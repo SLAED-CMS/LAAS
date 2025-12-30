@@ -1,0 +1,7 @@
+{
+  "name": "System",
+  "title": "System",
+  "description": "Core site pages",
+  "version": "0.1.0",
+  "namespace": "Laas\\Modules\\System"
+}

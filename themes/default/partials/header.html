@@ -1,0 +1,11 @@
+<header>
+  <p>{% t 'ui.home' %}</p>
+  {% if is_auth %}
+  <form method="post" action="/logout">
+    <input type="hidden" name="_token" value="{% csrf_token %}">
+    <button type="submit">{% t 'users.logout' %}</button>
+  </form>
+  {% else %}
+  <a href="/login">{% t 'users.login.title' %}</a>
+  {% endif %}
+</header>

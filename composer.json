@@ -1,0 +1,24 @@
+{
+  "name": "laas/laas",
+  "description": "LAAS CMS core",
+  "license": "MIT",
+  "homepage": "https://laas-cms.org",
+  "authors": [
+    {
+      "name": "Eduard Laas",
+      "homepage": "https://laas-cms.org"
+    }
+  ],
+  "type": "project",
+  "require": {
+    "php": "^8.4",
+    "nikic/fast-route": "^1.3",
+    "monolog/monolog": "^3.9"
+  },
+  "autoload": {
+    "psr-4": {
+      "Laas\\": "src/",
+      "Laas\\Modules\\": "modules/"
+    }
+  }
+}

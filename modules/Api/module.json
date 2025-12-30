@@ -1,0 +1,7 @@
+{
+  "name": "Api",
+  "title": "Api",
+  "description": "Public API endpoints",
+  "version": "0.1.0",
+  "namespace": "Laas\\Modules\\Api"
+}

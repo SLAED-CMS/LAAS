@@ -1,0 +1,7 @@
+/vendor/
+/storage/*
+!/storage/.gitkeep
+/.env
+/.idea/
+/.vscode/
+*.log
