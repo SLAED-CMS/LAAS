@@ -1,0 +1,52 @@
+{% if form.saved %}
+<div class="alert alert-success" role="alert" data-auto-hide="1" data-hide-ms="3000">
+  {% t 'admin.settings.saved' %}
+</div>
+{% endif %}
+{% if form.error %}
+<div class="alert alert-danger" role="alert">
+  {% t 'admin.settings.error_invalid' %}
+</div>
+{% endif %}
+<form method="post" action="/admin/settings"
+      hx-post="/admin/settings"
+      hx-target="#settings-form"
+      hx-swap="innerHTML">
+  <input type="hidden" name="_token" value="{% csrf_token %}">
+  <div class="mb-3">
+    <label class="form-label" for="site-name">
+      {% t 'admin.settings.site_name' %}
+      {% if source.site_name %}
+      <span class="badge bg-secondary-subtle text-secondary ms-2">{% source.site_name %}</span>
+      {% endif %}
+    </label>
+    <input class="form-control" id="site-name" name="site_name" value="{% settings.site_name %}">
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="default-locale">
+      {% t 'admin.settings.default_locale' %}
+      {% if source.default_locale %}
+      <span class="badge bg-secondary-subtle text-secondary ms-2">{% source.default_locale %}</span>
+      {% endif %}
+    </label>
+    <select class="form-select" id="default-locale" name="default_locale">
+      {% foreach localesOptions as opt %}
+      <option value="{% opt.value %}" {% raw opt.selected_attr %}>{% opt.label %}</option>
+      {% endforeach %}
+    </select>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="theme">
+      {% t 'admin.settings.theme' %}
+      {% if source.theme %}
+      <span class="badge bg-secondary-subtle text-secondary ms-2">{% source.theme %}</span>
+      {% endif %}
+    </label>
+    <select class="form-select" id="theme" name="theme">
+      {% foreach themesOptions as opt %}
+      <option value="{% opt.value %}" {% raw opt.selected_attr %}>{% opt.label %}</option>
+      {% endforeach %}
+    </select>
+  </div>
+  <button class="btn btn-primary" type="submit">{% t 'admin.settings.save' %}</button>
+</form>

@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+
+{% block content %}
+{% include "partials/header.html" %}
+<section class="bg-white border rounded p-4">
+  <h1 class="h4 mb-3">{% t 'admin.modules.title' %}</h1>
+  <table class="table table-sm align-middle">
+    <thead>
+      <tr>
+        <th>{% t 'admin.modules.name' %}</th>
+        <th>{% t 'admin.modules.version' %}</th>
+        <th>{% t 'admin.modules.status' %}</th>
+        <th>{% t 'admin.modules.action' %}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% foreach modules as module %}
+      {% include "partials/module_row.html" %}
+      {% endforeach %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}
