@@ -1,0 +1,52 @@
+<tr id="user-{% user.id %}">
+  <td>{% user.id %}</td>
+  <td>{% user.username %}</td>
+  <td>
+    {% if user.status %}
+    <span class="badge bg-success">{% t 'admin.users.active' %}</span>
+    {% else %}
+    <span class="badge bg-secondary">{% t 'admin.users.disabled' %}</span>
+    {% endif %}
+  </td>
+  <td>
+    {% if user.is_admin %}
+    <span class="badge bg-primary">admin</span>
+    {% else %}
+    -
+    {% endif %}
+  </td>
+  <td>{% user.last_login_at %}</td>
+  <td class="d-flex gap-2">
+    {% if user.protected %}
+    <button class="btn btn-outline-secondary btn-sm" type="button" disabled>{% t 'admin.users.disable' %}</button>
+    <button class="btn btn-outline-secondary btn-sm" type="button" disabled>{% t 'admin.users.remove_admin' %}</button>
+    {% else %}
+    <form method="post"
+          action="/admin/users/status"
+          hx-post="/admin/users/status"
+          hx-target="#user-{% user.id %}"
+          hx-swap="outerHTML"
+          hx-vals='{"user_id":"{% user.id %}"}'>
+      <input type="hidden" name="_token" value="{% csrf_token %}">
+      {% if user.status %}
+      <button class="btn btn-outline-danger btn-sm" type="submit">{% t 'admin.users.disable' %}</button>
+      {% else %}
+      <button class="btn btn-outline-success btn-sm" type="submit">{% t 'admin.users.enable' %}</button>
+      {% endif %}
+    </form>
+    <form method="post"
+          action="/admin/users/admin"
+          hx-post="/admin/users/admin"
+          hx-target="#user-{% user.id %}"
+          hx-swap="outerHTML"
+          hx-vals='{"user_id":"{% user.id %}"}'>
+      <input type="hidden" name="_token" value="{% csrf_token %}">
+      {% if user.is_admin %}
+      <button class="btn btn-outline-warning btn-sm" type="submit">{% t 'admin.users.remove_admin' %}</button>
+      {% else %}
+      <button class="btn btn-outline-primary btn-sm" type="submit">{% t 'admin.users.make_admin' %}</button>
+      {% endif %}
+    </form>
+    {% endif %}
+  </td>
+</tr>
