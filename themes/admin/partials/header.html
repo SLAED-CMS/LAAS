@@ -1,0 +1,13 @@
+<header class="d-flex align-items-center justify-content-between mb-4">
+  <div class="d-flex align-items-center gap-3">
+    <strong>Admin</strong>
+    <a class="text-decoration-none" href="/">{% t 'admin.nav.home' %}</a>
+    <a class="text-decoration-none" href="/admin/modules">{% t 'admin.nav.modules' %}</a>
+    <a class="text-decoration-none" href="/admin/settings">{% t 'admin.nav.settings' %}</a>
+    <a class="text-decoration-none" href="/admin/users">{% t 'admin.nav.users' %}</a>
+  </div>
+  <form method="post" action="/logout">
+    <input type="hidden" name="_token" value="{% csrf_token %}">
+    <button class="btn btn-outline-secondary btn-sm" type="submit">{% t 'admin.nav.logout' %}</button>
+  </form>
+</header>

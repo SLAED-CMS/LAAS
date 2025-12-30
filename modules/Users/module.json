@@ -1,0 +1,7 @@
+{
+  "name": "Users",
+  "title": "Users",
+  "description": "Authentication and user management",
+  "version": "0.1.0",
+  "namespace": "Laas\\Modules\\Users"
+}
