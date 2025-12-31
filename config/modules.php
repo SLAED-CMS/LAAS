@@ -6,4 +6,5 @@ return [
     \Laas\Modules\Api\ApiModule::class,
     \Laas\Modules\Users\UsersModule::class,
     \Laas\Modules\Admin\AdminModule::class,
+    \Laas\Modules\Pages\PagesModule::class,
 ];
