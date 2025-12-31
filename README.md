@@ -179,6 +179,13 @@ WHERE u.username = 'admin';
 
 ---
 
+## Contributing (Commit messages)
+
+This repository uses a commit template stored in `.gitmessage`.
+Set it locally with: `git config commit.template .gitmessage`.
+
+---
+
 ## License
 
 MIT License — see [LICENSE](LICENSE).
