@@ -3,8 +3,9 @@
 ![PHP Version](https://img.shields.io/badge/PHP-8.4+-blue.svg)
 ![MariaDB](https://img.shields.io/badge/MariaDB-10%2B-red.svg)
 ![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-8A2BE2.svg)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
 ![Status](https://img.shields.io/badge/Status-Active%20Development-orange.svg)
-![Baseline](https://img.shields.io/badge/Baseline-v1.1-green.svg)
+![Baseline](https://img.shields.io/badge/Baseline-v1.1-yellow.svg)
 
 **Modern, secure, HTML-first content management system.**
 
@@ -79,7 +80,7 @@ public/                # Web root
 src/                   # Core
 modules/               # Feature modules
 config/                # Configuration
-resources/lang/         # Core translations
+resources/lang/        # Core translations
 themes/                # Themes
 storage/               # Logs, sessions, cache
 tools/                 # CLI utilities
@@ -180,7 +181,7 @@ WHERE u.username = 'admin';
 
 ## License
 
-MIT License. See `LICENSE`.
+MIT License — see [LICENSE](LICENSE).
 
 ---
 
