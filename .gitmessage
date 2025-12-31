@@ -1,0 +1,17 @@
+# type(scope): subject
+#
+# Types: feat, fix, docs, chore, refactor, test
+# Scopes: core, security, db, admin, users, pages, i18n, docs, tools
+# Example: feat(pages): add admin pages UI
+#
+# What:
+# - 
+# - 
+# - 
+#
+# Why:
+# - 
+#
+# Test:
+# - not run (explain why)
+# - 
