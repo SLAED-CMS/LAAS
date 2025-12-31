@@ -1,11 +1,11 @@
 # LAAS CMS
 
-![PHP Version](https://img.shields.io/badge/PHP-8.4+-blue.svg)
-![MariaDB](https://img.shields.io/badge/MariaDB-10%2B-red.svg)
-![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-8A2BE2.svg)
-![License](https://img.shields.io/badge/License-MIT-green.svg)
-![Status](https://img.shields.io/badge/Status-Active%20Development-orange.svg)
-![Baseline](https://img.shields.io/badge/Baseline-v1.1-yellow.svg)
+[![PHP Version](https://img.shields.io/badge/PHP-8.4+-blue.svg)](https://www.php.net/)
+[![MariaDB](https://img.shields.io/badge/MariaDB-10%2B-red.svg)](https://mariadb.org/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-8A2BE2.svg)](https://www.mysql.com/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-Active%20Development-orange.svg)](#)
+[![Baseline](https://img.shields.io/badge/Baseline-v1.1-yellow.svg)](docs/VERSIONS.md)
 
 **Modern, secure, HTML-first content management system.**
 
