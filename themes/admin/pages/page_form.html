@@ -18,18 +18,19 @@
         hx-post="/admin/pages/save"
         hx-target="#form-messages"
         hx-swap="innerHTML"
-        data-slug-form="1">
+        data-slug-form="1"
+        data-mode="{% mode %}">
     <input type="hidden" name="_token" value="{% csrf_token %}">
     {% if is_edit %}
     <input type="hidden" name="id" value="{% page.id %}">
     {% endif %}
     <div class="mb-3">
       <label class="form-label">{% t 'admin.pages.form.title' %}</label>
-      <input class="form-control" name="title" value="{% page.title %}" maxlength="255" required>
+      <input class="form-control" id="page-title" name="title" value="{% page.title %}" maxlength="255" required>
     </div>
     <div class="mb-3">
       <label class="form-label">{% t 'admin.pages.form.slug' %}</label>
-      <input class="form-control" name="slug" value="{% page.slug %}" maxlength="255" required>
+      <input class="form-control" id="page-slug" name="slug" value="{% page.slug %}" maxlength="255" required>
       <div class="form-text">{% t 'admin.pages.form.slug_help' %}</div>
     </div>
     <div class="mb-3">
@@ -44,6 +45,7 @@
       <textarea class="form-control" name="content" rows="10">{% page.content %}</textarea>
     </div>
     <button class="btn btn-primary" type="submit">{% t 'admin.pages.form.save' %}</button>
+    <a class="btn btn-outline-secondary ms-2 disabled" id="page-preview" href="#" target="_blank" rel="noopener" aria-disabled="true" tabindex="-1">{% t 'admin.pages.form.preview' %}</a>
   </form>
 </section>
 {% endblock %}

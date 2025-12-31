@@ -56,11 +56,36 @@ final class PagesRepository
     }
 
     /** @return array<int, array<string, mixed>> */
-    public function listForAdmin(int $limit = 100, int $offset = 0): array
-    {
-        $stmt = $this->pdo->prepare(
-            'SELECT id, title, slug, status, updated_at FROM pages ORDER BY updated_at DESC, id DESC LIMIT :limit OFFSET :offset'
-        );
+    public function listForAdmin(
+        int $limit = 100,
+        int $offset = 0,
+        ?string $query = null,
+        ?string $status = null
+    ): array {
+        $sql = 'SELECT id, title, slug, status, updated_at FROM pages';
+        $conditions = [];
+        $params = [];
+
+        if ($query !== null && $query !== '') {
+            $conditions[] = '(title LIKE :q OR slug LIKE :q)';
+            $params['q'] = '%' . $query . '%';
+        }
+
+        if ($status !== null && $status !== '' && $status !== 'all') {
+            $conditions[] = 'status = :status';
+            $params['status'] = $status;
+        }
+
+        if ($conditions !== []) {
+            $sql .= ' WHERE ' . implode(' AND ', $conditions);
+        }
+
+        $sql .= ' ORDER BY updated_at DESC, id DESC LIMIT :limit OFFSET :offset';
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
         $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue('offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
@@ -104,6 +129,15 @@ final class PagesRepository
     {
         $stmt = $this->pdo->prepare('DELETE FROM pages WHERE id = :id');
         $stmt->execute(['id' => $id]);
+    }
+
+    public function updateStatus(int $id, string $status): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE pages SET status = :status, updated_at = NOW() WHERE id = :id');
+        $stmt->execute([
+            'id' => $id,
+            'status' => $status,
+        ]);
     }
 
     public function slugExists(string $slug, ?int $ignoreId = null): bool

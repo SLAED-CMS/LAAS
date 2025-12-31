@@ -23,4 +23,8 @@ return [
     'admin.pages.error_invalid' => 'Hitilafu. Tafadhali angalia sehemu.',
     'admin.pages.error_slug_exists' => 'Slug tayari ipo.',
     'admin.pages.error_reserved_slug' => 'Slug hii imehifadhiwa.',
+    'admin.pages.form.preview' => 'Hakiki',
+    'admin.pages.filter.search' => 'Tafuta',
+    'admin.pages.filter.status' => 'Hali',
+    'admin.pages.filter.all' => 'Zote',
 ];

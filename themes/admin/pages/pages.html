@@ -7,22 +7,29 @@
     <h1 class="h4 mb-0">{% t 'admin.pages.title' %}</h1>
     <a class="btn btn-primary btn-sm" href="/admin/pages/new">{% t 'admin.pages.new' %}</a>
   </div>
-  <table class="table table-sm align-middle">
-    <thead>
-      <tr>
-        <th>{% t 'admin.pages.id' %}</th>
-        <th>{% t 'admin.pages.form.title' %}</th>
-        <th>{% t 'admin.pages.slug' %}</th>
-        <th>{% t 'admin.pages.status' %}</th>
-        <th>{% t 'admin.pages.updated' %}</th>
-        <th>{% t 'admin.pages.actions' %}</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% foreach pages as page %}
-      {% include "partials/page_row.html" %}
-      {% endforeach %}
-    </tbody>
-  </table>
+  <form class="row g-2 align-items-end mb-3"
+        method="get"
+        action="/admin/pages"
+        hx-get="/admin/pages"
+        hx-target="#pages-table"
+        hx-swap="innerHTML"
+        hx-push-url="true"
+        hx-trigger="keyup changed delay:300ms from:input[name='q'], change from:select[name='status']">
+    <div class="col-sm-8">
+      <label class="form-label">{% t 'admin.pages.filter.search' %}</label>
+      <input class="form-control" type="search" name="q" value="{% q %}">
+    </div>
+    <div class="col-sm-4">
+      <label class="form-label">{% t 'admin.pages.filter.status' %}</label>
+      <select class="form-select" name="status">
+        <option value="all" {% raw status_selected_all %}>{% t 'admin.pages.filter.all' %}</option>
+        <option value="draft" {% raw status_selected_draft %}>{% t 'admin.pages.status.draft' %}</option>
+        <option value="published" {% raw status_selected_published %}>{% t 'admin.pages.status.published' %}</option>
+      </select>
+    </div>
+  </form>
+  <div id="pages-table">
+    {% include "partials/pages_table.html" %}
+  </div>
 </section>
 {% endblock %}

@@ -3,11 +3,22 @@
   <td>{% page.title %}</td>
   <td>{% page.slug %}</td>
   <td>
-    {% if page.is_published %}
-    <span class="badge bg-success">{% t 'admin.pages.status.published' %}</span>
-    {% else %}
-    <span class="badge bg-secondary">{% t 'admin.pages.status.draft' %}</span>
-    {% endif %}
+    <form method="post"
+          action="/admin/pages/status"
+          hx-post="/admin/pages/status"
+          hx-target="#page-{% page.id %}"
+          hx-swap="outerHTML"
+          class="d-inline">
+      <input type="hidden" name="_token" value="{% csrf_token %}">
+      <input type="hidden" name="id" value="{% page.id %}">
+      <button class="btn btn-link p-0 border-0" type="submit" {% if page.can_edit %}{% else %}disabled{% endif %}>
+        {% if page.is_published %}
+        <span class="badge bg-success">{% t 'admin.pages.status.published' %}</span>
+        {% else %}
+        <span class="badge bg-secondary">{% t 'admin.pages.status.draft' %}</span>
+        {% endif %}
+      </button>
+    </form>
   </td>
   <td>{% page.updated_at_display %}</td>
   <td class="d-flex gap-2">

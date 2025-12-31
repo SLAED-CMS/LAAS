@@ -1,0 +1,17 @@
+<table class="table table-sm align-middle">
+  <thead>
+    <tr>
+      <th>{% t 'admin.pages.id' %}</th>
+      <th>{% t 'admin.pages.form.title' %}</th>
+      <th>{% t 'admin.pages.slug' %}</th>
+      <th>{% t 'admin.pages.status' %}</th>
+      <th>{% t 'admin.pages.updated' %}</th>
+      <th>{% t 'admin.pages.actions' %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% foreach pages as page %}
+    {% include "partials/page_row.html" %}
+    {% endforeach %}
+  </tbody>
+</table>

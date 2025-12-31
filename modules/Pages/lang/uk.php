@@ -23,4 +23,8 @@ return [
     'admin.pages.error_invalid' => 'Помилка. Перевірте поля.',
     'admin.pages.error_slug_exists' => 'Слаг уже існує.',
     'admin.pages.error_reserved_slug' => 'Цей слаг зарезервовано.',
+    'admin.pages.form.preview' => 'Попередній перегляд',
+    'admin.pages.filter.search' => 'Пошук',
+    'admin.pages.filter.status' => 'Статус',
+    'admin.pages.filter.all' => 'Усі',
 ];

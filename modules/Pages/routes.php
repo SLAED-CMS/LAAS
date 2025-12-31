@@ -6,6 +6,7 @@ return [
     ['GET', '/admin/pages/new', [\Laas\Modules\Pages\Controller\AdminPagesController::class, 'createForm']],
     ['GET', '/admin/pages/{id:\d+}/edit', [\Laas\Modules\Pages\Controller\AdminPagesController::class, 'editForm']],
     ['POST', '/admin/pages/save', [\Laas\Modules\Pages\Controller\AdminPagesController::class, 'save']],
+    ['POST', '/admin/pages/status', [\Laas\Modules\Pages\Controller\AdminPagesController::class, 'toggleStatus']],
     ['POST', '/admin/pages/delete', [\Laas\Modules\Pages\Controller\AdminPagesController::class, 'delete']],
     ['GET', '/{slug:[a-z0-9-]+}', [\Laas\Modules\Pages\Controller\PagesController::class, 'show']],
 ];

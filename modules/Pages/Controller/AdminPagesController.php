@@ -41,13 +41,35 @@ final class AdminPagesController
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
+        $query = trim((string) ($request->query('q') ?? ''));
+        $status = (string) ($request->query('status') ?? 'all');
+        if (!in_array($status, ['all', 'draft', 'published'], true)) {
+            $status = 'all';
+        }
+
         $rows = [];
-        foreach ($repo->listForAdmin(100, 0) as $page) {
-            $rows[] = $this->buildPageRow($page);
+        $canEdit = true;
+        foreach ($repo->listForAdmin(100, 0, $query, $status) as $page) {
+            $rows[] = $this->buildPageRow($page, $canEdit);
+        }
+
+        $viewData = [
+            'pages' => $rows,
+            'q' => $query,
+            'status_selected_all' => $status === 'all' ? 'selected' : '',
+            'status_selected_draft' => $status === 'draft' ? 'selected' : '',
+            'status_selected_published' => $status === 'published' ? 'selected' : '',
+        ];
+
+        if ($request->isHtmx()) {
+            return $this->view->render('partials/pages_table.html', $viewData, 200, [], [
+                'theme' => 'admin',
+                'render_partial' => true,
+            ]);
         }
 
         return $this->view->render('pages/pages.html', [
-            'pages' => $rows,
+            ...$viewData,
         ], 200, [], [
             'theme' => 'admin',
         ]);
@@ -160,8 +182,10 @@ final class AdminPagesController
         }
 
         if ($request->isHtmx()) {
-            return new Response('', 200, [
-                'HX-Redirect' => '/admin/pages',
+            return $this->view->render('partials/page_form_messages.html', [
+                'saved_message' => true,
+            ], 200, [], [
+                'theme' => 'admin',
             ]);
         }
 
@@ -195,6 +219,47 @@ final class AdminPagesController
 
         if ($request->isHtmx()) {
             return new Response('', 200);
+        }
+
+        return new Response('', 302, [
+            'Location' => '/admin/pages',
+        ]);
+    }
+
+    public function toggleStatus(Request $request): Response
+    {
+        if (!$this->canEdit()) {
+            return $this->errorResponse($request, 'forbidden', 403);
+        }
+
+        $id = $this->readId($request);
+        if ($id === null) {
+            return $this->errorResponse($request, 'invalid_request', 400);
+        }
+
+        $repo = $this->getRepository();
+        if ($repo === null) {
+            return $this->errorResponse($request, 'db_unavailable', 503);
+        }
+
+        $page = $repo->findById($id);
+        if ($page === null) {
+            return $this->errorResponse($request, 'not_found', 404);
+        }
+
+        $status = (string) ($page['status'] ?? 'draft');
+        $nextStatus = $status === 'published' ? 'draft' : 'published';
+        $repo->updateStatus($id, $nextStatus);
+
+        $page['status'] = $nextStatus;
+        $row = $this->buildPageRow($page, true);
+
+        if ($request->isHtmx()) {
+            return $this->view->render('partials/page_row.html', [
+                'page' => $row,
+            ], 200, [], [
+                'theme' => 'admin',
+            ]);
         }
 
         return new Response('', 302, [
@@ -341,7 +406,7 @@ final class AdminPagesController
         ]);
     }
 
-    private function buildPageRow(array $page): array
+    private function buildPageRow(array $page, bool $canEdit): array
     {
         $status = (string) ($page['status'] ?? 'draft');
         $isPublished = $status === 'published';
@@ -356,6 +421,7 @@ final class AdminPagesController
             'status_badge_class' => $isPublished ? 'bg-success' : 'bg-secondary',
             'updated_at' => $updatedAt,
             'updated_at_display' => $updatedAt !== '' ? $updatedAt : '-',
+            'can_edit' => $canEdit,
         ];
     }
 }

@@ -23,4 +23,8 @@ return [
     'admin.pages.error_invalid' => 'Kesalahan. Silakan periksa kolom.',
     'admin.pages.error_slug_exists' => 'Slug sudah ada.',
     'admin.pages.error_reserved_slug' => 'Slug ini dicadangkan.',
+    'admin.pages.form.preview' => 'Pratinjau',
+    'admin.pages.filter.search' => 'Cari',
+    'admin.pages.filter.status' => 'Status',
+    'admin.pages.filter.all' => 'Semua',
 ];

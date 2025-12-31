@@ -23,4 +23,8 @@ return [
     'admin.pages.error_invalid' => 'خطأ. يرجى التحقق من الحقول.',
     'admin.pages.error_slug_exists' => 'الـ slug موجود بالفعل.',
     'admin.pages.error_reserved_slug' => 'هذا الـ slug محجوز.',
+    'admin.pages.form.preview' => 'معاينة',
+    'admin.pages.filter.search' => 'بحث',
+    'admin.pages.filter.status' => 'الحالة',
+    'admin.pages.filter.all' => 'الكل',
 ];

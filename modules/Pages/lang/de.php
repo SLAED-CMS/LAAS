@@ -23,4 +23,8 @@ return [
     'admin.pages.error_invalid' => 'Fehler. Bitte die Felder prüfen.',
     'admin.pages.error_slug_exists' => 'Der Slug existiert bereits.',
     'admin.pages.error_reserved_slug' => 'Dieser Slug ist reserviert.',
+    'admin.pages.form.preview' => 'Vorschau',
+    'admin.pages.filter.search' => 'Suche',
+    'admin.pages.filter.status' => 'Status',
+    'admin.pages.filter.all' => 'Alle',
 ];

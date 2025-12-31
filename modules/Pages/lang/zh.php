@@ -23,4 +23,8 @@ return [
     'admin.pages.error_invalid' => '错误。请检查字段。',
     'admin.pages.error_slug_exists' => 'Slug 已存在。',
     'admin.pages.error_reserved_slug' => '该 slug 已被保留。',
+    'admin.pages.form.preview' => '预览',
+    'admin.pages.filter.search' => '搜索',
+    'admin.pages.filter.status' => '状态',
+    'admin.pages.filter.all' => '全部',
 ];

@@ -23,4 +23,8 @@ return [
     'admin.pages.error_invalid' => 'ত্রুটি। অনুগ্রহ করে ফিল্ডগুলো যাচাই করুন।',
     'admin.pages.error_slug_exists' => 'স্লাগ ইতিমধ্যে আছে।',
     'admin.pages.error_reserved_slug' => 'এই স্লাগ সংরক্ষিত।',
+    'admin.pages.form.preview' => 'প্রিভিউ',
+    'admin.pages.filter.search' => 'অনুসন্ধান',
+    'admin.pages.filter.status' => 'স্ট্যাটাস',
+    'admin.pages.filter.all' => 'সব',
 ];

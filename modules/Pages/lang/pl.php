@@ -23,4 +23,8 @@ return [
     'admin.pages.error_invalid' => 'Błąd. Sprawdź pola.',
     'admin.pages.error_slug_exists' => 'Slug już istnieje.',
     'admin.pages.error_reserved_slug' => 'Ten slug jest zarezerwowany.',
+    'admin.pages.form.preview' => 'Podgląd',
+    'admin.pages.filter.search' => 'Szukaj',
+    'admin.pages.filter.status' => 'Status',
+    'admin.pages.filter.all' => 'Wszystkie',
 ];

@@ -1,3 +1,6 @@
+{% if saved_message %}
+<div class="alert alert-success mb-3" data-auto-hide="1" data-hide-ms="3000">{% t 'admin.pages.saved' %}</div>
+{% endif %}
 {% if error_invalid %}
 <div class="alert alert-danger mb-3">{% t 'admin.pages.error_invalid' %}</div>
 {% endif %}

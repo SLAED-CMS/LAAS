@@ -23,4 +23,8 @@ return [
     'admin.pages.error_invalid' => 'त्रुटि। कृपया फ़ील्ड जाँचें।',
     'admin.pages.error_slug_exists' => 'Slug पहले से मौजूद है।',
     'admin.pages.error_reserved_slug' => 'यह slug आरक्षित है।',
+    'admin.pages.form.preview' => 'पूर्वावलोकन',
+    'admin.pages.filter.search' => 'खोज',
+    'admin.pages.filter.status' => 'स्थिति',
+    'admin.pages.filter.all' => 'सभी',
 ];

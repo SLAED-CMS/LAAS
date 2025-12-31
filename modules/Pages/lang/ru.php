@@ -23,4 +23,8 @@ return [
     'admin.pages.error_invalid' => 'Ошибка. Проверьте поля.',
     'admin.pages.error_slug_exists' => 'Slug уже существует.',
     'admin.pages.error_reserved_slug' => 'Этот slug зарезервирован.',
+    'admin.pages.form.preview' => 'Предпросмотр',
+    'admin.pages.filter.search' => 'Поиск',
+    'admin.pages.filter.status' => 'Статус',
+    'admin.pages.filter.all' => 'Все',
 ];

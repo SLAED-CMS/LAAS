@@ -23,4 +23,8 @@ return [
     'admin.pages.error_invalid' => 'Erro. Verifique os campos.',
     'admin.pages.error_slug_exists' => 'O slug já existe.',
     'admin.pages.error_reserved_slug' => 'Este slug é reservado.',
+    'admin.pages.form.preview' => 'Pré-visualizar',
+    'admin.pages.filter.search' => 'Buscar',
+    'admin.pages.filter.status' => 'Status',
+    'admin.pages.filter.all' => 'Todos',
 ];

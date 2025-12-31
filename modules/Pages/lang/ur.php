@@ -23,4 +23,8 @@ return [
     'admin.pages.error_invalid' => 'غلطی۔ براہِ کرم فیلڈز چیک کریں۔',
     'admin.pages.error_slug_exists' => 'سلاگ پہلے سے موجود ہے۔',
     'admin.pages.error_reserved_slug' => 'یہ سلاگ محفوظ ہے۔',
+    'admin.pages.form.preview' => 'پیش نظارہ',
+    'admin.pages.filter.search' => 'تلاش',
+    'admin.pages.filter.status' => 'اسٹیٹس',
+    'admin.pages.filter.all' => 'سب',
 ];
