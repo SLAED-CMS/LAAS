@@ -1,0 +1,26 @@
+<?php
+declare(strict_types=1);
+
+return [
+    'admin.pages.title' => '页面',
+    'admin.pages.new' => '新建页面',
+    'admin.pages.edit' => '编辑页面',
+    'admin.pages.delete' => '删除',
+    'admin.pages.id' => 'ID',
+    'admin.pages.slug' => 'Slug',
+    'admin.pages.status' => '状态',
+    'admin.pages.updated' => '已更新',
+    'admin.pages.actions' => '操作',
+    'admin.pages.form.title' => '标题',
+    'admin.pages.form.slug' => 'Slug',
+    'admin.pages.form.slug_help' => 'Slug（在可读 URL 中）是页面地址中由有意义的词组成、用于描述内容的部分（例如 /product/laas-cms-v21），而不是数字或符号（例如 /cat/10&id=41）。它有助于用户在打开前理解页面，也能提升 SEO，因为搜索引擎更偏好这类友好的链接。',
+    'admin.pages.form.status' => '状态',
+    'admin.pages.form.content' => '内容',
+    'admin.pages.form.save' => '保存',
+    'admin.pages.status.draft' => '草稿',
+    'admin.pages.status.published' => '已发布',
+    'admin.pages.saved' => '已保存',
+    'admin.pages.error_invalid' => '错误。请检查字段。',
+    'admin.pages.error_slug_exists' => 'Slug 已存在。',
+    'admin.pages.error_reserved_slug' => '该 slug 已被保留。',
+];

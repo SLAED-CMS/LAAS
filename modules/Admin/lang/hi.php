@@ -45,5 +45,6 @@ return [
     'admin.nav.modules' => 'मॉड्यूल',
     'admin.nav.settings' => 'सेटिंग्स',
     'admin.nav.users' => 'यूज़र',
+    'admin.nav.pages' => 'पेज',
     'admin.nav.logout' => 'लॉग आउट',
 ];

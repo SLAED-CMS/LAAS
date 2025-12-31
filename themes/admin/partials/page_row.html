@@ -1,0 +1,25 @@
+<tr id="page-{% page.id %}">
+  <td>{% page.id %}</td>
+  <td>{% page.title %}</td>
+  <td>{% page.slug %}</td>
+  <td>
+    {% if page.is_published %}
+    <span class="badge bg-success">{% t 'admin.pages.status.published' %}</span>
+    {% else %}
+    <span class="badge bg-secondary">{% t 'admin.pages.status.draft' %}</span>
+    {% endif %}
+  </td>
+  <td>{% page.updated_at_display %}</td>
+  <td class="d-flex gap-2">
+    <a class="btn btn-outline-secondary btn-sm" href="/admin/pages/{% page.id %}/edit">{% t 'admin.pages.edit' %}</a>
+    <form method="post"
+          action="/admin/pages/delete"
+          hx-post="/admin/pages/delete"
+          hx-target="#page-{% page.id %}"
+          hx-swap="outerHTML">
+      <input type="hidden" name="_token" value="{% csrf_token %}">
+      <input type="hidden" name="id" value="{% page.id %}">
+      <button class="btn btn-outline-danger btn-sm" type="submit">{% t 'admin.pages.delete' %}</button>
+    </form>
+  </td>
+</tr>

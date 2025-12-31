@@ -45,5 +45,6 @@ return [
     'admin.nav.modules' => '模块',
     'admin.nav.settings' => '设置',
     'admin.nav.users' => '用户',
+    'admin.nav.pages' => '页面',
     'admin.nav.logout' => '退出',
 ];

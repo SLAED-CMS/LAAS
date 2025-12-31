@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+
+{% block content %}
+{% include "partials/header.html" %}
+<section class="bg-white border rounded p-4">
+  <h1 class="h4 mb-3">
+    {% if is_edit %}
+    {% t 'admin.pages.edit' %}
+    {% else %}
+    {% t 'admin.pages.new' %}
+    {% endif %}
+  </h1>
+  <div id="form-messages">
+    {% include "partials/page_form_messages.html" %}
+  </div>
+  <form method="post"
+        action="/admin/pages/save"
+        hx-post="/admin/pages/save"
+        hx-target="#form-messages"
+        hx-swap="innerHTML"
+        data-slug-form="1">
+    <input type="hidden" name="_token" value="{% csrf_token %}">
+    {% if is_edit %}
+    <input type="hidden" name="id" value="{% page.id %}">
+    {% endif %}
+    <div class="mb-3">
+      <label class="form-label">{% t 'admin.pages.form.title' %}</label>
+      <input class="form-control" name="title" value="{% page.title %}" maxlength="255" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">{% t 'admin.pages.form.slug' %}</label>
+      <input class="form-control" name="slug" value="{% page.slug %}" maxlength="255" required>
+      <div class="form-text">{% t 'admin.pages.form.slug_help' %}</div>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">{% t 'admin.pages.form.status' %}</label>
+      <select class="form-select" name="status">
+        <option value="draft" {% raw status_selected_draft %}>{% t 'admin.pages.status.draft' %}</option>
+        <option value="published" {% raw status_selected_published %}>{% t 'admin.pages.status.published' %}</option>
+      </select>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">{% t 'admin.pages.form.content' %}</label>
+      <textarea class="form-control" name="content" rows="10">{% page.content %}</textarea>
+    </div>
+    <button class="btn btn-primary" type="submit">{% t 'admin.pages.form.save' %}</button>
+  </form>
+</section>
+{% endblock %}

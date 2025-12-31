@@ -45,5 +45,6 @@ return [
     'admin.nav.modules' => 'Modules',
     'admin.nav.settings' => 'Paramètres',
     'admin.nav.users' => 'Utilisateurs',
+    'admin.nav.pages' => 'Pages',
     'admin.nav.logout' => 'Déconnexion',
 ];

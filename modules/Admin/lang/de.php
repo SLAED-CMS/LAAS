@@ -45,5 +45,6 @@ return [
     'admin.nav.modules' => 'Module',
     'admin.nav.settings' => 'Einstellungen',
     'admin.nav.users' => 'Benutzer',
+    'admin.nav.pages' => 'Seiten',
     'admin.nav.logout' => 'Abmelden',
 ];

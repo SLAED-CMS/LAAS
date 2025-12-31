@@ -45,5 +45,6 @@ return [
     'admin.nav.modules' => 'Modul',
     'admin.nav.settings' => 'Pengaturan',
     'admin.nav.users' => 'Pengguna',
+    'admin.nav.pages' => 'Halaman',
     'admin.nav.logout' => 'Keluar',
 ];

@@ -38,11 +38,34 @@ final class PagesRepository
         return $row ?: null;
     }
 
+    public function findById(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM pages WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
     /** @return array<int, array<string, mixed>> */
     public function listAll(): array
     {
         $stmt = $this->pdo->query('SELECT * FROM pages ORDER BY id ASC');
         $rows = $stmt->fetchAll();
+        return is_array($rows) ? $rows : [];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function listForAdmin(int $limit = 100, int $offset = 0): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT id, title, slug, status, updated_at FROM pages ORDER BY updated_at DESC, id DESC LIMIT :limit OFFSET :offset'
+        );
+        $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue('offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        $rows = $stmt->fetchAll();
+
         return is_array($rows) ? $rows : [];
     }
 
@@ -81,6 +104,24 @@ final class PagesRepository
     {
         $stmt = $this->pdo->prepare('DELETE FROM pages WHERE id = :id');
         $stmt->execute(['id' => $id]);
+    }
+
+    public function slugExists(string $slug, ?int $ignoreId = null): bool
+    {
+        if ($ignoreId !== null) {
+            $stmt = $this->pdo->prepare(
+                'SELECT 1 FROM pages WHERE slug = :slug AND id <> :id LIMIT 1'
+            );
+            $stmt->execute([
+                'slug' => $slug,
+                'id' => $ignoreId,
+            ]);
+        } else {
+            $stmt = $this->pdo->prepare('SELECT 1 FROM pages WHERE slug = :slug LIMIT 1');
+            $stmt->execute(['slug' => $slug]);
+        }
+
+        return (bool) $stmt->fetchColumn();
     }
 
 }

@@ -1,0 +1,26 @@
+<?php
+declare(strict_types=1);
+
+return [
+    'admin.pages.title' => 'Kurasa',
+    'admin.pages.new' => 'Ukurasa mpya',
+    'admin.pages.edit' => 'Hariri ukurasa',
+    'admin.pages.delete' => 'Futa',
+    'admin.pages.id' => 'ID',
+    'admin.pages.slug' => 'Slug',
+    'admin.pages.status' => 'Hali',
+    'admin.pages.updated' => 'Imesasishwa',
+    'admin.pages.actions' => 'Vitendo',
+    'admin.pages.form.title' => 'Kichwa',
+    'admin.pages.form.slug' => 'Slug',
+    'admin.pages.form.slug_help' => 'Slug (katika URL inayosomeka na binadamu) ni sehemu ya anwani ya ukurasa yenye maneno yenye maana yanayoelezea maudhui (mfano, /product/laas-cms-v21) badala ya namba au alama (mfano, /cat/10&id=41). Husaidia mtumiaji kuelewa ukurasa kabla ya kuufungua na inaweza kuboresha SEO kwa kuwa injini za utafutaji hupendelea viungo rafiki.',
+    'admin.pages.form.status' => 'Hali',
+    'admin.pages.form.content' => 'Maudhui',
+    'admin.pages.form.save' => 'Hifadhi',
+    'admin.pages.status.draft' => 'Rasimu',
+    'admin.pages.status.published' => 'Imechapishwa',
+    'admin.pages.saved' => 'Imehifadhiwa',
+    'admin.pages.error_invalid' => 'Hitilafu. Tafadhali angalia sehemu.',
+    'admin.pages.error_slug_exists' => 'Slug tayari ipo.',
+    'admin.pages.error_reserved_slug' => 'Slug hii imehifadhiwa.',
+];

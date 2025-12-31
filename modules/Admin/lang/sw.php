@@ -45,5 +45,6 @@ return [
     'admin.nav.modules' => 'Moduli',
     'admin.nav.settings' => 'Mipangilio',
     'admin.nav.users' => 'Watumiaji',
+    'admin.nav.pages' => 'Kurasa',
     'admin.nav.logout' => 'Toka',
 ];

@@ -1,0 +1,26 @@
+<?php
+declare(strict_types=1);
+
+return [
+    'admin.pages.title' => 'الصفحات',
+    'admin.pages.new' => 'صفحة جديدة',
+    'admin.pages.edit' => 'تعديل الصفحة',
+    'admin.pages.delete' => 'حذف',
+    'admin.pages.id' => 'ID',
+    'admin.pages.slug' => 'Slug',
+    'admin.pages.status' => 'الحالة',
+    'admin.pages.updated' => 'تم التحديث',
+    'admin.pages.actions' => 'الإجراءات',
+    'admin.pages.form.title' => 'العنوان',
+    'admin.pages.form.slug' => 'Slug',
+    'admin.pages.form.slug_help' => 'السلَغ (في عنوان URL قابل للقراءة) هو الجزء من عنوان الصفحة المكوّن من كلمات مفهومة تصف المحتوى (مثال: /product/laas-cms-v21) بدلًا من أرقام أو رموز (مثال: /cat/10&id=41). يساعد المستخدم على فهم الصفحة قبل فتحها وقد يحسّن SEO لأن محركات البحث تقيّم هذه الروابط الودّية بشكل أفضل.',
+    'admin.pages.form.status' => 'الحالة',
+    'admin.pages.form.content' => 'المحتوى',
+    'admin.pages.form.save' => 'حفظ',
+    'admin.pages.status.draft' => 'مسودة',
+    'admin.pages.status.published' => 'منشور',
+    'admin.pages.saved' => 'تم الحفظ',
+    'admin.pages.error_invalid' => 'خطأ. يرجى التحقق من الحقول.',
+    'admin.pages.error_slug_exists' => 'الـ slug موجود بالفعل.',
+    'admin.pages.error_reserved_slug' => 'هذا الـ slug محجوز.',
+];

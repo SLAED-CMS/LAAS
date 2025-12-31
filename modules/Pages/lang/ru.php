@@ -1,0 +1,26 @@
+<?php
+declare(strict_types=1);
+
+return [
+    'admin.pages.title' => 'Страницы',
+    'admin.pages.new' => 'Новая страница',
+    'admin.pages.edit' => 'Редактировать',
+    'admin.pages.delete' => 'Удалить',
+    'admin.pages.id' => 'ID',
+    'admin.pages.slug' => 'Slug',
+    'admin.pages.status' => 'Статус',
+    'admin.pages.updated' => 'Обновлено',
+    'admin.pages.actions' => 'Действия',
+    'admin.pages.form.title' => 'Заголовок',
+    'admin.pages.form.slug' => 'Слаг',
+    'admin.pages.form.slug_help' => 'Слаг (slug) в контексте ЧПУ (человеко-понятный URL) — это часть адреса веб-страницы (URL), состоящая из понятных слов, описывающих её содержание (например, /product/laas-cms-v21), а не набор цифр или символов (например, /cat/10&id=41). Он улучшает удобство для пользователей, помогая понять суть страницы до перехода, и положительно влияет на SEO, так как поисковые системы лучше ранжируют такие «дружественные» ссылки.',
+    'admin.pages.form.status' => 'Статус',
+    'admin.pages.form.content' => 'Контент',
+    'admin.pages.form.save' => 'Сохранить',
+    'admin.pages.status.draft' => 'Черновик',
+    'admin.pages.status.published' => 'Опубликовано',
+    'admin.pages.saved' => 'Сохранено',
+    'admin.pages.error_invalid' => 'Ошибка. Проверьте поля.',
+    'admin.pages.error_slug_exists' => 'Slug уже существует.',
+    'admin.pages.error_reserved_slug' => 'Этот slug зарезервирован.',
+];

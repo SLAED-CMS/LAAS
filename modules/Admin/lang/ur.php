@@ -45,5 +45,6 @@ return [
     'admin.nav.modules' => 'ماڈیولز',
     'admin.nav.settings' => 'سیٹنگز',
     'admin.nav.users' => 'صارفین',
+    'admin.nav.pages' => 'صفحات',
     'admin.nav.logout' => 'لاگ آؤٹ',
 ];

@@ -1,0 +1,26 @@
+<?php
+declare(strict_types=1);
+
+return [
+    'admin.pages.title' => 'صفحات',
+    'admin.pages.new' => 'نیا صفحہ',
+    'admin.pages.edit' => 'صفحہ ترمیم کریں',
+    'admin.pages.delete' => 'حذف کریں',
+    'admin.pages.id' => 'ID',
+    'admin.pages.slug' => 'سلاگ',
+    'admin.pages.status' => 'اسٹیٹس',
+    'admin.pages.updated' => 'اپ ڈیٹ ہوا',
+    'admin.pages.actions' => 'عمل',
+    'admin.pages.form.title' => 'عنوان',
+    'admin.pages.form.slug' => 'سلاگ',
+    'admin.pages.form.slug_help' => 'Slug (انسانی‑قابلِ فہم URL میں) صفحے کے پتے کا وہ حصہ ہے جو مواد کی وضاحت کرنے والے معنی خیز الفاظ پر مشتمل ہوتا ہے (مثال: /product/laas-cms-v21)، اعداد یا علامات کی بجائے (مثال: /cat/10&id=41). یہ صارف کو صفحہ کھولنے سے پہلے سمجھنے میں مدد دیتا ہے اور SEO بہتر کر سکتا ہے کیونکہ سرچ انجن ایسی دوستانہ لنکس کو بہتر درجہ دیتے ہیں۔',
+    'admin.pages.form.status' => 'اسٹیٹس',
+    'admin.pages.form.content' => 'مواد',
+    'admin.pages.form.save' => 'محفوظ کریں',
+    'admin.pages.status.draft' => 'مسودہ',
+    'admin.pages.status.published' => 'شائع شدہ',
+    'admin.pages.saved' => 'محفوظ ہو گیا',
+    'admin.pages.error_invalid' => 'غلطی۔ براہِ کرم فیلڈز چیک کریں۔',
+    'admin.pages.error_slug_exists' => 'سلاگ پہلے سے موجود ہے۔',
+    'admin.pages.error_reserved_slug' => 'یہ سلاگ محفوظ ہے۔',
+];

@@ -1,0 +1,9 @@
+{% if error_invalid %}
+<div class="alert alert-danger mb-3">{% t 'admin.pages.error_invalid' %}</div>
+{% endif %}
+{% if error_reserved %}
+<div class="alert alert-danger mb-3">{% t 'admin.pages.error_reserved_slug' %}</div>
+{% endif %}
+{% if error_slug_exists %}
+<div class="alert alert-danger mb-3">{% t 'admin.pages.error_slug_exists' %}</div>
+{% endif %}
