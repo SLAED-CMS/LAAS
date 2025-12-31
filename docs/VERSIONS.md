@@ -1,6 +1,6 @@
 # LAAS Versions
 
-- v1.2.1: Pages admin UX (slugify, preview, filters, HTMX status toggle)
+- v1.2.1: Pages admin UX (slugify, preview, filters, HTMX status toggle, flash highlight)
 - v1.1: Admin Users UI (first full admin user management)
   - Users list
   - Toggle status (enable/disable)

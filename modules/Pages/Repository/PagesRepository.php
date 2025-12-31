@@ -67,8 +67,9 @@ final class PagesRepository
         $params = [];
 
         if ($query !== null && $query !== '') {
-            $conditions[] = '(title LIKE :q OR slug LIKE :q)';
-            $params['q'] = '%' . $query . '%';
+            $conditions[] = '(title LIKE :q_title OR slug LIKE :q_slug)';
+            $params['q_title'] = '%' . $query . '%';
+            $params['q_slug'] = '%' . $query . '%';
         }
 
         if ($status !== null && $status !== '' && $status !== 'all') {
@@ -80,15 +81,11 @@ final class PagesRepository
             $sql .= ' WHERE ' . implode(' AND ', $conditions);
         }
 
-        $sql .= ' ORDER BY updated_at DESC, id DESC LIMIT :limit OFFSET :offset';
+        $sql .= ' ORDER BY updated_at DESC, id DESC';
+        $sql .= ' LIMIT ' . (int) $limit . ' OFFSET ' . (int) $offset;
 
         $stmt = $this->pdo->prepare($sql);
-        foreach ($params as $key => $value) {
-            $stmt->bindValue($key, $value);
-        }
-        $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
-        $stmt->bindValue('offset', $offset, PDO::PARAM_INT);
-        $stmt->execute();
+        $stmt->execute($params);
         $rows = $stmt->fetchAll();
 
         return is_array($rows) ? $rows : [];

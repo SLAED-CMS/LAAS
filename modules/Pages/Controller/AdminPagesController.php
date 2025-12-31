@@ -253,6 +253,7 @@ final class AdminPagesController
 
         $page['status'] = $nextStatus;
         $row = $this->buildPageRow($page, true);
+        $row['flash'] = true;
 
         if ($request->isHtmx()) {
             return $this->view->render('partials/page_row.html', [
