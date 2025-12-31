@@ -14,20 +14,24 @@
         hx-target="#pages-table"
         hx-swap="innerHTML"
         hx-push-url="true"
-        hx-trigger="keyup changed delay:300ms from:input[name='q'], change from:select[name='status']">
+        hx-indicator="#pages-loading"
+        hx-trigger="keyup changed delay:300ms from:#q, change from:#status">
     <div class="col-sm-8">
       <label class="form-label">{% t 'admin.pages.filter.search' %}</label>
-      <input class="form-control" type="search" name="q" value="{% q %}">
+      <input class="form-control" id="q" type="search" name="q" value="{% q %}">
     </div>
     <div class="col-sm-4">
       <label class="form-label">{% t 'admin.pages.filter.status' %}</label>
-      <select class="form-select" name="status">
+      <select class="form-select" id="status" name="status">
         <option value="all" {% raw status_selected_all %}>{% t 'admin.pages.filter.all' %}</option>
         <option value="draft" {% raw status_selected_draft %}>{% t 'admin.pages.status.draft' %}</option>
         <option value="published" {% raw status_selected_published %}>{% t 'admin.pages.status.published' %}</option>
       </select>
     </div>
   </form>
+  <div id="pages-loading" class="text-center my-3" style="display:none;">
+    <div class="spinner-border" role="status" aria-hidden="true"></div>
+  </div>
   <div id="pages-table">
     {% include "partials/pages_table.html" %}
   </div>
