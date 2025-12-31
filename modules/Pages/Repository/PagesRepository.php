@@ -24,6 +24,20 @@ final class PagesRepository
         return $row ?: null;
     }
 
+    public function findPublishedBySlug(string $slug): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM pages WHERE slug = :slug AND status = :status LIMIT 1'
+        );
+        $stmt->execute([
+            'slug' => $slug,
+            'status' => 'published',
+        ]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
     /** @return array<int, array<string, mixed>> */
     public function listAll(): array
     {
