@@ -1,7 +1,8 @@
 {
-  "name": "Admin",
-  "title": "Admin",
-  "description": "Admin dashboard",
-  "version": "0.1.0",
-  "namespace": "Laas\\Modules\\Admin"
+    "name":  "Admin",
+    "title":  "Admin",
+    "description":  "Admin dashboard",
+    "version":  "0.1.0",
+    "namespace":  "Laas\\Modules\\Admin",
+    "type":  "admin"
 }

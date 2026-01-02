@@ -40,7 +40,7 @@ final class ModuleManager
         }
     }
 
-    /** @return array<string, array{path: string, version: string|null}> */
+    /** @return array<string, array{path: string, version: string|null, type: string}> */
     public function discover(): array
     {
         $modulesDir = dirname(__DIR__, 2) . '/modules';
@@ -61,6 +61,7 @@ final class ModuleManager
 
             $name = $item;
             $version = null;
+            $type = 'feature';
             $metaPath = $path . '/module.json';
             if (is_file($metaPath)) {
                 $raw = (string) file_get_contents($metaPath);
@@ -68,12 +69,14 @@ final class ModuleManager
                 if (is_array($data)) {
                     $name = is_string($data['name'] ?? null) ? $data['name'] : $name;
                     $version = is_string($data['version'] ?? null) ? $data['version'] : null;
+                    $type = is_string($data['type'] ?? null) ? $data['type'] : $type;
                 }
             }
 
             $discovered[$name] = [
                 'path' => $path,
                 'version' => $version,
+                'type' => $type,
             ];
         }
 

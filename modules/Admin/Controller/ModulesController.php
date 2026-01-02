@@ -39,6 +39,9 @@ final class ModulesController
         }
 
         foreach ($discovered as $name => $meta) {
+            if (($meta['type'] ?? 'feature') !== 'feature') {
+                continue;
+            }
             $enabled = false;
             $source = 'CONFIG';
             if ($dbAvailable && is_array($dbModules) && array_key_exists($name, $dbModules)) {
@@ -53,7 +56,7 @@ final class ModulesController
                 'enabled' => $enabled,
                 'version' => $meta['version'] ?? null,
                 'source' => $source,
-                'protected' => $this->isProtected($name),
+                'protected' => false,
             ];
         }
 
@@ -73,8 +76,10 @@ final class ModulesController
             return $this->errorResponse($request, 'invalid_request', 400);
         }
 
-        if ($this->isProtected($name)) {
-            return $this->errorResponse($request, 'protected_module', 400);
+        $discovered = $this->discoverModules();
+        $type = $discovered[$name]['type'] ?? 'feature';
+        if ($type !== 'feature') {
+            return $this->errorResponse($request, 'not_toggleable', 400);
         }
 
         if ($this->db === null || !$this->db->healthCheck()) {
@@ -90,14 +95,13 @@ final class ModulesController
             $repo->enable($name);
         }
 
-        $discovered = $this->discoverModules();
         $row = $current[$name] ?? ['enabled' => !$enabled, 'version' => null];
         $module = [
             'name' => $name,
             'enabled' => !$enabled,
             'version' => $discovered[$name]['version'] ?? null,
             'source' => 'DB',
-            'protected' => $this->isProtected($name),
+            'protected' => false,
         ];
 
         if ($request->isHtmx()) {
@@ -113,7 +117,7 @@ final class ModulesController
         ]);
     }
 
-    /** @return array<string, array{path: string, version: string|null}> */
+    /** @return array<string, array{path: string, version: string|null, type: string}> */
     private function discoverModules(): array
     {
         $modulesDir = dirname(__DIR__, 3) . '/modules';
@@ -135,6 +139,7 @@ final class ModulesController
 
             $name = $item;
             $version = null;
+            $type = 'feature';
             $metaPath = $path . '/module.json';
             if (is_file($metaPath)) {
                 $raw = (string) file_get_contents($metaPath);
@@ -142,12 +147,14 @@ final class ModulesController
                 if (is_array($data)) {
                     $name = is_string($data['name'] ?? null) ? $data['name'] : $name;
                     $version = is_string($data['version'] ?? null) ? $data['version'] : null;
+                    $type = is_string($data['type'] ?? null) ? $data['type'] : $type;
                 }
             }
 
             $discovered[$name] = [
                 'path' => $path,
                 'version' => $version,
+                'type' => $type,
             ];
         }
 
@@ -185,11 +192,6 @@ final class ModulesController
         }
 
         return $names;
-    }
-
-    private function isProtected(string $name): bool
-    {
-        return in_array($name, ['System', 'Api', 'Admin'], true);
     }
 
     private function errorResponse(Request $request, string $code, int $status): Response

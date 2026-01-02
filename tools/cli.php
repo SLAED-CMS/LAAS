@@ -188,9 +188,13 @@ $commands['module:status'] = function () use ($modulesRepo, $modulesConfig, $roo
         $isEnabled = in_array($name, $enabled, true);
         $version = $meta['version'] ?? '';
         $version = $version !== null ? (string) $version : '';
+        $type = (string) ($meta['type'] ?? '');
         echo $name . ' | ' . ($isEnabled ? 'ON' : 'OFF') . ' | ' . $source;
         if ($version !== '') {
             echo ' | ' . $version;
+        }
+        if ($type !== '') {
+            echo ' | ' . $type;
         }
         echo "\n";
     }
@@ -216,7 +220,7 @@ $commands['module:sync'] = function () use ($modulesRepo, $modulesConfig, $rootP
     return 0;
 };
 
-$commands['module:enable'] = function () use ($modulesRepo, $args): int {
+$commands['module:enable'] = function () use ($modulesRepo, $args, $rootPath): int {
     if ($modulesRepo === null) {
         echo "DB not available. Enable modules via config/modules.php\n";
         return 1;
@@ -228,12 +232,20 @@ $commands['module:enable'] = function () use ($modulesRepo, $args): int {
         return 1;
     }
 
+    $discovered = discoverModules($rootPath);
+    $type = $discovered[$name]['type'] ?? null;
+    if ($type !== 'feature') {
+        $typeLabel = $type ?? 'unknown';
+        echo "Module {$name} is {$typeLabel} and cannot be toggled.\n";
+        return 1;
+    }
+
     $modulesRepo->enable($name);
     echo "Enabled: {$name}\n";
     return 0;
 };
 
-$commands['module:disable'] = function () use ($modulesRepo, $args): int {
+$commands['module:disable'] = function () use ($modulesRepo, $args, $rootPath): int {
     if ($modulesRepo === null) {
         echo "DB not available. Disable modules via config/modules.php\n";
         return 1;
@@ -245,8 +257,11 @@ $commands['module:disable'] = function () use ($modulesRepo, $args): int {
         return 1;
     }
 
-    if (in_array($name, ['System', 'Api'], true)) {
-        echo "Refusing to disable critical module: {$name}\n";
+    $discovered = discoverModules($rootPath);
+    $type = $discovered[$name]['type'] ?? null;
+    if ($type !== 'feature') {
+        $typeLabel = $type ?? 'unknown';
+        echo "Module {$name} is {$typeLabel} and cannot be toggled.\n";
         return 1;
     }
 
@@ -405,21 +420,24 @@ function discoverModules(string $rootPath): array
         }
 
         $name = $item;
-        $version = null;
-        $metaPath = $path . '/module.json';
-        if (is_file($metaPath)) {
-            $raw = (string) file_get_contents($metaPath);
-            $data = json_decode($raw, true);
-            if (is_array($data)) {
-                $name = is_string($data['name'] ?? null) ? $data['name'] : $name;
-                $version = is_string($data['version'] ?? null) ? $data['version'] : null;
-            }
-        }
+          $version = null;
+          $type = 'feature';
+          $metaPath = $path . '/module.json';
+          if (is_file($metaPath)) {
+              $raw = (string) file_get_contents($metaPath);
+              $data = json_decode($raw, true);
+              if (is_array($data)) {
+                  $name = is_string($data['name'] ?? null) ? $data['name'] : $name;
+                  $version = is_string($data['version'] ?? null) ? $data['version'] : null;
+                  $type = is_string($data['type'] ?? null) ? $data['type'] : $type;
+              }
+          }
 
-        $discovered[$name] = [
-            'path' => $path,
-            'version' => $version,
-        ];
+          $discovered[$name] = [
+              'path' => $path,
+              'version' => $version,
+              'type' => $type,
+          ];
     }
 
     return $discovered;

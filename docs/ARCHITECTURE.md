@@ -28,6 +28,12 @@ tools/              CLI
 - Роуты модуля подключаются через `routes.php`.
 - Включение модулей: config/modules.php, с DB override при наличии таблицы `modules`.
 
+## Module Types
+- `feature` — пользовательская функциональность (Pages, Menu, Users); показывается в `/admin/modules`, можно включать/выключать.
+- `internal` — инфраструктура ядра (System, Audit); не показывается, всегда включено.
+- `admin` — админ-оболочка (Admin); не управляется через `/admin/modules`.
+- `api` — API-only модуль (Api); не управляется через `/admin/modules`.
+
 ## HTMX partials
 - Если шаблон `extends` layout — для `HX-Request` возвращается только `block content`.
 - Если `extends` нет — возвращается сам шаблон.
