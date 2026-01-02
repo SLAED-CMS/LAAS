@@ -221,4 +221,4 @@ MIT License — see [LICENSE](LICENSE).
 - Website: https://laas-cms.org
 - Email: info@laas-cms.org
 
-*Last updated: December 2025*
+*Last updated: January 2026*
