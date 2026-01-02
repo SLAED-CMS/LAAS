@@ -1,4 +1,4 @@
-# DevTools (v1.7+)
+# DevTools (v1.7.1)
 
 ## Включение
 В `.env`:

@@ -1,4 +1,4 @@
-# Security (v1.6)
+# Security (v1.7.1)
 
 ## Сессии
 - Файловые сессии в `storage/sessions`.

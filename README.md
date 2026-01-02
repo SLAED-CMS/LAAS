@@ -5,7 +5,7 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-8A2BE2.svg)](https://www.mysql.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Active%20Development-orange.svg)](#)
-[![Baseline](https://img.shields.io/badge/Baseline-v1.6-yellow.svg)](docs/VERSIONS.md)
+[![Baseline](https://img.shields.io/badge/Baseline-v1.7.1-yellow.svg)](docs/VERSIONS.md)
 
 **Modern, secure, HTML-first content management system.**
 
