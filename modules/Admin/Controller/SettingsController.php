@@ -7,6 +7,7 @@ use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\SettingsRepository;
 use Laas\Http\Request;
 use Laas\Http\Response;
+use Laas\Support\AuditLogger;
 use Laas\View\View;
 use Throwable;
 
@@ -103,6 +104,18 @@ final class SettingsController
         $repo->set('site_name', $siteName, 'string');
         $repo->set('default_locale', $defaultLocale, 'string');
         $repo->set('theme', $theme, 'string');
+        (new AuditLogger($this->db))->log(
+            'settings.update',
+            'setting',
+            null,
+            [
+                'site_name' => $siteName,
+                'default_locale' => $defaultLocale,
+                'theme' => $theme,
+            ],
+            $this->currentUserId(),
+            $request->ip()
+        );
 
         if ($request->isHtmx()) {
             return $this->renderFormPartial($siteName, $defaultLocale, $theme, $locales, $themes, true, false, 200, [
@@ -257,5 +270,23 @@ final class SettingsController
         }
 
         return $options;
+    }
+
+    private function currentUserId(): ?int
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            return null;
+        }
+
+        $raw = $_SESSION['user_id'] ?? null;
+        if (is_int($raw)) {
+            return $raw;
+        }
+
+        if (is_string($raw) && ctype_digit($raw)) {
+            return (int) $raw;
+        }
+
+        return null;
     }
 }

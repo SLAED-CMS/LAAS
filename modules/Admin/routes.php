@@ -10,4 +10,5 @@ return [
     ['GET', '/admin/users', [\Laas\Modules\Admin\Controller\UsersController::class, 'index']],
     ['POST', '/admin/users/status', [\Laas\Modules\Admin\Controller\UsersController::class, 'toggleStatus']],
     ['POST', '/admin/users/admin', [\Laas\Modules\Admin\Controller\UsersController::class, 'toggleAdmin']],
+    ['GET', '/admin/audit', [\Laas\Modules\Admin\Controller\AuditController::class, 'index']],
 ];

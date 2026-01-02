@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+
+{% block content %}
+{% include "partials/header.html" %}
+<section class="bg-white border rounded p-4">
+  <h1 class="h4 mb-3">{% t 'admin.audit.title' %}</h1>
+
+  <table class="table table-sm align-middle">
+    <thead>
+      <tr>
+        <th>{% t 'admin.audit.date' %}</th>
+        <th>{% t 'admin.audit.user' %}</th>
+        <th>{% t 'admin.audit.action' %}</th>
+        <th>{% t 'admin.audit.entity' %}</th>
+        <th>{% t 'admin.audit.entity_id' %}</th>
+        <th>{% t 'admin.audit.context' %}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% foreach logs as log %}
+      <tr>
+        <td>{% log.created_at %}</td>
+        <td>
+          {% if log.user %}{% log.user %}{% else %}-{% endif %}
+        </td>
+        <td>{% log.action %}</td>
+        <td>{% log.entity %}</td>
+        <td>{% raw log.entity_id %}</td>
+        <td>{% log.context_preview %}</td>
+      </tr>
+      {% endforeach %}
+    </tbody>
+  </table>
+
+  <div class="d-flex align-items-center justify-content-between">
+    <a class="btn btn-sm btn-outline-secondary {% pagination.prev_disabled_class %}"
+       href="{% pagination.prev_url %}">
+      {% t 'admin.audit.prev' %}
+    </a>
+    <div class="text-muted small">
+      {% t 'admin.audit.page' %} {% raw pagination.page %} / {% raw pagination.total_pages %}
+    </div>
+    <a class="btn btn-sm btn-outline-secondary {% pagination.next_disabled_class %}"
+       href="{% pagination.next_url %}">
+      {% t 'admin.audit.next' %}
+    </a>
+  </div>
+</section>
+{% endblock %}
