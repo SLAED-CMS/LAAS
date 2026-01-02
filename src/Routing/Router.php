@@ -27,7 +27,7 @@ final class Router
             }
         });
 
-        $routeInfo = $dispatcher->dispatch($request->getMethod(), $request->getPath());
+        $routeInfo = $dispatcher->dispatch(strtoupper($request->getMethod()), $request->getPath());
 
         switch ($routeInfo[0]) {
             case Dispatcher::NOT_FOUND:
@@ -35,9 +35,16 @@ final class Router
                     'Content-Type' => 'text/plain; charset=utf-8',
                 ]);
             case Dispatcher::METHOD_NOT_ALLOWED:
-                return new Response('Method Not Allowed', 405, [
-                    'Content-Type' => 'text/plain; charset=utf-8',
-                ]);
+                $allowed = $routeInfo[1] ?? [];
+                $allowHeader = is_array($allowed) ? implode(', ', $allowed) : '';
+                return new Response(
+                    'Method Not Allowed' . ($allowHeader !== '' ? ' (Allow: ' . $allowHeader . ')' : ''),
+                    405,
+                    array_filter([
+                        'Content-Type' => 'text/plain; charset=utf-8',
+                        $allowHeader !== '' ? 'Allow' : '' => $allowHeader,
+                    ])
+                );
             case Dispatcher::FOUND:
                 $handler = $routeInfo[1];
                 $vars = $routeInfo[2];
