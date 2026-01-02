@@ -25,6 +25,7 @@ final class AdminPagesController
         'echo',
         'assets',
         'themes',
+        'media',
     ];
 
     public function __construct(

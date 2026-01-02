@@ -1,0 +1,7 @@
+{
+    "name": "Media",
+    "version": "0.1.0",
+    "description": "Media uploads module",
+    "enabled": true,
+    "type": "feature"
+}

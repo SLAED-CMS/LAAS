@@ -202,6 +202,7 @@ final class Kernel
             'modules' => $configDir . '/modules.php',
             'security' => $configDir . '/security.php',
             'database' => $configDir . '/database.php',
+            'media' => $configDir . '/media.php',
         ];
 
         $config = [];
@@ -227,6 +228,7 @@ final class Kernel
             $this->rootPath . '/storage/cache',
             $this->rootPath . '/storage/cache/templates',
             $this->rootPath . '/storage/cache/ratelimit',
+            $this->rootPath . '/storage/uploads',
         ];
 
         foreach ($paths as $path) {
