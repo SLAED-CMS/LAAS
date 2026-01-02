@@ -1,5 +1,18 @@
 # LAAS Versions
 
+- v1.6.0: Menu polish + Audit Log (stable)
+  - Admin Menus UI: create/edit/toggle/delete (HTMX, no reload)
+  - Active state, external links, enable/disable
+  - Unified validation errors (422)
+  - Audit Log module with RBAC (audit.view)
+  - Admin Audit UI (read-only)
+  - Documentation completed (architecture, standards, i18n audit)
+
+- v1.6: Menu polish + Audit Log
+  - Меню: активный пункт, external links, enable/disable без удаления
+  - Меню: admin UI с HTMX (создание/редактирование/удаление)
+  - Audit Log: журнал действий админки + UI
+
 - v1.2.1: Pages admin UX (slugify, preview, filters, HTMX status toggle, flash highlight)
 - v1.1: Admin Users UI (first full admin user management)
   - Users list

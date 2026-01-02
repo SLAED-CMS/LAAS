@@ -5,7 +5,7 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-8A2BE2.svg)](https://www.mysql.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Active%20Development-orange.svg)](#)
-[![Baseline](https://img.shields.io/badge/Baseline-v1.1-yellow.svg)](docs/VERSIONS.md)
+[![Baseline](https://img.shields.io/badge/Baseline-v1.6-yellow.svg)](docs/VERSIONS.md)
 
 **Modern, secure, HTML-first content management system.**
 
@@ -52,6 +52,14 @@ http://laas.loc/
 3. **Configure** database in `config/database.php`
 4. **Run migrations** with `php tools/cli.php migrate:up`
 5. **Open** the site in a browser
+
+---
+
+## Environment (.env)
+
+- Copy `.env.example` to `.env`
+- Adjust values for your local setup
+- `.env` is loaded in web and CLI via Dotenv
 
 ---
 
@@ -108,6 +116,14 @@ tools/                 # CLI utilities
 - db: `php tools/cli.php db:check`
 - migrations: `php tools/cli.php migrate:status`, `php tools/cli.php migrate:up`
 - settings: `php tools/cli.php settings:get KEY`, `php tools/cli.php settings:set KEY VALUE --type=string|int|bool|json`
+
+---
+
+## Running Tests
+
+```
+vendor/bin/phpunit
+```
 
 ---
 
@@ -174,8 +190,15 @@ WHERE u.username = 'admin';
 ## Documentation
 
 - `docs/ARCHITECTURE.md`
+- `docs/SECURITY.md`
+- `docs/MODULES.md`
+- `docs/TEMPLATES.md`
+- `docs/I18N.md`
+- `docs/DB_MIGRATIONS.md`
+- `docs/ADMIN.md`
 - `docs/VERSIONS.md`
 - `docs/CODING_STANDARDS.md`
+- `docs/i18n_audit.md`
 
 ---
 
