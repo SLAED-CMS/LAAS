@@ -51,3 +51,26 @@
 - Idempotency: `up` must not reapply on repeated runs
 - Ordering: filename timestamp order
 - No data loss in `down` unless explicitly documented
+
+## UI Standard (Bootstrap 5 + HTMX only)
+- UI uses only Bootstrap 5 components and utility classes
+- HTMX is the only client-side interaction layer (no SPA, no UI libs)
+- No HTML in PHP; templates only in `themes/*`
+- Buttons:
+  - primary: `btn btn-primary`
+  - secondary: `btn btn-outline-secondary`
+  - danger: `btn btn-outline-danger`
+  - small: `btn-sm`
+- Forms:
+  - inputs: `form-control`
+  - selects: `form-select`
+  - checkboxes: `form-check` + `form-check-input` + `form-check-label`
+  - spacing: `mb-3`
+- Tables: `table table-striped table-hover align-middle`
+- Row actions: `btn-group btn-group-sm`
+- Alerts: `alert alert-success|alert-danger|alert-info`
+- Badges: `badge text-bg-success|text-bg-secondary|text-bg-warning`
+- Loading: `spinner-border` + `hx-indicator` pattern
+
+## PR checklist
+- UI uses Bootstrap 5 + HTMX only (no custom UI libs)

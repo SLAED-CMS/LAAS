@@ -3,14 +3,24 @@ declare(strict_types=1);
 
 namespace Laas\Database;
 
+use Laas\DevTools\DevToolsContext;
+use Laas\DevTools\Db\ProxyPDO;
 use PDO;
 
 final class DatabaseManager
 {
     private ?PDO $pdo = null;
+    private ?DevToolsContext $devtoolsContext = null;
+    private array $devtoolsConfig = [];
 
     public function __construct(private array $config)
     {
+    }
+
+    public function enableDevTools(DevToolsContext $context, array $config): void
+    {
+        $this->devtoolsContext = $context;
+        $this->devtoolsConfig = $config;
     }
 
     public function pdo(): PDO
@@ -32,15 +42,37 @@ final class DatabaseManager
         $options[PDO::ATTR_DEFAULT_FETCH_MODE] = PDO::FETCH_ASSOC;
         $options[PDO::ATTR_EMULATE_PREPARES] = false;
 
-        $this->pdo = new PDO($dsn, (string) ($this->config['username'] ?? ''), (string) ($this->config['password'] ?? ''), $options);
+        $collectDb = (bool) ($this->devtoolsConfig['collect_db'] ?? false);
+        $devtoolsEnabled = (bool) ($this->devtoolsConfig['enabled'] ?? false);
+        if ($devtoolsEnabled && $collectDb && class_exists(ProxyPDO::class)) {
+            $this->pdo = new ProxyPDO(
+                $dsn,
+                (string) ($this->config['username'] ?? ''),
+                (string) ($this->config['password'] ?? ''),
+                $options,
+                $this->devtoolsContext,
+                $collectDb
+            );
+            return $this->pdo;
+        }
+
+        $this->pdo = new PDO(
+            $dsn,
+            (string) ($this->config['username'] ?? ''),
+            (string) ($this->config['password'] ?? ''),
+            $options
+        );
 
         return $this->pdo;
     }
 
     public function healthCheck(): bool
     {
-        $stmt = $this->pdo()->query('SELECT 1');
-
-        return $stmt !== false;
+        try {
+            $stmt = $this->pdo()->query('SELECT 1');
+            return $stmt !== false;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 }

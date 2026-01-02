@@ -1,5 +1,15 @@
 # LAAS Versions
 
+- v1.7.1: DevTools polish pack
+  - X-Request-Id header + log correlation
+  - Improved masking for sensitive request data
+  - Top slow queries in DevTools UI
+  - Unified Bootstrap messages + HTMX indicators
+  - Updated DevTools documentation
+- v1.7.0: DevTools (debug toolbar)
+  - DevTools module with debug.view permission
+  - Request/DB/Performance collectors
+  - SQL normalization (no params values)
 - v1.6.0: Menu polish + Audit Log (stable)
   - Admin Menus UI: create/edit/toggle/delete (HTMX, no reload)
   - Active state, external links, enable/disable

@@ -1,0 +1,163 @@
+<div class="laas-devtools position-fixed bottom-0 start-0 end-0 bg-dark text-light border-top small z-3">
+  <div class="d-flex flex-wrap gap-3 align-items-center px-3 py-2">
+    <strong>{% t 'devtools.title' %}</strong>
+    <div class="flex-grow-1">
+      {% t 'devtools.time' %}: {% devtools.duration_ms %} ms ·
+      {% t 'devtools.db' %}: {% devtools.db.count %} / {% devtools.db.total_ms %} ms ·
+      {% t 'devtools.mem' %}: {% devtools.memory_mb %} MB ·
+      {% t 'devtools.request_id' %}: {% devtools.request_id %}
+    </div>
+    <button class="btn btn-sm btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#devtools-details" aria-expanded="false" aria-controls="devtools-details">
+      {% t 'devtools.details' %}
+    </button>
+  </div>
+  <div id="devtools-details" class="collapse border-top laas-devtools-panel" data-devtools-collapse="1" data-devtools-id="details">
+    <div class="px-3 py-3">
+      <div class="row g-2">
+        <div class="col-12 col-md-4 col-lg-3">
+          <fieldset class="border border-secondary rounded p-2">
+            <legend class="float-none w-auto px-2 fs-6 text-secondary mb-0 fw-bold">
+              <a class="text-decoration-none laas-collapse-toggle" data-bs-toggle="collapse" href="#devtools-user" role="button" aria-expanded="false" aria-controls="devtools-user">
+                <span class="badge bg-primary">{% t 'devtools.user' %}</span>
+              </a>
+            </legend>
+            <div id="devtools-user" class="collapse" data-devtools-id="user">
+              <div>{% devtools.user.username %}</div>
+              <div class="small text-secondary mt-2">{% t 'devtools.roles' %}</div>
+              {% if devtools.user.roles %}
+              {% foreach devtools.user.roles as role %}
+              <div>{% role %}</div>
+              {% endforeach %}
+              {% else %}
+              <div>-</div>
+              {% endif %}
+            </div>
+          </fieldset>
+        </div>
+        <div class="col-12 col-md-4 col-lg-3">
+          <fieldset class="border border-secondary rounded p-2">
+            <legend class="float-none w-auto px-2 fs-6 text-secondary mb-0 fw-bold">
+              <a class="text-decoration-none laas-collapse-toggle" data-bs-toggle="collapse" href="#devtools-get" role="button" aria-expanded="false" aria-controls="devtools-get">
+                <span class="badge bg-info text-dark">{% t 'devtools.get' %}</span>
+              </a>
+            </legend>
+            <div id="devtools-get" class="collapse" data-devtools-id="get">
+              {% if devtools.request.get %}
+              {% foreach devtools.request.get as row %}
+              <div><span class="small text-secondary">{% row.key %}</span>: {% row.value %}</div>
+              {% endforeach %}
+              {% else %}
+              <div>-</div>
+              {% endif %}
+            </div>
+          </fieldset>
+        </div>
+        <div class="col-12 col-md-4 col-lg-3">
+          <fieldset class="border border-secondary rounded p-2">
+            <legend class="float-none w-auto px-2 fs-6 text-secondary mb-0 fw-bold">
+              <a class="text-decoration-none laas-collapse-toggle" data-bs-toggle="collapse" href="#devtools-post" role="button" aria-expanded="false" aria-controls="devtools-post">
+                <span class="badge bg-warning text-dark">{% t 'devtools.post' %}</span>
+              </a>
+            </legend>
+            <div id="devtools-post" class="collapse" data-devtools-id="post">
+              {% if devtools.request.post %}
+              {% foreach devtools.request.post as row %}
+              <div><span class="small text-secondary">{% row.key %}</span>: {% row.value %}</div>
+              {% endforeach %}
+              {% else %}
+              <div>-</div>
+              {% endif %}
+            </div>
+          </fieldset>
+        </div>
+        <div class="col-12 col-md-4 col-lg-3">
+          <fieldset class="border border-secondary rounded p-2">
+            <legend class="float-none w-auto px-2 fs-6 text-secondary mb-0 fw-bold">
+              <a class="text-decoration-none laas-collapse-toggle" data-bs-toggle="collapse" href="#devtools-cookies" role="button" aria-expanded="false" aria-controls="devtools-cookies">
+                <span class="badge bg-secondary">{% t 'devtools.cookies' %}</span>
+              </a>
+            </legend>
+            <div id="devtools-cookies" class="collapse" data-devtools-id="cookies">
+              {% if devtools.request.cookies %}
+              {% foreach devtools.request.cookies as row %}
+              <div><span class="small text-secondary">{% row.key %}</span>: {% row.value %}</div>
+              {% endforeach %}
+              {% else %}
+              <div>-</div>
+              {% endif %}
+            </div>
+          </fieldset>
+        </div>
+      </div>
+      <div class="row g-2 mt-1">
+        <div class="col-12">
+          <fieldset class="border border-secondary rounded p-2">
+            <legend class="float-none w-auto px-2 fs-6 text-secondary mb-0 fw-bold">
+              <a class="text-decoration-none laas-collapse-toggle" data-bs-toggle="collapse" href="#devtools-headers" role="button" aria-expanded="false" aria-controls="devtools-headers">
+                <span class="badge bg-danger">{% t 'devtools.headers' %}</span>
+              </a>
+            </legend>
+            <div id="devtools-headers" class="collapse" data-devtools-id="headers">
+              {% if devtools.request.headers %}
+              {% foreach devtools.request.headers as row %}
+              <div><span class="small text-secondary">{% row.key %}</span>: {% row.value %}</div>
+              {% endforeach %}
+              {% else %}
+              <div>-</div>
+              {% endif %}
+            </div>
+          </fieldset>
+        </div>
+      </div>
+
+      <fieldset class="border border-secondary rounded p-2 mt-3">
+        <legend class="float-none w-auto px-2 fs-6 text-secondary mb-0 fw-bold">
+          <a class="text-decoration-none laas-collapse-toggle" data-bs-toggle="collapse" href="#devtools-sql" role="button" aria-expanded="false" aria-controls="devtools-sql">
+            <span class="badge bg-success">{% t 'devtools.sql' %}</span>
+          </a>
+        </legend>
+        <div id="devtools-sql" class="collapse" data-devtools-id="sql">
+          {% if devtools.db.top_slow %}
+          <div class="mt-2 mb-2 fw-semibold">{% t 'devtools.top_slow' %}</div>
+          <table class="table table-dark table-striped table-hover align-middle mb-3">
+            <thead>
+              <tr>
+                <th>{% t 'devtools.sql' %}</th>
+                <th>{% t 'devtools.params' %}</th>
+                <th>{% t 'devtools.duration' %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% foreach devtools.db.top_slow as q %}
+              <tr>
+                <td>{% q.sql %}</td>
+                <td>{% q.params %}</td>
+                <td>{% q.duration_ms %}</td>
+              </tr>
+              {% endforeach %}
+            </tbody>
+          </table>
+          {% endif %}
+          <table class="table table-dark table-striped table-hover align-middle mt-2 mb-0">
+            <thead>
+              <tr>
+                <th>{% t 'devtools.sql' %}</th>
+                <th>{% t 'devtools.params' %}</th>
+                <th>{% t 'devtools.duration' %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% foreach devtools.db.queries as q %}
+              <tr>
+                <td>{% q.sql %}</td>
+                <td>{% q.params %}</td>
+                <td>{% q.duration_ms %}</td>
+              </tr>
+              {% endforeach %}
+            </tbody>
+          </table>
+        </div>
+      </fieldset>
+    </div>
+  </div>
+</div>

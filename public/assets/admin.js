@@ -152,7 +152,7 @@
   }
 
   function showAlert(text) {
-    var alerts = document.getElementById('admin-alerts');
+    var alerts = document.getElementById('page-messages');
     if (!alerts) {
       return;
     }

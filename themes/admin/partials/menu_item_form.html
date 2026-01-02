@@ -3,7 +3,7 @@
       hx-post="/admin/menus/item/save"
       hx-target="#menu-item-form"
       hx-swap="innerHTML"
-      hx-indicator="#menu-loading">
+      hx-indicator="#loading">
   <input type="hidden" name="_token" value="{% csrf_token %}">
   <input type="hidden" name="id" value="{% form.id %}">
   <div class="row g-3">
@@ -42,7 +42,7 @@
             type="button"
             hx-get="/admin/menus/item/new"
             hx-target="#menu-item-form"
-            hx-indicator="#menu-loading">
+            hx-indicator="#loading">
       {% t 'admin.menus.cancel' %}
     </button>
   </div>

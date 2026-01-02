@@ -7,42 +7,42 @@
   </td>
   <td>
     {% if item.is_external %}
-    <span class="badge bg-info">{% t 'admin.menus.external_yes' %}</span>
+    <span class="badge text-bg-info">{% t 'admin.menus.external_yes' %}</span>
     {% else %}
-    <span class="badge bg-secondary">{% t 'admin.menus.external_no' %}</span>
+    <span class="badge text-bg-secondary">{% t 'admin.menus.external_no' %}</span>
     {% endif %}
   </td>
   <td>
     {% if item.enabled %}
-    <span class="badge bg-success">{% t 'admin.menus.enabled_yes' %}</span>
+    <span class="badge text-bg-success">{% t 'admin.menus.enabled_yes' %}</span>
     {% else %}
-    <span class="badge bg-secondary">{% t 'admin.menus.enabled_no' %}</span>
+    <span class="badge text-bg-secondary">{% t 'admin.menus.enabled_no' %}</span>
     {% endif %}
   </td>
   <td>{% item.sort_order %}</td>
   <td>
-    <div class="d-flex align-items-center gap-2">
-      <button class="btn btn-sm btn-outline-primary"
+    <div class="btn-group btn-group-sm" role="group">
+      <button class="btn btn-outline-secondary"
               hx-get="/admin/menus/item/{% item.id %}/edit"
               hx-target="#menu-item-form"
-              hx-indicator="#menu-loading">
+              hx-indicator="#loading">
         {% t 'admin.menus.edit' %}
       </button>
-      <button class="btn btn-sm btn-outline-secondary"
+      <button class="btn btn-outline-secondary"
               hx-post="/admin/menus/item/toggle"
               hx-vals='{"id":"{% item.id %}"}'
               hx-target="#menu-items-table"
               hx-swap="innerHTML"
-              hx-indicator="#menu-loading">
+              hx-indicator="#loading">
         {% if item.enabled %}{% t 'admin.menus.disable' %}{% else %}{% t 'admin.menus.enable' %}{% endif %}
       </button>
-      <button class="btn btn-sm btn-outline-danger"
+      <button class="btn btn-outline-danger"
               hx-post="/admin/menus/item/delete"
               hx-vals='{"id":"{% item.id %}"}'
               hx-target="#menu-items-table"
               hx-swap="innerHTML"
               hx-confirm="{% t 'admin.menus.confirm_delete' %}"
-              hx-indicator="#menu-loading">
+              hx-indicator="#loading">
         {% t 'admin.menus.delete' %}
       </button>
     </div>

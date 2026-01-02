@@ -23,6 +23,12 @@ return [
     'key' => $envString('APP_KEY', ''),
     'env' => $envString('APP_ENV', 'dev'),
     'debug' => $envBool('APP_DEBUG', true),
+    'devtools' => [
+        'enabled' => $envBool('DEVTOOLS_ENABLED', false),
+        'collect_db' => $envBool('DEVTOOLS_COLLECT_DB', true),
+        'collect_request' => $envBool('DEVTOOLS_COLLECT_REQUEST', true),
+        'collect_logs' => $envBool('DEVTOOLS_COLLECT_LOGS', false),
+    ],
     'default_locale' => 'en',
     'locales' => ['en', 'de', 'ru', 'fr', 'es', 'pt', 'uk', 'pl', 'zh', 'hi', 'ar', 'bn', 'ur', 'sw', 'id'],
     'rtl_locales' => ['ar', 'ur'],

@@ -8,4 +8,5 @@ return [
     \Laas\Modules\Admin\AdminModule::class,
     \Laas\Modules\Pages\PagesModule::class,
     \Laas\Modules\Menu\MenuModule::class,
+    \Laas\Modules\DevTools\DevToolsModule::class,
 ];

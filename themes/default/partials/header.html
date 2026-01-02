@@ -1,12 +1,14 @@
-<header>
-  <p>{% t 'ui.home' %}</p>
-  {% menu 'main' %}
-  {% if is_auth %}
-  <form method="post" action="/logout">
-    <input type="hidden" name="_token" value="{% csrf_token %}">
-    <button type="submit">{% t 'users.logout' %}</button>
-  </form>
-  {% else %}
-  <a href="/login">{% t 'users.login.title' %}</a>
-  {% endif %}
+<header class="mb-3">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+    <div class="fw-semibold">{% t 'ui.home' %}</div>
+    <div>{% menu 'main' %}</div>
+    {% if is_auth %}
+    <form method="post" action="/logout" class="m-0">
+      <input type="hidden" name="_token" value="{% csrf_token %}">
+      <button class="btn btn-outline-secondary btn-sm" type="submit">{% t 'users.logout' %}</button>
+    </form>
+    {% else %}
+    <a class="btn btn-outline-secondary btn-sm" href="/login">{% t 'users.login.title' %}</a>
+    {% endif %}
+  </div>
 </header>

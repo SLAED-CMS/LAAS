@@ -35,11 +35,43 @@ final class Response
         echo $this->body;
     }
 
+    public function getBody(): string
+    {
+        return $this->body;
+    }
+
+    public function getStatus(): int
+    {
+        return $this->status;
+    }
+
+    public function getHeaders(): array
+    {
+        return $this->headers;
+    }
+
+    public function getHeader(string $name): ?string
+    {
+        $key = strtolower($name);
+        foreach ($this->headers as $headerName => $value) {
+            if (strtolower($headerName) === $key) {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
     public function withHeader(string $name, string $value): self
     {
         $headers = $this->headers;
         $headers[$name] = $value;
 
         return new self($this->body, $this->status, $headers);
+    }
+
+    public function withBody(string $body): self
+    {
+        return new self($body, $this->status, $this->headers);
     }
 }

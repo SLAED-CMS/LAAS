@@ -2,11 +2,14 @@
 
 {% block content %}
 {% include "partials/header.html" %}
-<section class="bg-white border rounded p-4">
+<div class="card">
+  <div class="card-body">
   <h1 class="h4 mb-3">{% t 'admin.users.title' %}</h1>
-  <div id="admin-alerts"></div>
+  <div id="page-messages">
+    {% include "partials/messages.html" %}
+  </div>
   <div id="users-table">
-    <table class="table table-sm align-middle">
+    <table class="table table-striped table-hover align-middle">
       <thead>
         <tr>
           <th>{% t 'admin.users.id' %}</th>
@@ -24,5 +27,9 @@
       </tbody>
     </table>
   </div>
-</section>
+  <div id="loading" class="htmx-indicator text-center my-3">
+    <div class="spinner-border" role="status" aria-hidden="true"></div>
+  </div>
+  </div>
+</div>
 {% endblock %}

@@ -191,6 +191,7 @@ WHERE u.username = 'admin';
 
 - `docs/ARCHITECTURE.md`
 - `docs/SECURITY.md`
+- `docs/DEVTOOLS.md`
 - `docs/MODULES.md`
 - `docs/TEMPLATES.md`
 - `docs/I18N.md`

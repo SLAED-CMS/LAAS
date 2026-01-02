@@ -34,14 +34,12 @@ final class ModulesController
                 $discovered[$name] = [
                     'path' => '',
                     'version' => null,
+                    'type' => 'feature',
                 ];
             }
         }
 
         foreach ($discovered as $name => $meta) {
-            if (($meta['type'] ?? 'feature') !== 'feature') {
-                continue;
-            }
             $enabled = false;
             $source = 'CONFIG';
             if ($dbAvailable && is_array($dbModules) && array_key_exists($name, $dbModules)) {
@@ -51,12 +49,23 @@ final class ModulesController
                 $enabled = true;
             }
 
+            $type = (string) ($meta['type'] ?? 'feature');
+            $typeLabel = $this->typeLabel($type);
+            $typeBadgeClass = $this->typeBadgeClass($type);
+            if ($type !== 'feature' && $enabled === false && !$dbAvailable && !in_array($name, $configEnabled, true)) {
+                $enabled = true;
+                $source = 'INTERNAL';
+            }
+
             $modules[] = [
                 'name' => $name,
                 'enabled' => $enabled,
                 'version' => $meta['version'] ?? null,
+                'type' => $type,
+                'type_label' => $typeLabel,
+                'type_badge_class' => $typeBadgeClass,
                 'source' => $source,
-                'protected' => false,
+                'protected' => $type !== 'feature',
             ];
         }
 
@@ -96,12 +105,17 @@ final class ModulesController
         }
 
         $row = $current[$name] ?? ['enabled' => !$enabled, 'version' => null];
+        $typeLabel = $this->typeLabel($type);
+        $typeBadgeClass = $this->typeBadgeClass($type);
         $module = [
             'name' => $name,
             'enabled' => !$enabled,
             'version' => $discovered[$name]['version'] ?? null,
+            'type' => $type,
+            'type_label' => $typeLabel,
+            'type_badge_class' => $typeBadgeClass,
             'source' => 'DB',
-            'protected' => false,
+            'protected' => $type !== 'feature',
         ];
 
         if ($request->isHtmx()) {
@@ -158,6 +172,15 @@ final class ModulesController
             ];
         }
 
+        if (!isset($discovered['Audit'])) {
+            $adminVersion = $discovered['Admin']['version'] ?? null;
+            $discovered['Audit'] = [
+                'path' => '',
+                'version' => $adminVersion,
+                'type' => 'internal',
+            ];
+        }
+
         return $discovered;
     }
 
@@ -203,5 +226,25 @@ final class ModulesController
         return new Response('Error', $status, [
             'Content-Type' => 'text/plain; charset=utf-8',
         ]);
+    }
+
+    private function typeLabel(string $type): string
+    {
+        return match ($type) {
+            'internal' => $this->view->translate('admin.modules.type_internal'),
+            'admin' => $this->view->translate('admin.modules.type_admin'),
+            'api' => $this->view->translate('admin.modules.type_api'),
+            default => $this->view->translate('admin.modules.type_feature'),
+        };
+    }
+
+    private function typeBadgeClass(string $type): string
+    {
+        return match ($type) {
+            'internal' => 'bg-secondary',
+            'admin' => 'bg-dark',
+            'api' => 'bg-info text-dark',
+            default => 'bg-primary',
+        };
     }
 }

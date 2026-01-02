@@ -1,24 +1,27 @@
-<!doctype html>
 {% extends "layout.html" %}
 
 {% block content %}
 {% include "partials/header.html" %}
-<section>
-  <h1>{% t 'system.home.title' %}</h1>
-  {% if show_message %}
-  <p>{% t 'system.home.message' %}</p>
-  {% else %}
-  <p>{% t 'app.welcome' %}</p>
-  {% endif %}
-  <ul>
-    {% foreach items as item %}
-    <li>{% item.title %}</li>
-    {% endforeach %}
-  </ul>
-  <form method="post" action="/echo">
-    <input type="hidden" name="_token" value="{% csrf_token %}">
-    <input name="msg">
-    <button type="submit">{% t 'ui.send' %}</button>
-  </form>
-</section>
+<div class="card">
+  <div class="card-body">
+    <h1 class="h4 mb-3">{% t 'system.home.title' %}</h1>
+    {% if show_message %}
+    <p class="text-muted">{% t 'system.home.message' %}</p>
+    {% else %}
+    <p class="text-muted">{% t 'app.welcome' %}</p>
+    {% endif %}
+    <ul class="list-group mb-3">
+      {% foreach items as item %}
+      <li class="list-group-item">{% item.title %}</li>
+      {% endforeach %}
+    </ul>
+    <form method="post" action="/echo">
+      <input type="hidden" name="_token" value="{% csrf_token %}">
+      <div class="input-group">
+        <input class="form-control" name="msg">
+        <button class="btn btn-primary" type="submit">{% t 'ui.send' %}</button>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock %}

@@ -1,0 +1,19 @@
+{% if success %}
+<div class="alert alert-success mb-3" data-auto-hide="1" data-hide-ms="3000">
+  {% success %}
+</div>
+{% endif %}
+{% if info %}
+<div class="alert alert-info mb-3">
+  {% info %}
+</div>
+{% endif %}
+{% if errors %}
+<div class="alert alert-danger mb-3">
+  <ul class="mb-0">
+    {% foreach errors as err %}
+    <li>{% err %}</li>
+    {% endforeach %}
+  </ul>
+</div>
+{% endif %}

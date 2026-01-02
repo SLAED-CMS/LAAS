@@ -272,12 +272,13 @@ final class AdminMenusController
         ?int $flashId
     ): Response {
         $items = $this->loadItems($menu, $flashId);
+        $success = $savedMessage ? $this->view->translate('admin.menus.saved') : null;
 
         if ($request->isHtmx()) {
             return $this->view->render('partials/menu_table_response.html', [
                 'menu' => $menu,
                 'items' => $items,
-                'saved_message' => $savedMessage,
+                'success' => $success,
                 'errors' => $messages,
             ], 200, [], [
                 'theme' => 'admin',
@@ -288,7 +289,7 @@ final class AdminMenusController
         return $this->view->render('pages/menus.html', [
             'menu' => $menu,
             'items' => $items,
-            'saved_message' => $savedMessage,
+            'success' => $success,
             'errors' => $messages,
             'form' => $this->emptyForm(),
         ], 200, [], [
@@ -306,13 +307,14 @@ final class AdminMenusController
         ?int $flashId
     ): Response {
         $messages = $errors !== null ? $this->resolveErrorMessages($errors) : [];
+        $success = $savedMessage ? $this->view->translate('admin.menus.saved') : null;
         $items = $this->loadItems($menu, $flashId);
 
         if ($request->isHtmx()) {
             return $this->view->render('partials/menu_form_response.html', [
                 'menu' => $menu,
                 'items' => $items,
-                'saved_message' => $savedMessage,
+                'success' => $success,
                 'errors' => $messages,
                 'form' => $form,
             ], $status, [], [
@@ -324,7 +326,7 @@ final class AdminMenusController
         return $this->view->render('pages/menus.html', [
             'menu' => $menu,
             'items' => $items,
-            'saved_message' => $savedMessage,
+            'success' => $success,
             'errors' => $messages,
             'form' => $form,
         ], $status, [], [

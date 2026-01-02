@@ -2,7 +2,8 @@
 
 {% block content %}
 {% include "partials/header.html" %}
-<section class="bg-white border rounded p-4">
+<div class="card">
+  <div class="card-body">
   <h1 class="h4 mb-3">
     {% if is_edit %}
     {% t 'admin.pages.edit' %}
@@ -10,14 +11,15 @@
     {% t 'admin.pages.new' %}
     {% endif %}
   </h1>
-  <div id="form-messages">
+  <div id="page-messages">
     {% include "partials/page_form_messages.html" %}
   </div>
   <form method="post"
         action="/admin/pages/save"
         hx-post="/admin/pages/save"
-        hx-target="#form-messages"
+        hx-target="#page-messages"
         hx-swap="innerHTML"
+        hx-indicator="#loading"
         data-slug-form="1"
         data-mode="{% mode %}">
     <input type="hidden" name="_token" value="{% csrf_token %}">
@@ -47,5 +49,9 @@
     <button class="btn btn-primary" type="submit">{% t 'admin.pages.form.save' %}</button>
     <a class="btn btn-outline-secondary ms-2 disabled" id="page-preview" href="#" target="_blank" rel="noopener" aria-disabled="true" tabindex="-1">{% t 'admin.pages.form.preview' %}</a>
   </form>
-</section>
+  <div id="loading" class="htmx-indicator text-center my-3">
+    <div class="spinner-border" role="status" aria-hidden="true"></div>
+  </div>
+  </div>
+</div>
 {% endblock %}

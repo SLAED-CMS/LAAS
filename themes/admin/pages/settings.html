@@ -2,10 +2,15 @@
 
 {% block content %}
 {% include "partials/header.html" %}
-<section class="bg-white border rounded p-4">
+<div class="card">
+  <div class="card-body">
   <h1 class="h4 mb-3">{% t 'admin.settings.title' %}</h1>
   <div id="settings-form">
     {% include "partials/settings_form.html" %}
   </div>
-</section>
+  <div id="loading" class="htmx-indicator text-center my-3">
+    <div class="spinner-border" role="status" aria-hidden="true"></div>
+  </div>
+  </div>
+</div>
 {% endblock %}

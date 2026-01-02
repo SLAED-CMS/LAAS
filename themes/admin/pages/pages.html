@@ -2,10 +2,14 @@
 
 {% block content %}
 {% include "partials/header.html" %}
-<section class="bg-white border rounded p-4">
+<div class="card">
+  <div class="card-body">
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h1 class="h4 mb-0">{% t 'admin.pages.title' %}</h1>
     <a class="btn btn-primary btn-sm" href="/admin/pages/new">{% t 'admin.pages.new' %}</a>
+  </div>
+  <div id="page-messages">
+    {% include "partials/messages.html" %}
   </div>
   <form class="row g-2 align-items-end mb-3"
         method="get"
@@ -14,7 +18,7 @@
         hx-target="#pages-table"
         hx-swap="innerHTML"
         hx-push-url="true"
-        hx-indicator="#pages-loading"
+        hx-indicator="#loading"
         hx-trigger="keyup changed delay:300ms from:#q, change from:#status">
     <div class="col-sm-8">
       <label class="form-label">{% t 'admin.pages.filter.search' %}</label>
@@ -29,11 +33,12 @@
       </select>
     </div>
   </form>
-  <div id="pages-loading" class="htmx-indicator text-center my-3">
+  <div id="loading" class="htmx-indicator text-center my-3">
     <div class="spinner-border" role="status" aria-hidden="true"></div>
   </div>
   <div id="pages-table">
     {% include "partials/pages_table.html" %}
   </div>
-</section>
+  </div>
+</div>
 {% endblock %}

@@ -59,14 +59,16 @@ final class AuthController
             ]);
         }
 
+        $errorMessage = $this->view->translate('users.login.invalid');
+        $errors = [$errorMessage];
         if ($request->isHtmx()) {
             return $this->view->render('partials/login_messages.html', [
-                'error_key' => 'users.login.invalid',
+                'errors' => $errors,
             ], 422);
         }
 
         return $this->view->render('pages/login.html', [
-            'error_key' => 'users.login.invalid',
+            'errors' => $errors,
         ]);
     }
 

@@ -1,13 +1,9 @@
-<nav>
-  <ul>
-    {% foreach items as item %}
-    <li>
-      <a href="{% item.url %}"
-         class="{% if item.active %}active{% endif %}"
-         {% if item.is_external %}target="_blank" rel="noopener noreferrer"{% endif %}>
-        {% item.label %}
-      </a>
-    </li>
-    {% endforeach %}
-  </ul>
+<nav class="nav nav-pills flex-wrap gap-2">
+  {% foreach items as item %}
+  <a href="{% item.url %}"
+     class="nav-link px-2 {% if item.active %}active{% endif %}"
+     {% if item.is_external %}target="_blank" rel="noopener noreferrer"{% endif %}>
+    {% item.label %}
+  </a>
+  {% endforeach %}
 </nav>

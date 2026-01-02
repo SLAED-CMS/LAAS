@@ -1,0 +1,8 @@
+{
+  "name": "DevTools",
+  "title": "DevTools",
+  "description": "Developer debug toolbar",
+  "version": "0.1.0",
+  "namespace": "Laas\\Modules\\DevTools",
+  "type": "internal"
+}

@@ -1,13 +1,15 @@
-<header class="d-flex align-items-center justify-content-between mb-4">
+<header class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
   <div class="d-flex align-items-center gap-3">
     <strong>Admin</strong>
-    <a class="text-decoration-none" href="/">{% t 'admin.nav.home' %}</a>
-    <a class="text-decoration-none" href="/admin/modules">{% t 'admin.nav.modules' %}</a>
-    <a class="text-decoration-none" href="/admin/menus">{% t 'admin.nav.menus' %}</a>
-    <a class="text-decoration-none" href="/admin/pages">{% t 'admin.nav.pages' %}</a>
-    <a class="text-decoration-none" href="/admin/settings">{% t 'admin.nav.settings' %}</a>
-    <a class="text-decoration-none" href="/admin/users">{% t 'admin.nav.users' %}</a>
-    <a class="text-decoration-none" href="/admin/audit">{% t 'admin.nav.audit' %}</a>
+    <nav class="nav nav-pills flex-wrap">
+      <a class="nav-link px-2" href="/">{% t 'admin.nav.home' %}</a>
+      <a class="nav-link px-2" href="/admin/modules">{% t 'admin.nav.modules' %}</a>
+      <a class="nav-link px-2" href="/admin/menus">{% t 'admin.nav.menus' %}</a>
+      <a class="nav-link px-2" href="/admin/pages">{% t 'admin.nav.pages' %}</a>
+      <a class="nav-link px-2" href="/admin/settings">{% t 'admin.nav.settings' %}</a>
+      <a class="nav-link px-2" href="/admin/users">{% t 'admin.nav.users' %}</a>
+      <a class="nav-link px-2" href="/admin/audit">{% t 'admin.nav.audit' %}</a>
+    </nav>
   </div>
   <form method="post" action="/logout">
     <input type="hidden" name="_token" value="{% csrf_token %}">

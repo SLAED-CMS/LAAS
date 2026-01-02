@@ -8,29 +8,34 @@
           hx-post="/admin/pages/status"
           hx-target="#page-{% page.id %}"
           hx-swap="outerHTML"
+          hx-indicator="#loading"
           class="d-inline">
       <input type="hidden" name="_token" value="{% csrf_token %}">
       <input type="hidden" name="id" value="{% page.id %}">
-      <button class="btn btn-link p-0 border-0" type="submit" {% if page.can_edit %}{% else %}disabled{% endif %}>
+      <button class="btn btn-outline-secondary btn-sm" type="submit" {% if page.can_edit %}{% else %}disabled{% endif %}>
         {% if page.is_published %}
-        <span class="badge bg-success">{% t 'admin.pages.status.published' %}</span>
+        <span class="badge text-bg-success">{% t 'admin.pages.status.published' %}</span>
         {% else %}
-        <span class="badge bg-secondary">{% t 'admin.pages.status.draft' %}</span>
+        <span class="badge text-bg-secondary">{% t 'admin.pages.status.draft' %}</span>
         {% endif %}
       </button>
     </form>
   </td>
   <td>{% page.updated_at_display %}</td>
-  <td class="d-flex gap-2">
-    <a class="btn btn-outline-secondary btn-sm" href="/admin/pages/{% page.id %}/edit">{% t 'admin.pages.edit' %}</a>
-    <form method="post"
-          action="/admin/pages/delete"
-          hx-post="/admin/pages/delete"
-          hx-target="#page-{% page.id %}"
-          hx-swap="outerHTML">
-      <input type="hidden" name="_token" value="{% csrf_token %}">
-      <input type="hidden" name="id" value="{% page.id %}">
-      <button class="btn btn-outline-danger btn-sm" type="submit">{% t 'admin.pages.delete' %}</button>
-    </form>
+  <td>
+    <div class="btn-group btn-group-sm" role="group">
+      <a class="btn btn-outline-secondary" href="/admin/pages/{% page.id %}/edit">{% t 'admin.pages.edit' %}</a>
+      <form method="post"
+            class="d-inline"
+            action="/admin/pages/delete"
+            hx-post="/admin/pages/delete"
+            hx-target="#page-{% page.id %}"
+            hx-swap="outerHTML"
+            hx-indicator="#loading">
+        <input type="hidden" name="_token" value="{% csrf_token %}">
+        <input type="hidden" name="id" value="{% page.id %}">
+        <button class="btn btn-outline-danger" type="submit">{% t 'admin.pages.delete' %}</button>
+      </form>
+    </div>
   </td>
 </tr>

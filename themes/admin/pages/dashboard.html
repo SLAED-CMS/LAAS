@@ -2,7 +2,8 @@
 
 {% block content %}
 {% include "partials/header.html" %}
-<section class="bg-white border rounded p-4">
+<div class="card">
+  <div class="card-body">
   <h1 class="h4 mb-3">{% t 'admin.dashboard.title' %}</h1>
   <p class="text-muted">{% t 'admin.dashboard.subtitle' %}</p>
   <p>{% t 'admin.dashboard.user' %}: {% auth_user.username %}</p>
@@ -12,5 +13,6 @@
     <li>{% t 'admin.dashboard.link.users' %}</li>
   </ul>
   <a class="btn btn-primary btn-sm mt-3" href="/admin/modules">{% t 'admin.modules.title' %}</a>
-</section>
+  </div>
+</div>
 {% endblock %}

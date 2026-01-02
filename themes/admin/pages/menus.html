@@ -2,18 +2,19 @@
 
 {% block content %}
 {% include "partials/header.html" %}
-<section class="bg-white border rounded p-4">
+<div class="card">
+  <div class="card-body">
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h1 class="h4 mb-0">{% t 'admin.menus.title' %}</h1>
-    <button class="btn btn-sm btn-outline-primary"
+    <button class="btn btn-sm btn-primary"
             hx-get="/admin/menus/item/new"
             hx-target="#menu-item-form"
-            hx-indicator="#menu-loading">
+            hx-indicator="#loading">
       {% t 'admin.menus.add' %}
     </button>
   </div>
 
-  <div id="menu-messages">
+  <div id="page-messages">
     {% include "partials/menu_messages.html" %}
   </div>
 
@@ -25,8 +26,9 @@
     {% include "partials/menu_items_table.html" %}
   </div>
 
-  <div id="menu-loading" class="text-center my-3 htmx-indicator">
+  <div id="loading" class="text-center my-3 htmx-indicator">
     <div class="spinner-border" role="status" aria-hidden="true"></div>
   </div>
-</section>
+  </div>
+</div>
 {% endblock %}

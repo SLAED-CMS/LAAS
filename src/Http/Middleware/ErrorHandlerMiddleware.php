@@ -12,7 +12,8 @@ final class ErrorHandlerMiddleware implements MiddlewareInterface
 {
     public function __construct(
         private LoggerInterface $logger,
-        private bool $debug
+        private bool $debug,
+        private string $requestId
     ) {
     }
 
@@ -21,17 +22,15 @@ final class ErrorHandlerMiddleware implements MiddlewareInterface
         try {
             return $next($request);
         } catch (Throwable $e) {
-            $requestId = $this->generateRequestId();
-
             $this->logger->error($e->getMessage(), [
                 'exception' => $e,
-                'request_id' => $requestId,
+                'request_id' => $this->requestId,
             ]);
 
             if ($request->expectsJson()) {
                 $payload = [
                     'error' => 'internal_error',
-                    'request_id' => $requestId,
+                    'request_id' => $this->requestId,
                 ];
 
                 if ($this->debug) {
@@ -40,7 +39,7 @@ final class ErrorHandlerMiddleware implements MiddlewareInterface
                 }
 
                 return Response::json($payload, 500)
-                    ->withHeader('X-Request-Id', $requestId);
+                    ->withHeader('X-Request-Id', $this->requestId);
             }
 
             $message = 'Internal Server Error';
@@ -50,12 +49,7 @@ final class ErrorHandlerMiddleware implements MiddlewareInterface
 
             return (new Response($message, 500, [
                 'Content-Type' => 'text/plain; charset=utf-8',
-            ]))->withHeader('X-Request-Id', $requestId);
+            ]))->withHeader('X-Request-Id', $this->requestId);
         }
-    }
-
-    private function generateRequestId(): string
-    {
-        return bin2hex(random_bytes(16));
     }
 }

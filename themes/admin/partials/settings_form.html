@@ -1,17 +1,11 @@
-{% if form.saved %}
-<div class="alert alert-success" role="alert" data-auto-hide="1" data-hide-ms="3000">
-  {% t 'admin.settings.saved' %}
+<div id="page-messages" hx-swap-oob="innerHTML">
+  {% include "partials/messages.html" %}
 </div>
-{% endif %}
-{% if form.error %}
-<div class="alert alert-danger" role="alert">
-  {% t 'admin.settings.error_invalid' %}
-</div>
-{% endif %}
 <form method="post" action="/admin/settings"
       hx-post="/admin/settings"
       hx-target="#settings-form"
-      hx-swap="innerHTML">
+      hx-swap="innerHTML"
+      hx-indicator="#loading">
   <input type="hidden" name="_token" value="{% csrf_token %}">
   <div class="mb-3">
     <label class="form-label" for="site-name">

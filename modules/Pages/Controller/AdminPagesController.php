@@ -224,7 +224,8 @@ final class AdminPagesController
 
         if ($request->isHtmx()) {
             return $this->view->render('partials/page_form_messages.html', [
-                'saved_message' => true,
+                'success' => $this->view->translate('admin.pages.saved'),
+                'errors' => [],
             ], 200, [], [
                 'theme' => 'admin',
             ]);

@@ -56,12 +56,16 @@ final class SettingsController
 
         $saved = $request->query('saved') === '1';
         $error = $request->query('error') === '1';
+        $successMessage = $saved ? $this->view->translate('admin.settings.saved') : null;
+        $errorMessages = $error ? [$this->view->translate('admin.settings.error_invalid')] : [];
 
         return $this->view->render('pages/settings.html', [
             'settings' => $settings,
             'source' => $sources,
             'localesOptions' => $this->buildOptions($locales, $settings['default_locale']),
             'themesOptions' => $this->buildOptions($themes, $settings['theme']),
+            'success' => $successMessage,
+            'errors' => $errorMessages,
             'form' => [
                 'saved' => $saved,
                 'error' => $error,
@@ -180,6 +184,8 @@ final class SettingsController
             'source' => $sources,
             'localesOptions' => $this->buildOptions($locales, $defaultLocale),
             'themesOptions' => $this->buildOptions($themes, $theme),
+            'success' => $saved ? $this->view->translate('admin.settings.saved') : null,
+            'errors' => $error ? [$this->view->translate('admin.settings.error_invalid')] : [],
             'form' => [
                 'saved' => $saved,
                 'error' => $error,

@@ -126,6 +126,13 @@ final class View
         return new Response($html, $status, $headers);
     }
 
+    public function renderPartial(string $template, array $data = [], array $options = []): string
+    {
+        $options = array_merge(['render_partial' => true], $options);
+        $response = $this->render($template, $data, 200, [], $options);
+        return $response->getBody();
+    }
+
     public function translate(string $key, array $params = []): string
     {
         return $this->translator->trans($key, $params, $this->locale);
