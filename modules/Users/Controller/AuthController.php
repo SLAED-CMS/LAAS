@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Laas\Modules\Users\Controller;
 
+use Laas\Core\Validation\Validator;
+use Laas\Core\Validation\ValidationResult;
 use Laas\Auth\AuthInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
@@ -26,10 +28,41 @@ final class AuthController
         $username = $request->post('username') ?? '';
         $password = $request->post('password') ?? '';
 
+        $validator = new Validator();
+        $result = $validator->validate([
+            'username' => $username,
+            'password' => $password,
+        ], [
+            'username' => ['required', 'string', 'max:50'],
+            'password' => ['required', 'string', 'max:255'],
+        ], [
+            'label_prefix' => 'auth',
+            'translator' => $this->view->getTranslator(),
+        ]);
+
+        if (!$result->isValid()) {
+            $messages = $this->resolveErrorMessages($result);
+            if ($request->isHtmx()) {
+                return $this->view->render('partials/login_messages.html', [
+                    'errors' => $messages,
+                ], 422);
+            }
+
+            return $this->view->render('pages/login.html', [
+                'errors' => $messages,
+            ], 422);
+        }
+
         if ($this->auth->attempt($username, $password, $request->ip())) {
             return new Response('', 302, [
                 'Location' => '/admin',
             ]);
+        }
+
+        if ($request->isHtmx()) {
+            return $this->view->render('partials/login_messages.html', [
+                'error_key' => 'users.login.invalid',
+            ], 422);
         }
 
         return $this->view->render('pages/login.html', [
@@ -44,5 +77,18 @@ final class AuthController
         return new Response('', 302, [
             'Location' => '/',
         ]);
+    }
+
+    /** @return array<int, string> */
+    private function resolveErrorMessages(ValidationResult $errors): array
+    {
+        $messages = [];
+        foreach ($errors->errors() as $fieldErrors) {
+            foreach ($fieldErrors as $error) {
+                $messages[] = $this->view->translate((string) $error['key'], $error['params'] ?? []);
+            }
+        }
+
+        return $messages;
     }
 }

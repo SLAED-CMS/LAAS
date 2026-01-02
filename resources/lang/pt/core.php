@@ -2,9 +2,22 @@
 declare(strict_types=1);
 
 return [
-    'app.name' => 'LAAS CMS',
+    'app.name' => 'LAAS',
     'app.welcome' => 'Bem-vindo',
     'ui.send' => 'Enviar',
     'ui.home' => 'Início',
     'ui.ok' => 'OK',
+    'validation.required' => 'O campo {field} é obrigatório.',
+    'validation.string' => 'O campo {field} deve ser uma string.',
+    'validation.min' => 'O campo {field} deve ter pelo menos {min} caracteres.',
+    'validation.max' => 'O campo {field} deve ter no máximo {max} caracteres.',
+    'validation.regex' => 'O formato do campo {field} é inválido.',
+    'validation.in' => 'O campo {field} deve ser um dos seguintes valores: {values}.',
+    'validation.slug' => 'O formato do campo {field} é inválido.',
+    'validation.reserved_slug' => 'O campo {field} está reservado.',
+    'validation.unique' => 'O valor de {field} já está em uso.',
+    'fields.pages.title' => 'Título',
+    'fields.pages.slug' => 'Slug',
+    'fields.auth.username' => 'Nome de usuário',
+    'fields.auth.password' => 'Senha',
 ];

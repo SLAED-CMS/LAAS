@@ -2,9 +2,22 @@
 declare(strict_types=1);
 
 return [
-    'app.name' => 'LAAS CMS',
+    'app.name' => 'LAAS',
     'app.welcome' => 'مرحبًا',
     'ui.send' => 'إرسال',
     'ui.home' => 'الرئيسية',
     'ui.ok' => 'OK',
+    'validation.required' => 'حقل {field} مطلوب.',
+    'validation.string' => 'يجب أن يكون {field} نصًا.',
+    'validation.min' => 'يجب أن يحتوي {field} على {min} أحرف على الأقل.',
+    'validation.max' => 'يجب ألا يزيد {field} عن {max} حرفًا.',
+    'validation.regex' => 'تنسيق الحقل {field} غير صالح.',
+    'validation.in' => 'يجب أن يكون {field} أحد القيم التالية: {values}.',
+    'validation.slug' => 'تنسيق الحقل {field} غير صالح.',
+    'validation.reserved_slug' => 'الحقل {field} محجوز.',
+    'validation.unique' => 'قيمة {field} مستخدمة بالفعل.',
+    'fields.pages.title' => 'العنوان',
+    'fields.pages.slug' => 'Slug',
+    'fields.auth.username' => 'اسم المستخدم',
+    'fields.auth.password' => 'كلمة المرور',
 ];
