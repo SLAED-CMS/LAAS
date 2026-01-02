@@ -93,15 +93,18 @@ final class PagesRepository
 
     public function create(array $data): int
     {
+        $now = date('Y-m-d H:i:s');
         $stmt = $this->pdo->prepare(
             'INSERT INTO pages (title, slug, content, status, created_at, updated_at)
-             VALUES (:title, :slug, :content, :status, NOW(), NOW())'
+             VALUES (:title, :slug, :content, :status, :created_at, :updated_at)'
         );
         $stmt->execute([
             'title' => (string) ($data['title'] ?? ''),
             'slug' => (string) ($data['slug'] ?? ''),
             'content' => (string) ($data['content'] ?? ''),
             'status' => (string) ($data['status'] ?? 'draft'),
+            'created_at' => $now,
+            'updated_at' => $now,
         ]);
 
         return (int) $this->pdo->lastInsertId();
@@ -109,8 +112,9 @@ final class PagesRepository
 
     public function update(int $id, array $data): void
     {
+        $now = date('Y-m-d H:i:s');
         $stmt = $this->pdo->prepare(
-            'UPDATE pages SET title = :title, slug = :slug, content = :content, status = :status, updated_at = NOW()
+            'UPDATE pages SET title = :title, slug = :slug, content = :content, status = :status, updated_at = :updated_at
              WHERE id = :id'
         );
         $stmt->execute([
@@ -119,6 +123,7 @@ final class PagesRepository
             'slug' => (string) ($data['slug'] ?? ''),
             'content' => (string) ($data['content'] ?? ''),
             'status' => (string) ($data['status'] ?? 'draft'),
+            'updated_at' => $now,
         ]);
     }
 
@@ -130,10 +135,12 @@ final class PagesRepository
 
     public function updateStatus(int $id, string $status): void
     {
-        $stmt = $this->pdo->prepare('UPDATE pages SET status = :status, updated_at = NOW() WHERE id = :id');
+        $now = date('Y-m-d H:i:s');
+        $stmt = $this->pdo->prepare('UPDATE pages SET status = :status, updated_at = :updated_at WHERE id = :id');
         $stmt->execute([
             'id' => $id,
             'status' => $status,
+            'updated_at' => $now,
         ]);
     }
 

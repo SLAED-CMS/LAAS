@@ -4,10 +4,13 @@ declare(strict_types=1);
 namespace Laas\Modules\Pages\Controller;
 
 use Laas\Database\DatabaseManager;
+use Laas\Core\Validation\Validator;
+use Laas\Core\Validation\ValidationResult;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Pages\Repository\PagesRepository;
 use Laas\Database\Repositories\RbacRepository;
+use Laas\Support\AuditLogger;
 use Laas\View\View;
 use Throwable;
 
@@ -142,21 +145,33 @@ final class AdminPagesController
         $content = (string) ($request->post('content') ?? '');
         $status = (string) ($request->post('status') ?? 'draft');
 
-        $errorKey = null;
-        if ($title === '' || mb_strlen($title) > 255) {
-            $errorKey = 'admin.pages.error_invalid';
-        } elseif (!$this->isValidSlug($slug)) {
-            $errorKey = 'admin.pages.error_invalid';
-        } elseif ($this->isReservedSlug($slug)) {
-            $errorKey = 'admin.pages.error_reserved_slug';
-        } elseif ($repo->slugExists($slug, $id)) {
-            $errorKey = 'admin.pages.error_slug_exists';
-        } elseif (!in_array($status, ['draft', 'published'], true)) {
-            $errorKey = 'admin.pages.error_invalid';
+        $data = [
+            'title' => $title,
+            'slug' => $slug,
+            'content' => $content,
+            'status' => $status,
+        ];
+
+        $uniqueRule = 'unique:pages,slug';
+        if ($id !== null) {
+            $uniqueRule .= ',' . $id;
         }
 
-        if ($errorKey !== null) {
-            return $this->formErrorResponse($request, $errorKey, [
+        $validator = new Validator();
+        $reservedRule = 'reserved_slug:' . implode(',', self::RESERVED);
+        $result = $validator->validate($data, [
+            'title' => ['required', 'string', 'max:255'],
+            'slug' => ['required', 'slug', 'max:255', $uniqueRule, $reservedRule],
+            'status' => ['required', 'in:draft,published'],
+            'content' => ['string'],
+        ], [
+            'db' => $this->db,
+            'label_prefix' => 'pages',
+            'translator' => $this->view->getTranslator(),
+        ]);
+
+        if (!$result->isValid()) {
+            return $this->formErrorResponse($request, $result, [
                 'id' => $id ?? 0,
                 'title' => $title,
                 'slug' => $slug,
@@ -165,13 +180,27 @@ final class AdminPagesController
             ]);
         }
 
+        $audit = new AuditLogger($this->db);
+
         if ($id === null) {
-            $repo->create([
+            $newId = $repo->create([
                 'title' => $title,
                 'slug' => $slug,
                 'content' => $content,
                 'status' => $status,
             ]);
+            $audit->log(
+                'pages.create',
+                'page',
+                $newId,
+                [
+                    'title' => $title,
+                    'slug' => $slug,
+                    'status' => $status,
+                ],
+                $this->currentUserId(),
+                $request->ip()
+            );
         } else {
             $repo->update($id, [
                 'title' => $title,
@@ -179,6 +208,18 @@ final class AdminPagesController
                 'content' => $content,
                 'status' => $status,
             ]);
+            $audit->log(
+                'pages.update',
+                'page',
+                $id,
+                [
+                    'title' => $title,
+                    'slug' => $slug,
+                    'status' => $status,
+                ],
+                $this->currentUserId(),
+                $request->ip()
+            );
         }
 
         if ($request->isHtmx()) {
@@ -216,6 +257,17 @@ final class AdminPagesController
         }
 
         $repo->delete($id);
+        (new AuditLogger($this->db))->log(
+            'pages.delete',
+            'page',
+            $id,
+            [
+                'title' => (string) ($page['title'] ?? ''),
+                'slug' => (string) ($page['slug'] ?? ''),
+            ],
+            $this->currentUserId(),
+            $request->ip()
+        );
 
         if ($request->isHtmx()) {
             return new Response('', 200);
@@ -342,27 +394,13 @@ final class AdminPagesController
         return $id > 0 ? $id : null;
     }
 
-    private function isValidSlug(string $slug): bool
+    private function formErrorResponse(Request $request, ValidationResult|array $errors, array $page): Response
     {
-        return (bool) preg_match('/^[a-z0-9-]+$/', $slug);
-    }
-
-    private function isReservedSlug(string $slug): bool
-    {
-        return in_array($slug, self::RESERVED, true);
-    }
-
-    private function formErrorResponse(Request $request, string $errorKey, array $page): Response
-    {
-        $errors = [
-            'error_invalid' => $errorKey === 'admin.pages.error_invalid',
-            'error_reserved' => $errorKey === 'admin.pages.error_reserved_slug',
-            'error_slug_exists' => $errorKey === 'admin.pages.error_slug_exists',
-        ];
+        $messages = $this->resolveErrorMessages($errors);
 
         if ($request->isHtmx()) {
             return $this->view->render('partials/page_form_messages.html', [
-                ...$errors,
+                'errors' => $messages,
             ], 422, [], [
                 'theme' => 'admin',
             ]);
@@ -376,7 +414,7 @@ final class AdminPagesController
             'page' => $page,
             'status_selected_draft' => $status === 'draft' ? 'selected' : '',
             'status_selected_published' => $status === 'published' ? 'selected' : '',
-            ...$errors,
+            'errors' => $messages,
         ], 422, [], [
             'theme' => 'admin',
         ]);
@@ -405,6 +443,28 @@ final class AdminPagesController
         return new Response('Error', $status, [
             'Content-Type' => 'text/plain; charset=utf-8',
         ]);
+    }
+
+    /** @return array<int, string> */
+    private function resolveErrorMessages(ValidationResult|array $errors): array
+    {
+        $messages = [];
+
+        if ($errors instanceof ValidationResult) {
+            foreach ($errors->errors() as $fieldErrors) {
+                foreach ($fieldErrors as $error) {
+                    $messages[] = $this->view->translate((string) $error['key'], $error['params'] ?? []);
+                }
+            }
+
+            return $messages;
+        }
+
+        foreach ($errors as $error) {
+            $messages[] = $this->view->translate((string) ($error['key'] ?? ''), $error['params'] ?? []);
+        }
+
+        return $messages;
     }
 
     private function buildPageRow(array $page, bool $canEdit): array
