@@ -1,0 +1,26 @@
+<?php
+declare(strict_types=1);
+
+return array (
+    'admin.nav.media' => 'Mídia',
+    'admin.media.title' => 'Mídia',
+    'admin.media.upload' => 'Enviar',
+    'admin.media.delete' => 'Excluir',
+    'admin.media.file' => 'Arquivo',
+    'admin.media.name' => 'Nome',
+    'admin.media.type' => 'Tipo',
+    'admin.media.size' => 'Tamanho',
+    'admin.media.created' => 'Criado',
+    'admin.media.actions' => 'Ações',
+    'admin.media.success_uploaded' => 'Arquivo enviado.',
+    'admin.media.success_deleted' => 'Arquivo excluído.',
+    'admin.media.error_invalid_type' => 'Tipo de arquivo inválido.',
+    'admin.media.error_too_large' => 'Arquivo muito grande.',
+    'admin.media.error_upload_failed' => 'Falha no envio.',
+    'admin.media.open' => 'Abrir',
+    'admin.media.download' => 'Baixar',
+    'admin.media.confirm_delete' => 'Excluir este arquivo?',
+    'admin.media.search' => 'Pesquisar',
+    'admin.media.search_button' => 'Pesquisar',
+    'admin.media.empty' => 'Nenhum arquivo encontrado.',
+);

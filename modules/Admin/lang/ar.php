@@ -40,6 +40,7 @@ return array (
     'admin.nav.logout' => 'تسجيل الخروج',
     'admin.nav.modules' => 'الوحدات',
     'admin.nav.pages' => 'الصفحات',
+    'admin.nav.media' => '???????',
     'admin.nav.settings' => 'الإعدادات',
     'admin.nav.users' => 'المستخدمون',
     'admin.settings.default_locale' => 'اللغة الافتراضية',

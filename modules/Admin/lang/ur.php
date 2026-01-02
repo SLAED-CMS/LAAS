@@ -40,6 +40,7 @@ return array (
     'admin.nav.logout' => 'لاگ آؤٹ',
     'admin.nav.modules' => 'ماڈیولز',
     'admin.nav.pages' => 'صفحات',
+    'admin.nav.media' => '?????',
     'admin.nav.settings' => 'سیٹنگز',
     'admin.nav.users' => 'صارفین',
     'admin.settings.default_locale' => 'ڈیفالٹ زبان',

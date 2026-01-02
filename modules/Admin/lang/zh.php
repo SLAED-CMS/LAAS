@@ -40,6 +40,7 @@ return array (
     'admin.nav.logout' => '退出',
     'admin.nav.modules' => '模块',
     'admin.nav.pages' => '页面',
+    'admin.nav.media' => '??',
     'admin.nav.settings' => '设置',
     'admin.nav.users' => '用户',
     'admin.settings.default_locale' => '默认语言',

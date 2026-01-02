@@ -40,6 +40,7 @@ return array (
     'admin.nav.logout' => 'Выйти',
     'admin.nav.modules' => 'Модули',
     'admin.nav.pages' => 'Страницы',
+    'admin.nav.media' => '?????',
     'admin.nav.settings' => 'Настройки',
     'admin.nav.users' => 'Пользователи',
     'admin.settings.default_locale' => 'Язык по умолчанию',

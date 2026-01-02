@@ -40,6 +40,7 @@ return array (
     'admin.nav.logout' => 'Toka',
     'admin.nav.modules' => 'Moduli',
     'admin.nav.pages' => 'Kurasa',
+    'admin.nav.media' => 'Vyombo vya habari',
     'admin.nav.settings' => 'Mipangilio',
     'admin.nav.users' => 'Watumiaji',
     'admin.settings.default_locale' => 'Lugha chaguo-msingi',

@@ -1,0 +1,46 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <div id="page-messages">
+      {% include "partials/messages.html" %}
+    </div>
+
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+      <h1 class="h4 mb-0">{% t 'admin.media.title' %}</h1>
+      <form method="get" class="d-flex gap-2" action="/admin/media">
+        <input class="form-control form-control-sm" type="search" name="q" value="{% q %}" placeholder="{% t 'admin.media.search' %}">
+        <button class="btn btn-outline-secondary btn-sm" type="submit">{% t 'admin.media.search_button' %}</button>
+      </form>
+    </div>
+
+    <form method="post"
+          action="/admin/media/upload"
+          enctype="multipart/form-data"
+          hx-post="/admin/media/upload"
+          hx-encoding="multipart/form-data"
+          hx-target="#media-table"
+          hx-swap="innerHTML"
+          hx-indicator="#loading"
+          class="row g-2 align-items-end mb-4">
+      <input type="hidden" name="_token" value="{% csrf_token %}">
+      <div class="col-12 col-md-6">
+        <label class="form-label fw-semibold">{% t 'admin.media.file' %}</label>
+        <input class="form-control" type="file" name="file" required>
+      </div>
+      <div class="col-12 col-md-3">
+        <button class="btn btn-primary w-100" type="submit">{% t 'admin.media.upload' %}</button>
+      </div>
+    </form>
+
+    <div id="media-table">
+      {% include "partials/media_table.html" %}
+    </div>
+
+    <div id="loading" class="text-center my-3 htmx-indicator" style="display:none;">
+      <div class="spinner-border" role="status" aria-hidden="true"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

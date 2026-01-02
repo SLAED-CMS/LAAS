@@ -107,6 +107,7 @@ tools/                 # CLI utilities
 - `/admin`
 - `/admin/modules`
 - `/admin/settings`
+- `/admin/media`
 
 ---
 
@@ -151,6 +152,7 @@ New install flow:
 
 - `/admin/modules`: HTMX toggle for modules (protected: System, Api, Admin)
 - `/admin/settings`: HTMX settings editor (site_name, default_locale, theme)
+- `/admin/media`: Media uploads and file list
 
 ---
 
@@ -192,6 +194,7 @@ WHERE u.username = 'admin';
 - `docs/ARCHITECTURE.md`
 - `docs/SECURITY.md`
 - `docs/DEVTOOLS.md`
+- `docs/MEDIA.md`
 - `docs/MODULES.md`
 - `docs/TEMPLATES.md`
 - `docs/I18N.md`

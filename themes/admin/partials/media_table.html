@@ -1,0 +1,41 @@
+<table class="table table-striped table-hover align-middle">
+  <thead>
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">{% t 'admin.media.file' %}</th>
+      <th scope="col">{% t 'admin.media.type' %}</th>
+      <th scope="col">{% t 'admin.media.size' %}</th>
+      <th scope="col">{% t 'admin.media.created' %}</th>
+      <th scope="col">{% t 'admin.media.actions' %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% if items %}
+      {% foreach items as item %}
+        {% include "partials/media_row.html" %}
+      {% endforeach %}
+    {% else %}
+      <tr>
+        <td colspan="6">
+          <div class="alert alert-secondary mb-0">{% t 'admin.media.empty' %}</div>
+        </td>
+      </tr>
+    {% endif %}
+  </tbody>
+</table>
+
+{% if total_pages > 1 %}
+<nav>
+  <ul class="pagination pagination-sm mb-0">
+    <li class="page-item {% if not has_prev %}disabled{% endif %}">
+      <a class="page-link" href="/admin/media?page={% prev_page %}&q={% q %}">Prev</a>
+    </li>
+    <li class="page-item disabled">
+      <span class="page-link">{% page %} / {% total_pages %}</span>
+    </li>
+    <li class="page-item {% if not has_next %}disabled{% endif %}">
+      <a class="page-link" href="/admin/media?page={% next_page %}&q={% q %}">Next</a>
+    </li>
+  </ul>
+</nav>
+{% endif %}

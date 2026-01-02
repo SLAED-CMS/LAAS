@@ -40,6 +40,7 @@ return array (
     'admin.nav.logout' => 'Abmelden',
     'admin.nav.modules' => 'Module',
     'admin.nav.pages' => 'Seiten',
+    'admin.nav.media' => 'Medien',
     'admin.nav.settings' => 'Einstellungen',
     'admin.nav.users' => 'Benutzer',
     'admin.settings.default_locale' => 'Standard-Sprache',

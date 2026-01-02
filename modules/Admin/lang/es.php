@@ -40,6 +40,7 @@ return array (
     'admin.nav.logout' => 'Salir',
     'admin.nav.modules' => 'Módulos',
     'admin.nav.pages' => 'Páginas',
+    'admin.nav.media' => 'Medios',
     'admin.nav.settings' => 'Configuración',
     'admin.nav.users' => 'Usuarios',
     'admin.settings.default_locale' => 'Idioma predeterminado',

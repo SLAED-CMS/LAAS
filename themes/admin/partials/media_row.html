@@ -1,0 +1,34 @@
+<tr id="media-row-{% item.id %}">
+  <td>{% item.id %}</td>
+  <td>
+    <div class="d-flex align-items-center gap-2">
+      {% if item.is_image %}
+        <img src="{% item.url %}" alt="" class="img-thumbnail" style="max-width: 80px;">
+      {% else %}
+        <span class="badge text-bg-secondary">FILE</span>
+      {% endif %}
+      <div>
+        <div class="fw-semibold">{% item.original_name %}</div>
+        <a href="{% item.url %}" class="small" target="_blank" rel="noopener">{% t 'admin.media.open' %}</a>
+      </div>
+    </div>
+  </td>
+  <td>{% item.mime_type %}</td>
+  <td>{% item.size_display %}</td>
+  <td>{% item.created_at_display %}</td>
+  <td>
+    <div class="btn-group btn-group-sm" role="group">
+      <a class="btn btn-outline-secondary" href="{% item.url %}" target="_blank" rel="noopener">{% t 'admin.media.download' %}</a>
+      <button class="btn btn-outline-danger"
+              type="button"
+              hx-post="/admin/media/delete"
+              hx-vals='{"id":"{% item.id %}"}'
+              hx-target="#media-table"
+              hx-swap="innerHTML"
+              hx-confirm="{% t 'admin.media.confirm_delete' %}"
+              hx-indicator="#loading">
+        {% t 'admin.media.delete' %}
+      </button>
+    </div>
+  </td>
+</tr>

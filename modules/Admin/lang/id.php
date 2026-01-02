@@ -40,6 +40,7 @@ return array (
     'admin.nav.logout' => 'Keluar',
     'admin.nav.modules' => 'Modul',
     'admin.nav.pages' => 'Halaman',
+    'admin.nav.media' => 'Media',
     'admin.nav.settings' => 'Pengaturan',
     'admin.nav.users' => 'Pengguna',
     'admin.settings.default_locale' => 'Bahasa default',
