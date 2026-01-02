@@ -1,15 +1,33 @@
 <?php
 declare(strict_types=1);
 
+$env = $_ENV;
+$envString = static function (string $key, string $default) use ($env): string {
+    $value = $env[$key] ?? null;
+    if ($value === null || $value === '') {
+        return $default;
+    }
+    return (string) $value;
+};
+$envBool = static function (string $key, bool $default) use ($env): bool {
+    $value = $env[$key] ?? null;
+    if ($value === null || $value === '') {
+        return $default;
+    }
+    $parsed = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    return $parsed ?? $default;
+};
+
 return [
     'name' => 'LAAS',
-    'env' => 'dev',
-    'debug' => true,
+    'key' => $envString('APP_KEY', ''),
+    'env' => $envString('APP_ENV', 'dev'),
+    'debug' => $envBool('APP_DEBUG', true),
     'default_locale' => 'en',
     'locales' => ['en', 'de', 'ru', 'fr', 'es', 'pt', 'uk', 'pl', 'zh', 'hi', 'ar', 'bn', 'ur', 'sw', 'id'],
     'rtl_locales' => ['ar', 'ur'],
     'theme' => 'default',
-    'admin_seed_enabled' => true,
-    'admin_seed_password' => 'change-me',
+    'admin_seed_enabled' => $envBool('ADMIN_SEED_ENABLED', true),
+    'admin_seed_password' => $envString('ADMIN_SEED_PASSWORD', 'change-me'),
     'middleware' => [],
 ];

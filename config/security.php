@@ -1,14 +1,38 @@
 <?php
 declare(strict_types=1);
 
+$env = $_ENV;
+$envString = static function (string $key, string $default) use ($env): string {
+    $value = $env[$key] ?? null;
+    if ($value === null || $value === '') {
+        return $default;
+    }
+    return (string) $value;
+};
+$envBool = static function (string $key, bool $default) use ($env): bool {
+    $value = $env[$key] ?? null;
+    if ($value === null || $value === '') {
+        return $default;
+    }
+    $parsed = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    return $parsed ?? $default;
+};
+$envInt = static function (string $key, int $default) use ($env): int {
+    $value = $env[$key] ?? null;
+    if ($value === null || $value === '') {
+        return $default;
+    }
+    return is_numeric($value) ? (int) $value : $default;
+};
+
 return [
     'session' => [
-        'name' => 'LAASID',
-        'secure' => false,
-        'httponly' => true,
-        'samesite' => 'Lax',
-        'lifetime' => 0,
-        'domain' => '',
+        'name' => $envString('SESSION_NAME', 'LAASID'),
+        'secure' => $envBool('SESSION_SECURE', false),
+        'httponly' => $envBool('SESSION_HTTPONLY', true),
+        'samesite' => $envString('SESSION_SAMESITE', 'Lax'),
+        'lifetime' => $envInt('SESSION_LIFETIME', 0),
+        'domain' => $envString('SESSION_DOMAIN', ''),
     ],
     'hsts_enabled' => false,
     'hsts_max_age' => 31536000,

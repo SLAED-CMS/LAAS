@@ -16,6 +16,10 @@ if (!is_file($autoload)) {
 
 require $autoload;
 
+if (class_exists(\Dotenv\Dotenv::class)) {
+    \Dotenv\Dotenv::createImmutable($rootPath)->safeLoad();
+}
+
 $kernel = new Kernel($rootPath);
 $response = $kernel->handle(Request::fromGlobals());
 $response->send();

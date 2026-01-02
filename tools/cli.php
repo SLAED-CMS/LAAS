@@ -14,6 +14,10 @@ use Laas\Support\LoggerFactory;
 $rootPath = dirname(__DIR__);
 require $rootPath . '/vendor/autoload.php';
 
+if (class_exists(\Dotenv\Dotenv::class)) {
+    \Dotenv\Dotenv::createImmutable($rootPath)->safeLoad();
+}
+
 $command = $argv[1] ?? '';
 $args = array_slice($argv, 2);
 
