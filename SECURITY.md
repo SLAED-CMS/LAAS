@@ -1,6 +1,6 @@
 # Security Policy
 
-Сообщайте об уязвимостях через GitHub Security Advisories
-или на email: security@laas-cms.org
+Report vulnerabilities via GitHub Security Advisories
+or email: security@laas-cms.org
 
-Пожалуйста, не публикуйте детали уязвимости до подтверждения получения.
+Please avoid public disclosure until we acknowledge receipt.

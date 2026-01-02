@@ -1,29 +1,29 @@
 # Contributing
 
-## Требования
+## Requirements
 - PHP 8.4+
 - Composer
 
-## Установка
+## Setup
 ```
 composer install
 cp .env.example .env
 ```
 
-## Миграции
+## Migrations
 ```
 php tools/cli.php migrate:up
 ```
 
-## Тесты
+## Tests
 ```
 vendor/bin/phpunit
 ```
 
 ## Commit messages
-- Формат: `type(scope): subject`
-- Блоки: What / Why / Test
-- Шаблон: `.gitmessage`
+- Format: `type(scope): subject`
+- Sections: What / Why / Test
+- Template: `.gitmessage`
 
 ## Line endings
-- Проект использует LF (`.gitattributes`).
+- Project enforces LF (`.gitattributes`).

@@ -7,12 +7,20 @@
   - Audit Log module with RBAC (audit.view)
   - Admin Audit UI (read-only)
   - Documentation completed (architecture, standards, i18n audit)
-
-- v1.6: Menu polish + Audit Log
-  - Меню: активный пункт, external links, enable/disable без удаления
-  - Меню: admin UI с HTMX (создание/редактирование/удаление)
-  - Audit Log: журнал действий админки + UI
-
+- v1.5: Menu / Navigation (MVP)
+  - Menu module, migrations, repositories
+  - Admin Menus UI (create/update/delete)
+  - Template helper `{% menu 'main' %}`
+- v1.4.1: Validation quality fixes
+  - Unified form errors partials
+  - 422 on validation errors
+  - reserved_slug rule
+- v1.4: Validation layer
+  - Core validator + rules
+  - Validation in Pages admin save and Auth login
+- v1.3: Core hardening
+  - .env support via phpdotenv
+  - PHPUnit baseline tests
 - v1.2.1: Pages admin UX (slugify, preview, filters, HTMX status toggle, flash highlight)
 - v1.1: Admin Users UI (first full admin user management)
   - Users list

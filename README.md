@@ -194,11 +194,8 @@ WHERE u.username = 'admin';
 - `docs/MODULES.md`
 - `docs/TEMPLATES.md`
 - `docs/I18N.md`
-- `docs/DB_MIGRATIONS.md`
-- `docs/ADMIN.md`
 - `docs/VERSIONS.md`
 - `docs/CODING_STANDARDS.md`
-- `docs/i18n_audit.md`
 
 ---
 
