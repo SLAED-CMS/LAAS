@@ -94,7 +94,8 @@ final class Kernel
             $appConfig,
             $authService,
             $settingsProvider,
-            $this->rootPath . '/storage/cache/templates'
+            $this->rootPath . '/storage/cache/templates',
+            $this->database()
         );
         $view->setRequest($request);
 
