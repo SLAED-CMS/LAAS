@@ -1,0 +1,17 @@
+<table class="table table-sm align-middle">
+  <thead>
+    <tr>
+      <th>{% t 'admin.menus.label' %}</th>
+      <th>{% t 'admin.menus.url' %}</th>
+      <th>{% t 'admin.menus.external' %}</th>
+      <th>{% t 'admin.menus.enabled' %}</th>
+      <th>{% t 'admin.menus.sort_order' %}</th>
+      <th>{% t 'admin.menus.actions' %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% foreach items as item %}
+    {% include "partials/menu_item_row.html" %}
+    {% endforeach %}
+  </tbody>
+</table>

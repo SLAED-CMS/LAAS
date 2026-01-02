@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+
+{% block content %}
+{% include "partials/header.html" %}
+<section class="bg-white border rounded p-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h4 mb-0">{% t 'admin.menus.title' %}</h1>
+    <button class="btn btn-sm btn-outline-primary"
+            hx-get="/admin/menus/item/new"
+            hx-target="#menu-item-form"
+            hx-indicator="#menu-loading">
+      {% t 'admin.menus.add' %}
+    </button>
+  </div>
+
+  <div id="menu-messages">
+    {% include "partials/menu_messages.html" %}
+  </div>
+
+  <div id="menu-item-form" class="mb-4">
+    {% include "partials/menu_item_form.html" %}
+  </div>
+
+  <div id="menu-items-table">
+    {% include "partials/menu_items_table.html" %}
+  </div>
+
+  <div id="menu-loading" class="text-center my-3 htmx-indicator">
+    <div class="spinner-border" role="status" aria-hidden="true"></div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,13 @@
+<nav>
+  <ul>
+    {% foreach items as item %}
+    <li>
+      <a href="{% item.url %}"
+         class="{% if item.active %}active{% endif %}"
+         {% if item.is_external %}target="_blank" rel="noopener noreferrer"{% endif %}>
+        {% item.label %}
+      </a>
+    </li>
+    {% endforeach %}
+  </ul>
+</nav>

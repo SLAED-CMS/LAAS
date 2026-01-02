@@ -126,6 +126,7 @@ final class TemplateEngine
             'url' => is_string($arg) && str_starts_with($arg, '/') ? $arg : (string) ($arg ?? ''),
             'asset' => '/assets/' . ltrim((string) ($arg ?? ''), '/'),
             't' => $this->translate($arg, $ctx),
+            'menu' => $this->renderMenu($arg, $ctx),
             'blocks' => '',
             default => '',
         };
@@ -147,6 +148,21 @@ final class TemplateEngine
         }
 
         return $key;
+    }
+
+    private function renderMenu(mixed $arg, array $ctx): string
+    {
+        $name = is_string($arg) ? $arg : '';
+        if ($name === '') {
+            return '';
+        }
+
+        $resolver = $ctx['__menu'] ?? null;
+        if (!is_callable($resolver)) {
+            return '';
+        }
+
+        return (string) $resolver($name);
     }
 
     private function compile(string $templatePath): string

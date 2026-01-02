@@ -1,0 +1,49 @@
+<form method="post"
+      action="/admin/menus/item/save"
+      hx-post="/admin/menus/item/save"
+      hx-target="#menu-item-form"
+      hx-swap="innerHTML"
+      hx-indicator="#menu-loading">
+  <input type="hidden" name="_token" value="{% csrf_token %}">
+  <input type="hidden" name="id" value="{% form.id %}">
+  <div class="row g-3">
+    <div class="col-md-3">
+      <label class="form-label">{% t 'admin.menus.label' %}</label>
+      <input class="form-control" name="label" maxlength="100" value="{% form.label %}" required>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">{% t 'admin.menus.url' %}</label>
+      <input class="form-control" name="url" maxlength="255" value="{% form.url %}" required>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">{% t 'admin.menus.sort_order' %}</label>
+      <input class="form-control" name="sort_order" value="{% form.sort_order %}">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label d-block">{% t 'admin.menus.enabled' %}</label>
+      <input type="hidden" name="enabled" value="0">
+      <div class="form-check mt-2">
+        <input class="form-check-input" type="checkbox" name="enabled" value="1" id="menu-enabled" {% raw form.enabled_checked %}>
+        <label class="form-check-label" for="menu-enabled">{% t 'admin.menus.enabled_yes' %}</label>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label d-block">{% t 'admin.menus.external' %}</label>
+      <input type="hidden" name="is_external" value="0">
+      <div class="form-check mt-2">
+        <input class="form-check-input" type="checkbox" name="is_external" value="1" id="menu-external" {% raw form.external_checked %}>
+        <label class="form-check-label" for="menu-external">{% t 'admin.menus.external_yes' %}</label>
+      </div>
+    </div>
+  </div>
+  <div class="mt-3 d-flex align-items-center gap-2">
+    <button class="btn btn-primary" type="submit">{% t 'admin.menus.save' %}</button>
+    <button class="btn btn-outline-secondary"
+            type="button"
+            hx-get="/admin/menus/item/new"
+            hx-target="#menu-item-form"
+            hx-indicator="#menu-loading">
+      {% t 'admin.menus.cancel' %}
+    </button>
+  </div>
+</form>

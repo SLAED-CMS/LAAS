@@ -3,9 +3,11 @@
     <strong>Admin</strong>
     <a class="text-decoration-none" href="/">{% t 'admin.nav.home' %}</a>
     <a class="text-decoration-none" href="/admin/modules">{% t 'admin.nav.modules' %}</a>
+    <a class="text-decoration-none" href="/admin/menus">{% t 'admin.nav.menus' %}</a>
     <a class="text-decoration-none" href="/admin/pages">{% t 'admin.nav.pages' %}</a>
     <a class="text-decoration-none" href="/admin/settings">{% t 'admin.nav.settings' %}</a>
     <a class="text-decoration-none" href="/admin/users">{% t 'admin.nav.users' %}</a>
+    <a class="text-decoration-none" href="/admin/audit">{% t 'admin.nav.audit' %}</a>
   </div>
   <form method="post" action="/logout">
     <input type="hidden" name="_token" value="{% csrf_token %}">

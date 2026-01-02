@@ -1,5 +1,6 @@
 <header>
   <p>{% t 'ui.home' %}</p>
+  {% menu 'main' %}
   {% if is_auth %}
   <form method="post" action="/logout">
     <input type="hidden" name="_token" value="{% csrf_token %}">

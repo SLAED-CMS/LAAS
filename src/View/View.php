@@ -9,6 +9,9 @@ use Laas\Auth\AuthInterface;
 use Laas\Security\Csrf;
 use Laas\I18n\Translator;
 use Laas\Settings\SettingsProvider;
+use Laas\Database\DatabaseManager;
+use Laas\Modules\Menu\Repository\MenusRepository;
+use Laas\Modules\Menu\Repository\MenuItemsRepository;
 use Laas\View\Template\TemplateEngine;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Theme\ThemeManager;
@@ -25,7 +28,8 @@ final class View
         private array $appConfig,
         private AuthInterface $authService,
         private SettingsProvider $settingsProvider,
-        private string $cachePath
+        private string $cachePath,
+        private ?DatabaseManager $db = null
     ) {
         $this->defaultTheme = $themeManager->getThemeName();
         $this->themesRoot = $themeManager->getThemesRoot();
@@ -58,6 +62,61 @@ final class View
 
         $theme = $renderOptions['theme'] ?? $this->themeManager->getPublicTheme();
         $engine = $this->resolveEngine($theme);
+        $ctx['__menu'] = function (string $name) use ($engine): string {
+            if ($this->db === null || !$this->db->healthCheck()) {
+                return '';
+            }
+
+            try {
+                $menusRepo = new MenusRepository($this->db);
+                $itemsRepo = new MenuItemsRepository($this->db);
+            } catch (\Throwable) {
+                return '';
+            }
+
+            $menu = $menusRepo->findMenuByName($name);
+            if ($menu === null) {
+                return '';
+            }
+
+            $items = $itemsRepo->listItems((int) $menu['id'], true);
+            $currentPath = $this->request?->getPath() ?? '/';
+            $currentPath = '/' . ltrim($currentPath, '/');
+            $currentPath = $currentPath === '/' ? '/' : rtrim($currentPath, '/');
+
+            $items = array_map(function (array $item) use ($currentPath): array {
+                $url = (string) ($item['url'] ?? '');
+                $isExternal = (bool) ($item['is_external'] ?? false);
+
+                $matchUrl = $url;
+                if ($matchUrl !== '' && !str_starts_with($matchUrl, 'http://') && !str_starts_with($matchUrl, 'https://')) {
+                    $matchUrl = '/' . ltrim($matchUrl, '/');
+                } else {
+                    $matchUrl = '';
+                }
+
+                $active = false;
+                if ($matchUrl !== '') {
+                    if ($matchUrl === '/') {
+                        $active = $currentPath === '/';
+                    } else {
+                        $active = $currentPath === $matchUrl || str_starts_with($currentPath, $matchUrl . '/');
+                    }
+                }
+
+                $item['is_external'] = $isExternal;
+                $item['active'] = $active;
+
+                return $item;
+            }, $items);
+
+            return $engine->render('partials/menu.html', [
+                'menu' => $menu,
+                'items' => $items,
+            ], [
+                'render_partial' => true,
+            ]);
+        };
         $html = $engine->render($template, $ctx, $renderOptions);
 
         $headers = array_merge([
@@ -65,6 +124,16 @@ final class View
         ], $headers);
 
         return new Response($html, $status, $headers);
+    }
+
+    public function translate(string $key, array $params = []): string
+    {
+        return $this->translator->trans($key, $params, $this->locale);
+    }
+
+    public function getTranslator(): Translator
+    {
+        return $this->translator;
     }
 
     private function globalContext(): array

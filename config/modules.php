@@ -7,4 +7,5 @@ return [
     \Laas\Modules\Users\UsersModule::class,
     \Laas\Modules\Admin\AdminModule::class,
     \Laas\Modules\Pages\PagesModule::class,
+    \Laas\Modules\Menu\MenuModule::class,
 ];
