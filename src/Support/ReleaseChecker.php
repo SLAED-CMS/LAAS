@@ -40,8 +40,9 @@ final class ReleaseChecker
         }
 
         if (empty($options['skip_health'])) {
-            if (!$this->checkHealth()) {
-                $errors[] = 'health_failed';
+            $healthErrors = $this->checkHealth();
+            if ($healthErrors !== []) {
+                $errors = array_merge($errors, $healthErrors);
             }
         }
 
@@ -115,8 +116,10 @@ final class ReleaseChecker
         ]);
     }
 
-    private function checkHealth(): bool
+    /** @return array<int, string> */
+    private function checkHealth(): array
     {
+        $this->ensureStorageDirs();
         $checker = new ConfigSanityChecker();
         $health = new HealthService(
             $this->rootPath,
@@ -131,7 +134,23 @@ final class ReleaseChecker
         );
 
         $result = $health->check();
-        return (bool) ($result['ok'] ?? false);
+        if (!empty($result['ok'])) {
+            return [];
+        }
+
+        $errors = [];
+        $checks = $result['checks'] ?? [];
+        foreach ($checks as $name => $ok) {
+            if ($ok !== true) {
+                $errors[] = 'health_' . $name . '_failed';
+            }
+        }
+
+        if ($errors === []) {
+            $errors[] = 'health_failed';
+        }
+
+        return $errors;
     }
 
     /** @return array<int, string> */
@@ -257,5 +276,18 @@ final class ReleaseChecker
         }
 
         return $found;
+    }
+
+    private function ensureStorageDirs(): void
+    {
+        $base = $this->rootPath . '/storage';
+        if (!is_dir($base)) {
+            @mkdir($base, 0775, true);
+        }
+
+        $cache = $base . '/cache';
+        if (!is_dir($cache)) {
+            @mkdir($cache, 0775, true);
+        }
     }
 }
