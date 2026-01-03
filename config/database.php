@@ -3,14 +3,14 @@ declare(strict_types=1);
 
 $env = $_ENV;
 $envString = static function (string $key, string $default) use ($env): string {
-    $value = $env[$key] ?? null;
+    $value = $env[$key] ?? getenv($key);
     if ($value === null || $value === '') {
         return $default;
     }
     return (string) $value;
 };
 $envInt = static function (string $key, int $default) use ($env): int {
-    $value = $env[$key] ?? null;
+    $value = $env[$key] ?? getenv($key);
     if ($value === null || $value === '') {
         return $default;
     }
