@@ -126,10 +126,11 @@ SQL;
                 $migration->up($this->pdo);
             });
 
-            $stmt = $this->pdo->prepare('INSERT INTO migrations (migration, batch, applied_at) VALUES (:migration, :batch, NOW())');
+            $stmt = $this->pdo->prepare('INSERT INTO migrations (migration, batch, applied_at) VALUES (:migration, :batch, :applied_at)');
             $stmt->execute([
                 'migration' => $name,
                 'batch' => $batch,
+                'applied_at' => $this->now(),
             ]);
 
             $appliedNames[] = $name;
@@ -263,5 +264,10 @@ SQL;
         }
 
         return $dirs;
+    }
+
+    private function now(): string
+    {
+        return (new \DateTimeImmutable())->format('Y-m-d H:i:s');
     }
 }
