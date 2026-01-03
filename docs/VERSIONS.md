@@ -1,5 +1,9 @@
 # LAAS Versions
 
+- v1.11.0: Stability & Ops
+  - Health endpoint and config sanity checks
+  - Read-only maintenance mode
+  - Backup/restore CLI
 - v1.10.1: S3-compatible storage driver
   - S3/MinIO disk support (SigV4, proxy serving)
   - Media uploads and thumbs on selected disk

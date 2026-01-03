@@ -66,3 +66,8 @@ ErrorHandler -> Session -> CSRF -> RateLimit -> SecurityHeaders -> Auth -> RBAC 
 ### SQLite в тестах
 - В тестах допускается SQLite in-memory.
 - Timestamps формируются в PHP (без `NOW()`).
+
+## Ops and Stability (v1.11.0)
+- Health endpoint: `GET /health` returns JSON with status and checks.
+- Read-only mode: blocks write methods at middleware level.
+- Backup/restore: CLI commands `backup:create` and `backup:restore`.

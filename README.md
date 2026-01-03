@@ -145,6 +145,17 @@ vendor/bin/phpunit
 
 ---
 
+## Production Readiness Checklist
+
+- Configure `.env` and set `APP_ENV=production`
+- Set `APP_READ_ONLY` during maintenance windows
+- Verify `/health` returns 200
+- Ensure backups via `php tools/cli.php backup:create`
+- Store backups from `storage/backups` off-site
+- Configure storage disk (local or S3)
+
+---
+
 ## Modules (DB-backed)
 
 - Default: enabled modules come from `config/modules.php`.

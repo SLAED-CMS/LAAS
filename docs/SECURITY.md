@@ -18,6 +18,11 @@
 - File-based limiter with `flock`.
 - Config: `config/security.php`.
 
+## Maintenance mode
+- Read-only mode blocks all write methods (POST/PUT/PATCH/DELETE).
+- Exceptions: `/login`, `/logout`, `/health`.
+- HTTP 503 with localized message.
+
 ## File uploads (Media)
 - MIME validation via `finfo(FILEINFO_MIME_TYPE)` only.
 - Allowlist: JPEG, PNG, WEBP, PDF. SVG is forbidden.
