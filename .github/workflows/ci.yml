@@ -74,7 +74,34 @@ jobs:
       - run: vendor/bin/phpunit --coverage-clover coverage/clover.xml --coverage-html coverage/html
       - name: Coverage threshold
         run: |
-          php -r "$file='coverage/clover.xml'; if (!file_exists($file)) { fwrite(STDERR, \"Missing clover.xml\\n\"); exit(1);} $xml=simplexml_load_file($file); $rate=0.0; if ($xml !== false) { if (isset($xml->project['line-rate'])) { $rate=(float)$xml->project['line-rate']; } elseif (isset($xml['line-rate'])) { $rate=(float)$xml['line-rate']; } else { $node=$xml->xpath('//project'); if ($node && isset($node[0]['line-rate'])) { $rate=(float)$node[0]['line-rate']; } } } $percent=$rate*100; $threshold=(float)getenv('COVERAGE_MIN_LINES'); echo 'Line coverage: '.number_format($percent,2).\"% (threshold {$threshold}%)\\n\"; if ($percent < $threshold) { exit(1); }"
+          php - <<'PHP'
+          <?php
+          $file = 'coverage/clover.xml';
+          if (!file_exists($file)) {
+              fwrite(STDERR, "Missing clover.xml\n");
+              exit(1);
+          }
+          $xml = simplexml_load_file($file);
+          $rate = 0.0;
+          if ($xml !== false) {
+              if (isset($xml->project['line-rate'])) {
+                  $rate = (float) $xml->project['line-rate'];
+              } elseif (isset($xml['line-rate'])) {
+                  $rate = (float) $xml['line-rate'];
+              } else {
+                  $node = $xml->xpath('//project');
+                  if ($node && isset($node[0]['line-rate'])) {
+                      $rate = (float) $node[0]['line-rate'];
+                  }
+              }
+          }
+          $percent = $rate * 100;
+          $threshold = (float) getenv('COVERAGE_MIN_LINES');
+          echo 'Line coverage: ' . number_format($percent, 2) . "% (threshold {$threshold}%)\n";
+          if ($percent < $threshold) {
+              exit(1);
+          }
+          PHP
       - uses: actions/upload-artifact@v4
         if: always()
         with:
