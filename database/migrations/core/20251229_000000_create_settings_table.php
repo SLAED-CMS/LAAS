@@ -1,8 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use PDO;
-
 $context = $context ?? [];
 $app = $context['app'] ?? [];
 
@@ -11,7 +9,7 @@ return new class($app) {
     {
     }
 
-    public function up(PDO $pdo): void
+    public function up(\PDO $pdo): void
     {
         $sql = <<<SQL
 CREATE TABLE IF NOT EXISTS settings (
@@ -29,22 +27,37 @@ SQL;
             'theme' => (string) ($this->app['theme'] ?? 'default'),
         ];
 
-        $stmt = $pdo->prepare(
-            'INSERT INTO settings (`key`, `value`, `type`, `updated_at`) VALUES (:key, :value, :type, NOW())
-             ON DUPLICATE KEY UPDATE `value` = VALUES(`value`), `type` = VALUES(`type`), `updated_at` = NOW()'
-        );
+        $now = $this->now();
+        $driver = $pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
+        if ($driver === 'sqlite') {
+            $stmt = $pdo->prepare(
+                'INSERT INTO settings ("key", "value", "type", "updated_at") VALUES (:key, :value, :type, :updated_at)
+                 ON CONFLICT("key") DO UPDATE SET "value" = excluded."value", "type" = excluded."type", "updated_at" = excluded."updated_at"'
+            );
+        } else {
+            $stmt = $pdo->prepare(
+                'INSERT INTO settings (`key`, `value`, `type`, `updated_at`) VALUES (:key, :value, :type, :updated_at)
+                 ON DUPLICATE KEY UPDATE `value` = VALUES(`value`), `type` = VALUES(`type`), `updated_at` = VALUES(`updated_at`)'
+            );
+        }
 
         foreach ($defaults as $key => $value) {
             $stmt->execute([
                 'key' => $key,
                 'value' => (string) $value,
                 'type' => 'string',
+                'updated_at' => $now,
             ]);
         }
     }
 
-    public function down(PDO $pdo): void
+    public function down(\PDO $pdo): void
     {
         $pdo->exec('DROP TABLE IF EXISTS settings');
+    }
+
+    private function now(): string
+    {
+        return (new \DateTimeImmutable())->format('Y-m-d H:i:s');
     }
 };

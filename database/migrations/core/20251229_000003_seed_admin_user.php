@@ -1,8 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use PDO;
-
 $context = $context ?? [];
 $app = $context['app'] ?? [];
 $seedPassword = (string) ($app['admin_seed_password'] ?? 'change-me');
@@ -19,7 +17,7 @@ return new class($seedPassword, $seedEnabled, $debug, $context) {
     {
     }
 
-    public function up(PDO $pdo): void
+    public function up(\PDO $pdo): void
     {
         $stmt = $pdo->prepare('SELECT id FROM users WHERE username = :username');
         $stmt->execute(['username' => 'admin']);
@@ -46,17 +44,19 @@ return new class($seedPassword, $seedEnabled, $debug, $context) {
         $hash = password_hash($this->seedPassword, PASSWORD_ARGON2ID);
         $stmt = $pdo->prepare(
             'INSERT INTO users (username, email, password_hash, status, created_at, updated_at)
-             VALUES (:username, :email, :password_hash, :status, NOW(), NOW())'
+             VALUES (:username, :email, :password_hash, :status, :created_at, :updated_at)'
         );
         $stmt->execute([
             'username' => 'admin',
             'email' => 'admin@local',
             'password_hash' => $hash,
             'status' => 1,
+            'created_at' => $this->now(),
+            'updated_at' => $this->now(),
         ]);
     }
 
-    public function down(PDO $pdo): void
+    public function down(\PDO $pdo): void
     {
         $stmt = $pdo->prepare('DELETE FROM users WHERE username = :username');
         $stmt->execute(['username' => 'admin']);
@@ -73,5 +73,10 @@ return new class($seedPassword, $seedEnabled, $debug, $context) {
         if (!empty($this->context['is_cli'])) {
             echo $message . "\n";
         }
+    }
+
+    private function now(): string
+    {
+        return (new \DateTimeImmutable())->format('Y-m-d H:i:s');
     }
 };

@@ -1,16 +1,14 @@
 <?php
 declare(strict_types=1);
 
-use PDO;
-
 return new class {
-    public function up(PDO $pdo): void
+    public function up(\PDO $pdo): void
     {
         $roleId = $this->ensureRole($pdo, 'admin', 'Administrator');
         $permId = $this->ensurePermission($pdo, 'debug.view', 'View debug toolbar');
 
         $stmt = $pdo->prepare(
-            'INSERT IGNORE INTO permission_role (role_id, permission_id) VALUES (:role_id, :permission_id)'
+            $this->insertIgnoreKeyword($pdo) . ' INTO permission_role (role_id, permission_id) VALUES (:role_id, :permission_id)'
         );
         $stmt->execute([
             'role_id' => $roleId,
@@ -18,7 +16,7 @@ return new class {
         ]);
     }
 
-    public function down(PDO $pdo): void
+    public function down(\PDO $pdo): void
     {
         $stmt = $pdo->prepare('SELECT id FROM roles WHERE name = :name');
         $stmt->execute(['name' => 'admin']);
@@ -31,7 +29,7 @@ return new class {
         $pdo->prepare('DELETE FROM permissions WHERE name = :name')->execute(['name' => 'debug.view']);
     }
 
-    private function ensureRole(PDO $pdo, string $name, ?string $title = null): int
+    private function ensureRole(\PDO $pdo, string $name, ?string $title = null): int
     {
         $stmt = $pdo->prepare('SELECT id FROM roles WHERE name = :name');
         $stmt->execute(['name' => $name]);
@@ -41,17 +39,19 @@ return new class {
         }
 
         $stmt = $pdo->prepare(
-            'INSERT INTO roles (name, title, created_at, updated_at) VALUES (:name, :title, NOW(), NOW())'
+            'INSERT INTO roles (name, title, created_at, updated_at) VALUES (:name, :title, :created_at, :updated_at)'
         );
         $stmt->execute([
             'name' => $name,
             'title' => $title,
+            'created_at' => $this->now(),
+            'updated_at' => $this->now(),
         ]);
 
         return (int) $pdo->lastInsertId();
     }
 
-    private function ensurePermission(PDO $pdo, string $name, ?string $title = null): int
+    private function ensurePermission(\PDO $pdo, string $name, ?string $title = null): int
     {
         $stmt = $pdo->prepare('SELECT id FROM permissions WHERE name = :name');
         $stmt->execute(['name' => $name]);
@@ -61,13 +61,25 @@ return new class {
         }
 
         $stmt = $pdo->prepare(
-            'INSERT INTO permissions (name, title, created_at, updated_at) VALUES (:name, :title, NOW(), NOW())'
+            'INSERT INTO permissions (name, title, created_at, updated_at) VALUES (:name, :title, :created_at, :updated_at)'
         );
         $stmt->execute([
             'name' => $name,
             'title' => $title,
+            'created_at' => $this->now(),
+            'updated_at' => $this->now(),
         ]);
 
         return (int) $pdo->lastInsertId();
+    }
+
+    private function insertIgnoreKeyword(\PDO $pdo): string
+    {
+        return $pdo->getAttribute(\PDO::ATTR_DRIVER_NAME) === 'sqlite' ? 'INSERT OR IGNORE' : 'INSERT IGNORE';
+    }
+
+    private function now(): string
+    {
+        return (new \DateTimeImmutable())->format('Y-m-d H:i:s');
     }
 };

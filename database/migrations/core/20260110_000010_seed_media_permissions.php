@@ -11,7 +11,7 @@ return new class {
         $deleteId = $this->ensurePermission($pdo, 'media.delete', 'Delete media');
 
         $stmt = $pdo->prepare(
-            'INSERT IGNORE INTO permission_role (role_id, permission_id) VALUES (:role_id, :permission_id)'
+            $this->insertIgnoreKeyword($pdo) . ' INTO permission_role (role_id, permission_id) VALUES (:role_id, :permission_id)'
         );
         foreach ([$viewId, $uploadId, $deleteId] as $permId) {
             $stmt->execute(['role_id' => $roleId, 'permission_id' => $permId]);
@@ -35,11 +35,13 @@ return new class {
         }
 
         $stmt = $pdo->prepare(
-            'INSERT INTO roles (name, title, created_at, updated_at) VALUES (:name, :title, NOW(), NOW())'
+            'INSERT INTO roles (name, title, created_at, updated_at) VALUES (:name, :title, :created_at, :updated_at)'
         );
         $stmt->execute([
             'name' => $name,
             'title' => $title,
+            'created_at' => $this->now(),
+            'updated_at' => $this->now(),
         ]);
 
         return (int) $pdo->lastInsertId();
@@ -55,13 +57,25 @@ return new class {
         }
 
         $stmt = $pdo->prepare(
-            'INSERT INTO permissions (name, title, created_at, updated_at) VALUES (:name, :title, NOW(), NOW())'
+            'INSERT INTO permissions (name, title, created_at, updated_at) VALUES (:name, :title, :created_at, :updated_at)'
         );
         $stmt->execute([
             'name' => $name,
             'title' => $title,
+            'created_at' => $this->now(),
+            'updated_at' => $this->now(),
         ]);
 
         return (int) $pdo->lastInsertId();
+    }
+
+    private function insertIgnoreKeyword(\PDO $pdo): string
+    {
+        return $pdo->getAttribute(\PDO::ATTR_DRIVER_NAME) === 'sqlite' ? 'INSERT OR IGNORE' : 'INSERT IGNORE';
+    }
+
+    private function now(): string
+    {
+        return (new \DateTimeImmutable())->format('Y-m-d H:i:s');
     }
 };
