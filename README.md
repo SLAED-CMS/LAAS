@@ -9,6 +9,8 @@
 
 **Modern, secure, HTML-first content management system.**
 
+v2.0 stable release.
+
 LAAS CMS is a modular, security-first CMS built for PHP 8.4+ with a lightweight template engine, middleware pipeline, and i18n support. Bootstrap 5 + HTMX ready.
 
 © Eduard Laas, 2005–2026  
@@ -75,6 +77,7 @@ http://laas.loc/
 
 ## Milestones
 
+- **v2.0.0**: Stable CMS Release
 - **v1.15.0**: RBAC/Audit maturity (groups, cloning, filters)
 - **v1.14.0**: Search (Admin + Frontend)
 - **v1.10.1**: S3-compatible storage (MinIO/AWS)
@@ -262,6 +265,7 @@ WHERE u.username = 'admin';
 - `docs/SEARCH.md`
 - `docs/PRODUCTION.md`
 - `docs/LIMITATIONS.md`
+- `docs/RELEASE.md`
 - `UPGRADING.md`
 - `docs/CACHE.md`
 - `docs/CODING_STANDARDS.md`

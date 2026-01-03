@@ -1,5 +1,9 @@
 # LAAS Versions
 
+- v2.0.0: Stable CMS Release
+  - Release checks and prod hardening
+  - DevTools disabled in prod
+  - Release documentation
 - v1.15.0: Permissions & Audit Maturity
   - RBAC permission groups and role cloning
   - RBAC change audit events
