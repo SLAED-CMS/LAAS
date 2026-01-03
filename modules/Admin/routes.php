@@ -19,4 +19,6 @@ return [
     ['POST', '/admin/users/roles/{id:\d+}/clone', [\Laas\Modules\Admin\Controller\RolesController::class, 'clone']],
     ['GET', '/admin/audit', [\Laas\Modules\Admin\Controller\AuditController::class, 'index']],
     ['GET', '/admin/search', [\Laas\Modules\Admin\Controller\AdminSearchController::class, 'index']],
+    ['GET', '/admin/rbac/diagnostics', [\Laas\Modules\Admin\Controller\RbacDiagnosticsController::class, 'index']],
+    ['POST', '/admin/rbac/diagnostics/check', [\Laas\Modules\Admin\Controller\RbacDiagnosticsController::class, 'checkPermission']],
 ];

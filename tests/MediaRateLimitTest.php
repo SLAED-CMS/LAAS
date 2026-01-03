@@ -30,6 +30,7 @@ final class MediaRateLimitTest extends TestCase
         if (session_status() === PHP_SESSION_ACTIVE) {
             session_unset();
         }
+        $_SERVER['REQUEST_TIME_FLOAT'] = microtime(true);
     }
 
     protected function tearDown(): void

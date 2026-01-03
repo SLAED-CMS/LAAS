@@ -1,0 +1,38 @@
+{% extends "layout.html" %}
+
+{% block content %}
+  <div id="page-messages">
+    {% include "partials/messages.html" %}
+  </div>
+
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h4 mb-0">{% t 'rbac.diagnostics.title' %}</h1>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <form method="get"
+            action="/admin/rbac/diagnostics"
+            hx-get="/admin/rbac/diagnostics"
+            hx-target="#rbac-user-result"
+            hx-indicator="#loading"
+            hx-trigger="change">
+        <label class="form-label" for="rbac-user">{% t 'rbac.diagnostics.select_user' %}</label>
+        <select class="form-select" id="rbac-user" name="user_id">
+          <option value="">--</option>
+          {% foreach users as user %}
+            <option value="{% user.id %}" {% if selected_user_id == user.id %}selected{% endif %}>{% user.label %}</option>
+          {% endforeach %}
+        </select>
+      </form>
+    </div>
+  </div>
+
+  <div id="rbac-user-result">
+    {% include "rbac/partials/user_result.html" %}
+  </div>
+
+  <div id="loading" class="htmx-indicator text-center my-3">
+    <div class="spinner-border" role="status"></div>
+  </div>
+{% endblock %}

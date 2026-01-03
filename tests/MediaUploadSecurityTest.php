@@ -46,6 +46,7 @@ namespace {
             }
             $_FILES = [];
             $_SERVER['CONTENT_LENGTH'] = '';
+            $_SERVER['REQUEST_TIME_FLOAT'] = microtime(true);
         }
 
         public function testRejectUploadByContentLength(): void
