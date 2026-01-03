@@ -20,4 +20,9 @@ return [
     'fields.pages.slug' => 'स्लग',
     'fields.auth.username' => 'उपयोगकर्ता नाम',
     'fields.auth.password' => 'पासवर्ड',
+    'system.read_only' => 'रीड-ओनली मोड: लिखना बंद है।',
+    'system.backup.restore_confirm' => 'रीस्टोर की पुष्टि के लिए RESTORE लिखें।',
+    'system.health.degraded' => 'डिग्रेडेड',
+    'system.backup.created' => 'बैकअप बनाया गया',
+    'system.health.ok' => 'ठीक है',
 ];

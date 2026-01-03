@@ -20,4 +20,9 @@ return [
     'fields.pages.slug' => 'Slug',
     'fields.auth.username' => 'Nom d\'utilisateur',
     'fields.auth.password' => 'Mot de passe',
+    'system.read_only' => 'Mode lecture seule : les écritures sont désactivées.',
+    'system.backup.restore_confirm' => 'Tapez RESTORE pour confirmer la restauration.',
+    'system.health.degraded' => 'Dégradé',
+    'system.backup.created' => 'Sauvegarde créée',
+    'system.health.ok' => 'OK',
 ];

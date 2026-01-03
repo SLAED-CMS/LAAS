@@ -20,4 +20,9 @@ return [
     'fields.pages.slug' => 'Slug',
     'fields.auth.username' => 'Nombre de usuario',
     'fields.auth.password' => 'Contraseña',
+    'system.read_only' => 'Modo solo lectura: las escrituras están deshabilitadas.',
+    'system.backup.restore_confirm' => 'Escribe RESTORE para confirmar la restauración.',
+    'system.health.degraded' => 'Degradado',
+    'system.backup.created' => 'Copia de seguridad creada',
+    'system.health.ok' => 'OK',
 ];

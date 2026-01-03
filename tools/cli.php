@@ -13,7 +13,9 @@ use Laas\Modules\Media\Repository\MediaRepository;
 use Laas\Modules\Media\Service\MediaThumbnailService;
 use Laas\Modules\Media\Service\StorageService;
 use Laas\Support\AuditLogger;
+use Laas\Support\BackupManager;
 use Laas\Support\LoggerFactory;
+use Laas\I18n\Translator;
 
 $rootPath = dirname(__DIR__);
 require $rootPath . '/vendor/autoload.php';
@@ -28,6 +30,7 @@ $args = array_slice($argv, 2);
 $appConfig = require $rootPath . '/config/app.php';
 $dbConfig = require $rootPath . '/config/database.php';
 $modulesConfig = require $rootPath . '/config/modules.php';
+$storageConfig = is_file($rootPath . '/config/storage.php') ? require $rootPath . '/config/storage.php' : [];
 
 $logger = (new LoggerFactory($rootPath))->create($appConfig);
 $dbManager = new DatabaseManager($dbConfig);
@@ -421,6 +424,72 @@ $commands['media:thumbs:sync'] = function () use ($dbManager, $rootPath): int {
         echo "Thumb sync failed: " . $e->getMessage() . "\n";
         return 1;
     }
+};
+
+$commands['backup:create'] = function () use ($rootPath, $dbManager, $appConfig, $storageConfig): int {
+    try {
+        if (!$dbManager->healthCheck()) {
+            echo "DB not available.\n";
+            return 1;
+        }
+
+        $storage = new StorageService($rootPath);
+        $manager = new BackupManager($rootPath, $dbManager, $storage, $appConfig, $storageConfig);
+        $result = $manager->create();
+        if (!$result['ok']) {
+            echo "Backup failed.\n";
+            return 1;
+        }
+
+        $translator = new Translator(
+            $rootPath,
+            (string) ($appConfig['theme'] ?? 'default'),
+            (string) ($appConfig['default_locale'] ?? 'en')
+        );
+        $message = $translator->trans('system.backup.created');
+        echo $message . ': ' . ($result['file'] ?? '') . "\n";
+        return 0;
+    } catch (Throwable) {
+        echo "Backup failed.\n";
+        return 1;
+    }
+};
+
+$commands['backup:restore'] = function () use ($rootPath, $dbManager, $appConfig, $storageConfig, $args): int {
+    $file = $args[0] ?? '';
+    if ($file === '') {
+        echo "Usage: backup:restore <file>\n";
+        return 1;
+    }
+
+    if (!$dbManager->healthCheck()) {
+        echo "DB not available.\n";
+        return 1;
+    }
+
+    $translator = new Translator(
+        $rootPath,
+        (string) ($appConfig['theme'] ?? 'default'),
+        (string) ($appConfig['default_locale'] ?? 'en')
+    );
+    $prompt = $translator->trans('system.backup.restore_confirm');
+    echo $prompt . "\n> ";
+    $input = trim((string) fgets(STDIN));
+    if ($input !== 'RESTORE') {
+        echo "Aborted.\n";
+        return 1;
+    }
+
+    $storage = new StorageService($rootPath);
+    $manager = new BackupManager($rootPath, $dbManager, $storage, $appConfig, $storageConfig);
+    $result = $manager->restore($file, true);
+    if (!$result['ok']) {
+        echo "Restore failed.\n";
+        return 1;
+    }
+
+    echo "OK\n";
+    return 0;
 };
 
 if ($command === '' || !isset($commands[$command])) {

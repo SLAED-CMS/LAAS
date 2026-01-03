@@ -6,3 +6,6 @@
 /.vscode/
 /.osp/
 *.log
+.phpunit.result.cache
+docs/IMPROVEMENTS-2.md
+docs/IMPROVEMENTS-3.md

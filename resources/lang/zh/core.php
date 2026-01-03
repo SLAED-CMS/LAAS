@@ -20,4 +20,9 @@ return [
     'fields.pages.slug' => 'Slug',
     'fields.auth.username' => '用户名',
     'fields.auth.password' => '密码',
+    'system.read_only' => '只读模式：写入已禁用。',
+    'system.backup.restore_confirm' => '输入 RESTORE 确认恢复。',
+    'system.health.degraded' => '降级',
+    'system.backup.created' => '备份已创建',
+    'system.health.ok' => '正常',
 ];

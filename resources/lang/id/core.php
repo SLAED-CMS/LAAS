@@ -20,4 +20,9 @@ return [
     'fields.pages.slug' => 'Slug',
     'fields.auth.username' => 'Nama pengguna',
     'fields.auth.password' => 'Kata sandi',
+    'system.read_only' => 'Mode hanya-baca: penulisan dinonaktifkan.',
+    'system.backup.restore_confirm' => 'Ketik RESTORE untuk mengonfirmasi pemulihan.',
+    'system.health.degraded' => 'Terdegradasi',
+    'system.backup.created' => 'Cadangan dibuat',
+    'system.health.ok' => 'OK',
 ];

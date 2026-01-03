@@ -20,4 +20,9 @@ return [
     'fields.pages.slug' => 'سلگ',
     'fields.auth.username' => 'صارف نام',
     'fields.auth.password' => 'پاس ورڈ',
+    'system.read_only' => 'صرف پڑھنے کا موڈ: لکھائی بند ہے۔',
+    'system.backup.restore_confirm' => 'بحالی کی تصدیق کے لیے RESTORE لکھیں۔',
+    'system.health.degraded' => 'تنزلی',
+    'system.backup.created' => 'بیک اپ بنا دیا گیا',
+    'system.health.ok' => 'ٹھیک ہے',
 ];

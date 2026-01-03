@@ -20,4 +20,9 @@ return [
     'fields.pages.slug' => 'Слаг',
     'fields.auth.username' => 'Логин',
     'fields.auth.password' => 'Пароль',
+    'system.read_only' => 'Режим только для чтения: запись отключена.',
+    'system.backup.restore_confirm' => 'Введите RESTORE для подтверждения восстановления.',
+    'system.health.degraded' => 'Деградация',
+    'system.backup.created' => 'Резервная копия создана',
+    'system.health.ok' => 'ОК',
 ];

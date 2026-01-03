@@ -20,4 +20,9 @@ return [
     'fields.pages.slug' => 'Slug',
     'fields.auth.username' => 'Benutzername',
     'fields.auth.password' => 'Passwort',
+    'system.read_only' => 'Schreibgeschützter Modus: Schreibvorgänge sind deaktiviert.',
+    'system.backup.restore_confirm' => 'Gib RESTORE ein, um die Wiederherstellung zu bestätigen.',
+    'system.health.degraded' => 'Degradiert',
+    'system.backup.created' => 'Backup erstellt',
+    'system.health.ok' => 'OK',
 ];

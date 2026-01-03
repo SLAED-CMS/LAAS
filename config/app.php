@@ -20,6 +20,7 @@ $envBool = static function (string $key, bool $default) use ($env): bool {
 
 return [
     'name' => 'LAAS',
+    'version' => $envString('APP_VERSION', 'v1.11.0'),
     'key' => $envString('APP_KEY', ''),
     'env' => $envString('APP_ENV', 'dev'),
     'debug' => $envBool('APP_DEBUG', true),
@@ -35,5 +36,6 @@ return [
     'theme' => 'default',
     'admin_seed_enabled' => $envBool('ADMIN_SEED_ENABLED', true),
     'admin_seed_password' => $envString('ADMIN_SEED_PASSWORD', 'change-me'),
+    'read_only' => $envBool('APP_READ_ONLY', false),
     'middleware' => [],
 ];

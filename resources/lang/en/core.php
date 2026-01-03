@@ -20,4 +20,9 @@ return [
     'fields.pages.slug' => 'Slug',
     'fields.auth.username' => 'Username',
     'fields.auth.password' => 'Password',
+    'system.read_only' => 'Read-only mode: write operations are disabled.',
+    'system.backup.restore_confirm' => 'Type RESTORE to confirm restore.',
+    'system.health.degraded' => 'Degraded',
+    'system.backup.created' => 'Backup created',
+    'system.health.ok' => 'OK',
 ];

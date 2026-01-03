@@ -20,4 +20,9 @@ return [
     'fields.pages.slug' => 'Slug',
     'fields.auth.username' => 'Nazwa użytkownika',
     'fields.auth.password' => 'Hasło',
+    'system.read_only' => 'Tryb tylko do odczytu: zapisy są zablokowane.',
+    'system.backup.restore_confirm' => 'Wpisz RESTORE, aby potwierdzić przywracanie.',
+    'system.health.degraded' => 'Degradacja',
+    'system.backup.created' => 'Kopia zapasowa utworzona',
+    'system.health.ok' => 'OK',
 ];

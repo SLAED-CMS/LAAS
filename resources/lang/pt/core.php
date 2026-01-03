@@ -20,4 +20,9 @@ return [
     'fields.pages.slug' => 'Slug',
     'fields.auth.username' => 'Nome de usuário',
     'fields.auth.password' => 'Senha',
+    'system.read_only' => 'Modo somente leitura: gravações estão desativadas.',
+    'system.backup.restore_confirm' => 'Digite RESTORE para confirmar a restauração.',
+    'system.health.degraded' => 'Degradado',
+    'system.backup.created' => 'Backup criado',
+    'system.health.ok' => 'OK',
 ];

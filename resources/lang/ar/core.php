@@ -20,4 +20,9 @@ return [
     'fields.pages.slug' => 'Slug',
     'fields.auth.username' => 'اسم المستخدم',
     'fields.auth.password' => 'كلمة المرور',
+    'system.read_only' => 'وضع القراءة فقط: عمليات الكتابة معطلة.',
+    'system.backup.restore_confirm' => 'اكتب RESTORE لتأكيد الاستعادة.',
+    'system.health.degraded' => 'متدهور',
+    'system.backup.created' => 'تم إنشاء نسخة احتياطية',
+    'system.health.ok' => 'حسنًا',
 ];

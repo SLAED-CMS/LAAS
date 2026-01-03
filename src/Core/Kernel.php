@@ -16,6 +16,7 @@ use Laas\Http\Middleware\CsrfMiddleware;
 use Laas\Http\Middleware\DevToolsMiddleware;
 use Laas\Http\Middleware\MiddlewareQueue;
 use Laas\Http\Middleware\RateLimitMiddleware;
+use Laas\Http\Middleware\ReadOnlyMiddleware;
 use Laas\Http\Middleware\SecurityHeadersMiddleware;
 use Laas\Http\Middleware\SessionMiddleware;
 use Laas\Http\Session\SessionManager;
@@ -31,6 +32,7 @@ use Laas\Security\RateLimiter;
 use Laas\Security\SecurityHeaders;
 use Laas\Settings\SettingsProvider;
 use Laas\Support\LoggerFactory;
+use Laas\Support\ConfigSanityChecker;
 use Laas\DevTools\DevToolsContext;
 use Laas\DevTools\RequestCollector;
 use Laas\DevTools\PerformanceCollector;
@@ -39,11 +41,11 @@ use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
 use Laas\View\Theme\ThemeManager;
 use Laas\View\View;
-use RuntimeException;
 
 final class Kernel
 {
     private array $config;
+    private array $configErrors = [];
     private ?DatabaseManager $databaseManager = null;
 
     public function __construct(private string $rootPath)
@@ -145,9 +147,25 @@ final class Kernel
             $collectors[] = new RequestCollector();
         }
 
+        $configErrors = $this->configErrors;
+        $checker = new ConfigSanityChecker();
+        $sanityErrors = $checker->check($this->config);
+        if ($sanityErrors !== []) {
+            $configErrors = array_merge($configErrors, $sanityErrors);
+        }
+        if ($configErrors !== []) {
+            $logger->error('Config sanity check failed', ['errors' => $configErrors]);
+            if ($request->getPath() !== '/health') {
+                return new Response('Error', 500, [
+                    'Content-Type' => 'text/plain; charset=utf-8',
+                ]);
+            }
+        }
+
         $middleware = new MiddlewareQueue([
             new ErrorHandlerMiddleware($logger, (bool) ($appConfig['debug'] ?? false), $requestId),
             new SessionMiddleware(new SessionManager($this->rootPath, $securityConfig)),
+            new ReadOnlyMiddleware((bool) ($appConfig['read_only'] ?? false), $translator),
             new CsrfMiddleware(new Csrf()),
             new RateLimitMiddleware(new RateLimiter($this->rootPath), $securityConfig),
             new SecurityHeadersMiddleware(new SecurityHeaders($securityConfig)),
@@ -211,17 +229,21 @@ final class Kernel
             'security' => $configDir . '/security.php',
             'database' => $configDir . '/database.php',
             'media' => $configDir . '/media.php',
+            'storage' => $configDir . '/storage.php',
         ];
 
         $config = [];
         foreach ($files as $key => $path) {
             if (!is_file($path)) {
-                throw new RuntimeException('Missing config file: ' . $path);
+                $this->configErrors[] = 'Missing config file: ' . $path;
+                $config[$key] = [];
+                continue;
             }
 
             $config[$key] = require $path;
             if (!is_array($config[$key])) {
-                throw new RuntimeException('Config must return array: ' . $path);
+                $this->configErrors[] = 'Config must return array: ' . $path;
+                $config[$key] = [];
             }
         }
 

@@ -20,4 +20,9 @@ return [
     'fields.pages.slug' => 'স্লাগ',
     'fields.auth.username' => 'ব্যবহারকারীর নাম',
     'fields.auth.password' => 'পাসওয়ার্ড',
+    'system.read_only' => 'শুধু পড়া মোড: লেখা নিষ্ক্রিয়।',
+    'system.backup.restore_confirm' => 'রিস্টোর নিশ্চিত করতে RESTORE লিখুন।',
+    'system.health.degraded' => 'অবনতি',
+    'system.backup.created' => 'ব্যাকআপ তৈরি হয়েছে',
+    'system.health.ok' => 'ঠিক আছে',
 ];

@@ -20,4 +20,9 @@ return [
     'fields.pages.slug' => 'Slug',
     'fields.auth.username' => 'Jina la mtumiaji',
     'fields.auth.password' => 'Nenosiri',
+    'system.read_only' => 'Hali ya kusoma tu: uandishi umezimwa.',
+    'system.backup.restore_confirm' => 'Andika RESTORE kuthibitisha urejeshaji.',
+    'system.health.degraded' => 'Imedorora',
+    'system.backup.created' => 'Hifadhi rudufu imeundwa',
+    'system.health.ok' => 'SAWA',
 ];
