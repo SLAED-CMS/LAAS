@@ -38,4 +38,9 @@ return array (
     'media.picker.select' => 'Seleccionar',
     'media.thumb.too_many_pixels' => 'Demasiados píxeles para la miniatura.',
     'media.thumb.decode_failed' => 'Falló el procesamiento de la imagen.',
-);
+    'media.public.on' => 'Público',
+    'media.public.off' => 'Privado',
+    'media.public.toggled' => 'Acceso público actualizado.',
+    'media.signed.url' => 'URL firmada',
+    'media.signed.invalid' => 'URL firmada no válida.',
+    'media.signed.expired' => 'URL firmada caducada.',);

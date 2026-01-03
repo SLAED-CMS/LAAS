@@ -22,7 +22,7 @@ final class MediaRepository
         $params = [];
 
         if ($query !== '') {
-            $sql .= ' WHERE original_name LIKE :q';
+            $sql .= ' WHERE original_name LIKE :q OR mime_type LIKE :q';
             $params['q'] = '%' . $query . '%';
         }
 
@@ -45,7 +45,7 @@ final class MediaRepository
         $params = [];
 
         if ($query !== '') {
-            $sql .= ' WHERE original_name LIKE :q';
+            $sql .= ' WHERE original_name LIKE :q OR mime_type LIKE :q';
             $params['q'] = '%' . $query . '%';
         }
 
@@ -78,8 +78,8 @@ final class MediaRepository
     {
         $now = date('Y-m-d H:i:s');
         $stmt = $this->pdo->prepare(
-            'INSERT INTO media_files (uuid, disk_path, original_name, mime_type, size_bytes, sha256, uploaded_by, created_at)
-             VALUES (:uuid, :disk_path, :original_name, :mime_type, :size_bytes, :sha256, :uploaded_by, :created_at)'
+            'INSERT INTO media_files (uuid, disk_path, original_name, mime_type, size_bytes, sha256, uploaded_by, created_at, is_public, public_token)
+             VALUES (:uuid, :disk_path, :original_name, :mime_type, :size_bytes, :sha256, :uploaded_by, :created_at, :is_public, :public_token)'
         );
         $stmt->execute([
             'uuid' => (string) ($data['uuid'] ?? ''),
@@ -90,6 +90,8 @@ final class MediaRepository
             'sha256' => $data['sha256'] ?? null,
             'uploaded_by' => $data['uploaded_by'] ?? null,
             'created_at' => $now,
+            'is_public' => !empty($data['is_public']) ? 1 : 0,
+            'public_token' => $data['public_token'] ?? null,
         ]);
 
         return (int) $this->pdo->lastInsertId();
@@ -99,5 +101,17 @@ final class MediaRepository
     {
         $stmt = $this->pdo->prepare('DELETE FROM media_files WHERE id = :id');
         $stmt->execute(['id' => $id]);
+    }
+
+    public function setPublic(int $id, bool $isPublic, ?string $token): void
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE media_files SET is_public = :is_public, public_token = :public_token WHERE id = :id'
+        );
+        $stmt->execute([
+            'id' => $id,
+            'is_public' => $isPublic ? 1 : 0,
+            'public_token' => $token,
+        ]);
     }
 }

@@ -38,4 +38,9 @@ return array (
     'media.picker.empty' => 'Ð¤Ð°Ð¹Ð»Ñ‹ Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½Ñ‹.',
     'media.thumb.too_many_pixels' => 'Слишком много пикселей для миниатюры.',
     'media.thumb.decode_failed' => 'Не удалось обработать изображение.',
-);
+    'media.public.on' => 'Публичный',
+    'media.public.off' => 'Приватный',
+    'media.public.toggled' => 'Публичный доступ обновлён.',
+    'media.signed.url' => 'Подписанная ссылка',
+    'media.signed.invalid' => 'Подпись ссылки недействительна.',
+    'media.signed.expired' => 'Срок подписи истёк.',);

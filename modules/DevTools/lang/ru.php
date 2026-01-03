@@ -31,6 +31,9 @@ return [
     'devtools.media_thumb_generated' => 'Миниатюра создана',
     'devtools.media_thumb_reason' => 'Причина отсутствия',
     'devtools.media_thumb_algo' => 'Алгоритм',
+    'devtools.media_access_mode' => 'Режим доступа',
+    'devtools.media_signature_valid' => 'Подпись валидна',
+    'devtools.media_signature_exp' => 'Срок подписи',
     'devtools.yes' => 'Да',
     'devtools.no' => 'Нет',
 ];

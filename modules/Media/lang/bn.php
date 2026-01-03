@@ -38,4 +38,9 @@ return array (
     'media.picker.select' => 'নির্বাচন',
     'media.thumb.too_many_pixels' => 'থাম্বনেইলের জন্য খুব বেশি পিক্সেল।',
     'media.thumb.decode_failed' => 'ছবি প্রক্রিয়াকরণ ব্যর্থ হয়েছে।',
-);
+    'media.public.on' => 'পাবলিক',
+    'media.public.off' => 'ব্যক্তিগত',
+    'media.public.toggled' => 'পাবলিক অ্যাক্সেস আপডেট হয়েছে।',
+    'media.signed.url' => 'স্বাক্ষরিত URL',
+    'media.signed.invalid' => 'স্বাক্ষরিত URL অবৈধ।',
+    'media.signed.expired' => 'স্বাক্ষরিত URL মেয়াদোত্তীর্ণ।',);

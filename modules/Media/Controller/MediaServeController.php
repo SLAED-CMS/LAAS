@@ -8,6 +8,7 @@ use Laas\Database\Repositories\RbacRepository;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Media\Repository\MediaRepository;
+use Laas\Modules\Media\Service\MediaSignedUrlService;
 use Laas\Modules\Media\Service\MimeSniffer;
 use Laas\Modules\Media\Service\StorageService;
 use Laas\View\View;
@@ -39,8 +40,31 @@ final class MediaServeController
         }
 
         $config = $this->mediaConfig();
-        $public = (bool) ($config['public'] ?? false);
-        if (!$public && !$this->canView()) {
+        $mode = $this->publicMode($config);
+        $isPublic = $this->isPublicRecord($row);
+        $accessMode = 'private';
+        $signatureValid = false;
+        $signatureExp = null;
+        $purpose = (string) ($request->query('p') ?? 'view');
+        if (!in_array($purpose, ['view', 'download'], true)) {
+            $purpose = 'view';
+        }
+
+        if ($mode === 'all') {
+            $accessMode = 'public';
+        } elseif ($mode === 'signed' && $isPublic) {
+            if (in_array($purpose, ['view', 'download'], true)) {
+                $signer = new MediaSignedUrlService($config);
+                $validation = $signer->validate($row, $purpose, $request->query('exp'), $request->query('sig'));
+                $signatureValid = (bool) ($validation['valid'] ?? false);
+                $signatureExp = $validation['exp'] ?? null;
+                if ($signatureValid) {
+                    $accessMode = 'signed';
+                }
+            }
+        }
+
+        if ($accessMode === 'private' && !$this->canView()) {
             return new Response('Forbidden', 403, [
                 'Content-Type' => 'text/plain; charset=utf-8',
             ]);
@@ -55,7 +79,7 @@ final class MediaServeController
         $mime = (string) ($row['mime_type'] ?? 'application/octet-stream');
         $size = (int) ($row['size_bytes'] ?? filesize($path));
         $name = $this->safeDownloadName((string) ($row['original_name'] ?? 'file'), $mime);
-        $disposition = $this->contentDisposition($mime);
+        $disposition = $purpose === 'download' ? 'attachment' : $this->contentDisposition($mime);
 
         $readStart = microtime(true);
         $body = file_get_contents($path);
@@ -64,11 +88,14 @@ final class MediaServeController
             return $this->notFound();
         }
 
+        $cacheControl = $accessMode === 'public' ? 'public, max-age=86400' : 'private, max-age=0';
+
         return new Response((string) $body, 200, [
             'Content-Type' => $mime,
             'Content-Length' => (string) $size,
             'Content-Disposition' => $disposition . '; filename="' . $name . '"',
             'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => $cacheControl,
             'X-Media-Id' => (string) $id,
             'X-Media-Mime' => $mime,
             'X-Media-Size' => (string) $size,
@@ -76,6 +103,9 @@ final class MediaServeController
             'X-Media-Disk' => $this->maskDiskPath((string) ($row['disk_path'] ?? '')),
             'X-Media-Storage' => 'local',
             'X-Media-Read-Time' => (string) $readMs,
+            'X-Media-Access-Mode' => $accessMode,
+            'X-Media-Signature-Valid' => $signatureValid ? '1' : '0',
+            'X-Media-Signature-Exp' => $signatureExp !== null ? (string) $signatureExp : '',
         ]);
     }
 
@@ -142,6 +172,17 @@ final class MediaServeController
         }
         $config = require $path;
         return is_array($config) ? $config : [];
+    }
+
+    private function publicMode(array $config): string
+    {
+        $mode = strtolower((string) ($config['public_mode'] ?? 'private'));
+        return in_array($mode, ['private', 'all', 'signed'], true) ? $mode : 'private';
+    }
+
+    private function isPublicRecord(array $row): bool
+    {
+        return !empty($row['is_public']);
     }
 
     private function safeName(string $name): string

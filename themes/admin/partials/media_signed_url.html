@@ -1,0 +1,9 @@
+<div class="card card-body p-2">
+  <div class="small fw-semibold">{% title %}</div>
+  <div class="input-group input-group-sm mt-1">
+    <input type="text" class="form-control" value="{% url %}" readonly>
+  </div>
+  {% if expires_at %}
+    <div class="small text-secondary mt-1">exp: {% expires_at %}</div>
+  {% endif %}
+</div>

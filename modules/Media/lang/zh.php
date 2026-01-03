@@ -38,4 +38,9 @@ return array (
     'media.picker.select' => '选择',
     'media.thumb.too_many_pixels' => '缩略图像素过多。',
     'media.thumb.decode_failed' => '图像处理失败。',
-);
+    'media.public.on' => '公开',
+    'media.public.off' => '私有',
+    'media.public.toggled' => '公开访问已更新。',
+    'media.signed.url' => '签名链接',
+    'media.signed.invalid' => '签名链接无效。',
+    'media.signed.expired' => '签名链接已过期。',);

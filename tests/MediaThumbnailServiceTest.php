@@ -162,8 +162,8 @@ namespace {
 
         public function testServeThumbMissingReturns404(): void
         {
-            $previous = $_ENV['MEDIA_PUBLIC'] ?? null;
-            $_ENV['MEDIA_PUBLIC'] = 'true';
+            $previous = $_ENV['MEDIA_PUBLIC_MODE'] ?? null;
+            $_ENV['MEDIA_PUBLIC_MODE'] = 'all';
 
             $db = $this->createDatabase();
             $repo = new MediaRepository($db);
@@ -184,9 +184,9 @@ namespace {
             $this->assertSame(404, $response->getStatus());
 
             if ($previous === null) {
-                unset($_ENV['MEDIA_PUBLIC']);
+                unset($_ENV['MEDIA_PUBLIC_MODE']);
             } else {
-                $_ENV['MEDIA_PUBLIC'] = $previous;
+                $_ENV['MEDIA_PUBLIC_MODE'] = $previous;
             }
         }
 
@@ -218,8 +218,10 @@ namespace {
                 size_bytes INTEGER NOT NULL,
                 sha256 TEXT NULL,
                 uploaded_by INTEGER NULL,
-                created_at TEXT NOT NULL
-            )');
+                created_at TEXT NOT NULL,
+            is_public INTEGER NOT NULL DEFAULT 0,
+            public_token TEXT NULL
+        )');
 
             $db = new DatabaseManager(['driver' => 'mysql']);
             $ref = new \ReflectionProperty($db, 'pdo');

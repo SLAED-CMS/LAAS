@@ -38,4 +38,9 @@ return array (
     'media.picker.select' => 'चुनें',
     'media.thumb.too_many_pixels' => 'थंबनेल के लिए बहुत अधिक पिक्सेल।',
     'media.thumb.decode_failed' => 'छवि प्रोसेसिंग विफल रही।',
-);
+    'media.public.on' => 'सार्वजनिक',
+    'media.public.off' => 'निजी',
+    'media.public.toggled' => 'सार्वजनिक एक्सेस अपडेट किया गया।',
+    'media.signed.url' => 'साइन की गई URL',
+    'media.signed.invalid' => 'साइन की गई URL अमान्य है।',
+    'media.signed.expired' => 'साइन की गई URL की समयसीमा समाप्त हो गई है।',);

@@ -174,8 +174,10 @@ namespace {
                 size_bytes INTEGER NOT NULL,
                 sha256 TEXT NULL,
                 uploaded_by INTEGER NULL,
-                created_at TEXT NOT NULL
-            )');
+                created_at TEXT NOT NULL,
+            is_public INTEGER NOT NULL DEFAULT 0,
+            public_token TEXT NULL
+        )');
 
             $db = new DatabaseManager(['driver' => 'mysql']);
             $ref = new \ReflectionProperty($db, 'pdo');

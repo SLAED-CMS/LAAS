@@ -68,15 +68,24 @@ foreach ($thumbVariants as $name => $width) {
     $thumbVariantsFiltered[$name] = $width;
 }
 
+$publicMode = strtolower($envString('MEDIA_PUBLIC_MODE', 'private'));
+if (!in_array($publicMode, ['private', 'all', 'signed'], true)) {
+    $publicMode = 'private';
+}
+
 return [
     'max_bytes' => $envInt('MEDIA_MAX_BYTES', 10 * 1024 * 1024),
     'public' => $envBool('MEDIA_PUBLIC', false),
+    'public_mode' => $publicMode,
     'allowed_mime' => $allowedList,
     'max_bytes_by_mime' => $maxBytesByMimeFiltered,
     'image_max_pixels' => $envInt('MEDIA_IMAGE_MAX_PIXELS', 40000000),
     'av_enabled' => $envBool('MEDIA_AV_ENABLED', false),
     'av_socket' => $envString('MEDIA_AV_SOCKET', '/var/run/clamav/clamd.ctl'),
     'av_timeout' => $envInt('MEDIA_AV_TIMEOUT', 8),
+    'signed_urls_enabled' => $envBool('MEDIA_SIGNED_URLS_ENABLED', true),
+    'signed_url_ttl' => $envInt('MEDIA_SIGNED_URL_TTL_SECONDS', 600),
+    'signed_url_secret' => $envString('MEDIA_SIGNED_URL_SECRET', ''),
     'thumb_variants' => $thumbVariantsFiltered,
     'thumb_format' => $envString('MEDIA_THUMB_FORMAT', 'webp'),
     'thumb_quality' => $envInt('MEDIA_THUMB_QUALITY', 82),

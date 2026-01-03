@@ -38,4 +38,9 @@ return array (
     'media.picker.empty' => 'No media found.',
     'media.thumb.too_many_pixels' => 'Image too large for thumbnail.',
     'media.thumb.decode_failed' => 'Image processing failed.',
-);
+    'media.public.on' => 'Public',
+    'media.public.off' => 'Private',
+    'media.public.toggled' => 'Public access updated.',
+    'media.signed.url' => 'Signed URL',
+    'media.signed.invalid' => 'Signed URL is invalid.',
+    'media.signed.expired' => 'Signed URL has expired.',);

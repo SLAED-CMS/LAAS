@@ -38,4 +38,9 @@ return array (
     'media.picker.select' => 'اختيار',
     'media.thumb.too_many_pixels' => 'عدد كبير من البكسلات للصورة المصغرة.',
     'media.thumb.decode_failed' => 'فشلت معالجة الصورة.',
-);
+    'media.public.on' => 'عام',
+    'media.public.off' => 'خاص',
+    'media.public.toggled' => 'تم تحديث الوصول العام.',
+    'media.signed.url' => 'رابط موقّع',
+    'media.signed.invalid' => 'الرابط الموقّع غير صالح.',
+    'media.signed.expired' => 'انتهت صلاحية الرابط الموقّع.',);

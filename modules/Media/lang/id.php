@@ -38,4 +38,9 @@ return array (
     'media.picker.select' => 'Pilih',
     'media.thumb.too_many_pixels' => 'Terlalu banyak piksel untuk thumbnail.',
     'media.thumb.decode_failed' => 'Pemrosesan gambar gagal.',
-);
+    'media.public.on' => 'Publik',
+    'media.public.off' => 'Privat',
+    'media.public.toggled' => 'Akses publik diperbarui.',
+    'media.signed.url' => 'URL bertanda tangan',
+    'media.signed.invalid' => 'URL bertanda tangan tidak valid.',
+    'media.signed.expired' => 'URL bertanda tangan kedaluwarsa.',);

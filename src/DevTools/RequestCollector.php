@@ -61,6 +61,9 @@ final class RequestCollector implements CollectorInterface
                 'thumb_generated' => ($this->toInt($response->getHeader('X-Media-Thumb-Generated')) ?? 0) > 0,
                 'thumb_reason' => (string) ($response->getHeader('X-Media-Thumb-Reason') ?? ''),
                 'thumb_algo' => $this->toInt($response->getHeader('X-Media-Thumb-Algo')) ?? 0,
+                'access_mode' => (string) ($response->getHeader('X-Media-Access-Mode') ?? ''),
+                'signature_valid' => ($this->toInt($response->getHeader('X-Media-Signature-Valid')) ?? 0) > 0,
+                'signature_exp' => $this->toInt($response->getHeader('X-Media-Signature-Exp')) ?? 0,
             ]);
         }
     }

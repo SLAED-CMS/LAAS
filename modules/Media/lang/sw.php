@@ -38,4 +38,9 @@ return array (
     'media.picker.select' => 'Chagua',
     'media.thumb.too_many_pixels' => 'Pikseli nyingi kwa kijipicha.',
     'media.thumb.decode_failed' => 'Imeshindikana kuchakata picha.',
-);
+    'media.public.on' => 'Umma',
+    'media.public.off' => 'Binafsi',
+    'media.public.toggled' => 'Ufikiaji wa umma umesasishwa.',
+    'media.signed.url' => 'URL iliyotiwa saini',
+    'media.signed.invalid' => 'URL iliyotiwa saini si halali.',
+    'media.signed.expired' => 'URL iliyotiwa saini muda wake umeisha.',);

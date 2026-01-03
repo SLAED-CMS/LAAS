@@ -19,6 +19,16 @@
   <td>
     <div class="btn-group btn-group-sm" role="group">
       <a class="btn btn-outline-secondary" href="{% item.url %}" target="_blank" rel="noopener">{% t 'admin.media.download' %}</a>
+      <button class="btn btn-outline-secondary"
+              type="button"
+              hx-post="/admin/media/{% item.id %}/public"
+              hx-vals='{"_token":"{% csrf_token %}"}'
+              hx-target="#media-row-{% item.id %}"
+              hx-swap="outerHTML"
+              hx-indicator="#loading"
+              hx-disabled-elt="this">
+        {% item.public_label %}
+      </button>
       <button class="btn btn-outline-danger"
               type="button"
               hx-post="/admin/media/delete"
@@ -31,5 +41,31 @@
         {% t 'admin.media.delete' %}
       </button>
     </div>
+    <div class="mt-2 d-flex flex-wrap gap-2 align-items-center">
+      <span class="badge {% item.public_class %}">{% item.public_label %}</span>
+      {% if item.public_mode == 'all' %}
+        <button class="btn btn-sm btn-outline-primary"
+                type="button"
+                hx-get="/admin/media/{% item.id %}/signed?p=view&public=1"
+                hx-target="#media-url-{% item.id %}"
+                hx-swap="innerHTML"
+                hx-indicator="#loading"
+                hx-disabled-elt="this">
+          {% t 'media.public.on' %}
+        </button>
+      {% endif %}
+      {% if item.public_mode == 'signed' and item.is_public and item.signed_enabled %}
+        <button class="btn btn-sm btn-outline-primary"
+                type="button"
+                hx-get="/admin/media/{% item.id %}/signed?p=view"
+                hx-target="#media-url-{% item.id %}"
+                hx-swap="innerHTML"
+                hx-indicator="#loading"
+                hx-disabled-elt="this">
+          {% t 'media.signed.url' %}
+        </button>
+      {% endif %}
+    </div>
+    <div id="media-url-{% item.id %}" class="mt-2"></div>
   </td>
 </tr>

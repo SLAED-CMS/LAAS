@@ -38,4 +38,9 @@ return array (
     'media.picker.select' => 'Вибрати',
     'media.thumb.too_many_pixels' => 'Забагато пікселів для мініатюри.',
     'media.thumb.decode_failed' => 'Не вдалося обробити зображення.',
-);
+    'media.public.on' => 'Публічний',
+    'media.public.off' => 'Приватний',
+    'media.public.toggled' => 'Публічний доступ оновлено.',
+    'media.signed.url' => 'Підписане посилання',
+    'media.signed.invalid' => 'Підписане посилання недійсне.',
+    'media.signed.expired' => 'Строк підпису минув.',);

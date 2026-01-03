@@ -38,4 +38,9 @@ return array (
     'media.picker.select' => 'منتخب کریں',
     'media.thumb.too_many_pixels' => 'تھمب نیل کے لیے بہت زیادہ پکسلز۔',
     'media.thumb.decode_failed' => 'تصویر کی پروسیسنگ ناکام ہوئی۔',
-);
+    'media.public.on' => 'عوام',
+    'media.public.off' => 'نجی',
+    'media.public.toggled' => 'عوامی رسائی اپ ڈیٹ کر دی گئی۔',
+    'media.signed.url' => 'دستخط شدہ یو آر ایل',
+    'media.signed.invalid' => 'دستخط شدہ یو آر ایل غلط ہے۔',
+    'media.signed.expired' => 'دستخط شدہ یو آر ایل کی میعاد ختم ہو گئی ہے۔',);

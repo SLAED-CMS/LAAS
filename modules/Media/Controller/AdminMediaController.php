@@ -9,6 +9,7 @@ use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Media\Repository\MediaRepository;
 use Laas\Modules\Media\Service\ClamAvScanner;
+use Laas\Modules\Media\Service\MediaSignedUrlService;
 use Laas\Modules\Media\Service\MediaUploadService;
 use Laas\Modules\Media\Service\MimeSniffer;
 use Laas\Modules\Media\Service\StorageService;
@@ -47,7 +48,7 @@ final class AdminMediaController
         }
         $offset = ($page - 1) * $perPage;
 
-        $items = $this->mapRows($repo->list($perPage, $offset, $query));
+        $items = $this->mapRows($repo->list($perPage, $offset, $query), $this->mediaConfig());
         $showPagination = $totalPages > 1 ? 1 : 0;
 
         return $this->view->render('pages/media.html', [
@@ -209,6 +210,147 @@ final class AdminMediaController
         return $this->tableResponse($request, $repo, $success, []);
     }
 
+    public function togglePublic(Request $request, array $params = []): Response
+    {
+        if (!$this->canTogglePublic()) {
+            return $this->errorResponse($request, 'forbidden', 403);
+        }
+
+        $repo = $this->repository();
+        if ($repo === null) {
+            return $this->errorResponse($request, 'db_unavailable', 503);
+        }
+
+        $id = isset($params['id']) ? (int) $params['id'] : 0;
+        if ($id <= 0) {
+            return $this->errorResponse($request, 'invalid_request', 400);
+        }
+
+        $row = $repo->findById($id);
+        if ($row === null) {
+            return $this->errorResponse($request, 'not_found', 404);
+        }
+
+        $isPublic = !empty($row['is_public']);
+        $newPublic = !$isPublic;
+        $token = $newPublic ? bin2hex(random_bytes(16)) : null;
+
+        $repo->setPublic($id, $newPublic, $token);
+
+        (new AuditLogger($this->db))->log(
+            $newPublic ? 'media.public.enabled' : 'media.public.disabled',
+            'media_file',
+            $id,
+            [
+                'id' => $id,
+            ],
+            $this->currentUserId(),
+            $request->ip()
+        );
+
+        $updated = $repo->findById($id);
+        $config = $this->mediaConfig();
+        $items = $updated !== null ? $this->mapRows([$updated], $config) : [];
+
+        if ($request->isHtmx()) {
+            return $this->view->render('partials/media_row_response.html', [
+                'item' => $items[0] ?? null,
+                'success' => $this->view->translate('media.public.toggled'),
+                'errors' => [],
+            ], 200, [], [
+                'theme' => 'admin',
+                'render_partial' => true,
+            ]);
+        }
+
+        return $this->tableResponse($request, $repo, $this->view->translate('media.public.toggled'), []);
+    }
+
+    public function signed(Request $request, array $params = []): Response
+    {
+        if (!$this->canView()) {
+            return $this->errorResponse($request, 'forbidden', 403);
+        }
+
+        $repo = $this->repository();
+        if ($repo === null) {
+            return $this->errorResponse($request, 'db_unavailable', 503);
+        }
+
+        $id = isset($params['id']) ? (int) $params['id'] : 0;
+        if ($id <= 0) {
+            return $this->errorResponse($request, 'invalid_request', 400);
+        }
+
+        $row = $repo->findById($id);
+        if ($row === null) {
+            return $this->errorResponse($request, 'not_found', 404);
+        }
+
+        $config = $this->mediaConfig();
+        $mode = $this->publicMode($config);
+        $publicOnly = $request->query('public') === '1';
+        $purpose = (string) ($request->query('p') ?? 'view');
+
+        $allowed = ['view', 'download'];
+        $variants = $config['thumb_variants'] ?? [];
+        if (is_array($variants)) {
+            foreach (array_keys($variants) as $variant) {
+                if (is_string($variant) && $variant !== '') {
+                    $allowed[] = 'thumb:' . $variant;
+                }
+            }
+        }
+
+        if (!in_array($purpose, $allowed, true)) {
+            return $this->signedErrorResponse($request, 'media.signed.invalid', 400);
+        }
+
+        $url = '';
+        $exp = null;
+        if ($publicOnly) {
+            if ($mode !== 'all') {
+                return $this->signedErrorResponse($request, 'media.signed.invalid', 403);
+            }
+            $url = $this->publicUrl($row, $purpose);
+        } else {
+            if ($mode !== 'signed' || empty($row['is_public'])) {
+                return $this->signedErrorResponse($request, 'media.signed.invalid', 403);
+            }
+            $signer = new MediaSignedUrlService($config);
+            $path = $this->publicUrl($row, $purpose);
+            if (!$signer->isEnabled() || $path === '') {
+                return $this->signedErrorResponse($request, 'media.signed.invalid', 400);
+            }
+            $exp = time() + $signer->ttl();
+            $url = $signer->buildSignedUrl($path, $row, $purpose, $exp) ?? '';
+            if ($url === '') {
+                return $this->signedErrorResponse($request, 'media.signed.invalid', 400);
+            }
+            (new AuditLogger($this->db))->log(
+                'media.signed.issued',
+                'media_file',
+                $id,
+                [
+                    'id' => $id,
+                    'p' => $purpose,
+                    'exp' => $exp,
+                ],
+                $this->currentUserId(),
+                $request->ip()
+            );
+        }
+
+        return $this->view->render('partials/media_signed_url.html', [
+            'url' => $url,
+            'expires_at' => $exp,
+            'title' => $publicOnly ? $this->view->translate('media.public.on') : $this->view->translate('media.signed.url'),
+        ], 200, [], [
+            'theme' => 'admin',
+            'render_partial' => true,
+        ]);
+    }
+
     private function tableResponse(Request $request, MediaRepository $repo, ?string $success, array $errors, ?int $flashId = null): Response
     {
         $query = trim((string) ($request->query('q') ?? ''));
@@ -221,7 +363,7 @@ final class AdminMediaController
         }
         $offset = ($page - 1) * $perPage;
 
-        $items = $this->mapRows($repo->list($perPage, $offset, $query), $flashId);
+        $items = $this->mapRows($repo->list($perPage, $offset, $query), $this->mediaConfig(), $flashId);
         $showPagination = $totalPages > 1 ? 1 : 0;
 
         if ($request->isHtmx()) {
@@ -290,7 +432,7 @@ final class AdminMediaController
         }
 
         $repo = $this->repository();
-        $items = $repo !== null ? $this->mapRows($repo->list(20, 0, '')) : [];
+        $items = $repo !== null ? $this->mapRows($repo->list(20, 0, ''), $this->mediaConfig()) : [];
         return $this->view->render('pages/media.html', [
             'items' => $items,
             'success' => null,
@@ -358,6 +500,11 @@ final class AdminMediaController
         return $this->hasPermission('media.delete');
     }
 
+    private function canTogglePublic(): bool
+    {
+        return $this->hasPermission('media.public.toggle');
+    }
+
     private function hasPermission(string $permission): bool
     {
         if ($this->db === null || !$this->db->healthCheck()) {
@@ -418,14 +565,19 @@ final class AdminMediaController
         return $name;
     }
 
-    private function mapRows(array $rows, ?int $flashId = null): array
+    private function mapRows(array $rows, array $config, ?int $flashId = null): array
     {
-        return array_map(function (array $row) use ($flashId): array {
+        $mode = $this->publicMode($config);
+        $signedEnabled = !empty($config['signed_urls_enabled']) && !empty($config['signed_url_secret']);
+
+        return array_map(function (array $row) use ($flashId, $mode, $signedEnabled): array {
             $mime = (string) ($row['mime_type'] ?? '');
             $originalName = (string) ($row['original_name'] ?? '');
             $id = (int) ($row['id'] ?? 0);
             $size = (int) ($row['size_bytes'] ?? 0);
             $isImage = str_starts_with($mime, 'image/');
+            $isPublic = !empty($row['is_public']);
+            $url = '/media/' . $id . '/' . $this->safeDownloadName($originalName, $mime);
 
             return [
                 'id' => $id,
@@ -436,8 +588,14 @@ final class AdminMediaController
                 'created_at_display' => (string) ($row['created_at'] ?? ''),
                 'is_image' => $isImage,
                 'badge' => $mime === 'application/pdf' ? $this->view->translate('admin.media.badge_pdf') : $this->view->translate('admin.media.badge_file'),
-                'url' => '/media/' . $id . '/' . $this->safeDownloadName($originalName, $mime),
+                'url' => $url,
                 'flash' => $flashId !== null && $id === $flashId,
+                'is_public' => $isPublic,
+                'public_label' => $isPublic ? $this->view->translate('media.public.on') : $this->view->translate('media.public.off'),
+                'public_class' => $isPublic ? 'text-bg-success' : 'text-bg-secondary',
+                'public_mode' => $mode,
+                'signed_enabled' => $signedEnabled,
+                'public_url' => $url,
             ];
         }, $rows);
     }
@@ -653,6 +811,56 @@ final class AdminMediaController
         }
 
         return round($bytes / (1024 * 1024 * 1024), 1) . ' GB';
+    }
+
+    private function publicMode(array $config): string
+    {
+        $mode = strtolower((string) ($config['public_mode'] ?? 'private'));
+        return in_array($mode, ['private', 'all', 'signed'], true) ? $mode : 'private';
+    }
+
+    private function publicUrl(array $row, string $purpose): string
+    {
+        $id = (int) ($row['id'] ?? 0);
+        if ($id <= 0) {
+            return '';
+        }
+
+        if (str_starts_with($purpose, 'thumb:')) {
+            $variant = substr($purpose, 6);
+            if ($variant === '') {
+                return '';
+            }
+            return '/media/' . $id . '/thumb/' . $variant;
+        }
+
+        $mime = (string) ($row['mime_type'] ?? '');
+        $originalName = (string) ($row['original_name'] ?? '');
+        return '/media/' . $id . '/' . $this->safeDownloadName($originalName, $mime);
+    }
+
+    private function signedErrorResponse(Request $request, string $key, int $status): Response
+    {
+        $message = $this->view->translate($key);
+        if ($request->isHtmx()) {
+            return $this->view->render('partials/messages.html', [
+                'errors' => [$message],
+            ], $status, [], [
+                'theme' => 'admin',
+                'render_partial' => true,
+            ]);
+        }
+
+        if ($request->wantsJson()) {
+            return Response::json([
+                'error' => 'signed_url',
+                'message' => $message,
+            ], $status);
+        }
+
+        return new Response($message, $status, [
+            'Content-Type' => 'text/plain; charset=utf-8',
+        ]);
     }
 
     private function forbidden(): Response

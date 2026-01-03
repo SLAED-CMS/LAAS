@@ -130,6 +130,9 @@
           <div><span class="small text-secondary">{% t 'devtools.media_thumb_generated' %}</span>: {% if devtools.media.thumb_generated %}{% t 'devtools.yes' %}{% else %}{% t 'devtools.no' %}{% endif %}</div>
           <div><span class="small text-secondary">{% t 'devtools.media_thumb_reason' %}</span>: {% if devtools.media.thumb_reason %}{% devtools.media.thumb_reason %}{% else %}-{% endif %}</div>
           <div><span class="small text-secondary">{% t 'devtools.media_thumb_algo' %}</span>: {% devtools.media.thumb_algo %}</div>
+          <div><span class="small text-secondary">{% t 'devtools.media_access_mode' %}</span>: {% devtools.media.access_mode %}</div>
+          <div><span class="small text-secondary">{% t 'devtools.media_signature_valid' %}</span>: {% if devtools.media.signature_valid %}{% t 'devtools.yes' %}{% else %}{% t 'devtools.no' %}{% endif %}</div>
+          <div><span class="small text-secondary">{% t 'devtools.media_signature_exp' %}</span>: {% if devtools.media.signature_exp %}{% devtools.media.signature_exp %}{% else %}-{% endif %}</div>
         </div>
       </fieldset>
       {% endif %}

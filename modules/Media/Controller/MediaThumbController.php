@@ -8,6 +8,7 @@ use Laas\Database\Repositories\RbacRepository;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Media\Repository\MediaRepository;
+use Laas\Modules\Media\Service\MediaSignedUrlService;
 use Laas\Modules\Media\Service\MediaThumbnailService;
 use Laas\Modules\Media\Service\StorageService;
 use Throwable;
@@ -38,8 +39,29 @@ final class MediaThumbController
         }
 
         $config = $this->mediaConfig();
-        $public = (bool) ($config['public'] ?? false);
-        if (!$public && !$this->canView()) {
+        $mode = $this->publicMode($config);
+        $isPublic = $this->isPublicRecord($row);
+        $accessMode = 'private';
+        $signatureValid = false;
+        $signatureExp = null;
+        $purpose = (string) ($request->query('p') ?? '');
+
+        if ($mode === 'all') {
+            $accessMode = 'public';
+        } elseif ($mode === 'signed' && $isPublic) {
+            $expected = 'thumb:' . $variant;
+            if ($purpose === $expected) {
+                $signer = new MediaSignedUrlService($config);
+                $validation = $signer->validate($row, $purpose, $request->query('exp'), $request->query('sig'));
+                $signatureValid = (bool) ($validation['valid'] ?? false);
+                $signatureExp = $validation['exp'] ?? null;
+                if ($signatureValid) {
+                    $accessMode = 'signed';
+                }
+            }
+        }
+
+        if ($accessMode === 'private' && !$this->canView()) {
             return new Response('Forbidden', 403, [
                 'Content-Type' => 'text/plain; charset=utf-8',
             ]);
@@ -64,7 +86,10 @@ final class MediaThumbController
                 0.0,
                 false,
                 $reason,
-                $this->thumbAlgoVersion($config)
+                $this->thumbAlgoVersion($config),
+                $accessMode,
+                $signatureValid,
+                $signatureExp
             ));
         }
 
@@ -82,16 +107,21 @@ final class MediaThumbController
                 0.0,
                 false,
                 $service->getThumbReason($row, $variant, $config),
-                $this->thumbAlgoVersion($config)
+                $this->thumbAlgoVersion($config),
+                $accessMode,
+                $signatureValid,
+                $signatureExp
             ));
         }
 
         $size = filesize($path) ?: 0;
 
+        $cacheControl = $accessMode === 'public' ? 'public, max-age=86400' : 'private, max-age=0';
+
         return new Response((string) $body, 200, [
             'Content-Type' => (string) $resolved['mime'],
             'Content-Length' => (string) $size,
-            'Cache-Control' => 'private, max-age=86400',
+            'Cache-Control' => $cacheControl,
             'X-Content-Type-Options' => 'nosniff',
             'X-Media-Id' => (string) $id,
             'X-Media-Mime' => (string) ($resolved['mime'] ?? ''),
@@ -100,6 +130,9 @@ final class MediaThumbController
             'X-Media-Disk' => $this->maskDiskPath((string) ($resolved['disk_path'] ?? '')),
             'X-Media-Storage' => 'local',
             'X-Media-Read-Time' => (string) $readMs,
+            'X-Media-Access-Mode' => $accessMode,
+            'X-Media-Signature-Valid' => $signatureValid ? '1' : '0',
+            'X-Media-Signature-Exp' => $signatureExp !== null ? (string) $signatureExp : '',
             'X-Media-Thumb-Generated' => '1',
             'X-Media-Thumb-Reason' => '',
             'X-Media-Thumb-Algo' => (string) $this->thumbAlgoVersion($config),
@@ -204,7 +237,10 @@ final class MediaThumbController
         float $readMs,
         bool $generated,
         ?string $reason,
-        int $algo
+        int $algo,
+        string $accessMode,
+        bool $signatureValid,
+        ?int $signatureExp
     ): array {
         return [
             'Content-Type' => 'text/plain; charset=utf-8',
@@ -215,6 +251,9 @@ final class MediaThumbController
             'X-Media-Disk' => $disk,
             'X-Media-Storage' => $storage,
             'X-Media-Read-Time' => (string) $readMs,
+            'X-Media-Access-Mode' => $accessMode,
+            'X-Media-Signature-Valid' => $signatureValid ? '1' : '0',
+            'X-Media-Signature-Exp' => $signatureExp !== null ? (string) $signatureExp : '',
             'X-Media-Thumb-Generated' => $generated ? '1' : '0',
             'X-Media-Thumb-Reason' => $reason ?? '',
             'X-Media-Thumb-Algo' => (string) $algo,
@@ -226,5 +265,16 @@ final class MediaThumbController
         return new Response('Not Found', 404, [
             'Content-Type' => 'text/plain; charset=utf-8',
         ] + $headers);
+    }
+
+    private function publicMode(array $config): string
+    {
+        $mode = strtolower((string) ($config['public_mode'] ?? 'private'));
+        return in_array($mode, ['private', 'all', 'signed'], true) ? $mode : 'private';
+    }
+
+    private function isPublicRecord(array $row): bool
+    {
+        return !empty($row['is_public']);
     }
 }

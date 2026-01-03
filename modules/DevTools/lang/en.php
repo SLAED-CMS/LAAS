@@ -31,6 +31,9 @@ return [
     'devtools.media_thumb_generated' => 'Thumb generated',
     'devtools.media_thumb_reason' => 'Thumb reason',
     'devtools.media_thumb_algo' => 'Thumb algo',
+    'devtools.media_access_mode' => 'Access mode',
+    'devtools.media_signature_valid' => 'Signature valid',
+    'devtools.media_signature_exp' => 'Signature exp',
     'devtools.yes' => 'Yes',
     'devtools.no' => 'No',
 ];
