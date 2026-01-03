@@ -1,52 +1,40 @@
-# Security (v1.7.1)
+# Security (v1.8.3)
 
-## Сессии
-- Файловые сессии в `storage/sessions`.
-- Cookie defaults: HttpOnly, SameSite=Lax, Secure=false (включать при HTTPS).
+## Sessions
+- Session storage: `storage/sessions`.
+- Cookie defaults: HttpOnly, SameSite=Lax, Secure=false (enable with HTTPS).
 
 ## Security Headers
 - CSP, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy.
-- Настройка: `config/security.php`.
+- Config: `config/security.php`.
 
 ## CSRF
-- Токен в сессии.
-- Проверка для POST/PUT/PATCH/DELETE.
+- Enabled by default.
+- Required for POST/PUT/PATCH/DELETE.
 - Endpoint: `/csrf`.
 
 ## Rate limit
-- Группы: `api`, `login`.
-- File-based фиксированное окно + `flock`.
-- Настройка: `config/security.php`.
+- Groups: `api`, `login`, `media_upload`.
+- File-based limiter with `flock`.
+- Config: `config/security.php`.
+
+## File uploads (Media)
+- MIME validation via `finfo(FILEINFO_MIME_TYPE)` only.
+- Allowlist: JPEG, PNG, WEBP, PDF. SVG is forbidden.
+- Quarantine flow before final move.
+- Size limits: `MEDIA_MAX_BYTES` and `MEDIA_MAX_BYTES_BY_MIME`.
+- Early `Content-Length` check and `$_FILES['size']` check.
+- Slow-upload protection (max input time guard).
+- Optional ClamAV scan in quarantine, fail-closed.
+- SHA-256 deduplication.
 
 ## RBAC
-- Таблицы: roles, permissions, role_user, permission_role.
-- Gate: `/admin*` требует `admin.access`.
+- Roles/permissions tables with gate on `/admin*`.
+- Permissions include `media.view`, `media.upload`, `media.delete`, `debug.view`.
 
 ## Audit Log
-- Таблица `audit_logs`.
-- Мягкий режим: сбой записи не ломает основную операцию.
+- `audit_logs` with context payloads and IP/user tracking.
 
-## Admin
-
-### Разделы
-- Pages
-- Menu
-- Users
-- Settings
-- Modules
-- Audit
-
-### Permissions
-- `admin.access`
-- `pages.edit`
-- `menus.edit`
-- `audit.view`
-
-### HTMX и ошибки
-- Ошибки валидации: статус 422.
-- Частичные обновления через partials.
-- Успех: alert + auto-hide (если включено в теме).
-
-### Добавление пункта в admin nav
-- Обновить `themes/admin/partials/header.html`.
-- Добавить ключи i18n в `modules/Admin/lang/*`.
+## Admin UI
+- HTMX validation errors return HTTP 422.
+- Unified messages partials and indicators.

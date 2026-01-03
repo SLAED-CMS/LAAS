@@ -1,5 +1,15 @@
 # LAAS Versions
 
+- v1.8.3: Media hardening final
+  - ClamAV scan (feature flag, fail-closed)
+  - Per-MIME size limits
+  - Upload rate limit (media_upload)
+  - ZIP-bomb / slow-upload protection
+  - Media DevTools panel (serve metadata)
+- v1.8.2: Media upload protections
+  - Upload rate limiting (per-IP and per-user)
+  - Early Content-Length checks and slow upload protection
+  - Size validation hardening and localized errors
 - v1.8.1: Media UX + polish
   - Bootstrap 5 + HTMX admin media UI refinements
   - Preview badges, row flash highlight, HTMX loading polish

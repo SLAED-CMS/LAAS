@@ -5,11 +5,13 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-8A2BE2.svg)](https://www.mysql.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Active%20Development-orange.svg)](#)
-[![Baseline](https://img.shields.io/badge/Baseline-v1.7.1-yellow.svg)](docs/VERSIONS.md)
+[![Baseline](https://img.shields.io/badge/Baseline-v1.8.3-yellow.svg)](docs/VERSIONS.md)
 
 **Modern, secure, HTML-first content management system.**
 
 LAAS CMS is a modular, security-first CMS built for PHP 8.4+ with a lightweight template engine, middleware pipeline, and i18n support. Bootstrap 5 + HTMX ready.
+
+- Media uploads: production-ready (v1.8.3)
 
 © Eduard Laas, 2005–2026  
 License: MIT  
@@ -75,8 +77,23 @@ http://laas.loc/
 
 ## Milestones
 
-- **v1.0**: Admin base (modules, settings)
+- **v1.8.3**: Media AV, per-MIME limits, DevTools media panel
+- **v1.8.2**: Media upload protections (rate limit, size, slow upload)
+- **v1.8.1**: Media admin UI polish (Bootstrap 5 + HTMX)
+- **v1.8.0**: Media security core (quarantine, MIME allowlist, SHA-256 dedupe)
+- **v1.7.1**: DevTools polish pack
+- **v1.7.0**: DevTools (debug toolbar)
+- **v1.6.0**: Menu polish + Audit Log (stable)
+- **v1.5**: Menu / Navigation (MVP)
+- **v1.4.1**: Validation quality fixes
+- **v1.4**: Validation layer
+- **v1.3**: Core hardening
+- **v1.2.1**: Pages admin UX
 - **v1.1**: Users management (Admin Users UI)
+- **v1.0.3**: Runtime settings overlay
+- **v1.0.2**: Admin settings UI
+- **v1.0.1**: Admin modules UI
+- **v1.0**: Admin base (modules, settings)
 
 ---
 
@@ -195,7 +212,6 @@ WHERE u.username = 'admin';
 - `docs/ARCHITECTURE.md`
 - `docs/SECURITY.md`
 - `docs/DEVTOOLS.md`
-- `docs/MEDIA.md`
 - `docs/MODULES.md`
 - `docs/TEMPLATES.md`
 - `docs/I18N.md`

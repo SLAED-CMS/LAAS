@@ -1,7 +1,7 @@
-# DevTools (v1.7.1)
+# DevTools (v1.8.3)
 
-## Включение
-В `.env`:
+## Enable
+Set in `.env`:
 ```
 APP_DEBUG=true
 DEVTOOLS_ENABLED=true
@@ -10,25 +10,27 @@ DEVTOOLS_COLLECT_REQUEST=true
 DEVTOOLS_COLLECT_LOGS=false
 ```
 
-## Доступ
-- Панель видят только пользователи с permission `debug.view`.
-- Дополнительно требуется `APP_DEBUG=true` и `DEVTOOLS_ENABLED=true`.
+## Access
+- Requires permission `debug.view`.
+- Available only when `APP_DEBUG=true` and `DEVTOOLS_ENABLED=true`.
 
-## Что собирается
-- Время запроса и peak memory.
-- DB: количество, суммарное время, список запросов (до 50), Top slow queries (до 5).
-- Request: GET/POST/Cookies/Headers (значения маскируются).
-- User summary: id/username/roles.
+## Panels
+- Performance: request time and peak memory.
+- DB: total queries, total time, top slow (top 5), last 50 queries.
+- Request: GET/POST/Cookies/Headers (masked).
+- User: id/username/roles.
 
-## Что не собирается
-- Значения параметров SQL (показывается только SQL + количество параметров).
-- Пароли/токены/секреты (маскируются как `[redacted]`).
+## Media panel
+- Shown only for media serve requests.
+- Conditions: `APP_DEBUG=true`, `DEVTOOLS_ENABLED=true`, permission `debug.view`.
+- Fields: media id, mime, size, serve mode, masked disk path, storage driver, read time (ms).
 
-## Безопасность
-- Маскирование применяется к GET/POST/Cookies/Headers.
-- Никогда не включайте DevTools в production.
+## Security notes
+- No absolute paths.
+- No secrets or tokens.
+- Request data is masked.
 
-## Отключение
+## Disable
 ```
 DEVTOOLS_ENABLED=false
 ```
