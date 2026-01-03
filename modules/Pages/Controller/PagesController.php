@@ -7,6 +7,9 @@ use Laas\Database\DatabaseManager;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Pages\Repository\PagesRepository;
+use Laas\Support\Search\Highlighter;
+use Laas\Support\Search\SearchNormalizer;
+use Laas\Support\Search\SearchQuery;
 use Laas\View\View;
 use Throwable;
 
@@ -51,6 +54,48 @@ final class PagesController
             'title' => (string) ($page['title'] ?? ''),
             'content' => (string) ($page['content'] ?? ''),
         ]);
+    }
+
+    public function search(Request $request): Response
+    {
+        $repo = $this->getRepository();
+        if ($repo === null) {
+            return new Response('Service Unavailable', 503, [
+                'Content-Type' => 'text/plain; charset=utf-8',
+            ]);
+        }
+
+        $query = SearchNormalizer::normalize((string) ($request->query('q') ?? ''));
+        $errors = [];
+        $results = [];
+        $status = 200;
+
+        if (SearchNormalizer::isTooShort($query)) {
+            $errors[] = $this->view->translate('search.too_short');
+            $status = 422;
+        } elseif ($query !== '') {
+            $search = new SearchQuery($query, 20, 1, 'pages');
+            $rows = $repo->search($search->q, $search->limit, $search->offset, 'published');
+            foreach ($rows as $row) {
+                $title = (string) ($row['title'] ?? '');
+                $slug = (string) ($row['slug'] ?? '');
+                $content = (string) ($row['content'] ?? '');
+
+                $results[] = [
+                    'title_segments' => Highlighter::segments($title, $search->q),
+                    'snippet_segments' => Highlighter::snippet($content, $search->q, 160),
+                    'url' => '/' . $slug,
+                ];
+            }
+        }
+
+        return $this->view->render('pages/search.html', [
+            'q' => $query,
+            'results' => $results,
+            'has_query' => $query !== '',
+            'count' => count($results),
+            'errors' => $errors,
+        ], $status);
     }
 
     private function getRepository(): ?PagesRepository

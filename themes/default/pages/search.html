@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <h1 class="h4 mb-3">{% t 'search.title' %}</h1>
+    <form method="get" action="/search" class="mb-3">
+      <div class="input-group">
+        <input class="form-control" type="search" name="q" value="{% q %}" placeholder="{% t 'search.placeholder' %}">
+        <button class="btn btn-outline-secondary" type="submit">{% t 'search.title' %}</button>
+      </div>
+    </form>
+    {% include "partials/messages.html" %}
+
+    {% if has_query %}
+      <div class="text-muted small mb-2">{% t 'search.results' %}: {% count %}</div>
+      {% if results %}
+        <div class="list-group">
+          {% foreach results as result %}
+            <a class="list-group-item list-group-item-action" href="{% result.url %}">
+              <div class="fw-semibold">
+                {% foreach result.title_segments as seg %}
+                  {% if seg.mark %}<mark>{% seg.text %}</mark>{% else %}{% seg.text %}{% endif %}
+                {% endforeach %}
+              </div>
+              <div class="text-muted small">
+                {% foreach result.snippet_segments as seg %}
+                  {% if seg.mark %}<mark>{% seg.text %}</mark>{% else %}{% seg.text %}{% endif %}
+                {% endforeach %}
+              </div>
+            </a>
+          {% endforeach %}
+        </div>
+      {% else %}
+        <div class="alert alert-secondary mb-0">{% t 'search.empty' %}</div>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

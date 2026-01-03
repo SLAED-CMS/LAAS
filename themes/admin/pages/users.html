@@ -3,28 +3,28 @@
 {% block content %}
 <div class="card">
   <div class="card-body">
-  <h1 class="h4 mb-3">{% t 'admin.users.title' %}</h1>
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h4 mb-0">{% t 'admin.users.title' %}</h1>
+  </div>
   <div id="page-messages">
     {% include "partials/messages.html" %}
   </div>
+  <form class="row g-2 align-items-end mb-3"
+        method="get"
+        action="/admin/users"
+        hx-get="/admin/users"
+        hx-target="#users-table"
+        hx-swap="innerHTML"
+        hx-push-url="true"
+        hx-indicator="#loading"
+        hx-trigger="keyup changed delay:300ms from:#q">
+    <div class="col-sm-6">
+      <label class="form-label">{% t 'admin.search.placeholder' %}</label>
+      <input class="form-control" id="q" type="search" name="q" value="{% q %}" placeholder="{% t 'admin.search.placeholder' %}">
+    </div>
+  </form>
   <div id="users-table">
-    <table class="table table-striped table-hover align-middle">
-      <thead>
-        <tr>
-          <th>{% t 'admin.users.id' %}</th>
-          <th>{% t 'admin.users.username' %}</th>
-          <th>{% t 'admin.users.status' %}</th>
-          <th>{% t 'admin.users.roles' %}</th>
-          <th>{% t 'admin.users.last_login' %}</th>
-          <th>{% t 'admin.users.actions' %}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% foreach users as user %}
-        {% include "partials/user_row.html" %}
-        {% endforeach %}
-      </tbody>
-    </table>
+    {% include "partials/users_table.html" %}
   </div>
   <div id="loading" class="htmx-indicator text-center my-3">
     <div class="spinner-border" role="status" aria-hidden="true"></div>

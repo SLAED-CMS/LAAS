@@ -9,8 +9,21 @@
 
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
       <h1 class="h4 mb-0">{% t 'admin.media.title' %}</h1>
-      <form method="get" class="d-flex gap-2" action="/admin/media">
-        <input class="form-control form-control-sm" type="search" name="q" value="{% q %}" placeholder="{% t 'admin.media.search' %}">
+      <form method="get"
+            class="d-flex gap-2"
+            action="/admin/media"
+            hx-get="/admin/media"
+            hx-target="#media-table"
+            hx-swap="innerHTML"
+            hx-push-url="true"
+            hx-indicator="#loading"
+            hx-include="[name=q]">
+        <input class="form-control form-control-sm"
+               type="search"
+               name="q"
+               value="{% q %}"
+               placeholder="{% t 'admin.media.search' %}"
+               hx-trigger="keyup changed delay:300ms">
         <button class="btn btn-outline-secondary btn-sm" type="submit">{% t 'admin.media.search_button' %}</button>
       </form>
     </div>

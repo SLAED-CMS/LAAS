@@ -15,6 +15,9 @@ use Laas\Modules\Media\Service\MimeSniffer;
 use Laas\Modules\Media\Service\StorageService;
 use Laas\Security\RateLimiter;
 use Laas\Support\AuditLogger;
+use Laas\Support\Search\Highlighter;
+use Laas\Support\Search\SearchNormalizer;
+use Laas\Support\Search\SearchQuery;
 use Laas\View\View;
 use Throwable;
 
@@ -37,21 +40,57 @@ final class AdminMediaController
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
-        $query = trim((string) ($request->query('q') ?? ''));
+        $query = SearchNormalizer::normalize((string) ($request->query('q') ?? ''));
         $page = max(1, (int) ($request->query('page') ?? 1));
         $perPage = 20;
 
-        $total = $repo->count($query);
+        if (SearchNormalizer::isTooShort($query)) {
+            $message = $this->view->translate('search.too_short');
+            if ($request->isHtmx()) {
+                $response = $this->view->render('partials/messages.html', [
+                    'errors' => [$message],
+                ], 422, [], [
+                    'theme' => 'admin',
+                    'render_partial' => true,
+                ]);
+                return $response->withHeader('HX-Retarget', '#page-messages');
+            }
+
+            return $this->view->render('pages/media.html', [
+                'items' => [],
+                'q' => $query,
+                'page' => 1,
+                'total_pages' => 1,
+                'has_prev' => false,
+                'has_next' => false,
+                'prev_page' => 1,
+                'next_page' => 1,
+                'show_pagination' => 0,
+                'prev_class' => 'disabled',
+                'next_class' => 'disabled',
+                'success' => null,
+                'errors' => [$message],
+            ], 422, [], [
+                'theme' => 'admin',
+            ]);
+        }
+
+        $total = $query !== '' ? $repo->countSearch($query) : $repo->count();
         $totalPages = max(1, (int) ceil($total / $perPage));
         if ($page > $totalPages) {
             $page = $totalPages;
         }
         $offset = ($page - 1) * $perPage;
 
-        $items = $this->mapRows($repo->list($perPage, $offset, $query), $this->mediaConfig());
+        if ($query !== '') {
+            $search = new SearchQuery($query, $perPage, $page, 'media');
+            $items = $this->mapRows($repo->search($search->q, $search->limit, $search->offset), $this->mediaConfig(), null, $search->q);
+        } else {
+            $items = $this->mapRows($repo->list($perPage, $offset), $this->mediaConfig(), null, $query);
+        }
         $showPagination = $totalPages > 1 ? 1 : 0;
 
-        return $this->view->render('pages/media.html', [
+        $viewData = [
             'items' => $items,
             'q' => $query,
             'page' => $page,
@@ -65,7 +104,16 @@ final class AdminMediaController
             'next_class' => $page < $totalPages ? '' : 'disabled',
             'success' => null,
             'errors' => [],
-        ], 200, [], [
+        ];
+
+        if ($request->isHtmx()) {
+            return $this->view->render('partials/media_table.html', $viewData, 200, [], [
+                'theme' => 'admin',
+                'render_partial' => true,
+            ]);
+        }
+
+        return $this->view->render('pages/media.html', $viewData, 200, [], [
             'theme' => 'admin',
         ]);
     }
@@ -376,17 +424,54 @@ final class AdminMediaController
 
     private function tableResponse(Request $request, MediaRepository $repo, ?string $success, array $errors, ?int $flashId = null): Response
     {
-        $query = trim((string) ($request->query('q') ?? ''));
+        $query = SearchNormalizer::normalize((string) ($request->query('q') ?? ''));
         $page = max(1, (int) ($request->query('page') ?? 1));
         $perPage = 20;
-        $total = $repo->count($query);
+
+        if (SearchNormalizer::isTooShort($query)) {
+            $message = $this->view->translate('search.too_short');
+            if ($request->isHtmx()) {
+                $response = $this->view->render('partials/messages.html', [
+                    'errors' => [$message],
+                ], 422, [], [
+                    'theme' => 'admin',
+                    'render_partial' => true,
+                ]);
+                return $response->withHeader('HX-Retarget', '#page-messages');
+            }
+
+            return $this->view->render('pages/media.html', [
+                'items' => [],
+                'q' => $query,
+                'page' => 1,
+                'total_pages' => 1,
+                'has_prev' => false,
+                'has_next' => false,
+                'prev_page' => 1,
+                'next_page' => 1,
+                'show_pagination' => 0,
+                'prev_class' => 'disabled',
+                'next_class' => 'disabled',
+                'success' => null,
+                'errors' => [$message],
+            ], 422, [], [
+                'theme' => 'admin',
+            ]);
+        }
+
+        $total = $query !== '' ? $repo->countSearch($query) : $repo->count();
         $totalPages = max(1, (int) ceil($total / $perPage));
         if ($page > $totalPages) {
             $page = $totalPages;
         }
         $offset = ($page - 1) * $perPage;
 
-        $items = $this->mapRows($repo->list($perPage, $offset, $query), $this->mediaConfig(), $flashId);
+        if ($query !== '') {
+            $search = new SearchQuery($query, $perPage, $page, 'media');
+            $items = $this->mapRows($repo->search($search->q, $search->limit, $search->offset), $this->mediaConfig(), $flashId, $search->q);
+        } else {
+            $items = $this->mapRows($repo->list($perPage, $offset), $this->mediaConfig(), $flashId, $query);
+        }
         $showPagination = $totalPages > 1 ? 1 : 0;
 
         if ($request->isHtmx()) {
@@ -588,12 +673,12 @@ final class AdminMediaController
         return $name;
     }
 
-    private function mapRows(array $rows, array $config, ?int $flashId = null): array
+    private function mapRows(array $rows, array $config, ?int $flashId = null, ?string $query = null): array
     {
         $mode = $this->publicMode($config);
         $signedEnabled = !empty($config['signed_urls_enabled']) && !empty($config['signed_url_secret']);
 
-        return array_map(function (array $row) use ($flashId, $mode, $signedEnabled): array {
+        return array_map(function (array $row) use ($flashId, $mode, $signedEnabled, $query): array {
             $mime = (string) ($row['mime_type'] ?? '');
             $originalName = (string) ($row['original_name'] ?? '');
             $id = (int) ($row['id'] ?? 0);
@@ -601,11 +686,15 @@ final class AdminMediaController
             $isImage = str_starts_with($mime, 'image/');
             $isPublic = !empty($row['is_public']);
             $url = '/media/' . $id . '/' . $this->safeDownloadName($originalName, $mime);
+            $nameSegments = Highlighter::segments($originalName, $query ?? '');
+            $mimeSegments = Highlighter::segments($mime, $query ?? '');
 
             return [
                 'id' => $id,
                 'original_name' => $originalName,
+                'name_segments' => $nameSegments,
                 'mime_type' => $mime,
+                'mime_segments' => $mimeSegments,
                 'size_bytes' => $size,
                 'size_display' => $this->formatBytes($size),
                 'created_at_display' => (string) ($row['created_at'] ?? ''),

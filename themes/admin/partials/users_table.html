@@ -1,0 +1,25 @@
+<table class="table table-striped table-hover align-middle">
+  <thead>
+    <tr>
+      <th>{% t 'admin.users.id' %}</th>
+      <th>{% t 'admin.users.username' %}</th>
+      <th>{% t 'admin.users.status' %}</th>
+      <th>{% t 'admin.users.roles' %}</th>
+      <th>{% t 'admin.users.last_login' %}</th>
+      <th>{% t 'admin.users.actions' %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% if users %}
+      {% foreach users as user %}
+      {% include "partials/user_row.html" %}
+      {% endforeach %}
+    {% else %}
+      <tr>
+        <td colspan="6">
+          <div class="alert alert-secondary mb-0">{% t 'search.empty' %}</div>
+        </td>
+      </tr>
+    {% endif %}
+  </tbody>
+</table>

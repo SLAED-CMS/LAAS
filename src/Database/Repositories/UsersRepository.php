@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Laas\Database\Repositories;
 
 use PDO;
+use Laas\Support\Search\LikeEscaper;
 
 final class UsersRepository
 {
@@ -47,7 +48,7 @@ final class UsersRepository
         $offset = max(0, $offset);
 
         $stmt = $this->pdo->prepare(
-            'SELECT id, username, status, last_login_at, last_login_ip, created_at FROM users ORDER BY id ASC LIMIT :limit OFFSET :offset'
+            'SELECT id, username, email, status, last_login_at, last_login_ip, created_at FROM users ORDER BY id ASC LIMIT :limit OFFSET :offset'
         );
         $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue('offset', $offset, PDO::PARAM_INT);
@@ -55,6 +56,52 @@ final class UsersRepository
 
         $rows = $stmt->fetchAll();
         return is_array($rows) ? $rows : [];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function search(string $query, int $limit, int $offset): array
+    {
+        $query = trim($query);
+        if ($query === '') {
+            return [];
+        }
+
+        $escaped = LikeEscaper::escape($query);
+        $prefix = $escaped . '%';
+        $contains = '%' . $escaped . '%';
+
+        $sql = 'SELECT id, username, email, status, last_login_at, last_login_ip, created_at FROM users';
+        $sql .= ' WHERE (username LIKE :contains ESCAPE \'\\\' OR email LIKE :contains ESCAPE \'\\\')';
+        $sql .= ' ORDER BY CASE WHEN username LIKE :prefix ESCAPE \'\\\' OR email LIKE :prefix ESCAPE \'\\\' THEN 0 ELSE 1 END, id DESC';
+        $sql .= ' LIMIT :limit OFFSET :offset';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue('limit', max(1, min(50, $limit)), PDO::PARAM_INT);
+        $stmt->bindValue('offset', max(0, $offset), PDO::PARAM_INT);
+        $stmt->bindValue('contains', $contains);
+        $stmt->bindValue('prefix', $prefix);
+        $stmt->execute();
+
+        $rows = $stmt->fetchAll();
+        return is_array($rows) ? $rows : [];
+    }
+
+    public function countSearch(string $query): int
+    {
+        $query = trim($query);
+        if ($query === '') {
+            return 0;
+        }
+
+        $escaped = LikeEscaper::escape($query);
+        $contains = '%' . $escaped . '%';
+        $stmt = $this->pdo->prepare(
+            'SELECT COUNT(*) AS cnt FROM users WHERE (username LIKE :contains ESCAPE \'\\\' OR email LIKE :contains ESCAPE \'\\\')'
+        );
+        $stmt->execute(['contains' => $contains]);
+        $row = $stmt->fetch();
+
+        return (int) ($row['cnt'] ?? 0);
     }
 
     public function setStatus(int $id, int $status): void

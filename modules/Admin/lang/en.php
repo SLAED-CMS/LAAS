@@ -50,6 +50,7 @@ return array (
     'admin.settings.site_name' => 'Site name',
     'admin.settings.theme' => 'Theme',
     'admin.settings.title' => 'Settings',
+    'admin.search.placeholder' => 'Search...',
     'admin.users.actions' => 'Actions',
     'admin.users.active' => 'Active',
     'admin.users.disable' => 'Disable',

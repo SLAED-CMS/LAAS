@@ -1,6 +1,19 @@
 <tr id="user-{% user.id %}">
   <td>{% user.id %}</td>
-  <td>{% user.username %}</td>
+  <td>
+    <div class="fw-semibold">
+      {% foreach user.username_segments as seg %}
+        {% if seg.mark %}<mark>{% seg.text %}</mark>{% else %}{% seg.text %}{% endif %}
+      {% endforeach %}
+    </div>
+    {% if user.email %}
+    <div class="text-muted small">
+      {% foreach user.email_segments as seg %}
+        {% if seg.mark %}<mark>{% seg.text %}</mark>{% else %}{% seg.text %}{% endif %}
+      {% endforeach %}
+    </div>
+    {% endif %}
+  </td>
   <td>
     {% if user.status %}
     <span class="badge text-bg-success">{% t 'admin.users.active' %}</span>

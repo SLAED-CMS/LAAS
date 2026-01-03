@@ -8,12 +8,20 @@
         <span class="badge text-bg-secondary">{% item.badge %}</span>
       {% endif %}
       <div>
-        <div class="fw-semibold">{% item.original_name %}</div>
+        <div class="fw-semibold">
+          {% foreach item.name_segments as seg %}
+            {% if seg.mark %}<mark>{% seg.text %}</mark>{% else %}{% seg.text %}{% endif %}
+          {% endforeach %}
+        </div>
         <a href="{% item.url %}" class="small" target="_blank" rel="noopener">{% t 'admin.media.open' %}</a>
       </div>
     </div>
   </td>
-  <td>{% item.mime_type %}</td>
+  <td>
+    {% foreach item.mime_segments as seg %}
+      {% if seg.mark %}<mark>{% seg.text %}</mark>{% else %}{% seg.text %}{% endif %}
+    {% endforeach %}
+  </td>
   <td>{% item.size_display %}</td>
   <td>{% item.created_at_display %}</td>
   <td>

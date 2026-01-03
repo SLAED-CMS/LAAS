@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Laas\Modules\Media\Repository;
 
 use Laas\Database\DatabaseManager;
+use Laas\Support\Search\LikeEscaper;
 use PDO;
 
 final class MediaRepository
@@ -22,8 +23,9 @@ final class MediaRepository
         $params = [];
 
         if ($query !== '') {
-            $sql .= ' WHERE original_name LIKE :q OR mime_type LIKE :q';
-            $params['q'] = '%' . $query . '%';
+            $escaped = LikeEscaper::escape($query);
+            $sql .= ' WHERE original_name LIKE :q ESCAPE \'\\\' OR mime_type LIKE :q ESCAPE \'\\\'';
+            $params['q'] = '%' . $escaped . '%';
         }
 
         $sql .= ' ORDER BY id DESC LIMIT :limit OFFSET :offset';
@@ -39,18 +41,65 @@ final class MediaRepository
         return is_array($rows) ? $rows : [];
     }
 
+    /** @return array<int, array<string, mixed>> */
+    public function search(string $query, int $limit, int $offset): array
+    {
+        $query = trim($query);
+        if ($query === '') {
+            return [];
+        }
+
+        $escaped = LikeEscaper::escape($query);
+        $prefix = $escaped . '%';
+        $contains = '%' . $escaped . '%';
+
+        $sql = 'SELECT media_files.* FROM media_files LEFT JOIN users ON users.id = media_files.uploaded_by';
+        $sql .= ' WHERE (media_files.original_name LIKE :contains ESCAPE \'\\\' OR media_files.mime_type LIKE :contains ESCAPE \'\\\' OR users.username LIKE :contains ESCAPE \'\\\')';
+        $sql .= ' ORDER BY CASE WHEN media_files.original_name LIKE :prefix ESCAPE \'\\\' OR media_files.mime_type LIKE :prefix ESCAPE \'\\\' OR users.username LIKE :prefix ESCAPE \'\\\' THEN 0 ELSE 1 END, media_files.id DESC';
+        $sql .= ' LIMIT :limit OFFSET :offset';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue('limit', max(1, min(50, $limit)), PDO::PARAM_INT);
+        $stmt->bindValue('offset', max(0, $offset), PDO::PARAM_INT);
+        $stmt->bindValue('contains', $contains);
+        $stmt->bindValue('prefix', $prefix);
+        $stmt->execute();
+        $rows = $stmt->fetchAll();
+
+        return is_array($rows) ? $rows : [];
+    }
+
     public function count(string $query = ''): int
     {
         $sql = 'SELECT COUNT(*) AS cnt FROM media_files';
         $params = [];
 
         if ($query !== '') {
-            $sql .= ' WHERE original_name LIKE :q OR mime_type LIKE :q';
-            $params['q'] = '%' . $query . '%';
+            $escaped = LikeEscaper::escape($query);
+            $sql .= ' WHERE original_name LIKE :q ESCAPE \'\\\' OR mime_type LIKE :q ESCAPE \'\\\'';
+            $params['q'] = '%' . $escaped . '%';
         }
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
+        $row = $stmt->fetch();
+
+        return (int) ($row['cnt'] ?? 0);
+    }
+
+    public function countSearch(string $query): int
+    {
+        $query = trim($query);
+        if ($query === '') {
+            return 0;
+        }
+
+        $escaped = LikeEscaper::escape($query);
+        $contains = '%' . $escaped . '%';
+        $stmt = $this->pdo->prepare(
+            'SELECT COUNT(*) AS cnt FROM media_files LEFT JOIN users ON users.id = media_files.uploaded_by WHERE (media_files.original_name LIKE :q ESCAPE \'\\\' OR media_files.mime_type LIKE :q ESCAPE \'\\\' OR users.username LIKE :q ESCAPE \'\\\')'
+        );
+        $stmt->execute(['q' => $contains]);
         $row = $stmt->fetch();
 
         return (int) ($row['cnt'] ?? 0);

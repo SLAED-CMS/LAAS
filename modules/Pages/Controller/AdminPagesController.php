@@ -11,6 +11,9 @@ use Laas\Http\Response;
 use Laas\Modules\Pages\Repository\PagesRepository;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Support\AuditLogger;
+use Laas\Support\Search\Highlighter;
+use Laas\Support\Search\SearchNormalizer;
+use Laas\Support\Search\SearchQuery;
 use Laas\View\View;
 use Throwable;
 
@@ -45,16 +48,47 @@ final class AdminPagesController
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
-        $query = trim((string) ($request->query('q') ?? ''));
+        $query = SearchNormalizer::normalize((string) ($request->query('q') ?? ''));
         $status = (string) ($request->query('status') ?? 'all');
         if (!in_array($status, ['all', 'draft', 'published'], true)) {
             $status = 'all';
         }
 
+        if (SearchNormalizer::isTooShort($query)) {
+            $message = $this->view->translate('search.too_short');
+            if ($request->isHtmx()) {
+                $response = $this->view->render('partials/messages.html', [
+                    'errors' => [$message],
+                ], 422, [], [
+                    'theme' => 'admin',
+                    'render_partial' => true,
+                ]);
+                return $response->withHeader('HX-Retarget', '#page-messages');
+            }
+
+            return $this->view->render('pages/pages.html', [
+                'pages' => [],
+                'q' => $query,
+                'errors' => [$message],
+                'status_selected_all' => $status === 'all' ? 'selected' : '',
+                'status_selected_draft' => $status === 'draft' ? 'selected' : '',
+                'status_selected_published' => $status === 'published' ? 'selected' : '',
+            ], 422, [], [
+                'theme' => 'admin',
+            ]);
+        }
+
         $rows = [];
         $canEdit = true;
-        foreach ($repo->listForAdmin(100, 0, $query, $status) as $page) {
-            $rows[] = $this->buildPageRow($page, $canEdit);
+        if ($query !== '') {
+            $search = new SearchQuery($query, 50, 1, 'pages');
+            foreach ($repo->search($search->q, $search->limit, $search->offset, $status) as $page) {
+                $rows[] = $this->buildPageRow($page, $canEdit, $search->q);
+            }
+        } else {
+            foreach ($repo->listForAdmin(100, 0, $query, $status) as $page) {
+                $rows[] = $this->buildPageRow($page, $canEdit);
+            }
         }
 
         $viewData = [
@@ -469,16 +503,23 @@ final class AdminPagesController
         return $messages;
     }
 
-    private function buildPageRow(array $page, bool $canEdit): array
+    private function buildPageRow(array $page, bool $canEdit, ?string $query = null): array
     {
         $status = (string) ($page['status'] ?? 'draft');
         $isPublished = $status === 'published';
         $updatedAt = (string) ($page['updated_at'] ?? '');
 
+        $title = (string) ($page['title'] ?? '');
+        $slug = (string) ($page['slug'] ?? '');
+        $titleSegments = Highlighter::segments($title, $query ?? '');
+        $slugSegments = Highlighter::segments($slug, $query ?? '');
+
         return [
             'id' => (int) ($page['id'] ?? 0),
-            'title' => (string) ($page['title'] ?? ''),
-            'slug' => (string) ($page['slug'] ?? ''),
+            'title' => $title,
+            'slug' => $slug,
+            'title_segments' => $titleSegments,
+            'slug_segments' => $slugSegments,
             'status' => $status,
             'is_published' => $isPublished,
             'status_badge_class' => $isPublished ? 'bg-success' : 'bg-secondary',

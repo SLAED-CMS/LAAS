@@ -21,7 +21,7 @@
         hx-trigger="keyup changed delay:300ms from:#q, change from:#status">
     <div class="col-sm-8">
       <label class="form-label">{% t 'admin.pages.filter.search' %}</label>
-      <input class="form-control" id="q" type="search" name="q" value="{% q %}">
+      <input class="form-control" id="q" type="search" name="q" value="{% q %}" placeholder="{% t 'admin.search.placeholder' %}">
     </div>
     <div class="col-sm-4">
       <label class="form-label">{% t 'admin.pages.filter.status' %}</label>

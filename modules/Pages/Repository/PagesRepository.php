@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Laas\Modules\Pages\Repository;
 
 use Laas\Database\DatabaseManager;
+use Laas\Support\Search\LikeEscaper;
 use PDO;
 
 final class PagesRepository
@@ -67,9 +68,10 @@ final class PagesRepository
         $params = [];
 
         if ($query !== null && $query !== '') {
-            $conditions[] = '(title LIKE :q_title OR slug LIKE :q_slug)';
-            $params['q_title'] = '%' . $query . '%';
-            $params['q_slug'] = '%' . $query . '%';
+            $escaped = LikeEscaper::escape($query);
+            $conditions[] = '(title LIKE :q_title ESCAPE \'\\\' OR slug LIKE :q_slug ESCAPE \'\\\')';
+            $params['q_title'] = '%' . $escaped . '%';
+            $params['q_slug'] = '%' . $escaped . '%';
         }
 
         if ($status !== null && $status !== '' && $status !== 'all') {
@@ -89,6 +91,70 @@ final class PagesRepository
         $rows = $stmt->fetchAll();
 
         return is_array($rows) ? $rows : [];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function search(string $query, int $limit, int $offset, ?string $status = null): array
+    {
+        $query = trim($query);
+        if ($query === '') {
+            return [];
+        }
+
+        $escaped = LikeEscaper::escape($query);
+        $prefix = $escaped . '%';
+        $contains = '%' . $escaped . '%';
+
+        $sql = 'SELECT id, title, slug, status, updated_at, content FROM pages WHERE (title LIKE :contains ESCAPE \'\\\' OR slug LIKE :contains ESCAPE \'\\\')';
+        $params = [
+            'contains' => $contains,
+            'prefix' => $prefix,
+        ];
+
+        if ($status !== null && $status !== '' && $status !== 'all') {
+            $sql .= ' AND status = :status';
+            $params['status'] = $status;
+        }
+
+        $sql .= ' ORDER BY CASE WHEN title LIKE :prefix ESCAPE \'\\\' OR slug LIKE :prefix ESCAPE \'\\\' THEN 0 ELSE 1 END, updated_at DESC, id DESC';
+        $sql .= ' LIMIT :limit OFFSET :offset';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue('limit', max(1, min(50, $limit)), PDO::PARAM_INT);
+        $stmt->bindValue('offset', max(0, $offset), PDO::PARAM_INT);
+        $stmt->bindValue('contains', $params['contains']);
+        $stmt->bindValue('prefix', $params['prefix']);
+        if (isset($params['status'])) {
+            $stmt->bindValue('status', $params['status']);
+        }
+        $stmt->execute();
+        $rows = $stmt->fetchAll();
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    public function countSearch(string $query, ?string $status = null): int
+    {
+        $query = trim($query);
+        if ($query === '') {
+            return 0;
+        }
+
+        $escaped = LikeEscaper::escape($query);
+        $contains = '%' . $escaped . '%';
+
+        $sql = 'SELECT COUNT(*) AS cnt FROM pages WHERE (title LIKE :contains ESCAPE \'\\\' OR slug LIKE :contains ESCAPE \'\\\')';
+        $params = ['contains' => $contains];
+        if ($status !== null && $status !== '' && $status !== 'all') {
+            $sql .= ' AND status = :status';
+            $params['status'] = $status;
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch();
+
+        return (int) ($row['cnt'] ?? 0);
     }
 
     public function create(array $data): int

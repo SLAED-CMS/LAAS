@@ -8,6 +8,9 @@ use Laas\Database\Repositories\RbacRepository;
 use Laas\Database\Repositories\UsersRepository;
 use Laas\Http\Request;
 use Laas\Http\Response;
+use Laas\Support\Search\Highlighter;
+use Laas\Support\Search\SearchNormalizer;
+use Laas\Support\Search\SearchQuery;
 use Laas\View\View;
 use Throwable;
 
@@ -27,8 +30,35 @@ final class UsersController
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
+        $query = SearchNormalizer::normalize((string) ($request->query('q') ?? ''));
+        if (SearchNormalizer::isTooShort($query)) {
+            $message = $this->view->translate('search.too_short');
+            if ($request->isHtmx()) {
+                $response = $this->view->render('partials/messages.html', [
+                    'errors' => [$message],
+                ], 422, [], [
+                    'theme' => 'admin',
+                    'render_partial' => true,
+                ]);
+                return $response->withHeader('HX-Retarget', '#page-messages');
+            }
+
+            return $this->view->render('pages/users.html', [
+                'users' => [],
+                'q' => $query,
+                'errors' => [$message],
+            ], 422, [], [
+                'theme' => 'admin',
+            ]);
+        }
+
         $currentUserId = $this->currentUserId();
-        $users = $repo->list(100, 0);
+        if ($query !== '') {
+            $search = new SearchQuery($query, 50, 1, 'users');
+            $users = $repo->search($search->q, $search->limit, $search->offset);
+        } else {
+            $users = $repo->list(100, 0);
+        }
         $rows = [];
 
         foreach ($users as $user) {
@@ -38,12 +68,23 @@ final class UsersController
             }
 
             $isAdmin = $rbac->userHasRole($userId, 'admin');
-            $rows[] = $this->mapUserRow($user, $isAdmin, $currentUserId);
+            $rows[] = $this->mapUserRow($user, $isAdmin, $currentUserId, $query);
         }
 
-        return $this->view->render('pages/users.html', [
+        $viewData = [
             'users' => $rows,
-        ], 200, [], [
+            'q' => $query,
+            'errors' => [],
+        ];
+
+        if ($request->isHtmx()) {
+            return $this->view->render('partials/users_table.html', $viewData, 200, [], [
+                'theme' => 'admin',
+                'render_partial' => true,
+            ]);
+        }
+
+        return $this->view->render('pages/users.html', $viewData, 200, [], [
             'theme' => 'admin',
         ]);
     }
@@ -131,16 +172,21 @@ final class UsersController
         ]);
     }
 
-    private function mapUserRow(array $user, bool $isAdmin, ?int $currentUserId): array
+    private function mapUserRow(array $user, bool $isAdmin, ?int $currentUserId, ?string $query = null): array
     {
         $id = (int) ($user['id'] ?? 0);
         $status = (int) ($user['status'] ?? 0);
         $protected = $currentUserId !== null && $id === $currentUserId;
         $lastLogin = (string) ($user['last_login_at'] ?? '');
+        $username = (string) ($user['username'] ?? '');
+        $email = (string) ($user['email'] ?? '');
 
         return [
             'id' => $id,
-            'username' => (string) ($user['username'] ?? ''),
+            'username' => $username,
+            'username_segments' => Highlighter::segments($username, $query ?? ''),
+            'email' => $email,
+            'email_segments' => Highlighter::segments($email, $query ?? ''),
             'status' => $status,
             'status_badge_class' => $status === 1 ? 'bg-success' : 'bg-secondary',
             'is_admin' => $isAdmin,
