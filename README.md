@@ -191,6 +191,7 @@ WHERE u.username = 'admin';
 
 ## Documentation
 
+- Media uploads: `docs/MEDIA.md`
 - `docs/ARCHITECTURE.md`
 - `docs/SECURITY.md`
 - `docs/DEVTOOLS.md`

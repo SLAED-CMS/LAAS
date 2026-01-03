@@ -1,9 +1,12 @@
 # LAAS Versions
 
-- v1.8: Media uploads (files)
-  - Media module with DB storage and local uploads
-  - Admin Media UI (upload/list/delete, HTMX)
-  - Safe /media/* serving via controller
+- v1.8.1: Media UX + polish
+  - Bootstrap 5 + HTMX admin media UI refinements
+  - Preview badges, row flash highlight, HTMX loading polish
+  - Updated media documentation
+- v1.8.0: Media security core
+  - Hardened upload pipeline (quarantine, MIME allowlist, SHA-256 dedupe)
+  - Secure /media/* serving headers and disposition rules
   - RBAC permissions: media.view/media.upload/media.delete
   - Audit log for media.upload/media.delete
 - v1.7.1: DevTools polish pack

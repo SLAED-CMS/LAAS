@@ -23,6 +23,7 @@
           hx-target="#media-table"
           hx-swap="innerHTML"
           hx-indicator="#loading"
+          hx-disabled-elt="find button, find input"
           class="row g-2 align-items-end mb-4">
       <input type="hidden" name="_token" value="{% csrf_token %}">
       <div class="col-12 col-md-6">

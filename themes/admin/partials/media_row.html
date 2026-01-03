@@ -1,11 +1,11 @@
-<tr id="media-row-{% item.id %}">
+<tr id="media-row-{% item.id %}" class="{% if item.flash %}laas-flash{% endif %}">
   <td>{% item.id %}</td>
   <td>
     <div class="d-flex align-items-center gap-2">
       {% if item.is_image %}
         <img src="{% item.url %}" alt="" class="img-thumbnail" style="max-width: 80px;">
       {% else %}
-        <span class="badge text-bg-secondary">FILE</span>
+        <span class="badge text-bg-secondary">{% item.badge %}</span>
       {% endif %}
       <div>
         <div class="fw-semibold">{% item.original_name %}</div>
@@ -23,10 +23,11 @@
               type="button"
               hx-post="/admin/media/delete"
               hx-vals='{"id":"{% item.id %}"}'
-              hx-target="#media-table"
-              hx-swap="innerHTML"
+              hx-target="#media-row-{% item.id %}"
+              hx-swap="outerHTML"
               hx-confirm="{% t 'admin.media.confirm_delete' %}"
-              hx-indicator="#loading">
+              hx-indicator="#loading"
+              hx-disabled-elt="this">
         {% t 'admin.media.delete' %}
       </button>
     </div>
