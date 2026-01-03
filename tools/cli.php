@@ -426,7 +426,7 @@ $commands['media:thumbs:sync'] = function () use ($dbManager, $rootPath): int {
     }
 };
 
-$commands['backup:create'] = function () use ($rootPath, $dbManager, $appConfig, $storageConfig): int {
+$commands['backup:create'] = function () use ($rootPath, $dbManager, $appConfig, $storageConfig, $args): int {
     try {
         if (!$dbManager->healthCheck()) {
             echo "DB not available.\n";
@@ -435,7 +435,8 @@ $commands['backup:create'] = function () use ($rootPath, $dbManager, $appConfig,
 
         $storage = new StorageService($rootPath);
         $manager = new BackupManager($rootPath, $dbManager, $storage, $appConfig, $storageConfig);
-        $result = $manager->create();
+        $driver = (string) (getOption($args, 'db-driver') ?? 'auto');
+        $result = $manager->create(['db_driver' => $driver]);
         if (!$result['ok']) {
             echo "Backup failed.\n";
             return 1;
@@ -448,6 +449,10 @@ $commands['backup:create'] = function () use ($rootPath, $dbManager, $appConfig,
         );
         $message = $translator->trans('system.backup.created');
         echo $message . ': ' . ($result['file'] ?? '') . "\n";
+        $driverKey = ($result['driver'] ?? '') === 'mysqldump'
+            ? 'backup.create.driver_mysqldump'
+            : 'backup.create.driver_pdo';
+        echo $translator->trans($driverKey) . "\n";
         return 0;
     } catch (Throwable) {
         echo "Backup failed.\n";
@@ -472,23 +477,82 @@ $commands['backup:restore'] = function () use ($rootPath, $dbManager, $appConfig
         (string) ($appConfig['theme'] ?? 'default'),
         (string) ($appConfig['default_locale'] ?? 'en')
     );
-    $prompt = $translator->trans('system.backup.restore_confirm');
-    echo $prompt . "\n> ";
-    $input = trim((string) fgets(STDIN));
-    if ($input !== 'RESTORE') {
+    $prompt1 = $translator->trans('backup.restore.confirm_1');
+    echo $prompt1 . "\n> ";
+    $input1 = trim((string) fgets(STDIN));
+    $prompt2 = $translator->trans('backup.restore.confirm_2');
+    echo $prompt2 . "\n> ";
+    $input2 = trim((string) fgets(STDIN));
+    if ($input1 !== 'RESTORE' || $input2 !== basename($file)) {
         echo "Aborted.\n";
         return 1;
     }
 
     $storage = new StorageService($rootPath);
     $manager = new BackupManager($rootPath, $dbManager, $storage, $appConfig, $storageConfig);
-    $result = $manager->restore($file, true);
+    $result = $manager->restore($file, [
+        'force' => hasFlag($args, 'force'),
+        'dry_run' => hasFlag($args, 'dry-run'),
+        'confirm1' => $input1,
+        'confirm2' => $input2,
+    ]);
     if (!$result['ok']) {
-        echo "Restore failed.\n";
+        $error = $result['error'] ?? '';
+        if ($error === 'forbidden_in_prod') {
+            echo $translator->trans('backup.restore.forbidden_in_prod') . "\n";
+        } elseif ($error === 'locked') {
+            echo $translator->trans('backup.restore.locked') . "\n";
+        } else {
+            echo $translator->trans('backup.restore.failed') . "\n";
+        }
         return 1;
     }
 
+    if (hasFlag($args, 'dry-run')) {
+        echo $translator->trans('backup.restore.dry_run_ok') . "\n";
+        return 0;
+    }
+
     echo "OK\n";
+    return 0;
+};
+
+$commands['backup:inspect'] = function () use ($rootPath, $dbManager, $appConfig, $storageConfig, $args): int {
+    $file = $args[0] ?? '';
+    if ($file === '') {
+        echo "Usage: backup:inspect <file>\n";
+        return 1;
+    }
+
+    $storage = new StorageService($rootPath);
+    $manager = new BackupManager($rootPath, $dbManager, $storage, $appConfig, $storageConfig);
+    $result = $manager->inspect($file);
+
+    $translator = new Translator(
+        $rootPath,
+        (string) ($appConfig['theme'] ?? 'default'),
+        (string) ($appConfig['default_locale'] ?? 'en')
+    );
+
+    if (!$result['ok']) {
+        echo $translator->trans('backup.inspect.failed') . "\n";
+        return 1;
+    }
+
+    $meta = $result['metadata'] ?? [];
+    $checks = $result['checks'] ?? [];
+    $top = $result['top'] ?? [];
+
+    echo $translator->trans('backup.inspect.ok') . "\n";
+    foreach ($meta as $key => $value) {
+        echo $key . ': ' . (is_scalar($value) ? (string) $value : json_encode($value)) . "\n";
+    }
+    foreach ($checks as $key => $value) {
+        echo 'check.' . $key . ': ' . ($value ? 'ok' : 'fail') . "\n";
+    }
+    foreach ($top as $key => $value) {
+        echo 'size.' . $key . ': ' . $value . "\n";
+    }
     return 0;
 };
 
@@ -515,6 +579,11 @@ function getOption(array $args, string $name): ?string
     }
 
     return null;
+}
+
+function hasFlag(array $args, string $name): bool
+{
+    return in_array('--' . $name, $args, true);
 }
 
 /** @return array<string, array{path: string, version: string|null}> */
