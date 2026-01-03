@@ -57,7 +57,9 @@ final class MediaServeController
         $name = $this->safeDownloadName((string) ($row['original_name'] ?? 'file'), $mime);
         $disposition = $this->contentDisposition($mime);
 
+        $readStart = microtime(true);
         $body = file_get_contents($path);
+        $readMs = round((microtime(true) - $readStart) * 1000, 2);
         if ($body === false) {
             return $this->notFound();
         }
@@ -67,6 +69,13 @@ final class MediaServeController
             'Content-Length' => (string) $size,
             'Content-Disposition' => $disposition . '; filename="' . $name . '"',
             'X-Content-Type-Options' => 'nosniff',
+            'X-Media-Id' => (string) $id,
+            'X-Media-Mime' => $mime,
+            'X-Media-Size' => (string) $size,
+            'X-Media-Mode' => $disposition,
+            'X-Media-Disk' => $this->maskDiskPath((string) ($row['disk_path'] ?? '')),
+            'X-Media-Storage' => 'local',
+            'X-Media-Read-Time' => (string) $readMs,
         ]);
     }
 
@@ -186,6 +195,23 @@ final class MediaServeController
         $value = preg_replace('/-+/', '-', $value) ?? '';
 
         return $value;
+    }
+
+    private function maskDiskPath(string $path): string
+    {
+        $path = str_replace('\\', '/', $path);
+        $path = trim($path, '/');
+        if ($path === '') {
+            return '';
+        }
+
+        $parts = explode('/', $path);
+        $count = count($parts);
+        if ($count <= 2) {
+            return $path;
+        }
+
+        return $parts[0] . '/.../' . $parts[$count - 1];
     }
 
     private function notFound(): Response

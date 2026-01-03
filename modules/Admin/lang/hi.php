@@ -40,7 +40,7 @@ return array (
     'admin.nav.logout' => 'लॉग आउट',
     'admin.nav.modules' => 'मॉड्यूल',
     'admin.nav.pages' => 'पेज',
-    'admin.nav.media' => '??????',
+    'admin.nav.media' => 'मीडिया',
     'admin.nav.settings' => 'सेटिंग्स',
     'admin.nav.users' => 'यूज़र',
     'admin.settings.default_locale' => 'डिफ़ॉल्ट भाषा',

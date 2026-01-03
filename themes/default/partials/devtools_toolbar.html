@@ -2,9 +2,9 @@
   <div class="d-flex flex-wrap gap-3 align-items-center px-3 py-2">
     <strong>{% t 'devtools.title' %}</strong>
     <div class="flex-grow-1">
-      {% t 'devtools.time' %}: {% devtools.duration_ms %} ms ·
-      {% t 'devtools.db' %}: {% devtools.db.count %} / {% devtools.db.total_ms %} ms ·
-      {% t 'devtools.mem' %}: {% devtools.memory_mb %} MB ·
+      {% t 'devtools.time' %}: {% devtools.duration_ms %} ms |
+      {% t 'devtools.db' %}: {% devtools.db.count %} / {% devtools.db.total_ms %} ms |
+      {% t 'devtools.mem' %}: {% devtools.memory_mb %} MB |
       {% t 'devtools.request_id' %}: {% devtools.request_id %}
     </div>
     <button class="btn btn-sm btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#devtools-details" aria-expanded="false" aria-controls="devtools-details">
@@ -109,6 +109,29 @@
           </fieldset>
         </div>
       </div>
+
+      {% if devtools.media.id %}
+      {% if devtools.flags.debug %}
+      {% if devtools.flags.enabled %}
+      <fieldset class="border border-secondary rounded p-2 mt-3">
+        <legend class="float-none w-auto px-2 fs-6 text-secondary mb-0 fw-bold">
+          <a class="text-decoration-none laas-collapse-toggle" data-bs-toggle="collapse" href="#devtools-media" role="button" aria-expanded="false" aria-controls="devtools-media">
+            <span class="badge bg-light text-dark">{% t 'devtools.media' %}</span>
+          </a>
+        </legend>
+        <div id="devtools-media" class="collapse" data-devtools-id="media">
+          <div><span class="small text-secondary">{% t 'devtools.media_id' %}</span>: {% devtools.media.id %}</div>
+          <div><span class="small text-secondary">{% t 'devtools.media_mime' %}</span>: {% devtools.media.mime %}</div>
+          <div><span class="small text-secondary">{% t 'devtools.media_size' %}</span>: {% devtools.media.size %}</div>
+          <div><span class="small text-secondary">{% t 'devtools.media_mode' %}</span>: {% devtools.media.mode %}</div>
+          <div><span class="small text-secondary">{% t 'devtools.media_disk' %}</span>: {% devtools.media.disk %}</div>
+          <div><span class="small text-secondary">{% t 'devtools.media_storage' %}</span>: {% devtools.media.storage %}</div>
+          <div><span class="small text-secondary">{% t 'devtools.media_read_time' %}</span>: {% devtools.media.read_time_ms %}</div>
+        </div>
+      </fieldset>
+      {% endif %}
+      {% endif %}
+      {% endif %}
 
       <fieldset class="border border-secondary rounded p-2 mt-3">
         <legend class="float-none w-auto px-2 fs-6 text-secondary mb-0 fw-bold">

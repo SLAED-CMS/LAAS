@@ -20,4 +20,12 @@ return [
     'devtools.params' => 'Параметры',
     'devtools.duration' => 'Время (мс)',
     'devtools.top_slow' => 'Самые медленные запросы',
+    'devtools.media' => 'Медиа',
+    'devtools.media_id' => 'ID медиа',
+    'devtools.media_mime' => 'MIME',
+    'devtools.media_size' => 'Размер',
+    'devtools.media_mode' => 'Режим выдачи',
+    'devtools.media_disk' => 'Диск',
+    'devtools.media_storage' => 'Хранилище',
+    'devtools.media_read_time' => 'Время чтения (мс)',
 ];

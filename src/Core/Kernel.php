@@ -98,8 +98,16 @@ final class Kernel
         $loggerFactory = new LoggerFactory($this->rootPath);
         $logger = $loggerFactory->create($appConfig);
         if ($logger instanceof \Monolog\Logger) {
-            $logger->pushProcessor(static function (array $record) use ($requestId): array {
-                $record['extra']['request_id'] = $requestId;
+            $logger->pushProcessor(static function ($record) use ($requestId) {
+                if ($record instanceof \Monolog\LogRecord) {
+                    return $record->with(extra: array_merge($record->extra, [
+                        'request_id' => $requestId,
+                    ]));
+                }
+                if (is_array($record)) {
+                    $record['extra']['request_id'] = $requestId;
+                    return $record;
+                }
                 return $record;
             });
         }

@@ -16,6 +16,7 @@ final class DevToolsContext
     private array $user = [];
     private array $flags = [];
     private array $response = [];
+    private array $media = [];
 
     public function __construct(array $flags)
     {
@@ -40,6 +41,7 @@ final class DevToolsContext
             'status' => 0,
             'content_type' => '',
         ];
+        $this->media = [];
     }
 
     public function getRequestId(): string
@@ -65,6 +67,11 @@ final class DevToolsContext
     public function setResponse(array $data): void
     {
         $this->response = $data;
+    }
+
+    public function setMedia(array $data): void
+    {
+        $this->media = $data;
     }
 
     public function addDbQuery(string $sql, int $paramsCount, float $durationMs): void
@@ -111,6 +118,7 @@ final class DevToolsContext
             'user' => $this->user,
             'flags' => $this->flags,
             'response' => $this->response,
+            'media' => $this->media,
         ];
     }
 

@@ -20,4 +20,12 @@ return [
     'devtools.params' => 'Params',
     'devtools.duration' => 'Duration (ms)',
     'devtools.top_slow' => 'Top slow queries',
+    'devtools.media' => 'Media',
+    'devtools.media_id' => 'Media ID',
+    'devtools.media_mime' => 'MIME',
+    'devtools.media_size' => 'Size',
+    'devtools.media_mode' => 'Serve mode',
+    'devtools.media_disk' => 'Disk',
+    'devtools.media_storage' => 'Storage',
+    'devtools.media_read_time' => 'Read time (ms)',
 ];

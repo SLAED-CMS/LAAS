@@ -60,6 +60,10 @@ return [
             'window' => 60,
             'max' => 10,
         ],
+        'media_upload' => [
+            'window' => 300,
+            'max' => 10,
+        ],
     ],
     'trusted_proxies' => [],
 ];

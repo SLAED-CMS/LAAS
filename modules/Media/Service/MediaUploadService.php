@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Laas\Modules\Media\Service;
 
 use Laas\Modules\Media\Repository\MediaRepository;
+use Laas\Support\AuditLogger;
 use Throwable;
 
 final class MediaUploadService
@@ -11,7 +12,10 @@ final class MediaUploadService
     public function __construct(
         private MediaRepository $repository,
         private StorageService $storage,
-        private MimeSniffer $sniffer
+        private MimeSniffer $sniffer,
+        private ?AntivirusScannerInterface $scanner = null,
+        private ?AuditLogger $auditLogger = null,
+        private ?string $requestIp = null
     ) {
     }
 
@@ -29,7 +33,7 @@ final class MediaUploadService
         $size = is_file($tmpPath) ? (int) filesize($tmpPath) : 0;
         if ($maxBytes > 0 && $size > $maxBytes) {
             $this->storage->deleteAbsolute($tmpPath);
-            return $this->error('admin.media.error_too_large', [
+            return $this->error('media.upload_too_large', [
                 'max' => $this->formatBytes($maxBytes),
             ]);
         }
@@ -57,10 +61,39 @@ final class MediaUploadService
             return $this->error('admin.media.error_invalid_type');
         }
 
+        $maxBytesByMime = $config['max_bytes_by_mime'] ?? [];
+        $mimeMax = $maxBytes;
+        if (is_array($maxBytesByMime) && isset($maxBytesByMime[$mime]) && is_numeric($maxBytesByMime[$mime])) {
+            $mimeMax = (int) $maxBytesByMime[$mime];
+        }
+        if ($mimeMax > 0 && $size > $mimeMax) {
+            $this->storage->deleteAbsolute($tmpPath);
+            $this->auditMimeLimitRejected($userId, $mime, $size, $mimeMax);
+            return $this->error('media.upload_mime_too_large', [
+                'max' => $this->formatBytes($mimeMax),
+            ]);
+        }
+
         $hash = hash_file('sha256', $tmpPath);
         if (!is_string($hash) || $hash === '') {
             $this->storage->deleteAbsolute($tmpPath);
             return $this->error('admin.media.error_upload_failed');
+        }
+
+        $avEnabled = (bool) ($config['av_enabled'] ?? false);
+        if ($avEnabled) {
+            if ($this->scanner === null) {
+                $this->storage->deleteAbsolute($tmpPath);
+                $this->auditVirusRejected($userId, $mime, $size, $hash);
+                return $this->error('media.upload_virus_detected');
+            }
+
+            $scan = $this->scanner->scan($tmpPath);
+            if (($scan['status'] ?? '') !== 'clean') {
+                $this->storage->deleteAbsolute($tmpPath);
+                $this->auditVirusRejected($userId, $mime, $size, $hash);
+                return $this->error('media.upload_virus_detected');
+            }
         }
 
         $existing = $this->repository->findBySha256($hash);
@@ -133,5 +166,45 @@ final class MediaUploadService
         }
 
         return round($bytes / (1024 * 1024 * 1024), 1) . ' GB';
+    }
+
+    private function auditVirusRejected(?int $userId, string $mime, int $size, string $hash): void
+    {
+        if ($this->auditLogger === null) {
+            return;
+        }
+
+        $this->auditLogger->log(
+            'media.upload.rejected_virus',
+            'media_upload',
+            null,
+            [
+                'mime' => $mime,
+                'size' => $size,
+                'sha256' => $hash,
+            ],
+            $userId,
+            $this->requestIp ?? ''
+        );
+    }
+
+    private function auditMimeLimitRejected(?int $userId, string $mime, int $size, int $maxBytes): void
+    {
+        if ($this->auditLogger === null) {
+            return;
+        }
+
+        $this->auditLogger->log(
+            'media.upload.rejected_mime_size',
+            'media_upload',
+            null,
+            [
+                'mime' => $mime,
+                'size' => $size,
+                'max_bytes' => $maxBytes,
+            ],
+            $userId,
+            $this->requestIp ?? ''
+        );
     }
 }

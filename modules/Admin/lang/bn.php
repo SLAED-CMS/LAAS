@@ -40,7 +40,7 @@ return array (
     'admin.nav.logout' => 'লগআউট',
     'admin.nav.modules' => 'মডিউল',
     'admin.nav.pages' => 'পৃষ্ঠাসমূহ',
-    'admin.nav.media' => '???????',
+    'admin.nav.media' => 'মিডিয়া',
     'admin.nav.settings' => 'সেটিংস',
     'admin.nav.users' => 'ব্যবহারকারী',
     'admin.settings.default_locale' => 'ডিফল্ট ভাষা',

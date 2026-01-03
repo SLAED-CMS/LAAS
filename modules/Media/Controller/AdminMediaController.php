@@ -8,9 +8,11 @@ use Laas\Database\Repositories\RbacRepository;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Media\Repository\MediaRepository;
+use Laas\Modules\Media\Service\ClamAvScanner;
 use Laas\Modules\Media\Service\MediaUploadService;
 use Laas\Modules\Media\Service\MimeSniffer;
 use Laas\Modules\Media\Service\StorageService;
+use Laas\Security\RateLimiter;
 use Laas\Support\AuditLogger;
 use Laas\View\View;
 use Throwable;
@@ -78,15 +80,55 @@ final class AdminMediaController
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
+        $config = $this->mediaConfig();
+        $maxBytes = (int) ($config['max_bytes'] ?? 0);
+        $contentLength = $this->contentLength($request);
+
+        if ($contentLength === -1) {
+            return $this->uploadMalformedResponse($request);
+        }
+
+        if ($maxBytes > 0 && $contentLength !== null && $contentLength > $maxBytes) {
+            return $this->uploadTooLargeResponse($request, $this->currentUserId(), $contentLength, $maxBytes);
+        }
+
+        if ($this->isUploadTimedOut()) {
+            return $this->uploadTimeoutResponse($request, $this->currentUserId(), $contentLength, $maxBytes);
+        }
+
+        $rateLimited = $this->enforceUploadRateLimit($request);
+        if ($rateLimited !== null) {
+            return $rateLimited;
+        }
+
         $file = $_FILES['file'] ?? null;
-        if (!is_array($file) || empty($file['tmp_name'])) {
-            return $this->validationError($request, ['admin.media.error_upload_failed']);
+        if (!is_array($file)) {
+            return $this->uploadMalformedResponse($request);
+        }
+
+        $fileSize = (int) ($file['size'] ?? 0);
+        if ($maxBytes > 0 && $fileSize > $maxBytes) {
+            return $this->uploadTooLargeResponse($request, $this->currentUserId(), $contentLength, $maxBytes);
+        }
+
+        if (empty($file['tmp_name'])) {
+            return $this->uploadMalformedResponse($request);
         }
 
         $originalName = $this->safeOriginalName((string) ($file['name'] ?? ''));
-        $config = $this->mediaConfig();
 
-        $service = new MediaUploadService($repo, $this->storage(), new MimeSniffer());
+        $scanner = null;
+        if (!empty($config['av_enabled'])) {
+            $scanner = new ClamAvScanner($config);
+        }
+        $service = new MediaUploadService(
+            $repo,
+            $this->storage(),
+            new MimeSniffer(),
+            $scanner,
+            new AuditLogger($this->db),
+            $request->ip()
+        );
         $result = $service->upload($file, $originalName, $config, $this->currentUserId());
         if (($result['status'] ?? '') === 'error') {
             return $this->validationError($request, $result['errors'] ?? []);
@@ -398,6 +440,172 @@ final class AdminMediaController
                 'flash' => $flashId !== null && $id === $flashId,
             ];
         }, $rows);
+    }
+
+    private function enforceUploadRateLimit(Request $request): ?Response
+    {
+        $config = $this->securityConfig();
+        $rateConfig = $config['rate_limit']['media_upload'] ?? ['window' => 300, 'max' => 10];
+        $window = (int) ($rateConfig['window'] ?? 300);
+        $max = (int) ($rateConfig['max'] ?? 10);
+
+        $ip = $request->ip();
+        $userId = $this->currentUserId();
+
+        try {
+            $limiter = new RateLimiter($this->rootPath());
+            $ipResult = $limiter->hit('media_upload_ip', $ip, $window, $max);
+            $userResult = null;
+            if ($userId !== null) {
+                $userResult = $limiter->hit('media_upload_user', 'user:' . $userId, $window, $max);
+            }
+        } catch (Throwable) {
+            return $this->rateLimitResponse($request, $userId);
+        }
+
+        if (!$ipResult['allowed'] || ($userResult !== null && !$userResult['allowed'])) {
+            return $this->rateLimitResponse($request, $userId);
+        }
+
+        return null;
+    }
+
+    private function rateLimitResponse(Request $request, ?int $userId): Response
+    {
+        $message = $this->view->translate('media.rate_limit_exceeded');
+        $context = ['ip' => $request->ip()];
+        if ($userId !== null) {
+            $context['user_id'] = $userId;
+        }
+
+        (new AuditLogger($this->db))->log(
+            'media.upload.rate_limited',
+            'media_upload',
+            null,
+            $context,
+            $userId,
+            $request->ip()
+        );
+
+        if ($request->isHtmx()) {
+            return $this->view->render('partials/messages.html', [
+                'errors' => [$message],
+            ], 429, [], [
+                'theme' => 'admin',
+                'render_partial' => true,
+            ]);
+        }
+
+        if ($request->wantsJson()) {
+            return Response::json([
+                'error' => 'rate_limited',
+                'message' => $message,
+            ], 429);
+        }
+
+        return new Response($message, 429, [
+            'Content-Type' => 'text/plain; charset=utf-8',
+        ]);
+    }
+
+    private function securityConfig(): array
+    {
+        $path = $this->rootPath() . '/config/security.php';
+        if (!is_file($path)) {
+            return [];
+        }
+        $config = require $path;
+        return is_array($config) ? $config : [];
+    }
+
+    private function contentLength(Request $request): ?int
+    {
+        $raw = $request->getHeader('content-length') ?? ($_SERVER['CONTENT_LENGTH'] ?? null);
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+        if (!is_string($raw) || !ctype_digit($raw)) {
+            return -1;
+        }
+        return (int) $raw;
+    }
+
+    private function isUploadTimedOut(): bool
+    {
+        $maxInput = (int) ini_get('max_input_time');
+        $limit = 30;
+        if ($maxInput > 0 && $maxInput < $limit) {
+            $limit = $maxInput;
+        }
+
+        $started = $_SERVER['REQUEST_TIME_FLOAT'] ?? $_SERVER['REQUEST_TIME'] ?? null;
+        $started = is_numeric($started) ? (float) $started : microtime(true);
+        $elapsed = microtime(true) - $started;
+
+        return $elapsed > $limit;
+    }
+
+    private function uploadTooLargeResponse(Request $request, ?int $userId, ?int $contentLength, int $maxBytes): Response
+    {
+        $message = $this->view->translate('media.upload_too_large', [
+            'max' => $this->formatBytes($maxBytes),
+        ]);
+        $this->auditUploadRejected('media.upload.rejected_size', $request, $userId, $contentLength, $maxBytes);
+
+        return $this->uploadErrorResponse($request, 413, $message);
+    }
+
+    private function uploadTimeoutResponse(Request $request, ?int $userId, ?int $contentLength, int $maxBytes): Response
+    {
+        $message = $this->view->translate('media.upload_timeout');
+        $this->auditUploadRejected('media.upload.rejected_timeout', $request, $userId, $contentLength, $maxBytes);
+
+        return $this->uploadErrorResponse($request, 400, $message);
+    }
+
+    private function uploadMalformedResponse(Request $request): Response
+    {
+        $message = $this->view->translate('admin.media.error_upload_failed');
+        return $this->uploadErrorResponse($request, 400, $message);
+    }
+
+    private function uploadErrorResponse(Request $request, int $status, string $message): Response
+    {
+        if ($request->isHtmx()) {
+            return $this->view->render('partials/messages.html', [
+                'errors' => [$message],
+            ], $status, [], [
+                'theme' => 'admin',
+                'render_partial' => true,
+            ]);
+        }
+
+        if ($request->wantsJson()) {
+            return Response::json([
+                'error' => $status === 413 ? 'payload_too_large' : 'bad_request',
+                'message' => $message,
+            ], $status);
+        }
+
+        return new Response($message, $status, [
+            'Content-Type' => 'text/plain; charset=utf-8',
+        ]);
+    }
+
+    private function auditUploadRejected(string $action, Request $request, ?int $userId, ?int $contentLength, int $maxBytes): void
+    {
+        (new AuditLogger($this->db))->log(
+            $action,
+            'media_upload',
+            null,
+            [
+                'ip' => $request->ip(),
+                'content_length' => $contentLength,
+                'max_bytes' => $maxBytes,
+            ],
+            $userId,
+            $request->ip()
+        );
     }
 
     private function safeDownloadName(string $name, string $mime): string

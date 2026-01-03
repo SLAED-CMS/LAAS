@@ -27,4 +27,9 @@ return array (
     'admin.media.empty' => 'No files found.',
     'admin.media.badge_pdf' => 'PDF',
     'admin.media.badge_file' => 'FILE',
+    'media.rate_limit_exceeded' => 'Too many uploads. Try again later.',
+    'media.upload_too_large' => 'Upload is too large. Max: {max}.',
+    'media.upload_timeout' => 'Upload timed out. Try again.',
+    'media.upload_virus_detected' => 'Upload rejected: virus detected.',
+    'media.upload_mime_too_large' => 'File too large for this type. Max: {max}.',
 );

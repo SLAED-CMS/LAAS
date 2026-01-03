@@ -27,4 +27,9 @@ return array (
     'admin.media.empty' => 'Hakuna faili.',
     'admin.media.badge_pdf' => 'PDF',
     'admin.media.badge_file' => 'FAILI',
+    'media.rate_limit_exceeded' => 'Upakiaji mwingi. Jaribu tena baadaye.',
+    'media.upload_too_large' => 'Upakiaji ni mkubwa sana. Kikomo: {max}.',
+    'media.upload_timeout' => 'Muda wa upakiaji umeisha. Jaribu tena.',
+    'media.upload_virus_detected' => 'Upakiaji umekataliwa: virusi vimegunduliwa.',
+    'media.upload_mime_too_large' => 'Faili ni kubwa sana kwa aina hii. Kikomo: {max}.',
 );

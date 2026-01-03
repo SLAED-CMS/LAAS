@@ -24,16 +24,16 @@
   </tbody>
 </table>
 
-{% if total_pages > 1 %}
+{% if show_pagination %}
 <nav>
   <ul class="pagination pagination-sm mb-0">
-    <li class="page-item {% if not has_prev %}disabled{% endif %}">
+    <li class="page-item {% prev_class %}">
       <a class="page-link" href="/admin/media?page={% prev_page %}&q={% q %}">Prev</a>
     </li>
     <li class="page-item disabled">
       <span class="page-link">{% page %} / {% total_pages %}</span>
     </li>
-    <li class="page-item {% if not has_next %}disabled{% endif %}">
+    <li class="page-item {% next_class %}">
       <a class="page-link" href="/admin/media?page={% next_page %}&q={% q %}">Next</a>
     </li>
   </ul>

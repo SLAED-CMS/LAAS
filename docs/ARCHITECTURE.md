@@ -1,4 +1,4 @@
-# LAAS Architecture (v1.7.1)
+# LAAS Architecture (v1.8.3)
 
 ## Общее устройство
 Поток обработки запроса:

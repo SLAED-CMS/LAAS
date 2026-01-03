@@ -47,6 +47,19 @@ final class RequestCollector implements CollectorInterface
             'cookies' => $cookies,
             'headers' => $headers,
         ]);
+
+        $mediaId = $this->toInt($response->getHeader('X-Media-Id'));
+        if ($mediaId !== null) {
+            $context->setMedia([
+                'id' => $mediaId,
+                'mime' => (string) ($response->getHeader('X-Media-Mime') ?? ''),
+                'size' => $this->toInt($response->getHeader('X-Media-Size')) ?? 0,
+                'mode' => (string) ($response->getHeader('X-Media-Mode') ?? ''),
+                'disk' => (string) ($response->getHeader('X-Media-Disk') ?? ''),
+                'storage' => (string) ($response->getHeader('X-Media-Storage') ?? ''),
+                'read_time_ms' => $this->toFloat($response->getHeader('X-Media-Read-Time')) ?? 0.0,
+            ]);
+        }
     }
 
     private function mask(array $data): array
@@ -85,5 +98,27 @@ final class RequestCollector implements CollectorInterface
         }
 
         return false;
+    }
+
+    private function toInt(?string $value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        if (!is_numeric($value)) {
+            return null;
+        }
+        return (int) $value;
+    }
+
+    private function toFloat(?string $value): ?float
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        if (!is_numeric($value)) {
+            return null;
+        }
+        return (float) $value;
     }
 }

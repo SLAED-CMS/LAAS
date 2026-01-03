@@ -40,7 +40,7 @@ return array (
     'admin.nav.logout' => 'Sair',
     'admin.nav.modules' => 'Módulos',
     'admin.nav.pages' => 'Páginas',
-    'admin.nav.media' => 'M�dia',
+    'admin.nav.media' => 'Mídia',
     'admin.nav.settings' => 'Configurações',
     'admin.nav.users' => 'Usuários',
     'admin.settings.default_locale' => 'Idioma padrão',
