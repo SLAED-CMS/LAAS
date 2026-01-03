@@ -1,4 +1,4 @@
-# LAAS Architecture (v1.8.3)
+# LAAS Architecture (v1.11.1)
 
 ## Общее устройство
 Поток обработки запроса:
@@ -71,3 +71,8 @@ ErrorHandler -> Session -> CSRF -> RateLimit -> SecurityHeaders -> Auth -> RBAC 
 - Health endpoint: `GET /health` returns JSON with status and checks.
 - Read-only mode: blocks write methods at middleware level.
 - Backup/restore: CLI commands `backup:create` and `backup:restore`.
+
+## Ops Safety Polish (v1.11.1)
+- Health safe mode: no write-test by default, optional via `HEALTH_WRITE_CHECK=true`.
+- Degradation logging: single log on state change (OK↔DEGRADED), anti-spam with TTL.
+- Read-only whitelist for critical endpoints.

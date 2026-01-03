@@ -1,4 +1,4 @@
-# Security (v1.10.0)
+# Security (v1.11.0)
 
 ## Sessions
 - Session storage: `storage/sessions`.
@@ -20,8 +20,9 @@
 
 ## Maintenance mode
 - Read-only mode blocks all write methods (POST/PUT/PATCH/DELETE).
-- Exceptions: `/login`, `/logout`, `/health`.
+- Exceptions: `/login`, `/logout`, `/csrf`, `/health`, `/api/v1/ping`.
 - HTTP 503 with localized message.
+- Admin mutations are fail-closed.
 
 ## File uploads (Media)
 - MIME validation via `finfo(FILEINFO_MIME_TYPE)` only.

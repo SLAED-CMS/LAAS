@@ -1,5 +1,9 @@
 # LAAS Versions
 
+- v1.11.1: Ops Safety Polish
+  - Health safe mode + write-check flag
+  - Read-only whitelist and HTMX handling
+  - Anti-spam logging for health/config errors
 - v1.11.0: Stability & Ops
   - Health endpoint and config sanity checks
   - Read-only maintenance mode
