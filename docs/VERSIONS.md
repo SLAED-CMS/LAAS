@@ -1,5 +1,9 @@
 # LAAS Versions
 
+- v1.11.2: Backup/Restore Hardening
+  - Backup inspect command and checksum validation
+  - Double-confirm restore with prod safety guard
+  - mysqldump + PDO backup drivers and rollback on failure
 - v1.11.1: Ops Safety Polish
   - Health safe mode + write-check flag
   - Read-only whitelist and HTMX handling

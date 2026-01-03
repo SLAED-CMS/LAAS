@@ -152,6 +152,7 @@ vendor/bin/phpunit
 - Verify `/health` returns 200
 - Ensure backups via `php tools/cli.php backup:create`
 - Store backups from `storage/backups` off-site
+- Review backup/restore safety in `docs/BACKUP.md` (restore is destructive)
 - Configure storage disk (local or S3)
 
 ---
@@ -228,6 +229,7 @@ WHERE u.username = 'admin';
 - `docs/TEMPLATES.md`
 - `docs/I18N.md`
 - `docs/VERSIONS.md`
+- `docs/BACKUP.md`
 - `docs/CODING_STANDARDS.md`
 
 ---
