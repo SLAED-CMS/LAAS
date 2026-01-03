@@ -47,7 +47,7 @@ final class OpsChecker
             $checks['storage'] = 'fail';
             $errors++;
         } else {
-            $ok = $this->storage->exists('health/.probe');
+            $ok = $this->checkStorage();
             $checks['storage'] = $ok ? 'ok' : 'fail';
             if (!$ok) {
                 $errors++;
@@ -80,6 +80,21 @@ final class OpsChecker
         }
 
         return ['code' => $code, 'checks' => $checks];
+    }
+
+    private function checkStorage(): bool
+    {
+        try {
+            if ($this->storage->driverName() === 'local') {
+                $root = $this->rootPath . '/storage';
+                return is_dir($root) && is_readable($root);
+            }
+
+            $this->storage->exists('health/.probe');
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     private function checkDb(): bool
