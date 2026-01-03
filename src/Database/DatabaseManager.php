@@ -103,5 +103,12 @@ final class DatabaseManager
         if (!is_dir($dir)) {
             @mkdir($dir, 0775, true);
         }
+
+        if (!is_file($db)) {
+            $handle = @fopen($db, 'c');
+            if (is_resource($handle)) {
+                fclose($handle);
+            }
+        }
     }
 }
