@@ -35,4 +35,26 @@ final class PermissionsRepository
 
         return (int) $this->pdo->lastInsertId();
     }
+
+    /** @return array<int, array{name: string, title: string|null, id: int}> */
+    public function listAll(): array
+    {
+        $stmt = $this->pdo->query('SELECT id, name, title FROM permissions ORDER BY name ASC');
+        $rows = $stmt !== false ? $stmt->fetchAll() : [];
+        return is_array($rows) ? $rows : [];
+    }
+
+    /** @return array<int, int> */
+    public function listRolePermissionIds(int $roleId): array
+    {
+        $stmt = $this->pdo->prepare('SELECT permission_id FROM permission_role WHERE role_id = :role_id');
+        $stmt->execute(['role_id' => $roleId]);
+        $rows = $stmt->fetchAll();
+
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        return array_map(static fn(array $row): int => (int) ($row['permission_id'] ?? 0), $rows);
+    }
 }

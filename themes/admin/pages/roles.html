@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h1 class="h4 mb-0">{% t 'admin.users.roles' %}</h1>
+      <a class="btn btn-primary btn-sm" href="/admin/users/roles/new">{% t 'admin.pages.new' %}</a>
+    </div>
+    <div id="page-messages">
+      {% include "partials/messages.html" %}
+    </div>
+    <div id="roles-table">
+      {% include "partials/roles_table.html" %}
+    </div>
+    <div id="loading" class="htmx-indicator text-center my-3">
+      <div class="spinner-border" role="status" aria-hidden="true"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

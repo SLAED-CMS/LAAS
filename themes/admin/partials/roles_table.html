@@ -1,0 +1,24 @@
+<table class="table table-striped table-hover align-middle">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>{% t 'admin.users.roles' %}</th>
+      <th>Title</th>
+      <th>Updated</th>
+      <th>{% t 'admin.users.actions' %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% if roles %}
+      {% foreach roles as role %}
+      {% include "partials/role_row.html" %}
+      {% endforeach %}
+    {% else %}
+      <tr>
+        <td colspan="5">
+          <div class="alert alert-secondary mb-0">{% t 'search.empty' %}</div>
+        </td>
+      </tr>
+    {% endif %}
+  </tbody>
+</table>

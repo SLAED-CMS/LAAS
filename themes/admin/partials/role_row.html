@@ -1,0 +1,23 @@
+<tr id="role-{% role.id %}">
+  <td>{% role.id %}</td>
+  <td>{% role.name %}</td>
+  <td>{% role.title %}</td>
+  <td>{% role.updated_at %}</td>
+  <td>
+    <div class="btn-group btn-group-sm" role="group">
+      <a class="btn btn-outline-secondary" href="/admin/users/roles/{% role.id %}/edit">{% t 'admin.pages.edit' %}</a>
+      <a class="btn btn-outline-secondary" href="/admin/users/roles/{% role.id %}/clone">{% t 'rbac.role.clone' %}</a>
+      <form method="post"
+            class="d-inline"
+            action="/admin/users/roles/delete"
+            hx-post="/admin/users/roles/delete"
+            hx-target="#role-{% role.id %}"
+            hx-swap="outerHTML"
+            hx-indicator="#loading">
+        <input type="hidden" name="_token" value="{% csrf_token %}">
+        <input type="hidden" name="id" value="{% role.id %}">
+        <button class="btn btn-outline-danger" type="submit">{% t 'admin.pages.delete' %}</button>
+      </form>
+    </div>
+  </td>
+</tr>

@@ -1,0 +1,28 @@
+<div class="accordion" id="permissionsAccordion">
+  {% foreach groups as group %}
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="heading-{% group.key %}">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{% group.key %}">
+        {% group.label %}
+      </button>
+    </h2>
+    <div id="collapse-{% group.key %}" class="accordion-collapse collapse" data-bs-parent="#permissionsAccordion">
+      <div class="accordion-body">
+        {% if group.permissions %}
+          {% foreach group.permissions as perm %}
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="permissions[]" id="perm-{% perm.name %}" value="{% perm.name %}" {% if perm.checked %}checked{% endif %}>
+            <label class="form-check-label" for="perm-{% perm.name %}">
+              {% if perm.title %}{% perm.title %}{% else %}{% perm.name %}{% endif %}
+              <span class="text-muted small ms-2">{% perm.name %}</span>
+            </label>
+          </div>
+          {% endforeach %}
+        {% else %}
+          <div class="text-muted small">-</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endforeach %}
+</div>

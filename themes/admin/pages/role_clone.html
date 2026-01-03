@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <h1 class="h4 mb-3">{% t 'rbac.role.clone' %}</h1>
+    <div id="page-messages">
+      {% include "partials/messages.html" %}
+    </div>
+    <p class="mb-3">
+      <strong>{% role.name %}</strong> ({% permission_count %} permissions)
+    </p>
+    <form method="post" action="/admin/users/roles/{% role.id %}/clone">
+      <input type="hidden" name="_token" value="{% csrf_token %}">
+      <button class="btn btn-primary" type="submit">{% t 'rbac.role.clone' %}</button>
+      <a class="btn btn-outline-secondary" href="/admin/users/roles">{% t 'audit.filters.reset' %}</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -8,6 +8,7 @@ use Laas\Database\Repositories\RbacRepository;
 use Laas\Database\Repositories\UsersRepository;
 use Laas\Http\Request;
 use Laas\Http\Response;
+use Laas\Support\AuditLogger;
 use Laas\Support\Search\Highlighter;
 use Laas\Support\Search\SearchNormalizer;
 use Laas\Support\Search\SearchQuery;
@@ -152,6 +153,15 @@ final class UsersController
         } else {
             $rbac->grantRoleToUser($userId, 'admin');
         }
+
+        $actorId = $currentUserId;
+        $audit = new AuditLogger($this->db);
+        $audit->log('rbac.user.roles.updated', 'user', $userId, [
+            'actor_user_id' => $actorId,
+            'target_user_id' => $userId,
+            'added_roles' => $isAdmin ? [] : ['admin'],
+            'removed_roles' => $isAdmin ? ['admin'] : [],
+        ], $actorId, $request->ip());
 
         $row = $this->mapUserRow($user, !$isAdmin, $currentUserId);
         return $this->renderRow($request, $row);

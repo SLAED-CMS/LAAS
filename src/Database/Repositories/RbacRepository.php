@@ -127,4 +127,70 @@ SQL;
     {
         return $this->getUserRoles($userId);
     }
+
+    /** @return array<int, array<string, mixed>> */
+    public function listRoles(): array
+    {
+        return $this->roles->listAll();
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function listPermissions(): array
+    {
+        return $this->permissions->listAll();
+    }
+
+    /** @return array<int, string> */
+    public function listRolePermissions(int $roleId): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT p.name FROM permissions p JOIN permission_role pr ON pr.permission_id = p.id WHERE pr.role_id = :role_id'
+        );
+        $stmt->execute(['role_id' => $roleId]);
+        $rows = $stmt->fetchAll();
+
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        return array_map(static fn(array $row): string => (string) ($row['name'] ?? ''), $rows);
+    }
+
+    /** @param array<int, int> $permissionIds */
+    public function setRolePermissions(int $roleId, array $permissionIds): array
+    {
+        $permissionIds = array_values(array_unique(array_filter($permissionIds, static fn($id): bool => is_int($id) && $id > 0)));
+
+        $existingIds = $this->permissions->listRolePermissionIds($roleId);
+        $toAdd = array_values(array_diff($permissionIds, $existingIds));
+        $toRemove = array_values(array_diff($existingIds, $permissionIds));
+
+        if ($toAdd !== []) {
+            $insertSql = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite'
+                ? 'INSERT OR IGNORE INTO permission_role (role_id, permission_id) VALUES (:role_id, :permission_id)'
+                : 'INSERT IGNORE INTO permission_role (role_id, permission_id) VALUES (:role_id, :permission_id)';
+            $stmt = $this->pdo->prepare($insertSql);
+            foreach ($toAdd as $permId) {
+                $stmt->execute([
+                    'role_id' => $roleId,
+                    'permission_id' => $permId,
+                ]);
+            }
+        }
+
+        if ($toRemove !== []) {
+            $stmt = $this->pdo->prepare('DELETE FROM permission_role WHERE role_id = :role_id AND permission_id = :permission_id');
+            foreach ($toRemove as $permId) {
+                $stmt->execute([
+                    'role_id' => $roleId,
+                    'permission_id' => $permId,
+                ]);
+            }
+        }
+
+        return [
+            'added' => $toAdd,
+            'removed' => $toRemove,
+        ];
+    }
 }

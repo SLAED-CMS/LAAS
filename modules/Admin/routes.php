@@ -10,5 +10,12 @@ return [
     ['GET', '/admin/users', [\Laas\Modules\Admin\Controller\UsersController::class, 'index']],
     ['POST', '/admin/users/status', [\Laas\Modules\Admin\Controller\UsersController::class, 'toggleStatus']],
     ['POST', '/admin/users/admin', [\Laas\Modules\Admin\Controller\UsersController::class, 'toggleAdmin']],
+    ['GET', '/admin/users/roles', [\Laas\Modules\Admin\Controller\RolesController::class, 'index']],
+    ['GET', '/admin/users/roles/new', [\Laas\Modules\Admin\Controller\RolesController::class, 'createForm']],
+    ['GET', '/admin/users/roles/{id:\d+}/edit', [\Laas\Modules\Admin\Controller\RolesController::class, 'editForm']],
+    ['POST', '/admin/users/roles/save', [\Laas\Modules\Admin\Controller\RolesController::class, 'save']],
+    ['POST', '/admin/users/roles/delete', [\Laas\Modules\Admin\Controller\RolesController::class, 'delete']],
+    ['GET', '/admin/users/roles/{id:\d+}/clone', [\Laas\Modules\Admin\Controller\RolesController::class, 'cloneForm']],
+    ['POST', '/admin/users/roles/{id:\d+}/clone', [\Laas\Modules\Admin\Controller\RolesController::class, 'clone']],
     ['GET', '/admin/audit', [\Laas\Modules\Admin\Controller\AuditController::class, 'index']],
 ];
