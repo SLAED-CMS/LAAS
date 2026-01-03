@@ -794,11 +794,6 @@ function hasFlag(array $args, string $name): bool
     return in_array('--' . $name, $args, true);
 }
 
-function hasFlag(array $args, string $name): bool
-{
-    return in_array('--' . $name, $args, true);
-}
-
 /** @return array<string, array{path: string, version: string|null}> */
 function discoverModules(string $rootPath): array
 {
