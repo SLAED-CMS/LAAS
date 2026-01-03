@@ -1,6 +1,7 @@
 /vendor/
 /storage/*
 !/storage/.gitkeep
+/coverage/
 /.env
 /.idea/
 /.vscode/

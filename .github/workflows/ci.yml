@@ -53,6 +53,35 @@ jobs:
           name: junit
           path: junit.xml
 
+  coverage:
+    runs-on: ubuntu-latest
+    env:
+      APP_ENV: test
+      DB_DRIVER: sqlite
+      DB_NAME: ':memory:'
+      COVERAGE_MIN_LINES: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: pcov
+      - run: composer install --no-interaction --prefer-dist
+      - run: vendor/bin/phpunit --coverage-clover coverage/clover.xml --coverage-html coverage/html
+      - name: Coverage threshold
+        run: |
+          php -r "$file='coverage/clover.xml'; if (!file_exists($file)) { fwrite(STDERR, \"Missing clover.xml\\n\"); exit(1);} $xml=simplexml_load_file($file); $rate=0.0; if ($xml !== false) { if (isset($xml->project['line-rate'])) { $rate=(float)$xml->project['line-rate']; } elseif (isset($xml['line-rate'])) { $rate=(float)$xml['line-rate']; } else { $node=$xml->xpath('//project'); if ($node && isset($node[0]['line-rate'])) { $rate=(float)$node[0]['line-rate']; } } } $percent=$rate*100; $threshold=(float)getenv('COVERAGE_MIN_LINES'); echo 'Line coverage: '.number_format($percent,2).\"% (threshold {$threshold}%)\\n\"; if ($percent < $threshold) { exit(1); }"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-clover
+          path: coverage/clover.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-html
+          path: coverage/html
+
   smoke-sqlite:
     runs-on: ubuntu-latest
     env:

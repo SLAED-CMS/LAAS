@@ -5,4 +5,17 @@
       <directory>tests</directory>
     </testsuite>
   </testsuites>
+  <coverage includeUncoveredFiles="true">
+    <include>
+      <directory suffix=".php">src</directory>
+      <directory suffix=".php">modules</directory>
+      <directory suffix=".php">tools</directory>
+    </include>
+    <exclude>
+      <directory suffix=".php">vendor</directory>
+      <directory suffix=".php">themes</directory>
+      <directory suffix=".php">storage</directory>
+      <directory suffix=".php">tests/Fixtures</directory>
+    </exclude>
+  </coverage>
 </phpunit>
