@@ -17,6 +17,7 @@ use Laas\Support\BackupManager;
 use Laas\Support\ConfigSanityChecker;
 use Laas\Support\LoggerFactory;
 use Laas\Support\OpsChecker;
+use Laas\Support\ReleaseChecker;
 use Laas\I18n\Translator;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
@@ -631,6 +632,58 @@ $commands['ops:check'] = function () use ($rootPath, $dbManager, $appConfig, $st
     }
 
     return $result['code'];
+};
+
+$commands['release:check'] = function () use ($rootPath, $dbManager, $appConfig, $storageConfig, $migrator): int {
+    $mediaConfig = is_file($rootPath . '/config/media.php') ? require $rootPath . '/config/media.php' : [];
+    $dbConfig = is_file($rootPath . '/config/database.php') ? require $rootPath . '/config/database.php' : [];
+    $storage = new StorageService($rootPath);
+    $backup = new BackupManager($rootPath, $dbManager, $storage, $appConfig, $storageConfig);
+
+    $checker = new ReleaseChecker(
+        $rootPath,
+        $appConfig,
+        is_array($mediaConfig) ? $mediaConfig : [],
+        $storageConfig,
+        is_array($dbConfig) ? $dbConfig : [],
+        $dbManager,
+        $migrator,
+        $storage,
+        $backup
+    );
+
+    $translator = new Translator(
+        $rootPath,
+        (string) ($appConfig['theme'] ?? 'default'),
+        (string) ($appConfig['default_locale'] ?? 'en')
+    );
+
+    $warmupEnabled = filter_var($_ENV['TEMPLATES_WARMUP_ENABLED'] ?? false, FILTER_VALIDATE_BOOLEAN);
+    $dbDriver = (string) ($_ENV['RELEASE_CHECK_DB_DRIVER'] ?? 'pdo');
+
+    $result = $checker->run([
+        'warmup_enabled' => $warmupEnabled,
+        'db_driver' => $dbDriver,
+    ]);
+
+    if (!$result['ok']) {
+        echo $translator->trans('release.check.failed') . "\n";
+        foreach ($result['errors'] as $error) {
+            if ($error === 'debt_found') {
+                echo $translator->trans('release.debt.todo_found') . "\n";
+                continue;
+            }
+            if ($error === 'prod_devtools_enabled') {
+                echo $translator->trans('release.devtools.disabled_in_prod') . "\n";
+                continue;
+            }
+            echo '- ' . $error . "\n";
+        }
+        return 1;
+    }
+
+    echo $translator->trans('release.check.ok') . "\n";
+    return 0;
 };
 
 if ($command === '' || !isset($commands[$command])) {

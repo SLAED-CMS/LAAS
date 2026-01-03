@@ -23,6 +23,12 @@ jobs:
       - name: PHP lint
         run: |
           find src modules tools database public -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Debt sweep
+        run: |
+          if rg -n "TODO|FIXME" src modules tools; then
+            echo "TODO/FIXME found"
+            exit 1
+          fi
 
   test:
     runs-on: ubuntu-latest
@@ -64,3 +70,21 @@ jobs:
       - run: php tools/cli.php ops:check
       - run: php tools/cli.php migrate:up
       - run: php tools/cli.php migrate:status
+
+  release-check:
+    runs-on: ubuntu-latest
+    env:
+      APP_ENV: test
+      DB_DRIVER: sqlite
+      DB_NAME: ${{ github.workspace }}/storage/tmp/release.sqlite
+      RELEASE_CHECK_DB_DRIVER: pdo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+      - run: composer install --no-interaction --prefer-dist
+      - run: |
+          mkdir -p storage/logs storage/sessions storage/cache storage/backups storage/tmp storage/uploads
+      - run: php tools/cli.php migrate:up
+      - run: php tools/cli.php release:check

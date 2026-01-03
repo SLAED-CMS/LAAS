@@ -62,7 +62,15 @@ final class Kernel
         $appConfig = $this->config['app'] ?? [];
         $securityConfig = $this->config['security'] ?? [];
         $devtoolsConfig = $appConfig['devtools'] ?? [];
+        $env = strtolower((string) ($appConfig['env'] ?? ''));
         $devtoolsEnabled = (bool) ($appConfig['debug'] ?? false) && (bool) ($devtoolsConfig['enabled'] ?? false);
+        if ($env === 'prod') {
+            $devtoolsEnabled = false;
+            $devtoolsConfig['enabled'] = false;
+            $devtoolsConfig['collect_db'] = false;
+            $devtoolsConfig['collect_request'] = false;
+            $devtoolsConfig['collect_logs'] = false;
+        }
         $devtoolsConfig['enabled'] = $devtoolsEnabled;
 
         $requestId = bin2hex(random_bytes(16));

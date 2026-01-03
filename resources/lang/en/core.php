@@ -30,4 +30,8 @@ return [
     'system.health.degraded' => 'Degraded',
     'system.backup.created' => 'Backup created',
     'system.health.ok' => 'OK',
+    'release.check.ok' => 'Release check OK',
+    'release.check.failed' => 'Release check failed',
+    'release.devtools.disabled_in_prod' => 'DevTools must be disabled in prod',
+    'release.debt.todo_found' => 'TODO/FIXME found (see details)',
 ];

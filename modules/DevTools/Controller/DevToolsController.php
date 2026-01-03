@@ -64,6 +64,10 @@ final class DevToolsController
     private function isAllowed(): bool
     {
         $appConfig = require dirname(__DIR__, 3) . '/config/app.php';
+        $env = strtolower((string) ($appConfig['env'] ?? ''));
+        if ($env === 'prod') {
+            return false;
+        }
         $debug = (bool) ($appConfig['debug'] ?? false);
         $devtoolsEnabled = (bool) (($appConfig['devtools']['enabled'] ?? false));
         if (!$debug || !$devtoolsEnabled) {
