@@ -8,6 +8,7 @@ use Laas\Database\Repositories\RbacRepository;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Media\Repository\MediaRepository;
+use Laas\Modules\Media\Service\MediaUploadService;
 use Laas\Modules\Media\Service\MimeSniffer;
 use Laas\Modules\Media\Service\StorageService;
 use Laas\Support\AuditLogger;
@@ -45,6 +46,7 @@ final class AdminMediaController
         $offset = ($page - 1) * $perPage;
 
         $items = $this->mapRows($repo->list($perPage, $offset, $query));
+        $showPagination = $totalPages > 1 ? 1 : 0;
 
         return $this->view->render('pages/media.html', [
             'items' => $items,
@@ -55,6 +57,9 @@ final class AdminMediaController
             'has_next' => $page < $totalPages,
             'prev_page' => $page > 1 ? $page - 1 : 1,
             'next_page' => $page < $totalPages ? $page + 1 : $totalPages,
+            'show_pagination' => $showPagination,
+            'prev_class' => $page > 1 ? '' : 'disabled',
+            'next_class' => $page < $totalPages ? '' : 'disabled',
             'success' => null,
             'errors' => [],
         ], 200, [], [
@@ -78,64 +83,38 @@ final class AdminMediaController
             return $this->validationError($request, ['admin.media.error_upload_failed']);
         }
 
-        $config = $this->mediaConfig();
-        $maxBytes = (int) ($config['max_bytes'] ?? 0);
-        if ($maxBytes > 0 && (int) ($file['size'] ?? 0) > $maxBytes) {
-            return $this->validationError($request, ['admin.media.error_too_large']);
-        }
-
-        $sniffer = new MimeSniffer();
-        $mime = $sniffer->detect((string) $file['tmp_name']);
-        if ($mime === null) {
-            return $this->validationError($request, ['admin.media.error_invalid_type']);
-        }
-
-        $allowed = $config['allowed_mime'] ?? [];
-        if (is_array($allowed) && $allowed !== [] && !in_array($mime, $allowed, true)) {
-            return $this->validationError($request, ['admin.media.error_invalid_type']);
-        }
-
-        $extension = $sniffer->extensionForMime($mime);
-        if ($extension === null) {
-            return $this->validationError($request, ['admin.media.error_invalid_type']);
-        }
-
-        $storage = $this->storage();
-        try {
-            $stored = $storage->storeUploadedFile($file, $extension);
-        } catch (Throwable) {
-            return $this->validationError($request, ['admin.media.error_upload_failed']);
-        }
-
         $originalName = $this->safeOriginalName((string) ($file['name'] ?? ''));
-        $diskPath = $stored['disk_path'];
-        $absolutePath = $stored['absolute_path'];
-        $hash = is_file($absolutePath) ? hash_file('sha256', $absolutePath) : null;
+        $config = $this->mediaConfig();
 
-        $mediaId = $repo->create([
-            'uuid' => $stored['uuid'],
-            'disk_path' => $diskPath,
-            'original_name' => $originalName,
-            'mime_type' => $mime,
-            'size_bytes' => (int) ($file['size'] ?? 0),
-            'sha256' => $hash,
-            'uploaded_by' => $this->currentUserId(),
-        ]);
+        $service = new MediaUploadService($repo, $this->storage(), new MimeSniffer());
+        $result = $service->upload($file, $originalName, $config, $this->currentUserId());
+        if (($result['status'] ?? '') === 'error') {
+            return $this->validationError($request, $result['errors'] ?? []);
+        }
+
+        $mediaId = (int) ($result['id'] ?? 0);
+        $existing = (bool) ($result['existing'] ?? false);
+        $row = $mediaId > 0 ? $repo->findById($mediaId) : null;
+        $mime = (string) ($row['mime_type'] ?? '');
+        $size = (int) ($row['size_bytes'] ?? 0);
+        $successKey = $existing ? 'admin.media.success_deduped' : 'admin.media.success_uploaded';
 
         (new AuditLogger($this->db))->log(
             'media.upload',
             'media_file',
             $mediaId,
             [
+                'id' => $mediaId,
                 'original_name' => $originalName,
                 'mime' => $mime,
-                'size' => (int) ($file['size'] ?? 0),
+                'size' => $size,
             ],
             $this->currentUserId(),
             $request->ip()
         );
 
-        return $this->tableResponse($request, $repo, $this->view->translate('admin.media.success_uploaded'), []);
+        $success = $this->view->translate($successKey);
+        return $this->tableResponse($request, $repo, $success, [], $mediaId > 0 ? $mediaId : null);
     }
 
     public function delete(Request $request, array $params = []): Response
@@ -163,18 +142,32 @@ final class AdminMediaController
                 'media_file',
                 $id,
                 [
+                    'id' => $id,
                     'original_name' => (string) ($row['original_name'] ?? ''),
                     'mime' => (string) ($row['mime_type'] ?? ''),
+                    'size' => (int) ($row['size_bytes'] ?? 0),
                 ],
                 $this->currentUserId(),
                 $request->ip()
             );
         }
 
-        return $this->tableResponse($request, $repo, $this->view->translate('admin.media.success_deleted'), []);
+        $success = $this->view->translate('admin.media.success_deleted');
+        if ($request->isHtmx()) {
+            return $this->view->render('partials/media_row_deleted.html', [
+                'id' => $id,
+                'success' => $success,
+                'errors' => [],
+            ], 200, [], [
+                'theme' => 'admin',
+                'render_partial' => true,
+            ]);
+        }
+
+        return $this->tableResponse($request, $repo, $success, []);
     }
 
-    private function tableResponse(Request $request, MediaRepository $repo, ?string $success, array $errors): Response
+    private function tableResponse(Request $request, MediaRepository $repo, ?string $success, array $errors, ?int $flashId = null): Response
     {
         $query = trim((string) ($request->query('q') ?? ''));
         $page = max(1, (int) ($request->query('page') ?? 1));
@@ -186,7 +179,8 @@ final class AdminMediaController
         }
         $offset = ($page - 1) * $perPage;
 
-        $items = $this->mapRows($repo->list($perPage, $offset, $query));
+        $items = $this->mapRows($repo->list($perPage, $offset, $query), $flashId);
+        $showPagination = $totalPages > 1 ? 1 : 0;
 
         if ($request->isHtmx()) {
             return $this->view->render('partials/media_table_response.html', [
@@ -199,6 +193,9 @@ final class AdminMediaController
                 'has_next' => $page < $totalPages,
                 'prev_page' => $page > 1 ? $page - 1 : 1,
                 'next_page' => $page < $totalPages ? $page + 1 : $totalPages,
+                'show_pagination' => $showPagination,
+                'prev_class' => $page > 1 ? '' : 'disabled',
+                'next_class' => $page < $totalPages ? '' : 'disabled',
                 'q' => $query,
             ], 200, [], [
                 'theme' => 'admin',
@@ -217,6 +214,9 @@ final class AdminMediaController
             'has_next' => $page < $totalPages,
             'prev_page' => $page > 1 ? $page - 1 : 1,
             'next_page' => $page < $totalPages ? $page + 1 : $totalPages,
+            'show_pagination' => $showPagination,
+            'prev_class' => $page > 1 ? '' : 'disabled',
+            'next_class' => $page < $totalPages ? '' : 'disabled',
         ], 200, [], [
             'theme' => 'admin',
         ]);
@@ -226,6 +226,15 @@ final class AdminMediaController
     {
         $errors = [];
         foreach ($keys as $key) {
+            if (is_array($key)) {
+                $k = (string) ($key['key'] ?? '');
+                $params = is_array($key['params'] ?? null) ? $key['params'] : [];
+                if ($k !== '') {
+                    $errors[] = $this->view->translate($k, $params);
+                }
+                continue;
+            }
+
             $errors[] = $this->view->translate((string) $key);
         }
 
@@ -251,6 +260,9 @@ final class AdminMediaController
             'has_next' => false,
             'prev_page' => 1,
             'next_page' => 1,
+            'show_pagination' => 0,
+            'prev_class' => 'disabled',
+            'next_class' => 'disabled',
         ], 422, [], [
             'theme' => 'admin',
         ]);
@@ -364,13 +376,14 @@ final class AdminMediaController
         return $name;
     }
 
-    private function mapRows(array $rows): array
+    private function mapRows(array $rows, ?int $flashId = null): array
     {
-        return array_map(function (array $row): array {
+        return array_map(function (array $row) use ($flashId): array {
             $mime = (string) ($row['mime_type'] ?? '');
             $originalName = (string) ($row['original_name'] ?? '');
             $id = (int) ($row['id'] ?? 0);
             $size = (int) ($row['size_bytes'] ?? 0);
+            $isImage = str_starts_with($mime, 'image/');
 
             return [
                 'id' => $id,
@@ -379,8 +392,10 @@ final class AdminMediaController
                 'size_bytes' => $size,
                 'size_display' => $this->formatBytes($size),
                 'created_at_display' => (string) ($row['created_at'] ?? ''),
-                'is_image' => str_starts_with($mime, 'image/'),
+                'is_image' => $isImage,
+                'badge' => $mime === 'application/pdf' ? $this->view->translate('admin.media.badge_pdf') : $this->view->translate('admin.media.badge_file'),
                 'url' => '/media/' . $id . '/' . $this->safeDownloadName($originalName, $mime),
+                'flash' => $flashId !== null && $id === $flashId,
             ];
         }, $rows);
     }

@@ -15,8 +15,20 @@ final class StorageService
     /** @return array{uuid: string, disk_path: string, absolute_path: string} */
     public function storeUploadedFile(array $file, string $extension): array
     {
-        $uuid = $this->uuidV4();
-        $diskPath = $this->buildDiskPath(new DateTimeImmutable(), $uuid, $extension);
+        $quarantine = $this->storeUploadedToQuarantine($file);
+        return $this->finalizeFromQuarantine($quarantine['absolute_path'], $extension);
+    }
+
+    public function absolutePath(string $diskPath): string
+    {
+        return $this->rootPath . '/storage/' . ltrim($diskPath, '/');
+    }
+
+    /** @return array{disk_path: string, absolute_path: string} */
+    public function storeUploadedToQuarantine(array $file): array
+    {
+        $name = bin2hex(random_bytes(16)) . '.tmp';
+        $diskPath = 'uploads/quarantine/' . $name;
         $absolutePath = $this->absolutePath($diskPath);
 
         $dir = dirname($absolutePath);
@@ -34,20 +46,42 @@ final class StorageService
         }
 
         return [
+            'disk_path' => $diskPath,
+            'absolute_path' => $absolutePath,
+        ];
+    }
+
+    /** @return array{uuid: string, disk_path: string, absolute_path: string} */
+    public function finalizeFromQuarantine(string $quarantinePath, string $extension, ?DateTimeImmutable $now = null): array
+    {
+        $uuid = $this->randomId();
+        $diskPath = $this->buildDiskPath($now ?? new DateTimeImmutable(), $uuid, $extension);
+        $absolutePath = $this->absolutePath($diskPath);
+
+        $dir = dirname($absolutePath);
+        if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
+            throw new RuntimeException('Failed to create upload directory');
+        }
+
+        if (!rename($quarantinePath, $absolutePath)) {
+            throw new RuntimeException('Failed to move uploaded file');
+        }
+
+        return [
             'uuid' => $uuid,
             'disk_path' => $diskPath,
             'absolute_path' => $absolutePath,
         ];
     }
 
-    public function absolutePath(string $diskPath): string
-    {
-        return $this->rootPath . '/storage/' . ltrim($diskPath, '/');
-    }
-
     public function delete(string $diskPath): void
     {
         $path = $this->absolutePath($diskPath);
+        $this->deleteAbsolute($path);
+    }
+
+    public function deleteAbsolute(string $path): void
+    {
         if (is_file($path)) {
             @unlink($path);
         }
@@ -61,12 +95,8 @@ final class StorageService
         return sprintf('uploads/%s/%s/%s.%s', $year, $month, $uuid, $ext);
     }
 
-    private function uuidV4(): string
+    private function randomId(): string
     {
-        $data = random_bytes(16);
-        $data[6] = chr((ord($data[6]) & 0x0f) | 0x40);
-        $data[8] = chr((ord($data[8]) & 0x3f) | 0x80);
-
-        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+        return bin2hex(random_bytes(16));
     }
 }

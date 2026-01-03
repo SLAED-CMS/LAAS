@@ -65,6 +65,15 @@ final class MediaRepository
         return $row ?: null;
     }
 
+    public function findBySha256(string $sha256): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM media_files WHERE sha256 = :sha256 LIMIT 1');
+        $stmt->execute(['sha256' => $sha256]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
     public function create(array $data): int
     {
         $now = date('Y-m-d H:i:s');

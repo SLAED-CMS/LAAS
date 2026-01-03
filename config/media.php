@@ -28,7 +28,7 @@ $envInt = static function (string $key, int $default) use ($env): int {
     return (int) $value;
 };
 
-$allowed = $envString('MEDIA_ALLOWED_MIME', 'image/jpeg,image/png,image/gif,image/webp,application/pdf');
+$allowed = $envString('MEDIA_ALLOWED_MIME', 'image/jpeg,image/png,image/webp,application/pdf');
 $allowedList = array_filter(array_map('trim', explode(',', $allowed)));
 
 return [

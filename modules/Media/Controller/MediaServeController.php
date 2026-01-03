@@ -8,6 +8,7 @@ use Laas\Database\Repositories\RbacRepository;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Media\Repository\MediaRepository;
+use Laas\Modules\Media\Service\MimeSniffer;
 use Laas\Modules\Media\Service\StorageService;
 use Laas\View\View;
 use Throwable;
@@ -53,12 +54,15 @@ final class MediaServeController
 
         $mime = (string) ($row['mime_type'] ?? 'application/octet-stream');
         $size = (int) ($row['size_bytes'] ?? filesize($path));
-        $name = $this->safeName((string) ($row['original_name'] ?? 'file'));
-        $disposition = str_starts_with($mime, 'image/') ? 'inline' : 'attachment';
+        $name = $this->safeDownloadName((string) ($row['original_name'] ?? 'file'), $mime);
+        $disposition = $this->contentDisposition($mime);
 
-        $body = (string) file_get_contents($path);
+        $body = file_get_contents($path);
+        if ($body === false) {
+            return $this->notFound();
+        }
 
-        return new Response($body, 200, [
+        return new Response((string) $body, 200, [
             'Content-Type' => $mime,
             'Content-Length' => (string) $size,
             'Content-Disposition' => $disposition . '; filename="' . $name . '"',
@@ -141,6 +145,47 @@ final class MediaServeController
         $name = str_replace(['"', '\\', '/'], '', $name);
 
         return $name;
+    }
+
+    private function contentDisposition(string $mime): string
+    {
+        if (str_starts_with($mime, 'image/') || $mime === 'application/pdf') {
+            return 'inline';
+        }
+
+        return 'attachment';
+    }
+
+    private function safeDownloadName(string $name, string $mime): string
+    {
+        $ext = (new MimeSniffer())->extensionForMime($mime) ?? 'bin';
+        $base = pathinfo($name, PATHINFO_FILENAME);
+        $base = $this->slugify($base);
+        if ($base === '') {
+            $base = 'file';
+        }
+
+        return $this->safeName($base . '.' . $ext);
+    }
+
+    private function slugify(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+
+        $ascii = @iconv('UTF-8', 'ASCII//TRANSLIT', $value);
+        if (is_string($ascii) && $ascii !== '') {
+            $value = $ascii;
+        }
+
+        $value = strtolower($value);
+        $value = preg_replace('/[^a-z0-9]+/', '-', $value) ?? '';
+        $value = trim($value, '-');
+        $value = preg_replace('/-+/', '-', $value) ?? '';
+
+        return $value;
     }
 
     private function notFound(): Response

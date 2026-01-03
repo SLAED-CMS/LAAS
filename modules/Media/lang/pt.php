@@ -2,8 +2,8 @@
 declare(strict_types=1);
 
 return array (
-    'admin.nav.media' => 'Mídia',
-    'admin.media.title' => 'Mídia',
+    'admin.nav.media' => 'MÃ­dia',
+    'admin.media.title' => 'MÃ­dia',
     'admin.media.upload' => 'Enviar',
     'admin.media.delete' => 'Excluir',
     'admin.media.file' => 'Arquivo',
@@ -11,10 +11,10 @@ return array (
     'admin.media.type' => 'Tipo',
     'admin.media.size' => 'Tamanho',
     'admin.media.created' => 'Criado',
-    'admin.media.actions' => 'Ações',
+    'admin.media.actions' => 'AÃ§Ãµes',
     'admin.media.success_uploaded' => 'Arquivo enviado.',
-    'admin.media.success_deleted' => 'Arquivo excluído.',
-    'admin.media.error_invalid_type' => 'Tipo de arquivo inválido.',
+    'admin.media.success_deleted' => 'Arquivo excluÃ­do.',
+    'admin.media.error_invalid_type' => 'Tipo de arquivo invÃ¡lido.',
     'admin.media.error_too_large' => 'Arquivo muito grande.',
     'admin.media.error_upload_failed' => 'Falha no envio.',
     'admin.media.open' => 'Abrir',
@@ -23,4 +23,9 @@ return array (
     'admin.media.search' => 'Pesquisar',
     'admin.media.search_button' => 'Pesquisar',
     'admin.media.empty' => 'Nenhum arquivo encontrado.',
+    'admin.media.success_deduped' => 'File already exists.',
+    'admin.media.error_svg_forbidden' => 'SVG is not allowed.',
+    'admin.media.error_too_large' => 'File is too large. Max: {max}.',
+    'admin.media.badge_pdf' => 'PDF',
+    'admin.media.badge_file' => 'FILE',
 );

@@ -23,6 +23,7 @@ final class MediaServiceTest extends TestCase
 
         $this->assertSame('jpg', $sniffer->extensionForMime('image/jpeg'));
         $this->assertSame('png', $sniffer->extensionForMime('image/png'));
+        $this->assertNull($sniffer->extensionForMime('image/gif'));
         $this->assertNull($sniffer->extensionForMime('application/zip'));
     }
 }

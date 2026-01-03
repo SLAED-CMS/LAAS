@@ -9,7 +9,6 @@ final class MimeSniffer
     private array $mimeToExt = [
         'image/jpeg' => 'jpg',
         'image/png' => 'png',
-        'image/gif' => 'gif',
         'image/webp' => 'webp',
         'application/pdf' => 'pdf',
     ];
