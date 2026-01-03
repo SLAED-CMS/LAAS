@@ -32,3 +32,11 @@ RBAC changes are recorded in audit logs:
 - `rbac.user.roles.updated`
 
 Context includes the actor, target IDs, and diffs for permissions/roles.
+
+## Diagnostics
+
+Admin diagnostics page: `/admin/rbac/diagnostics`
+
+- Requires permission `rbac.diagnostics`.
+- Shows user roles, effective permissions (grouped), and why a permission is granted.
+- Logs `rbac.diagnostics.viewed` with target user id.

@@ -6,6 +6,9 @@
 - v2.1.1: Global Admin Search
   - Admin search page for pages/media/users
   - HTMX live search with debounce and safe highlights
+- v2.2.0: RBAC diagnostics
+  - Admin diagnostics page with effective permissions and explanations
+  - Audit event for diagnostics views
 - v2.0.0: Stable CMS Release
   - Release checks and prod hardening
   - DevTools disabled in prod
