@@ -15,6 +15,7 @@ use Laas\Modules\Media\Service\StorageService;
 use Laas\Support\AuditLogger;
 use Laas\Support\BackupManager;
 use Laas\Support\ConfigSanityChecker;
+use Laas\Support\ConfigExporter;
 use Laas\Support\LoggerFactory;
 use Laas\Support\OpsChecker;
 use Laas\Support\ReleaseChecker;
@@ -687,6 +688,82 @@ $commands['release:check'] = function () use ($rootPath, $dbManager, $appConfig,
     return 0;
 };
 
+$commands['config:export'] = function () use ($rootPath, $dbManager, $appConfig, $storageConfig, $modulesConfig): int {
+    $mediaConfig = is_file($rootPath . '/config/media.php') ? require $rootPath . '/config/media.php' : [];
+    $translator = new Translator(
+        $rootPath,
+        (string) ($appConfig['theme'] ?? 'default'),
+        (string) ($appConfig['default_locale'] ?? 'en')
+    );
+
+    $settingsProvider = new \Laas\Settings\SettingsProvider(
+        $dbManager,
+        [
+            'site_name' => $appConfig['name'] ?? 'LAAS',
+            'default_locale' => $appConfig['default_locale'] ?? 'en',
+            'theme' => $appConfig['theme'] ?? 'default',
+        ],
+        ['site_name', 'default_locale', 'theme']
+    );
+
+    $warnings = [];
+    $schemaVersion = null;
+    if (!$dbManager->healthCheck()) {
+        $warnings[] = 'db_unavailable';
+    } else {
+        try {
+            $stmt = $dbManager->pdo()->query('SELECT migration FROM migrations ORDER BY id DESC LIMIT 1');
+            if ($stmt !== false) {
+                $row = $stmt->fetch();
+                if (is_array($row) && isset($row['migration'])) {
+                    $schemaVersion = (string) $row['migration'];
+                }
+            }
+        } catch (Throwable) {
+            $schemaVersion = null;
+        }
+    }
+
+    $exporter = new ConfigExporter(
+        $rootPath,
+        $appConfig,
+        is_array($mediaConfig) ? $mediaConfig : [],
+        $storageConfig,
+        $modulesConfig,
+        $settingsProvider->all(),
+        $schemaVersion
+    );
+
+    $pretty = hasFlag($args, 'pretty');
+    $redact = true;
+    $redactOpt = getOption($args, 'redact');
+    if ($redactOpt !== null) {
+        $parsed = filter_var($redactOpt, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        $redact = $parsed ?? true;
+    }
+    $out = getOption($args, 'out');
+
+    $snapshot = $exporter->buildSnapshot($redact, $warnings);
+    $json = $exporter->toJson($snapshot, $pretty);
+    if ($json === '') {
+        echo $translator->trans('config.export.failed') . "\n";
+        return 1;
+    }
+
+    if ($out !== null && $out !== '') {
+        if (!$exporter->writeAtomic($out, $json)) {
+            echo $translator->trans('config.export.failed') . "\n";
+            return 1;
+        }
+        echo str_replace('{file}', $out, $translator->trans('config.export.wrote')) . "\n";
+        return 0;
+    }
+
+    echo $json;
+    fwrite(STDERR, $translator->trans('config.export.ok') . "\n");
+    return 0;
+};
+
 if ($command === '' || !isset($commands[$command])) {
     echo "Available commands:\n";
     foreach (array_keys($commands) as $name) {
@@ -710,6 +787,11 @@ function getOption(array $args, string $name): ?string
     }
 
     return null;
+}
+
+function hasFlag(array $args, string $name): bool
+{
+    return in_array('--' . $name, $args, true);
 }
 
 function hasFlag(array $args, string $name): bool

@@ -34,4 +34,7 @@ return [
     'release.check.failed' => 'Release check failed',
     'release.devtools.disabled_in_prod' => 'DevTools must be disabled in prod',
     'release.debt.todo_found' => 'TODO/FIXME found (see details)',
+    'config.export.ok' => 'Config snapshot exported.',
+    'config.export.failed' => 'Config snapshot export failed.',
+    'config.export.wrote' => 'Config snapshot written to {file}.',
 ];
