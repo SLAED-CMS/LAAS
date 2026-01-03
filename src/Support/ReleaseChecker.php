@@ -124,7 +124,7 @@ final class ReleaseChecker
         $checker = new ConfigSanityChecker();
         $health = new HealthService(
             $this->rootPath,
-            static fn (): bool => $this->db->healthCheck(),
+            fn (): bool => $this->db->healthCheck(),
             $this->storage,
             $checker,
             [
@@ -144,6 +144,15 @@ final class ReleaseChecker
         foreach ($checks as $name => $ok) {
             if ($ok !== true) {
                 $errors[] = 'health_' . $name . '_failed';
+                // Debug output for CI
+                if (getenv('CI') === 'true' || getenv('APP_ENV') === 'test') {
+                    fwrite(STDERR, "DEBUG: Health check '{$name}' failed (value: " . var_export($ok, true) . ")\n");
+                }
+            } else {
+                // Show passing checks too in debug mode
+                if (getenv('CI') === 'true' || getenv('APP_ENV') === 'test') {
+                    fwrite(STDERR, "DEBUG: Health check '{$name}' passed\n");
+                }
             }
         }
 

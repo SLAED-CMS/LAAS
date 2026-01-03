@@ -61,7 +61,12 @@ final class HealthService
         try {
             $checker = $this->dbCheck;
             return (bool) $checker();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            // Debug output for CI/test environments
+            if (getenv('CI') === 'true' || getenv('APP_ENV') === 'test') {
+                fwrite(STDERR, "DEBUG: DB health check exception: " . $e->getMessage() . "\n");
+                fwrite(STDERR, "DEBUG: Exception trace: " . $e->getTraceAsString() . "\n");
+            }
             return false;
         }
     }
