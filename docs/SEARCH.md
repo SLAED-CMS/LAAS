@@ -5,6 +5,7 @@
 - Pages (frontend + admin)
 - Media (admin)
 - Users (admin)
+- Global Admin Search (pages/media/users)
 
 ## Query Rules
 
@@ -32,3 +33,6 @@
   - `hx-get` to the list endpoint
 - Empty state uses `alert alert-secondary`
 - Highlight uses `<mark>` with escaped segments
+- Admin global search:
+  - `/admin/search?q=...` aggregates pages/media/users
+  - Results scoped by RBAC permissions
