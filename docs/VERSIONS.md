@@ -1,5 +1,9 @@
 # LAAS Versions
 
+- v2.2.4: Coverage report + CI threshold
+  - PHPUnit coverage reports (Clover + HTML)
+  - CI coverage artifacts and line threshold gate
+  - Expanded tests for core/critical paths
 - v2.2.3: OpCache docs + deploy flow
   - OPcache production recommendations and safety notes
   - Safe PHP-FPM deploy flow with reload guidance

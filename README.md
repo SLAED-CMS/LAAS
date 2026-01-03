@@ -273,15 +273,18 @@ tools/                 # CLI utilities
 
 ---
 
-## Running Tests
+## Testing & Coverage
+
+- See [docs/TESTING.md](docs/TESTING.md) for full testing and coverage guidance.
 
 ```
 vendor/bin/phpunit
+vendor/bin/phpunit --coverage-html coverage/html --coverage-clover coverage/clover.xml
 ```
 
 ## CI
 
-- GitHub Actions runs lint, phpunit, and sqlite smoke checks.
+- GitHub Actions runs lint, phpunit, coverage, and sqlite smoke checks.
 - Smoke commands: `php tools/cli.php ops:check`, `php tools/cli.php migrate:status`.
 
 ## Release
@@ -451,7 +454,8 @@ See [docs/RBAC.md](docs/RBAC.md) for detailed documentation.
 - [Limitations](docs/LIMITATIONS.md) — Known limitations and constraints
 
 ### Development
-- [Coding Standards](docs/CODING_STANDARDS.md) — Code style and conventions
+- [Coding Standards](docs/CODING_STANDARDS.md) - Code style and conventions
+- [Testing](docs/TESTING.md) - Running tests and coverage
 - [Versions](docs/VERSIONS.md) — Version history and changelog
 - [Release Notes](docs/RELEASE.md) — Human-readable release history
 - [Roadmap](docs/ROADMAP.md) — Project roadmap (v0.1 → v2.x)
@@ -479,3 +483,8 @@ MIT License — see [LICENSE](LICENSE).
 - Email: info@laas-cms.org
 
 **Last updated:** January 2026
+
+
+
+
+
