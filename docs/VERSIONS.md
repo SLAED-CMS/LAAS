@@ -1,5 +1,9 @@
 # LAAS Versions
 
+- v2.2.2: Performance must-have
+  - Perf indexes for pages/media/audit
+  - N+1 removal in users list (batched roles)
+  - Base query-cache for settings/permissions/menus (TTL + invalidation)
 - v2.2.1: Module contract tests template
   - Contract test base for module discovery requirements
   - Storage and media contract tests for core invariants
