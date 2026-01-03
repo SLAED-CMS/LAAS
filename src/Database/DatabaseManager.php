@@ -30,6 +30,18 @@ final class DatabaseManager
         }
 
         $driver = $this->config['driver'] ?? 'mysql';
+        if ($driver === 'sqlite') {
+            $db = $this->config['database'] ?? ':memory:';
+            $dsn = 'sqlite:' . $db;
+            $options = $this->config['options'] ?? [];
+            $options[PDO::ATTR_ERRMODE] = PDO::ERRMODE_EXCEPTION;
+            $options[PDO::ATTR_DEFAULT_FETCH_MODE] = PDO::FETCH_ASSOC;
+            $options[PDO::ATTR_EMULATE_PREPARES] = false;
+
+            $this->pdo = new PDO($dsn, null, null, $options);
+            return $this->pdo;
+        }
+
         $host = $this->config['host'] ?? '127.0.0.1';
         $port = (int) ($this->config['port'] ?? 3306);
         $db = $this->config['database'] ?? '';

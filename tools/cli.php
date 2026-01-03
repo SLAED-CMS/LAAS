@@ -14,7 +14,9 @@ use Laas\Modules\Media\Service\MediaThumbnailService;
 use Laas\Modules\Media\Service\StorageService;
 use Laas\Support\AuditLogger;
 use Laas\Support\BackupManager;
+use Laas\Support\ConfigSanityChecker;
 use Laas\Support\LoggerFactory;
+use Laas\Support\OpsChecker;
 use Laas\I18n\Translator;
 
 $rootPath = dirname(__DIR__);
@@ -554,6 +556,32 @@ $commands['backup:inspect'] = function () use ($rootPath, $dbManager, $appConfig
         echo 'size.' . $key . ': ' . $value . "\n";
     }
     return 0;
+};
+
+$commands['ops:check'] = function () use ($rootPath, $dbManager, $appConfig, $storageConfig): int {
+    $storage = new StorageService($rootPath);
+    $checker = new ConfigSanityChecker();
+    $mediaConfig = is_file($rootPath . '/config/media.php') ? require $rootPath . '/config/media.php' : [];
+    $dbConfig = is_file($rootPath . '/config/database.php') ? require $rootPath . '/config/database.php' : [];
+
+    $ops = new OpsChecker(
+        $rootPath,
+        static fn (): bool => $dbManager->healthCheck(),
+        $storage,
+        $checker,
+        [
+            'media' => is_array($mediaConfig) ? $mediaConfig : [],
+            'storage' => $storageConfig,
+            'db' => is_array($dbConfig) ? $dbConfig : [],
+        ]
+    );
+
+    $result = $ops->run();
+    foreach ($result['checks'] as $name => $status) {
+        echo $name . ': ' . $status . "\n";
+    }
+
+    return $result['code'];
 };
 
 if ($command === '' || !isset($commands[$command])) {
