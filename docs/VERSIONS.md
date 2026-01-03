@@ -1,5 +1,9 @@
 # LAAS Versions
 
+- v1.12.0: CI / QA / Release Engineering
+  - GitHub Actions CI (lint, phpunit, sqlite smoke)
+  - ops:check CLI smoke command
+  - Release automation from tags (notes from VERSIONS.md)
 - v1.11.3: Production Docs & Upgrade Path
   - Production checklist and ops guidance
   - Upgrade path and rollback strategy

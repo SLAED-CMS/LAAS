@@ -143,7 +143,17 @@ tools/                 # CLI utilities
 vendor/bin/phpunit
 ```
 
----
+## CI
+
+- GitHub Actions runs lint, phpunit, and sqlite smoke checks.
+- Smoke commands: `php tools/cli.php ops:check`, `php tools/cli.php migrate:status`.
+
+## Release
+
+- Releases are created automatically from tags `v*`.
+- Release notes are pulled from `docs/VERSIONS.md`.
+
+--- 
 
 ## Production Readiness Checklist
 
