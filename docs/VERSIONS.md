@@ -9,6 +9,9 @@
 - v2.2.0: RBAC diagnostics
   - Admin diagnostics page with effective permissions and explanations
   - Audit event for diagnostics views
+- v2.2.1: Module contract tests template
+  - Contract test base for module discovery requirements
+  - Storage and media contract tests for core invariants
 - v2.0.0: Stable CMS Release
   - Release checks and prod hardening
   - DevTools disabled in prod
