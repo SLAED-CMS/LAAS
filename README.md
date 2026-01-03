@@ -155,6 +155,12 @@ vendor/bin/phpunit
 - Review backup/restore safety in `docs/BACKUP.md` (restore is destructive)
 - Configure storage disk (local or S3)
 
+## Production
+
+- Checklist: `docs/PRODUCTION.md`
+- Upgrade path: `UPGRADING.md`
+- Known limitations: `docs/LIMITATIONS.md`
+
 ---
 
 ## Modules (DB-backed)
@@ -230,6 +236,9 @@ WHERE u.username = 'admin';
 - `docs/I18N.md`
 - `docs/VERSIONS.md`
 - `docs/BACKUP.md`
+- `docs/PRODUCTION.md`
+- `docs/LIMITATIONS.md`
+- `UPGRADING.md`
 - `docs/CODING_STANDARDS.md`
 
 ---

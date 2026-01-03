@@ -1,0 +1,22 @@
+# Known Limitations (v1.11.3)
+
+- No horizontal session scaling
+  - Sessions are file-based by default.
+  - Becomes a problem with multiple app servers.
+  - Workaround: shared session storage or sticky sessions.
+- No async jobs/queue
+  - All tasks run synchronously.
+  - Becomes a problem for heavy background work.
+  - Workaround: external queue/worker system.
+- Thumbnails are pre-generated only
+  - No on-the-fly transforms.
+  - Becomes a problem for large variant sets.
+  - Workaround: run `media:thumbs:sync` regularly.
+- No built-in WAF
+  - Application-layer protection only.
+  - Becomes a problem under active attack.
+  - Workaround: use a reverse proxy WAF/CDN.
+- No zero-downtime migrations
+  - Migrations may lock tables or block writes.
+  - Becomes a problem for strict uptime requirements.
+  - Workaround: maintenance window and read-only mode.

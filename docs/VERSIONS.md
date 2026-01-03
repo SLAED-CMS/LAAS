@@ -1,5 +1,9 @@
 # LAAS Versions
 
+- v1.11.3: Production Docs & Upgrade Path
+  - Production checklist and ops guidance
+  - Upgrade path and rollback strategy
+  - Known limitations document
 - v1.11.2: Backup/Restore Hardening
   - Backup inspect command and checksum validation
   - Double-confirm restore with prod safety guard

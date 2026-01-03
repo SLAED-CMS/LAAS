@@ -1,0 +1,36 @@
+# Production Checklist (v1.11.3)
+
+- HTTPS
+  - Required for admin and sessions.
+  - Terminate TLS at reverse proxy (nginx/apache).
+  - Ensure trusted proxy headers are configured correctly.
+- HSTS
+  - Recommended: `max-age=15552000; includeSubDomains; preload`.
+  - Enable only after confirming HTTPS is stable.
+- Environment flags
+  - `APP_ENV=prod`
+  - `APP_DEBUG=false`
+  - `DEVTOOLS_ENABLED=false`
+- Storage permissions
+  - Writable: `storage/`, `storage/logs/`, `storage/sessions/`, `storage/cache/`, `storage/backups/`.
+  - Never expose `storage/` directly via web server.
+- Media & Storage
+  - Local: keep `storage/uploads` private.
+  - S3/MinIO: use private buckets, no public write access.
+- Backups
+  - Schedule `backup:create` regularly.
+  - Periodically run `backup:inspect` and `backup:restore --dry-run`.
+- Sessions & Cookies
+  - HttpOnly and Secure cookies.
+  - SameSite=Lax (or Strict if safe for your flows).
+- DevTools
+  - Must be disabled in production.
+- CSP & Security headers
+  - Start with default CSP and tighten over time.
+  - When relaxing CSP, document the reason and scope.
+- Health checks
+  - Use `/health` for readiness/liveness.
+  - Health checks are non-destructive by default.
+- Read-only mode
+  - Use during maintenance windows and restores.
+  - Enable before risky migrations or bulk edits.
