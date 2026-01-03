@@ -1,5 +1,9 @@
 # LAAS Versions
 
+- v1.10.1: S3-compatible storage driver
+  - S3/MinIO disk support (SigV4, proxy serving)
+  - Media uploads and thumbs on selected disk
+  - DevTools storage metrics and masked object keys
 - v1.10.0: Public Media + Signed URLs
   - Public access modes (private/all/signed)
   - Signed URLs for media and thumbnails

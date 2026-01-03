@@ -35,6 +35,12 @@
 - Constant-time signature compare.
 - Fail-closed on missing/expired/invalid signatures.
 
+## S3 storage driver
+- Endpoint and credentials come only from config/env (no user-controlled URLs).
+- Requests use AWS SigV4 canonicalization, signed headers only.
+- Proxy serving only (no public buckets, no presigned redirects).
+- Fail-closed on S3 errors without leaking secrets.
+
 ## Media thumbnails
 - Pre-generated only, stored under `_cache`.
 - Max pixels guard and memory guard during decode.

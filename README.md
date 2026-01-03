@@ -75,6 +75,7 @@ http://laas.loc/
 
 ## Milestones
 
+- **v1.10.1**: S3-compatible storage (MinIO/AWS)
 - **v1.10.0**: Public Media + Signed URLs
 - **v1.8.3**: Media AV, per-MIME limits, DevTools media panel
 - **v1.8.2**: Media upload protections (rate limit, size, slow upload)
@@ -208,6 +209,7 @@ WHERE u.username = 'admin';
 ## Documentation
 
 - Media uploads and signed URLs: `docs/MEDIA.md`
+- S3/MinIO storage: `docs/MEDIA.md`
 - `docs/ARCHITECTURE.md`
 - `docs/SECURITY.md`
 - `docs/DEVTOOLS.md`

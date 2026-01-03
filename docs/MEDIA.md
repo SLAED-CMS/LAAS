@@ -66,6 +66,15 @@
 - Purposes: `view`, `download`, `thumb:sm`/`thumb:md`/`thumb:lg`.
 - Fail-closed: missing/expired/invalid signature denies access.
 
+## Storage disks (v1.10.1)
+- Config: `config/storage.php`, env `STORAGE_DISK=local|s3`.
+- S3 config: `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`,
+  `S3_USE_PATH_STYLE`, `S3_PREFIX`, `S3_TIMEOUT_SECONDS`, `S3_VERIFY_TLS`.
+- Serving is always proxied through controllers (no public buckets, no redirects).
+- Object keys:
+  - `<prefix>/uploads/YYYY/MM/<uuid>.<ext>`
+  - `<prefix>/uploads/_cache/YYYY/MM/<sha256>/<variant>_v<algo>.<ext>`
+
 ## RBAC permissions
 - `media.view`
 - `media.upload`
@@ -124,7 +133,8 @@ storage/uploads/_cache/YYYY/MM/<sha256>/<variant>_v<algo>.webp
 ## DevTools Media panel
 - Visible only when `APP_DEBUG=true`, `DEVTOOLS_ENABLED=true`, and permission `debug.view`.
 - Only for media serve requests.
-- Fields: media id, mime, size, serve mode, masked disk path, storage driver, read time (ms).
+- Fields: media id, mime, size, serve mode, masked disk path, storage driver, object key, read time (ms).
+- S3 stats: request count and total time (ms).
 - Thumb fields: generated (yes/no), reason (if missing), algo version.
 - Access fields: access mode, signature valid, signature exp.
 
@@ -155,4 +165,17 @@ storage/uploads/
   YYYY/
     MM/
       <uuid>.<ext>
+```
+
+## Storage layout (S3 object keys)
+```
+<prefix>/uploads/
+  quarantine/
+  YYYY/
+    MM/
+      <uuid>.<ext>
+  _cache/
+    YYYY/
+      MM/
+        <sha256>/<variant>_v<algo>.<ext>
 ```
