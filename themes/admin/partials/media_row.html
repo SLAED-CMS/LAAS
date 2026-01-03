@@ -43,7 +43,7 @@
     </div>
     <div class="mt-2 d-flex flex-wrap gap-2 align-items-center">
       <span class="badge {% item.public_class %}">{% item.public_label %}</span>
-      {% if item.public_mode == 'all' %}
+      {% if item.public_mode_all %}
         <button class="btn btn-sm btn-outline-primary"
                 type="button"
                 hx-get="/admin/media/{% item.id %}/signed?p=view&public=1"
@@ -54,7 +54,9 @@
           {% t 'media.public.on' %}
         </button>
       {% endif %}
-      {% if item.public_mode == 'signed' and item.is_public and item.signed_enabled %}
+      {% if item.public_mode_signed %}
+      {% if item.is_public %}
+      {% if item.signed_enabled %}
         <button class="btn btn-sm btn-outline-primary"
                 type="button"
                 hx-get="/admin/media/{% item.id %}/signed?p=view"
@@ -64,6 +66,8 @@
                 hx-disabled-elt="this">
           {% t 'media.signed.url' %}
         </button>
+      {% endif %}
+      {% endif %}
       {% endif %}
     </div>
     <div id="media-url-{% item.id %}" class="mt-2"></div>

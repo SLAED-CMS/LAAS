@@ -10,11 +10,14 @@ use Laas\I18n\Translator;
 use Laas\Modules\Media\Service\StorageService;
 use Laas\Support\ConfigSanityChecker;
 use Laas\Support\HealthService;
+use Laas\Support\HealthStatusTracker;
+use Laas\Support\LoggerFactory;
 
 final class HealthController
 {
     private HealthService $healthService;
     private Translator $translator;
+    private ?HealthStatusTracker $tracker = null;
 
     public function __construct(?HealthService $healthService = null, ?Translator $translator = null)
     {
@@ -40,14 +43,19 @@ final class HealthController
             'media' => $mediaConfig,
             'storage' => $storageConfig,
         ];
+        $writeCheck = (bool) ($appConfig['health_write_check'] ?? false);
 
         $this->healthService = new HealthService(
             $rootPath,
             static fn (): bool => $db->healthCheck(),
             $storage,
             $checker,
-            $config
+            $config,
+            $writeCheck
         );
+
+        $logger = (new LoggerFactory($rootPath))->create($appConfig);
+        $this->tracker = new HealthStatusTracker($rootPath, $logger);
     }
 
     public function index(Request $request): Response
@@ -55,10 +63,16 @@ final class HealthController
         $result = $this->healthService->check();
         $ok = (bool) ($result['ok'] ?? false);
         $messageKey = $ok ? 'system.health.ok' : 'system.health.degraded';
+        if ($this->tracker !== null) {
+            $this->tracker->logHealthTransition($ok);
+        }
+
+        $checks = $result['checks'] ?? [];
         $payload = [
             'status' => $ok ? 'ok' : 'degraded',
             'message' => $this->translator->trans($messageKey),
-            'checks' => $result['checks'] ?? [],
+            'checks' => $this->formatChecks($checks),
+            'timestamp' => gmdate('c'),
         ];
 
         return Response::json($payload, $ok ? 200 : 503);
@@ -71,5 +85,15 @@ final class HealthController
         }
         $config = require $path;
         return is_array($config) ? $config : [];
+    }
+
+    /** @param array<string, bool> $checks */
+    private function formatChecks(array $checks): array
+    {
+        $result = [];
+        foreach ($checks as $key => $value) {
+            $result[$key] = $value ? 'ok' : 'fail';
+        }
+        return $result;
     }
 }

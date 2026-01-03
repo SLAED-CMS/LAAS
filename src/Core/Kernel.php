@@ -33,6 +33,7 @@ use Laas\Security\SecurityHeaders;
 use Laas\Settings\SettingsProvider;
 use Laas\Support\LoggerFactory;
 use Laas\Support\ConfigSanityChecker;
+use Laas\Support\LogSpamGuard;
 use Laas\DevTools\DevToolsContext;
 use Laas\DevTools\RequestCollector;
 use Laas\DevTools\PerformanceCollector;
@@ -154,7 +155,12 @@ final class Kernel
             $configErrors = array_merge($configErrors, $sanityErrors);
         }
         if ($configErrors !== []) {
-            $logger->error('Config sanity check failed', ['errors' => $configErrors]);
+            $guard = new LogSpamGuard($this->rootPath);
+            foreach ($configErrors as $error) {
+                $guard->logOnce($logger, 'config:' . $error, 'Config sanity check failed', [
+                    'error' => $error,
+                ]);
+            }
             if ($request->getPath() !== '/health') {
                 return new Response('Error', 500, [
                     'Content-Type' => 'text/plain; charset=utf-8',
@@ -165,7 +171,7 @@ final class Kernel
         $middleware = new MiddlewareQueue([
             new ErrorHandlerMiddleware($logger, (bool) ($appConfig['debug'] ?? false), $requestId),
             new SessionMiddleware(new SessionManager($this->rootPath, $securityConfig)),
-            new ReadOnlyMiddleware((bool) ($appConfig['read_only'] ?? false), $translator),
+            new ReadOnlyMiddleware((bool) ($appConfig['read_only'] ?? false), $translator, $view),
             new CsrfMiddleware(new Csrf()),
             new RateLimitMiddleware(new RateLimiter($this->rootPath), $securityConfig),
             new SecurityHeadersMiddleware(new SecurityHeaders($securityConfig)),

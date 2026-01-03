@@ -28,12 +28,14 @@ $envInt = static function (string $key, int $default) use ($env): int {
     return (int) $value;
 };
 
-$defaultDisk = strtolower($envString('STORAGE_DISK', 'local'));
+$defaultRaw = strtolower($envString('STORAGE_DISK', 'local'));
+$defaultDisk = $defaultRaw;
 if (!in_array($defaultDisk, ['local', 's3'], true)) {
     $defaultDisk = 'local';
 }
 
 return [
+    'default_raw' => $defaultRaw,
     'default' => $defaultDisk,
     'disks' => [
         'local' => [

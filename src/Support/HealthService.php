@@ -13,19 +13,22 @@ final class HealthService
     private StorageService $storage;
     private ConfigSanityChecker $configChecker;
     private array $config;
+    private bool $writeCheck;
 
     public function __construct(
         string $rootPath,
         callable $dbCheck,
         StorageService $storage,
         ConfigSanityChecker $configChecker,
-        array $config
+        array $config,
+        bool $writeCheck = false
     ) {
         $this->rootPath = $rootPath;
         $this->dbCheck = $dbCheck;
         $this->storage = $storage;
         $this->configChecker = $configChecker;
         $this->config = $config;
+        $this->writeCheck = $writeCheck;
     }
 
     /** @return array{ok: bool, checks: array<string, bool>} */
@@ -69,8 +72,13 @@ final class HealthService
             return false;
         }
 
+        if (!$this->writeCheck) {
+            $this->storage->exists('health/.probe');
+            return true;
+        }
+
         $token = bin2hex(random_bytes(6));
-        $diskPath = 'health/check_' . $token . '.txt';
+        $diskPath = 'health/write_check/' . $token . '.txt';
         if (!$this->storage->putContents($diskPath, 'ok')) {
             return false;
         }

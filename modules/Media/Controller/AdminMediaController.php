@@ -617,6 +617,8 @@ final class AdminMediaController
                 'public_label' => $isPublic ? $this->view->translate('media.public.on') : $this->view->translate('media.public.off'),
                 'public_class' => $isPublic ? 'text-bg-success' : 'text-bg-secondary',
                 'public_mode' => $mode,
+                'public_mode_all' => $mode === 'all',
+                'public_mode_signed' => $mode === 'signed',
                 'signed_enabled' => $signedEnabled,
                 'public_url' => $url,
             ];

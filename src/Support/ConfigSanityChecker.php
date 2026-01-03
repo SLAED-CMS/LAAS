@@ -30,7 +30,11 @@ final class ConfigSanityChecker
     private function checkStorage(array $storage): array
     {
         $errors = [];
+        $raw = strtolower((string) ($storage['default_raw'] ?? $storage['default'] ?? ''));
         $default = strtolower((string) ($storage['default'] ?? ''));
+        if (!in_array($raw, ['local', 's3'], true)) {
+            $errors[] = 'storage.default_raw invalid';
+        }
         if (!in_array($default, ['local', 's3'], true)) {
             $errors[] = 'storage.default invalid';
         }

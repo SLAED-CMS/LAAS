@@ -43,7 +43,14 @@ return array (
     'media.public.toggled' => 'Public access updated.',
     'media.signed.url' => 'Signed URL',
     'media.signed.invalid' => 'Signed URL is invalid.',
-    'media.signed.expired' => 'Signed URL has expired.',    'storage.s3.misconfigured' => 'S3 is misconfigured.',
+    'media.signed.expired' => 'Signed URL has expired.',
+    'storage.s3.misconfigured' => 'S3 is misconfigured.',
     'storage.s3.upload_failed' => 'S3 upload failed.',
     'storage.s3.read_failed' => 'S3 read failed.',
-    'storage.s3.delete_failed' => 'S3 delete failed.',);
+    'storage.s3.delete_failed' => 'S3 delete failed.',
+    'system.read_only' => 'Read-only mode: write operations are disabled.',
+    'system.health.ok' => 'OK',
+    'system.health.degraded' => 'Degraded',
+    'system.health.check_failed' => 'Health check failed.',
+    'system.config.invalid' => 'Configuration is invalid.',
+);

@@ -76,4 +76,39 @@ final class HealthControllerTest extends TestCase
         $response = $controller->index(new Request('GET', '/health', [], [], [], ''));
         $this->assertSame(503, $response->getStatus());
     }
+
+    public function testHealthShowsConfigDegraded(): void
+    {
+        $root = sys_get_temp_dir() . '/laas_health_' . bin2hex(random_bytes(4));
+        @mkdir($root . '/storage/cache', 0775, true);
+
+        $storage = new StorageService($root);
+        $checker = new ConfigSanityChecker();
+        $config = [
+            'media' => [
+                'max_bytes' => 10,
+                'allowed_mime' => ['image/jpeg'],
+            ],
+            'storage' => [
+                'default' => 'local',
+                'default_raw' => 'invalid',
+                'disks' => ['s3' => []],
+            ],
+        ];
+
+        $health = new HealthService(
+            $root,
+            static fn (): bool => true,
+            $storage,
+            $checker,
+            $config
+        );
+
+        $translator = new Translator(dirname(__DIR__), 'default', 'en');
+        $controller = new HealthController($health, $translator);
+
+        $response = $controller->index(new Request('GET', '/health', [], [], [], ''));
+        $this->assertSame(503, $response->getStatus());
+        $this->assertStringContainsString('"config":"fail"', $response->getBody());
+    }
 }

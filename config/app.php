@@ -20,10 +20,11 @@ $envBool = static function (string $key, bool $default) use ($env): bool {
 
 return [
     'name' => 'LAAS',
-    'version' => $envString('APP_VERSION', 'v1.11.0'),
+    'version' => $envString('APP_VERSION', 'v1.11.1'),
     'key' => $envString('APP_KEY', ''),
     'env' => $envString('APP_ENV', 'dev'),
     'debug' => $envBool('APP_DEBUG', true),
+    'health_write_check' => $envBool('HEALTH_WRITE_CHECK', false),
     'devtools' => [
         'enabled' => $envBool('DEVTOOLS_ENABLED', false),
         'collect_db' => $envBool('DEVTOOLS_COLLECT_DB', true),
