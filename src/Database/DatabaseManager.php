@@ -32,6 +32,7 @@ final class DatabaseManager
         $driver = $this->config['driver'] ?? 'mysql';
         if ($driver === 'sqlite') {
             $db = $this->config['database'] ?? ':memory:';
+            $this->ensureSqliteDir($db);
             $dsn = 'sqlite:' . $db;
             $options = $this->config['options'] ?? [];
             $options[PDO::ATTR_ERRMODE] = PDO::ERRMODE_EXCEPTION;
@@ -85,6 +86,22 @@ final class DatabaseManager
             return $stmt !== false;
         } catch (\Throwable) {
             return false;
+        }
+    }
+
+    private function ensureSqliteDir(string $db): void
+    {
+        if ($db === ':memory:' || str_starts_with($db, 'file:')) {
+            return;
+        }
+
+        $dir = dirname($db);
+        if ($dir === '' || $dir === '.') {
+            return;
+        }
+
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0775, true);
         }
     }
 }
