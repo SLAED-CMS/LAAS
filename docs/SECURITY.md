@@ -1,4 +1,4 @@
-# Security (v1.8.3)
+# Security (v1.9.0)
 
 ## Sessions
 - Session storage: `storage/sessions`.
@@ -27,6 +27,14 @@
 - Slow-upload protection (max input time guard).
 - Optional ClamAV scan in quarantine, fail-closed.
 - SHA-256 deduplication.
+ - Image hardening: max pixels guard and deterministic thumbnail output.
+
+## Media thumbnails
+- Pre-generated only, stored under `_cache`.
+- Max pixels guard and memory guard during decode.
+- Metadata stripped on output.
+- Deterministic output format and quality.
+- Missing thumbs return 404 (no fallback).
 
 ## RBAC
 - Roles/permissions tables with gate on `/admin*`.

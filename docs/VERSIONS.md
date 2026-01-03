@@ -1,5 +1,16 @@
 # LAAS Versions
 
+- v1.9.2: Image hardening (thumbnails)
+  - Max pixels guard and decode safety
+  - Deterministic thumbnail output with metadata stripping
+  - DevTools thumb visibility (generated/reason/algo)
+- v1.9.1: Media Picker (admin, HTMX)
+  - Reusable HTMX modal picker
+  - Thumbnail preview and selection event
+- v1.9.0: Media Transforms (thumbnails)
+  - Pre-generated image thumbnails (sm/md/lg)
+  - Secure thumb serve endpoint with cache headers
+  - CLI sync command for missing variants
 - v1.8.3: Media hardening final
   - ClamAV scan (feature flag, fail-closed)
   - Per-MIME size limits

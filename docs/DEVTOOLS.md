@@ -1,4 +1,4 @@
-# DevTools (v1.8.3)
+# DevTools (v1.9.0)
 
 ## Enable
 Set in `.env`:
@@ -24,6 +24,7 @@ DEVTOOLS_COLLECT_LOGS=false
 - Shown only for media serve requests.
 - Conditions: `APP_DEBUG=true`, `DEVTOOLS_ENABLED=true`, permission `debug.view`.
 - Fields: media id, mime, size, serve mode, masked disk path, storage driver, read time (ms).
+- Thumb fields: generated (yes/no), reason (pixels/decode/unsupported), algo version.
 
 ## Security notes
 - No absolute paths.
