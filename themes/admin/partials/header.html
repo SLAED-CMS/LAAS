@@ -13,6 +13,18 @@
       <a class="nav-link px-2" href="/admin/audit">{% t 'admin.nav.audit' %}</a>
     </nav>
   </div>
+  <form class="d-flex align-items-center gap-2" method="get" action="/admin/search">
+    <input type="search"
+           name="q"
+           class="form-control form-control-sm"
+           placeholder="{% t 'admin.search.placeholder' %}"
+           value="{% q %}"
+           hx-get="/admin/search"
+           hx-trigger="keyup changed delay:300ms"
+           hx-target="#admin-search-results"
+           hx-include="[name=q]"
+           hx-indicator="#loading">
+  </form>
   <form method="post" action="/logout">
     <input type="hidden" name="_token" value="{% csrf_token %}">
     <button class="btn btn-outline-secondary btn-sm" type="submit">{% t 'admin.nav.logout' %}</button>

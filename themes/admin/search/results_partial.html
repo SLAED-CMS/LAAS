@@ -1,0 +1,75 @@
+{% if search.query %}
+  {% if search.has_results %}
+    <div class="card mb-3">
+      <div class="card-body">
+        {% if search.pages %}
+          <div class="mb-3">
+            <div class="fw-semibold mb-2">{% t 'admin.search.scope.pages' %}</div>
+            <div class="list-group">
+              {% foreach search.pages as item %}
+                <a class="list-group-item list-group-item-action" href="{% item.url %}">
+                  <div class="fw-semibold">
+                    {% foreach item.title_segments as seg %}
+                      {% if seg.mark %}<mark>{% seg.text %}</mark>{% else %}{% seg.text %}{% endif %}
+                    {% endforeach %}
+                  </div>
+                  <div class="text-muted small">
+                    {% foreach item.slug_segments as seg %}
+                      {% if seg.mark %}<mark>{% seg.text %}</mark>{% else %}{% seg.text %}{% endif %}
+                    {% endforeach %}
+                  </div>
+                </a>
+              {% endforeach %}
+            </div>
+          </div>
+        {% endif %}
+        {% if search.media %}
+          <div class="mb-3">
+            <div class="fw-semibold mb-2">{% t 'admin.search.scope.media' %}</div>
+            <div class="list-group">
+              {% foreach search.media as item %}
+                <a class="list-group-item list-group-item-action" href="{% item.url %}" target="_blank" rel="noopener">
+                  <div class="fw-semibold">
+                    {% foreach item.name_segments as seg %}
+                      {% if seg.mark %}<mark>{% seg.text %}</mark>{% else %}{% seg.text %}{% endif %}
+                    {% endforeach %}
+                  </div>
+                  <div class="text-muted small">
+                    {% foreach item.mime_segments as seg %}
+                      {% if seg.mark %}<mark>{% seg.text %}</mark>{% else %}{% seg.text %}{% endif %}
+                    {% endforeach %}
+                  </div>
+                </a>
+              {% endforeach %}
+            </div>
+          </div>
+        {% endif %}
+        {% if search.users %}
+          <div class="mb-3">
+            <div class="fw-semibold mb-2">{% t 'admin.search.scope.users' %}</div>
+            <div class="list-group">
+              {% foreach search.users as item %}
+                <a class="list-group-item list-group-item-action" href="{% item.url %}">
+                  <div class="fw-semibold">
+                    {% foreach item.username_segments as seg %}
+                      {% if seg.mark %}<mark>{% seg.text %}</mark>{% else %}{% seg.text %}{% endif %}
+                    {% endforeach %}
+                  </div>
+                  {% if item.email %}
+                  <div class="text-muted small">
+                    {% foreach item.email_segments as seg %}
+                      {% if seg.mark %}<mark>{% seg.text %}</mark>{% else %}{% seg.text %}{% endif %}
+                    {% endforeach %}
+                  </div>
+                  {% endif %}
+                </a>
+              {% endforeach %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <div class="alert alert-secondary mb-3">{% t 'admin.search.empty' %}</div>
+  {% endif %}
+{% endif %}

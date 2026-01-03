@@ -18,4 +18,5 @@ return [
     ['GET', '/admin/users/roles/{id:\d+}/clone', [\Laas\Modules\Admin\Controller\RolesController::class, 'cloneForm']],
     ['POST', '/admin/users/roles/{id:\d+}/clone', [\Laas\Modules\Admin\Controller\RolesController::class, 'clone']],
     ['GET', '/admin/audit', [\Laas\Modules\Admin\Controller\AuditController::class, 'index']],
+    ['GET', '/admin/search', [\Laas\Modules\Admin\Controller\AdminSearchController::class, 'index']],
 ];

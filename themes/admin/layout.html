@@ -12,6 +12,11 @@
 <body class="bg-light" hx-headers='{"X-CSRF-Token":"{% csrf_token %}"}'>
   <main class="container-fluid py-3">
     {% include "partials/header.html" %}
+    <div id="admin-search-results">
+      {% if admin_search_results %}
+        {% include "search/results_partial.html" %}
+      {% endif %}
+    </div>
     {% block content %}{% endblock %}
   </main>
   <script src="https://cdn.jsdelivr.net/npm/htmx.org@1.9.12/dist/htmx.min.js" defer></script>
