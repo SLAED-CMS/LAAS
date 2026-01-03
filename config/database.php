@@ -18,11 +18,11 @@ $envInt = static function (string $key, int $default) use ($env): int {
 };
 
 return [
-    'driver' => $envString('DB_DRIVER', 'mysql'),
+    'driver' => $envString('DB_CONNECTION', $envString('DB_DRIVER', 'mysql')),
     'host' => $envString('DB_HOST', 'MariaDB-11.8'),
     'port' => $envInt('DB_PORT', 3306),
-    'database' => $envString('DB_NAME', 'laas'),
-    'username' => $envString('DB_USER', 'root'),
+    'database' => $envString('DB_DATABASE', $envString('DB_NAME', 'laas')),
+    'username' => $envString('DB_USERNAME', $envString('DB_USER', 'root')),
     'password' => $envString('DB_PASSWORD', ''),
     'charset' => 'utf8mb4',
     'options' => [
