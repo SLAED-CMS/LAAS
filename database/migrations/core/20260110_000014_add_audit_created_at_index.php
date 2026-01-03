@@ -1,8 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use Throwable;
-
 return new class {
     public function up(\PDO $pdo): void
     {
@@ -17,7 +15,7 @@ return new class {
 
         try {
             $pdo->exec($sql);
-        } catch (Throwable) {
+        } catch (\Throwable) {
             // ignore if exists
         }
     }
@@ -32,7 +30,7 @@ return new class {
 
         try {
             $pdo->exec($sql);
-        } catch (Throwable) {
+        } catch (\Throwable) {
             // ignore if missing
         }
     }

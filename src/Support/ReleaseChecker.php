@@ -120,6 +120,7 @@ final class ReleaseChecker
     private function checkHealth(): array
     {
         $this->ensureStorageDirs();
+        $this->ensureSqliteDir();
         $checker = new ConfigSanityChecker();
         $health = new HealthService(
             $this->rootPath,
@@ -288,6 +289,24 @@ final class ReleaseChecker
         $cache = $base . '/cache';
         if (!is_dir($cache)) {
             @mkdir($cache, 0775, true);
+        }
+    }
+
+    private function ensureSqliteDir(): void
+    {
+        $driver = strtolower((string) ($this->dbConfig['driver'] ?? ''));
+        if ($driver !== 'sqlite') {
+            return;
+        }
+
+        $database = (string) ($this->dbConfig['database'] ?? '');
+        if ($database === '' || $database === ':memory:') {
+            return;
+        }
+
+        $dir = dirname($database);
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0775, true);
         }
     }
 }
