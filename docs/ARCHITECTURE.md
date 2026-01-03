@@ -76,3 +76,9 @@ ErrorHandler -> Session -> CSRF -> RateLimit -> SecurityHeaders -> Auth -> RBAC 
 - Health safe mode: no write-test by default, optional via `HEALTH_WRITE_CHECK=true`.
 - Degradation logging: single log on state change (OK↔DEGRADED), anti-spam with TTL.
 - Read-only whitelist for critical endpoints.
+
+## Cache Layer (v1.13.0)
+- File cache at `storage/cache/data`.
+- Namespaced keys for settings and menus.
+- Invalidators on write operations.
+- Template warmup CLI command.

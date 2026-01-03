@@ -1,5 +1,8 @@
 # LAAS Versions
 
+- v1.13.0: Performance & Cache Maturity
+  - File cache for settings and menus with invalidation hooks
+  - Per-request i18n caching and template warmup CLI
 - v1.12.0: CI / QA / Release Engineering
   - GitHub Actions CI (lint, phpunit, sqlite smoke)
   - ops:check CLI smoke command

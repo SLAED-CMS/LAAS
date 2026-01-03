@@ -134,6 +134,12 @@ tools/                 # CLI utilities
 - db: `php tools/cli.php db:check`
 - migrations: `php tools/cli.php migrate:status`, `php tools/cli.php migrate:up`
 - settings: `php tools/cli.php settings:get KEY`, `php tools/cli.php settings:set KEY VALUE --type=string|int|bool|json`
+- templates: `php tools/cli.php templates:warmup`
+
+## Cache
+
+- File cache under `storage/cache/data` (settings/menu).
+- Default TTL: 300s.
 
 ---
 
@@ -249,6 +255,7 @@ WHERE u.username = 'admin';
 - `docs/PRODUCTION.md`
 - `docs/LIMITATIONS.md`
 - `UPGRADING.md`
+- `docs/CACHE.md`
 - `docs/CODING_STANDARDS.md`
 
 ---
