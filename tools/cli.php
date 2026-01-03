@@ -48,7 +48,6 @@ $migrator = new Migrator($dbManager, $rootPath, $modulesConfig, [
     'logger' => $logger,
     'is_cli' => true,
 ], $logger);
-$settings = new SettingsRepository($dbManager->pdo());
 $modulesRepo = null;
 $rbacRepo = null;
 $rolesRepo = null;
@@ -331,13 +330,19 @@ $commands['module:disable'] = function () use ($modulesRepo, $args, $rootPath): 
     return 0;
 };
 
-$commands['settings:get'] = function () use ($settings, $args): int {
+$commands['settings:get'] = function () use ($dbManager, $args): int {
     $key = $args[0] ?? '';
     if ($key === '') {
         echo "Usage: settings:get KEY\n";
         return 1;
     }
 
+    if (!$dbManager->healthCheck()) {
+        echo "DB not available.\n";
+        return 1;
+    }
+
+    $settings = new SettingsRepository($dbManager->pdo());
     $value = $settings->get($key, null);
     if (is_array($value)) {
         echo json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n";
@@ -348,7 +353,7 @@ $commands['settings:get'] = function () use ($settings, $args): int {
     return 0;
 };
 
-$commands['settings:set'] = function () use ($settings, $args): int {
+$commands['settings:set'] = function () use ($dbManager, $args): int {
     $key = $args[0] ?? '';
     $value = $args[1] ?? null;
     $type = (string) (getOption($args, 'type') ?? 'string');
@@ -358,6 +363,12 @@ $commands['settings:set'] = function () use ($settings, $args): int {
         return 1;
     }
 
+    if (!$dbManager->healthCheck()) {
+        echo "DB not available.\n";
+        return 1;
+    }
+
+    $settings = new SettingsRepository($dbManager->pdo());
     $settings->set($key, $value, $type);
     echo "OK\n";
     return 0;
