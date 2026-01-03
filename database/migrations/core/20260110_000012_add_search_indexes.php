@@ -1,13 +1,12 @@
 <?php
 declare(strict_types=1);
 
-use PDO;
 use Throwable;
 
 return new class {
-    public function up(PDO $pdo): void
+    public function up(\PDO $pdo): void
     {
-        $driver = (string) $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        $driver = (string) $pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
 
         $indexes = [
             'idx_pages_title' => 'CREATE INDEX idx_pages_title ON pages (title)',
@@ -33,9 +32,9 @@ return new class {
         }
     }
 
-    public function down(PDO $pdo): void
+    public function down(\PDO $pdo): void
     {
-        $driver = (string) $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        $driver = (string) $pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
         $indexes = [
             'idx_pages_title',
             'idx_pages_slug',

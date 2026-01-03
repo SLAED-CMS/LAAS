@@ -1,13 +1,12 @@
 <?php
 declare(strict_types=1);
 
-use PDO;
 use Throwable;
 
 return new class {
-    public function up(PDO $pdo): void
+    public function up(\PDO $pdo): void
     {
-        $driver = (string) $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        $driver = (string) $pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
         $sql = 'CREATE INDEX idx_audit_logs_created_at ON audit_logs (created_at)';
 
         if ($driver === 'sqlite') {
@@ -23,9 +22,9 @@ return new class {
         }
     }
 
-    public function down(PDO $pdo): void
+    public function down(\PDO $pdo): void
     {
-        $driver = (string) $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        $driver = (string) $pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
         $sql = 'DROP INDEX idx_audit_logs_created_at';
         if ($driver === 'sqlite') {
             $sql .= ' IF EXISTS';

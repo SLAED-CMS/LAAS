@@ -1,10 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use PDO;
-
 return new class {
-    public function up(PDO $pdo): void
+    public function up(\PDO $pdo): void
     {
         $sql = <<<SQL
 CREATE TABLE IF NOT EXISTS permission_role (
@@ -18,7 +16,7 @@ SQL;
         $pdo->exec($sql);
     }
 
-    public function down(PDO $pdo): void
+    public function down(\PDO $pdo): void
     {
         $pdo->exec('DROP TABLE IF EXISTS permission_role');
     }

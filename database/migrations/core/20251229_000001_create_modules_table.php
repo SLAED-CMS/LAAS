@@ -1,10 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use PDO;
-
 return new class {
-    public function up(PDO $pdo): void
+    public function up(\PDO $pdo): void
     {
         $sql = <<<SQL
 CREATE TABLE IF NOT EXISTS modules (
@@ -19,7 +17,7 @@ SQL;
         $pdo->exec('CREATE INDEX idx_modules_enabled ON modules (enabled)');
     }
 
-    public function down(PDO $pdo): void
+    public function down(\PDO $pdo): void
     {
         $pdo->exec('DROP TABLE IF EXISTS modules');
     }

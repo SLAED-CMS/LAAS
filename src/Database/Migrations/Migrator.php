@@ -25,7 +25,18 @@ final class Migrator
 
     public function ensureMigrationsTable(): void
     {
-        $sql = <<<SQL
+        $driver = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        if ($driver === 'sqlite') {
+            $sql = <<<SQL
+CREATE TABLE IF NOT EXISTS migrations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    migration VARCHAR(255) NOT NULL UNIQUE,
+    batch INT NOT NULL,
+    applied_at DATETIME NOT NULL
+)
+SQL;
+        } else {
+            $sql = <<<SQL
 CREATE TABLE IF NOT EXISTS migrations (
     id INT AUTO_INCREMENT PRIMARY KEY,
     migration VARCHAR(255) NOT NULL UNIQUE,
@@ -33,6 +44,7 @@ CREATE TABLE IF NOT EXISTS migrations (
     applied_at DATETIME NOT NULL
 )
 SQL;
+        }
         $this->pdo->exec($sql);
     }
 
