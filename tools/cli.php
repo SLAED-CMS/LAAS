@@ -18,6 +18,10 @@ use Laas\Support\ConfigSanityChecker;
 use Laas\Support\LoggerFactory;
 use Laas\Support\OpsChecker;
 use Laas\I18n\Translator;
+use Laas\View\Template\TemplateCompiler;
+use Laas\View\Template\TemplateEngine;
+use Laas\View\Template\TemplateWarmupService;
+use Laas\View\Theme\ThemeManager;
 
 $rootPath = dirname(__DIR__);
 require $rootPath . '/vendor/autoload.php';
@@ -88,6 +92,51 @@ $commands['templates:clear'] = function () use ($rootPath): int {
 
 $commands['cache:clear'] = function () use (&$commands): int {
     return $commands['templates:clear']();
+};
+
+$commands['templates:warmup'] = function () use ($rootPath, $appConfig): int {
+    $start = microtime(true);
+    $translator = new Translator(
+        $rootPath,
+        (string) ($appConfig['theme'] ?? 'default'),
+        (string) ($appConfig['default_locale'] ?? 'en')
+    );
+
+    $themesRoot = $rootPath . '/themes';
+    $publicTheme = (string) ($appConfig['theme'] ?? 'default');
+    $adminTheme = 'admin';
+
+    $compiled = 0;
+    $errors = [];
+
+    foreach ([$publicTheme, $adminTheme] as $theme) {
+        $themeManager = new ThemeManager($themesRoot, $theme, null);
+        $engine = new TemplateEngine(
+            $themeManager,
+            new TemplateCompiler(),
+            $rootPath . '/storage/cache/templates',
+            (bool) ($appConfig['debug'] ?? false)
+        );
+        $warmup = new TemplateWarmupService($engine);
+        $result = $warmup->warmupTheme($themeManager);
+        $compiled += $result['compiled'];
+        $errors = array_merge($errors, $result['errors']);
+    }
+
+    $elapsedMs = (int) ((microtime(true) - $start) * 1000);
+    if ($errors !== []) {
+        echo $translator->trans('cache.warmup.failed') . "\n";
+        foreach ($errors as $error) {
+            echo $error . "\n";
+        }
+        return 1;
+    }
+
+    $message = $translator->trans('cache.warmup.ok');
+    $compiledMessage = $translator->trans('cache.warmup.compiled', ['count' => $compiled]);
+    echo $message . "\n";
+    echo $compiledMessage . ' (' . $elapsedMs . "ms)\n";
+    return 0;
 };
 
 $commands['db:check'] = function () use ($dbManager): int {

@@ -14,4 +14,7 @@ return [
     'backup.restore.failed' => 'Restore failed',
     'backup.create.driver_mysqldump' => 'DB driver: mysqldump',
     'backup.create.driver_pdo' => 'DB driver: pdo',
+    'cache.warmup.ok' => 'Template warmup completed',
+    'cache.warmup.failed' => 'Template warmup failed',
+    'cache.warmup.compiled' => 'Compiled templates: {count}',
 ];

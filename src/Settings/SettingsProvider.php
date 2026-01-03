@@ -4,6 +4,9 @@ declare(strict_types=1);
 namespace Laas\Settings;
 
 use Laas\Database\DatabaseManager;
+use Laas\Support\Cache\CacheFactory;
+use Laas\Support\Cache\CacheInterface;
+use Laas\Support\Cache\CacheKey;
 use PDO;
 use Throwable;
 
@@ -13,6 +16,7 @@ final class SettingsProvider
     private bool $dbFailed = false;
     private array $values = [];
     private array $sources = [];
+    private CacheInterface $cache;
 
     /** @param array<string, mixed> $defaults */
     public function __construct(
@@ -20,6 +24,8 @@ final class SettingsProvider
         private array $defaults,
         private array $allowedKeys
     ) {
+        $rootPath = dirname(__DIR__, 2);
+        $this->cache = CacheFactory::create($rootPath);
     }
 
     public function get(string $key, mixed $default = null): mixed
@@ -64,6 +70,13 @@ final class SettingsProvider
         }
 
         $this->loaded = true;
+        $cached = $this->cache->get(CacheKey::settingsAll());
+        if (is_array($cached) && isset($cached['values'], $cached['sources'])) {
+            $this->values = is_array($cached['values']) ? $cached['values'] : [];
+            $this->sources = is_array($cached['sources']) ? $cached['sources'] : [];
+            return;
+        }
+
         foreach ($this->allowedKeys as $key) {
             if (array_key_exists($key, $this->defaults)) {
                 $this->values[$key] = $this->defaults[$key];
@@ -91,6 +104,16 @@ final class SettingsProvider
                 $value = $this->deserialize((string) ($row['value'] ?? ''), $type);
                 $this->values[$key] = $value;
                 $this->sources[$key] = 'DB';
+            }
+
+            $this->cache->set(CacheKey::settingsAll(), [
+                'values' => $this->values,
+                'sources' => $this->sources,
+            ]);
+            foreach ($this->values as $key => $value) {
+                if (is_string($key)) {
+                    $this->cache->set(CacheKey::settingsKey($key), $value);
+                }
             }
         } catch (Throwable) {
             $this->dbFailed = true;

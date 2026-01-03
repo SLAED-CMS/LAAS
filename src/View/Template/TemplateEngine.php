@@ -65,6 +65,17 @@ final class TemplateEngine
         return $output;
     }
 
+    public function compileTemplate(string $template): string
+    {
+        $templatePath = $this->themeManager->resolvePath($template);
+        return $this->compile($templatePath);
+    }
+
+    public function compilePath(string $templatePath): string
+    {
+        return $this->compile($templatePath);
+    }
+
     public function block(string $name, callable $default, array $options): void
     {
         if (!empty($options['collect_blocks'])) {

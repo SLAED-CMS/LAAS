@@ -12,6 +12,8 @@ use Laas\Settings\SettingsProvider;
 use Laas\Database\DatabaseManager;
 use Laas\Modules\Menu\Repository\MenusRepository;
 use Laas\Modules\Menu\Repository\MenuItemsRepository;
+use Laas\Support\Cache\CacheFactory;
+use Laas\Support\Cache\CacheKey;
 use Laas\View\Template\TemplateEngine;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Theme\ThemeManager;
@@ -74,12 +76,27 @@ final class View
                 return '';
             }
 
-            $menu = $menusRepo->findMenuByName($name);
-            if ($menu === null) {
-                return '';
+            $rootPath = dirname($this->cachePath, 3);
+            $cache = CacheFactory::create($rootPath);
+            $cacheKey = CacheKey::menu($name, $this->locale);
+            $cached = $cache->get($cacheKey);
+
+            if (is_array($cached) && isset($cached['menu'], $cached['items'])) {
+                $menu = $cached['menu'];
+                $items = $cached['items'];
+            } else {
+                $menu = $menusRepo->findMenuByName($name);
+                if ($menu === null) {
+                    return '';
+                }
+
+                $items = $itemsRepo->listItems((int) $menu['id'], true);
+                $cache->set($cacheKey, [
+                    'menu' => $menu,
+                    'items' => $items,
+                ]);
             }
 
-            $items = $itemsRepo->listItems((int) $menu['id'], true);
             $currentPath = $this->request?->getPath() ?? '/';
             $currentPath = '/' . ltrim($currentPath, '/');
             $currentPath = $currentPath === '/' ? '/' : rtrim($currentPath, '/');

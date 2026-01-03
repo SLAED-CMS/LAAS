@@ -12,6 +12,7 @@ use Laas\Http\Response;
 use Laas\Support\AuditLogger;
 use Laas\Modules\Menu\Repository\MenuItemsRepository;
 use Laas\Modules\Menu\Repository\MenusRepository;
+use Laas\Modules\Menu\Service\MenuCacheInvalidator;
 use Laas\View\View;
 use Throwable;
 
@@ -171,6 +172,8 @@ final class AdminMenusController
             $request->ip()
         );
 
+        (new MenuCacheInvalidator())->invalidate((string) ($menu['name'] ?? ''));
+
         return $this->renderFormResponse(
             $request,
             $menu,
@@ -224,6 +227,8 @@ final class AdminMenusController
             $request->ip()
         );
 
+        (new MenuCacheInvalidator())->invalidate((string) ($menu['name'] ?? ''));
+
         return $this->renderTableResponse($menu, $request, [], true, $id);
     }
 
@@ -260,6 +265,8 @@ final class AdminMenusController
             $this->currentUserId(),
             $request->ip()
         );
+
+        (new MenuCacheInvalidator())->invalidate((string) ($menu['name'] ?? ''));
 
         return $this->renderTableResponse($menu, $request, [], true, null);
     }
