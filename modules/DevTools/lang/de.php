@@ -7,7 +7,7 @@ return [
     'devtools.time' => 'Zeit',
     'devtools.db' => 'DB',
     'devtools.mem' => 'Speicher',
-    'devtools.request_id' => 'ReqId',
+    'devtools.request_id' => 'ID-Anfrage',
     'devtools.request' => 'Request',
     'devtools.get' => 'GET',
     'devtools.post' => 'POST',
