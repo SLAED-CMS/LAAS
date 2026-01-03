@@ -109,6 +109,42 @@ namespace {
             $this->assertSame(413, $response->getStatus());
         }
 
+        public function testRejectSvgUpload(): void
+        {
+            $db = $this->createDatabase();
+            $this->seedRbac($db->pdo(), $this->userId, ['media.upload']);
+
+            $svg = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1\" height=\"1\"></svg>";
+            $tmp = tempnam(sys_get_temp_dir(), 'laas_upload_');
+            file_put_contents($tmp, $svg);
+            $size = filesize($tmp) ?: 0;
+
+            $_SERVER['REMOTE_ADDR'] = '127.0.0.13';
+            $_SERVER['CONTENT_LENGTH'] = (string) $size;
+            if (session_status() !== PHP_SESSION_ACTIVE) {
+                session_start();
+            }
+            $_SESSION['user_id'] = $this->userId;
+
+            $_FILES['file'] = [
+                'name' => 'icon.svg',
+                'type' => 'image/svg+xml',
+                'tmp_name' => $tmp,
+                'error' => 0,
+                'size' => $size,
+            ];
+
+            $request = new Request('POST', '/admin/media/upload', [], [], [
+                'content-length' => (string) $size,
+                'hx-request' => 'true',
+            ], '');
+            $view = $this->createView($db, $request);
+            $controller = new AdminMediaController($view, $db);
+
+            $response = $controller->upload($request);
+            $this->assertSame(422, $response->getStatus());
+        }
+
         public function testAcceptValidUpload(): void
         {
             $db = $this->createDatabase();

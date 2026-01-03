@@ -68,4 +68,38 @@ final class S3StorageTest extends TestCase
         $this->assertFalse($requests[0]['verify_tls']);
         $this->assertArrayHasKey('Authorization', $requests[0]['headers']);
     }
+
+    public function testDiskPathDoesNotChangeHost(): void
+    {
+        $requests = [];
+        $client = static function (
+            string $method,
+            string $url,
+            array $headers,
+            ?string $body,
+            int $timeout,
+            bool $verifyTls
+        ) use (&$requests): array {
+            $requests[] = $url;
+            return ['status' => 200, 'headers' => [], 'body' => ''];
+        };
+
+        $storage = new S3Storage([
+            'endpoint' => 'https://s3.local',
+            'region' => 'us-east-1',
+            'bucket' => 'bucket',
+            'access_key' => 'key',
+            'secret_key' => 'secret',
+            'use_path_style' => true,
+            'prefix' => '',
+            'timeout_seconds' => 5,
+            'verify_tls' => false,
+        ], $client);
+
+        $storage->exists('http://evil.example/steal');
+
+        $this->assertNotEmpty($requests);
+        $host = parse_url($requests[0], PHP_URL_HOST);
+        $this->assertSame('s3.local', $host);
+    }
 }
