@@ -45,7 +45,6 @@ final class MediaThumbnailService
 
         return [
             'disk_path' => $diskPath,
-            'absolute_path' => $this->storage->absolutePath($diskPath),
             'mime' => $this->thumbMime($config),
         ];
     }
@@ -57,12 +56,12 @@ final class MediaThumbnailService
             return null;
         }
 
-        $absolute = $this->storage->absolutePath($path);
-        if (!is_file($absolute)) {
+        $contents = $this->storage->getContents($path);
+        if ($contents === null) {
             return null;
         }
 
-        $reason = trim((string) file_get_contents($absolute));
+        $reason = trim($contents);
         if (!in_array($reason, [
             self::REASON_TOO_MANY_PIXELS,
             self::REASON_DECODE_FAILED,
@@ -89,10 +88,12 @@ final class MediaThumbnailService
             return $result;
         }
 
-        $sourcePath = $this->storage->absolutePath((string) ($media['disk_path'] ?? ''));
-        if (!is_file($sourcePath)) {
+        $sourceDisk = (string) ($media['disk_path'] ?? '');
+        $sourcePath = $this->storage->readToTemp($sourceDisk);
+        if ($sourcePath === null || !is_file($sourcePath)) {
             return $result;
         }
+        $cleanupSource = $this->storage->driverName() !== 'local';
 
         $deadline = $this->deadlineSeconds();
         $maxPixels = $this->maxPixels($config);
@@ -104,8 +105,7 @@ final class MediaThumbnailService
             }
 
             $reasonDiskPath = $this->thumbReasonDiskPath($media, $variant, $config);
-            $absolutePath = $this->storage->absolutePath($diskPath);
-            if (is_file($absolutePath)) {
+            if ($this->storage->exists($diskPath)) {
                 $this->clearReason($reasonDiskPath);
                 $result['skipped']++;
                 continue;
@@ -139,9 +139,16 @@ final class MediaThumbnailService
                 continue;
             }
 
+            $tmpOut = $this->tempFile();
+            if ($tmpOut === '') {
+                $this->writeReason($reasonDiskPath, self::REASON_DECODE_FAILED);
+                $result['failed']++;
+                continue;
+            }
+
             $ok = $this->decoder->createThumbnail(
                 $sourcePath,
-                $absolutePath,
+                $tmpOut,
                 $maxWidth,
                 $this->thumbFormat($config),
                 $this->thumbQuality($config),
@@ -150,25 +157,42 @@ final class MediaThumbnailService
             );
 
             if (!$ok) {
-                if (is_file($absolutePath)) {
-                    @unlink($absolutePath);
+                if (is_file($tmpOut)) {
+                    @unlink($tmpOut);
                 }
                 $this->writeReason($reasonDiskPath, self::REASON_DECODE_FAILED);
                 $result['failed']++;
                 continue;
             }
 
-            if (!$this->decoder->stripMetadata($absolutePath)) {
-                if (is_file($absolutePath)) {
-                    @unlink($absolutePath);
+            if (!$this->decoder->stripMetadata($tmpOut)) {
+                if (is_file($tmpOut)) {
+                    @unlink($tmpOut);
                 }
                 $this->writeReason($reasonDiskPath, self::REASON_DECODE_FAILED);
                 $result['failed']++;
                 continue;
+            }
+
+            if (!$this->storage->put($diskPath, $tmpOut)) {
+                if (is_file($tmpOut)) {
+                    @unlink($tmpOut);
+                }
+                $this->writeReason($reasonDiskPath, self::REASON_DECODE_FAILED);
+                $result['failed']++;
+                continue;
+            }
+
+            if (is_file($tmpOut)) {
+                @unlink($tmpOut);
             }
 
             $this->clearReason($reasonDiskPath);
             $result['generated']++;
+        }
+
+        if ($cleanupSource && is_file($sourcePath)) {
+            @unlink($sourcePath);
         }
 
         return $result;
@@ -295,13 +319,7 @@ final class MediaThumbnailService
             return;
         }
 
-        $absolute = $this->storage->absolutePath($diskPath);
-        $dir = dirname($absolute);
-        if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
-            return;
-        }
-
-        @file_put_contents($absolute, $reason, LOCK_EX);
+        $this->storage->putContents($diskPath, $reason);
     }
 
     private function clearReason(?string $diskPath): void
@@ -310,9 +328,8 @@ final class MediaThumbnailService
             return;
         }
 
-        $absolute = $this->storage->absolutePath($diskPath);
-        if (is_file($absolute)) {
-            @unlink($absolute);
+        if ($this->storage->exists($diskPath)) {
+            $this->storage->delete($diskPath);
         }
     }
 
@@ -335,5 +352,11 @@ final class MediaThumbnailService
             null,
             ''
         );
+    }
+
+    private function tempFile(): string
+    {
+        $dir = sys_get_temp_dir();
+        return $dir . '/laas_thumb_' . bin2hex(random_bytes(8)) . '.tmp';
     }
 }

@@ -43,4 +43,7 @@ return array (
     'media.public.toggled' => 'Acceso público actualizado.',
     'media.signed.url' => 'URL firmada',
     'media.signed.invalid' => 'URL firmada no válida.',
-    'media.signed.expired' => 'URL firmada caducada.',);
+    'media.signed.expired' => 'URL firmada caducada.',    'storage.s3.misconfigured' => 'S3 está mal configurado.',
+    'storage.s3.upload_failed' => 'La subida a S3 falló.',
+    'storage.s3.read_failed' => 'La lectura de S3 falló.',
+    'storage.s3.delete_failed' => 'El borrado en S3 falló.',);

@@ -43,4 +43,7 @@ return array (
     'media.public.toggled' => 'Публичный доступ обновлён.',
     'media.signed.url' => 'Подписанная ссылка',
     'media.signed.invalid' => 'Подпись ссылки недействительна.',
-    'media.signed.expired' => 'Срок подписи истёк.',);
+    'media.signed.expired' => 'Срок подписи истёк.',    'storage.s3.misconfigured' => 'S3 настроен неверно.',
+    'storage.s3.upload_failed' => 'Ошибка загрузки в S3.',
+    'storage.s3.read_failed' => 'Ошибка чтения из S3.',
+    'storage.s3.delete_failed' => 'Ошибка удаления из S3.',);

@@ -43,4 +43,7 @@ return array (
     'media.public.toggled' => 'Dostęp publiczny zaktualizowany.',
     'media.signed.url' => 'Podpisany URL',
     'media.signed.invalid' => 'Podpisany URL jest nieprawidłowy.',
-    'media.signed.expired' => 'Podpisany URL wygasł.',);
+    'media.signed.expired' => 'Podpisany URL wygasł.',    'storage.s3.misconfigured' => 'S3 jest źle skonfigurowane.',
+    'storage.s3.upload_failed' => 'Wysyłanie do S3 nie powiodło się.',
+    'storage.s3.read_failed' => 'Odczyt z S3 nie powiódł się.',
+    'storage.s3.delete_failed' => 'Usunięcie z S3 nie powiodło się.',);

@@ -108,9 +108,10 @@ final class MediaUploadService
 
         try {
             $stored = $this->storage->finalizeFromQuarantine($tmpPath, $extension);
-        } catch (Throwable) {
+        } catch (Throwable $e) {
             $this->storage->deleteAbsolute($tmpPath);
-            return $this->error('admin.media.error_upload_failed');
+            $key = $this->storageErrorKey($e);
+            return $this->error($key);
         }
 
         try {
@@ -166,6 +167,16 @@ final class MediaUploadService
         }
 
         return round($bytes / (1024 * 1024 * 1024), 1) . ' GB';
+    }
+
+    private function storageErrorKey(Throwable $e): string
+    {
+        $message = $e->getMessage();
+        return match ($message) {
+            's3_misconfigured' => 'storage.s3.misconfigured',
+            's3_upload_failed' => 'storage.s3.upload_failed',
+            default => 'admin.media.error_upload_failed',
+        };
     }
 
     private function auditVirusRejected(?int $userId, string $mime, int $size, string $hash): void

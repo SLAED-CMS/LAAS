@@ -27,6 +27,7 @@ return [
     'devtools.media_mode' => 'Режим выдачи',
     'devtools.media_disk' => 'Диск',
     'devtools.media_storage' => 'Хранилище',
+    'devtools.media_object_key' => 'Ключ объекта',
     'devtools.media_read_time' => 'Время чтения (мс)',
     'devtools.media_thumb_generated' => 'Миниатюра создана',
     'devtools.media_thumb_reason' => 'Причина отсутствия',
@@ -34,6 +35,8 @@ return [
     'devtools.media_access_mode' => 'Режим доступа',
     'devtools.media_signature_valid' => 'Подпись валидна',
     'devtools.media_signature_exp' => 'Срок подписи',
+    'devtools.media_s3_requests' => 'S3 запросы',
+    'devtools.media_s3_time' => 'S3 время (мс)',
     'devtools.yes' => 'Да',
     'devtools.no' => 'Нет',
 ];

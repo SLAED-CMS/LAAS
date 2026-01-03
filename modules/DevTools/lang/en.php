@@ -27,6 +27,7 @@ return [
     'devtools.media_mode' => 'Serve mode',
     'devtools.media_disk' => 'Disk',
     'devtools.media_storage' => 'Storage',
+    'devtools.media_object_key' => 'Object key',
     'devtools.media_read_time' => 'Read time (ms)',
     'devtools.media_thumb_generated' => 'Thumb generated',
     'devtools.media_thumb_reason' => 'Thumb reason',
@@ -34,6 +35,8 @@ return [
     'devtools.media_access_mode' => 'Access mode',
     'devtools.media_signature_valid' => 'Signature valid',
     'devtools.media_signature_exp' => 'Signature exp',
+    'devtools.media_s3_requests' => 'S3 requests',
+    'devtools.media_s3_time' => 'S3 time (ms)',
     'devtools.yes' => 'Yes',
     'devtools.no' => 'No',
 ];

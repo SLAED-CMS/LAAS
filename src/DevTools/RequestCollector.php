@@ -57,6 +57,7 @@ final class RequestCollector implements CollectorInterface
                 'mode' => (string) ($response->getHeader('X-Media-Mode') ?? ''),
                 'disk' => (string) ($response->getHeader('X-Media-Disk') ?? ''),
                 'storage' => (string) ($response->getHeader('X-Media-Storage') ?? ''),
+                'object_key' => (string) ($response->getHeader('X-Media-Object-Key') ?? ''),
                 'read_time_ms' => $this->toFloat($response->getHeader('X-Media-Read-Time')) ?? 0.0,
                 'thumb_generated' => ($this->toInt($response->getHeader('X-Media-Thumb-Generated')) ?? 0) > 0,
                 'thumb_reason' => (string) ($response->getHeader('X-Media-Thumb-Reason') ?? ''),
@@ -64,6 +65,8 @@ final class RequestCollector implements CollectorInterface
                 'access_mode' => (string) ($response->getHeader('X-Media-Access-Mode') ?? ''),
                 'signature_valid' => ($this->toInt($response->getHeader('X-Media-Signature-Valid')) ?? 0) > 0,
                 'signature_exp' => $this->toInt($response->getHeader('X-Media-Signature-Exp')) ?? 0,
+                's3_requests' => $this->toInt($response->getHeader('X-Media-S3-Requests')) ?? 0,
+                's3_time_ms' => $this->toFloat($response->getHeader('X-Media-S3-Time')) ?? 0.0,
             ]);
         }
     }

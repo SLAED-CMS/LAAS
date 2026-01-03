@@ -1,0 +1,24 @@
+<tr>
+  <td>{% item.id %}</td>
+  <td>
+    <div class="d-flex align-items-center gap-2">
+      {% if item.thumb_url %}
+        <img src="{% item.thumb_url %}" alt="" class="img-thumbnail" style="max-width: 60px;">
+      {% else %}
+        <span class="badge text-bg-secondary">{% item.badge %}</span>
+      {% endif %}
+      <div class="fw-semibold">{% item.original_name %}</div>
+    </div>
+  </td>
+  <td>{% item.mime_type %}</td>
+  <td>{% item.size_display %}</td>
+  <td>
+    <button class="btn btn-sm btn-outline-primary"
+            type="button"
+            hx-post="/admin/media/picker/select"
+            hx-vals='{"media_id":"{% item.id %}"}'
+            hx-swap="none">
+      {% t 'media.picker.select' %}
+    </button>
+  </td>
+</tr>

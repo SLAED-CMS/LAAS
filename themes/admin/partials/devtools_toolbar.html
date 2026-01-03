@@ -126,6 +126,7 @@
           <div><span class="small text-secondary">{% t 'devtools.media_mode' %}</span>: {% devtools.media.mode %}</div>
           <div><span class="small text-secondary">{% t 'devtools.media_disk' %}</span>: {% devtools.media.disk %}</div>
           <div><span class="small text-secondary">{% t 'devtools.media_storage' %}</span>: {% devtools.media.storage %}</div>
+          <div><span class="small text-secondary">{% t 'devtools.media_object_key' %}</span>: {% if devtools.media.object_key %}{% devtools.media.object_key %}{% else %}-{% endif %}</div>
           <div><span class="small text-secondary">{% t 'devtools.media_read_time' %}</span>: {% devtools.media.read_time_ms %}</div>
           <div><span class="small text-secondary">{% t 'devtools.media_thumb_generated' %}</span>: {% if devtools.media.thumb_generated %}{% t 'devtools.yes' %}{% else %}{% t 'devtools.no' %}{% endif %}</div>
           <div><span class="small text-secondary">{% t 'devtools.media_thumb_reason' %}</span>: {% if devtools.media.thumb_reason %}{% devtools.media.thumb_reason %}{% else %}-{% endif %}</div>
@@ -133,6 +134,8 @@
           <div><span class="small text-secondary">{% t 'devtools.media_access_mode' %}</span>: {% devtools.media.access_mode %}</div>
           <div><span class="small text-secondary">{% t 'devtools.media_signature_valid' %}</span>: {% if devtools.media.signature_valid %}{% t 'devtools.yes' %}{% else %}{% t 'devtools.no' %}{% endif %}</div>
           <div><span class="small text-secondary">{% t 'devtools.media_signature_exp' %}</span>: {% if devtools.media.signature_exp %}{% devtools.media.signature_exp %}{% else %}-{% endif %}</div>
+          <div><span class="small text-secondary">{% t 'devtools.media_s3_requests' %}</span>: {% devtools.media.s3_requests %}</div>
+          <div><span class="small text-secondary">{% t 'devtools.media_s3_time' %}</span>: {% devtools.media.s3_time_ms %}</div>
         </div>
       </fieldset>
       {% endif %}

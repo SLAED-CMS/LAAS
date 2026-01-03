@@ -71,22 +71,31 @@ final class MediaServeController
         }
 
         $storage = new StorageService($this->rootPath());
-        $path = $storage->absolutePath((string) ($row['disk_path'] ?? ''));
-        if (!is_file($path)) {
+        if ($storage->isMisconfigured()) {
+            return $this->storageError();
+        }
+        $diskPath = (string) ($row['disk_path'] ?? '');
+        if (!$storage->exists($diskPath)) {
             return $this->notFound();
         }
 
         $mime = (string) ($row['mime_type'] ?? 'application/octet-stream');
-        $size = (int) ($row['size_bytes'] ?? filesize($path));
+        $size = (int) ($row['size_bytes'] ?? $storage->size($diskPath));
         $name = $this->safeDownloadName((string) ($row['original_name'] ?? 'file'), $mime);
         $disposition = $purpose === 'download' ? 'attachment' : $this->contentDisposition($mime);
 
         $readStart = microtime(true);
-        $body = file_get_contents($path);
+        $stream = $storage->getStream($diskPath);
+        $body = $stream !== false ? stream_get_contents($stream) : false;
+        if (is_resource($stream)) {
+            fclose($stream);
+        }
         $readMs = round((microtime(true) - $readStart) * 1000, 2);
         if ($body === false) {
             return $this->notFound();
         }
+
+        $stats = $storage->stats();
 
         $cacheControl = $accessMode === 'public' ? 'public, max-age=86400' : 'private, max-age=0';
 
@@ -100,12 +109,15 @@ final class MediaServeController
             'X-Media-Mime' => $mime,
             'X-Media-Size' => (string) $size,
             'X-Media-Mode' => $disposition,
-            'X-Media-Disk' => $this->maskDiskPath((string) ($row['disk_path'] ?? '')),
-            'X-Media-Storage' => 'local',
+            'X-Media-Disk' => $storage->driverName(),
+            'X-Media-Object-Key' => $this->maskDiskPath($diskPath),
+            'X-Media-Storage' => $storage->driverName(),
             'X-Media-Read-Time' => (string) $readMs,
             'X-Media-Access-Mode' => $accessMode,
             'X-Media-Signature-Valid' => $signatureValid ? '1' : '0',
             'X-Media-Signature-Exp' => $signatureExp !== null ? (string) $signatureExp : '',
+            'X-Media-S3-Requests' => (string) ($stats['requests'] ?? 0),
+            'X-Media-S3-Time' => (string) round((float) ($stats['total_ms'] ?? 0.0), 2),
         ]);
     }
 
@@ -258,6 +270,13 @@ final class MediaServeController
     private function notFound(): Response
     {
         return new Response('Not Found', 404, [
+            'Content-Type' => 'text/plain; charset=utf-8',
+        ]);
+    }
+
+    private function storageError(): Response
+    {
+        return new Response('Error', 500, [
             'Content-Type' => 'text/plain; charset=utf-8',
         ]);
     }

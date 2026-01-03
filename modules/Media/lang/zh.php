@@ -43,4 +43,7 @@ return array (
     'media.public.toggled' => '公开访问已更新。',
     'media.signed.url' => '签名链接',
     'media.signed.invalid' => '签名链接无效。',
-    'media.signed.expired' => '签名链接已过期。',);
+    'media.signed.expired' => '签名链接已过期。',    'storage.s3.misconfigured' => 'S3 配置不正确。',
+    'storage.s3.upload_failed' => 'S3 上传失败。',
+    'storage.s3.read_failed' => 'S3 读取失败。',
+    'storage.s3.delete_failed' => 'S3 删除失败。',);

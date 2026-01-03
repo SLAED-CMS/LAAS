@@ -43,4 +43,7 @@ return array (
     'media.public.toggled' => 'Öffentlicher Zugriff aktualisiert.',
     'media.signed.url' => 'Signierte URL',
     'media.signed.invalid' => 'Signierte URL ist ungültig.',
-    'media.signed.expired' => 'Signierte URL ist abgelaufen.',);
+    'media.signed.expired' => 'Signierte URL ist abgelaufen.',    'storage.s3.misconfigured' => 'S3 ist falsch konfiguriert.',
+    'storage.s3.upload_failed' => 'S3-Upload fehlgeschlagen.',
+    'storage.s3.read_failed' => 'S3-Lesen fehlgeschlagen.',
+    'storage.s3.delete_failed' => 'S3-Löschen fehlgeschlagen.',);

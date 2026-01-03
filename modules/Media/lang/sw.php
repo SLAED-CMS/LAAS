@@ -43,4 +43,7 @@ return array (
     'media.public.toggled' => 'Ufikiaji wa umma umesasishwa.',
     'media.signed.url' => 'URL iliyotiwa saini',
     'media.signed.invalid' => 'URL iliyotiwa saini si halali.',
-    'media.signed.expired' => 'URL iliyotiwa saini muda wake umeisha.',);
+    'media.signed.expired' => 'URL iliyotiwa saini muda wake umeisha.',    'storage.s3.misconfigured' => 'S3 haijasanidiwa vibaya.',
+    'storage.s3.upload_failed' => 'Upakiaji wa S3 umeshindikana.',
+    'storage.s3.read_failed' => 'Usomaji wa S3 umeshindikana.',
+    'storage.s3.delete_failed' => 'Ufutaji wa S3 umeshindikana.',);

@@ -43,4 +43,7 @@ return array (
     'media.public.toggled' => 'सार्वजनिक एक्सेस अपडेट किया गया।',
     'media.signed.url' => 'साइन की गई URL',
     'media.signed.invalid' => 'साइन की गई URL अमान्य है।',
-    'media.signed.expired' => 'साइन की गई URL की समयसीमा समाप्त हो गई है।',);
+    'media.signed.expired' => 'साइन की गई URL की समयसीमा समाप्त हो गई है।',    'storage.s3.misconfigured' => 'S3 गलत कॉन्फ़िगर है।',
+    'storage.s3.upload_failed' => 'S3 अपलोड विफल रहा।',
+    'storage.s3.read_failed' => 'S3 पढ़ना विफल रहा।',
+    'storage.s3.delete_failed' => 'S3 हटाना विफल रहा।',);

@@ -1,0 +1,30 @@
+<div class="modal fade show" style="display:block;" tabindex="-1" role="dialog" aria-modal="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{% t 'media.picker.title' %}</h5>
+        <button type="button" class="btn-close" aria-label="Close" hx-target="#media-picker-modal" hx-swap="innerHTML"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <input class="form-control"
+                 type="search"
+                 name="q"
+                 value="{% q %}"
+                 placeholder="{% t 'media.picker.search' %}"
+                 hx-get="/admin/media/picker"
+                 hx-trigger="keyup changed delay:300ms"
+                 hx-target="#media-picker-body"
+                 hx-include="[name=q]">
+        </div>
+        <div id="media-picker-body">
+          {% include "media/picker_table.html" %}
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" hx-target="#media-picker-modal" hx-swap="innerHTML">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade show"></div>

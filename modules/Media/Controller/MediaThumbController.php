@@ -67,22 +67,27 @@ final class MediaThumbController
             ]);
         }
 
-        $service = new MediaThumbnailService(new StorageService($this->rootPath()));
+        $storage = new StorageService($this->rootPath());
+        if ($storage->isMisconfigured()) {
+            return $this->storageError();
+        }
+        $service = new MediaThumbnailService($storage);
         $resolved = $service->resolveThumbPath($row, $variant, $config);
         if ($resolved === null) {
             return $this->notFound();
         }
 
-        $path = $resolved['absolute_path'];
-        if (!is_file($path)) {
+        $diskPath = (string) ($resolved['disk_path'] ?? '');
+        if (!$storage->exists($diskPath)) {
             $reason = $service->getThumbReason($row, $variant, $config);
             return $this->notFound($this->devtoolsHeaders(
                 $id,
                 (string) ($resolved['mime'] ?? ''),
                 0,
                 'thumb',
-                $this->maskDiskPath((string) ($resolved['disk_path'] ?? '')),
-                'local',
+                $storage->driverName(),
+                $this->maskDiskPath($diskPath),
+                $storage->driverName(),
                 0.0,
                 false,
                 $reason,
@@ -94,7 +99,11 @@ final class MediaThumbController
         }
 
         $readStart = microtime(true);
-        $body = file_get_contents($path);
+        $stream = $storage->getStream($diskPath);
+        $body = $stream !== false ? stream_get_contents($stream) : false;
+        if (is_resource($stream)) {
+            fclose($stream);
+        }
         $readMs = round((microtime(true) - $readStart) * 1000, 2);
         if ($body === false) {
             return $this->notFound($this->devtoolsHeaders(
@@ -102,8 +111,9 @@ final class MediaThumbController
                 (string) ($resolved['mime'] ?? ''),
                 0,
                 'thumb',
-                $this->maskDiskPath((string) ($resolved['disk_path'] ?? '')),
-                'local',
+                $storage->driverName(),
+                $this->maskDiskPath($diskPath),
+                $storage->driverName(),
                 0.0,
                 false,
                 $service->getThumbReason($row, $variant, $config),
@@ -114,7 +124,8 @@ final class MediaThumbController
             ));
         }
 
-        $size = filesize($path) ?: 0;
+        $size = $storage->size($diskPath);
+        $stats = $storage->stats();
 
         $cacheControl = $accessMode === 'public' ? 'public, max-age=86400' : 'private, max-age=0';
 
@@ -127,8 +138,9 @@ final class MediaThumbController
             'X-Media-Mime' => (string) ($resolved['mime'] ?? ''),
             'X-Media-Size' => (string) $size,
             'X-Media-Mode' => 'thumb',
-            'X-Media-Disk' => $this->maskDiskPath((string) ($resolved['disk_path'] ?? '')),
-            'X-Media-Storage' => 'local',
+            'X-Media-Disk' => $storage->driverName(),
+            'X-Media-Object-Key' => $this->maskDiskPath($diskPath),
+            'X-Media-Storage' => $storage->driverName(),
             'X-Media-Read-Time' => (string) $readMs,
             'X-Media-Access-Mode' => $accessMode,
             'X-Media-Signature-Valid' => $signatureValid ? '1' : '0',
@@ -136,6 +148,8 @@ final class MediaThumbController
             'X-Media-Thumb-Generated' => '1',
             'X-Media-Thumb-Reason' => '',
             'X-Media-Thumb-Algo' => (string) $this->thumbAlgoVersion($config),
+            'X-Media-S3-Requests' => (string) ($stats['requests'] ?? 0),
+            'X-Media-S3-Time' => (string) round((float) ($stats['total_ms'] ?? 0.0), 2),
         ]);
     }
 
@@ -233,6 +247,7 @@ final class MediaThumbController
         int $size,
         string $mode,
         string $disk,
+        string $objectKey,
         string $storage,
         float $readMs,
         bool $generated,
@@ -249,6 +264,7 @@ final class MediaThumbController
             'X-Media-Size' => (string) $size,
             'X-Media-Mode' => $mode,
             'X-Media-Disk' => $disk,
+            'X-Media-Object-Key' => $objectKey,
             'X-Media-Storage' => $storage,
             'X-Media-Read-Time' => (string) $readMs,
             'X-Media-Access-Mode' => $accessMode,
@@ -257,6 +273,8 @@ final class MediaThumbController
             'X-Media-Thumb-Generated' => $generated ? '1' : '0',
             'X-Media-Thumb-Reason' => $reason ?? '',
             'X-Media-Thumb-Algo' => (string) $algo,
+            'X-Media-S3-Requests' => '0',
+            'X-Media-S3-Time' => '0',
         ];
     }
 
@@ -265,6 +283,13 @@ final class MediaThumbController
         return new Response('Not Found', 404, [
             'Content-Type' => 'text/plain; charset=utf-8',
         ] + $headers);
+    }
+
+    private function storageError(): Response
+    {
+        return new Response('Error', 500, [
+            'Content-Type' => 'text/plain; charset=utf-8',
+        ]);
     }
 
     private function publicMode(array $config): string

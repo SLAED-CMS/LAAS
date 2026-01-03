@@ -43,4 +43,7 @@ return array (
     'media.public.toggled' => 'পাবলিক অ্যাক্সেস আপডেট হয়েছে।',
     'media.signed.url' => 'স্বাক্ষরিত URL',
     'media.signed.invalid' => 'স্বাক্ষরিত URL অবৈধ।',
-    'media.signed.expired' => 'স্বাক্ষরিত URL মেয়াদোত্তীর্ণ।',);
+    'media.signed.expired' => 'স্বাক্ষরিত URL মেয়াদোত্তীর্ণ।',    'storage.s3.misconfigured' => 'S3 কনফিগারেশন ভুল।',
+    'storage.s3.upload_failed' => 'S3 আপলোড ব্যর্থ হয়েছে।',
+    'storage.s3.read_failed' => 'S3 পড়া ব্যর্থ হয়েছে।',
+    'storage.s3.delete_failed' => 'S3 ডিলিট ব্যর্থ হয়েছে।',);

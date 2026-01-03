@@ -43,4 +43,7 @@ return array (
     'media.public.toggled' => 'تم تحديث الوصول العام.',
     'media.signed.url' => 'رابط موقّع',
     'media.signed.invalid' => 'الرابط الموقّع غير صالح.',
-    'media.signed.expired' => 'انتهت صلاحية الرابط الموقّع.',);
+    'media.signed.expired' => 'انتهت صلاحية الرابط الموقّع.',    'storage.s3.misconfigured' => 'إعدادات S3 غير صحيحة.',
+    'storage.s3.upload_failed' => 'فشل رفع S3.',
+    'storage.s3.read_failed' => 'فشل قراءة S3.',
+    'storage.s3.delete_failed' => 'فشل حذف S3.',);

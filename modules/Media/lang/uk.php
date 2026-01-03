@@ -43,4 +43,7 @@ return array (
     'media.public.toggled' => 'Публічний доступ оновлено.',
     'media.signed.url' => 'Підписане посилання',
     'media.signed.invalid' => 'Підписане посилання недійсне.',
-    'media.signed.expired' => 'Строк підпису минув.',);
+    'media.signed.expired' => 'Строк підпису минув.',    'storage.s3.misconfigured' => 'S3 налаштовано неправильно.',
+    'storage.s3.upload_failed' => 'Помилка завантаження в S3.',
+    'storage.s3.read_failed' => 'Помилка читання з S3.',
+    'storage.s3.delete_failed' => 'Помилка видалення з S3.',);

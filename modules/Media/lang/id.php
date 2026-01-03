@@ -43,4 +43,7 @@ return array (
     'media.public.toggled' => 'Akses publik diperbarui.',
     'media.signed.url' => 'URL bertanda tangan',
     'media.signed.invalid' => 'URL bertanda tangan tidak valid.',
-    'media.signed.expired' => 'URL bertanda tangan kedaluwarsa.',);
+    'media.signed.expired' => 'URL bertanda tangan kedaluwarsa.',    'storage.s3.misconfigured' => 'Konfigurasi S3 salah.',
+    'storage.s3.upload_failed' => 'Upload S3 gagal.',
+    'storage.s3.read_failed' => 'Baca S3 gagal.',
+    'storage.s3.delete_failed' => 'Hapus S3 gagal.',);

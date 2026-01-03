@@ -178,7 +178,30 @@ final class AdminMediaController
 
         $row = $repo->findById($id);
         if ($row !== null) {
-            $this->storage()->delete((string) ($row['disk_path'] ?? ''));
+            try {
+                $this->storage()->delete((string) ($row['disk_path'] ?? ''));
+            } catch (Throwable) {
+                $message = $this->view->translate('storage.s3.delete_failed');
+                if ($request->isHtmx()) {
+                    return $this->view->render('partials/messages.html', [
+                        'errors' => [$message],
+                    ], 500, [], [
+                        'theme' => 'admin',
+                        'render_partial' => true,
+                    ]);
+                }
+
+                if ($request->wantsJson()) {
+                    return Response::json([
+                        'error' => 'storage_error',
+                        'message' => $message,
+                    ], 500);
+                }
+
+                return new Response($message, 500, [
+                    'Content-Type' => 'text/plain; charset=utf-8',
+                ]);
+            }
             $repo->delete($id);
             (new AuditLogger($this->db))->log(
                 'media.delete',

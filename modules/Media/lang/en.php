@@ -43,4 +43,7 @@ return array (
     'media.public.toggled' => 'Public access updated.',
     'media.signed.url' => 'Signed URL',
     'media.signed.invalid' => 'Signed URL is invalid.',
-    'media.signed.expired' => 'Signed URL has expired.',);
+    'media.signed.expired' => 'Signed URL has expired.',    'storage.s3.misconfigured' => 'S3 is misconfigured.',
+    'storage.s3.upload_failed' => 'S3 upload failed.',
+    'storage.s3.read_failed' => 'S3 read failed.',
+    'storage.s3.delete_failed' => 'S3 delete failed.',);

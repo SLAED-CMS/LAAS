@@ -43,4 +43,7 @@ return array (
     'media.public.toggled' => 'عوامی رسائی اپ ڈیٹ کر دی گئی۔',
     'media.signed.url' => 'دستخط شدہ یو آر ایل',
     'media.signed.invalid' => 'دستخط شدہ یو آر ایل غلط ہے۔',
-    'media.signed.expired' => 'دستخط شدہ یو آر ایل کی میعاد ختم ہو گئی ہے۔',);
+    'media.signed.expired' => 'دستخط شدہ یو آر ایل کی میعاد ختم ہو گئی ہے۔',    'storage.s3.misconfigured' => 'S3 کی ترتیب غلط ہے۔',
+    'storage.s3.upload_failed' => 'S3 اپ لوڈ ناکام ہوا۔',
+    'storage.s3.read_failed' => 'S3 سے پڑھنا ناکام ہوا۔',
+    'storage.s3.delete_failed' => 'S3 حذف کرنا ناکام ہوا۔',);
