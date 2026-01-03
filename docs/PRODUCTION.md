@@ -1,4 +1,4 @@
-# Production Checklist (v1.11.3)
+# Production Checklist
 
 - HTTPS
   - Required for admin and sessions.
@@ -11,6 +11,9 @@
   - `APP_ENV=prod`
   - `APP_DEBUG=false`
   - `DEVTOOLS_ENABLED=false`
+- Config snapshot
+  - Use `php tools/cli.php config:export --out=storage/config_snapshot.json`.
+  - Safe to attach to issues (secrets redacted).
 - Storage permissions
   - Writable: `storage/`, `storage/logs/`, `storage/sessions/`, `storage/cache/`, `storage/backups/`.
   - Never expose `storage/` directly via web server.

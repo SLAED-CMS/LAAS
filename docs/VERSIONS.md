@@ -1,5 +1,8 @@
 # LAAS Versions
 
+- v2.1.0: Config snapshot (config:export)
+  - CLI config:export snapshot with redaction and file output
+  - Storage/media/security flags included in export
 - v2.0.0: Stable CMS Release
   - Release checks and prod hardening
   - DevTools disabled in prod
