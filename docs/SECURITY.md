@@ -1,4 +1,4 @@
-# Security (v1.9.0)
+# Security (v1.10.0)
 
 ## Sessions
 - Session storage: `storage/sessions`.
@@ -27,7 +27,13 @@
 - Slow-upload protection (max input time guard).
 - Optional ClamAV scan in quarantine, fail-closed.
 - SHA-256 deduplication.
- - Image hardening: max pixels guard and deterministic thumbnail output.
+- Image hardening: max pixels guard and deterministic thumbnail output.
+
+## Signed URLs (Media)
+- HMAC-SHA256 signatures with short TTL.
+- Payload includes `public_token` for revocation.
+- Constant-time signature compare.
+- Fail-closed on missing/expired/invalid signatures.
 
 ## Media thumbnails
 - Pre-generated only, stored under `_cache`.

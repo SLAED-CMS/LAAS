@@ -1,5 +1,9 @@
 # LAAS Versions
 
+- v1.10.0: Public Media + Signed URLs
+  - Public access modes (private/all/signed)
+  - Signed URLs for media and thumbnails
+  - Admin public toggle and signed URL issuance
 - v1.9.2: Image hardening (thumbnails)
   - Max pixels guard and decode safety
   - Deterministic thumbnail output with metadata stripping

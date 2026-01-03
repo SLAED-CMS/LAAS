@@ -11,8 +11,6 @@
 
 LAAS CMS is a modular, security-first CMS built for PHP 8.4+ with a lightweight template engine, middleware pipeline, and i18n support. Bootstrap 5 + HTMX ready.
 
-- Media uploads: production-ready (v1.8.3)
-
 © Eduard Laas, 2005–2026  
 License: MIT  
 Website: https://laas-cms.org
@@ -77,6 +75,7 @@ http://laas.loc/
 
 ## Milestones
 
+- **v1.10.0**: Public Media + Signed URLs
 - **v1.8.3**: Media AV, per-MIME limits, DevTools media panel
 - **v1.8.2**: Media upload protections (rate limit, size, slow upload)
 - **v1.8.1**: Media admin UI polish (Bootstrap 5 + HTMX)
@@ -208,7 +207,7 @@ WHERE u.username = 'admin';
 
 ## Documentation
 
-- Media uploads: `docs/MEDIA.md`
+- Media uploads and signed URLs: `docs/MEDIA.md`
 - `docs/ARCHITECTURE.md`
 - `docs/SECURITY.md`
 - `docs/DEVTOOLS.md`

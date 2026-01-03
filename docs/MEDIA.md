@@ -1,4 +1,4 @@
-# Media (v1.9.2)
+# Media (v1.10.0)
 
 ## Overview
 - Module: `Media` (type `feature`)
@@ -16,7 +16,7 @@
 - Malware: optional ClamAV scan in quarantine, fail-closed
 - Path traversal: original filename is ignored, UUID/random name only
 - Content sniffing: `X-Content-Type-Options: nosniff`
-- Unauthorized access: RBAC gate + `MEDIA_PUBLIC=false` by default
+- Unauthorized access: RBAC gate + public modes + signed URLs
 - Duplicate storage: SHA-256 dedupe
 - Image bombs: max pixels guard and decoder safety
 - Thumbnail safety: deterministic output, metadata stripped, no user-controlled paths
@@ -52,14 +52,25 @@
 - SHA-256 stored in `media_files.sha256`.
 - If hash exists, upload is discarded and existing record returned.
 
-## Public vs private media
-- `MEDIA_PUBLIC=false` by default.
-- When `false`, `/media/*` requires `media.view`.
+## Public vs signed vs private media (v1.10.0)
+- Modes via `MEDIA_PUBLIC_MODE`: `private`, `all`, `signed`.
+- `private`: always requires `media.view`.
+- `all`: all media served without RBAC.
+- `signed`: no RBAC only with a valid signature.
+- Per-file toggle stored in `media_files.is_public` (required for signed access) with optional `public_token` for revoke.
+
+### Signed URL scheme
+- HMAC-SHA256 signature.
+- Payload: `media_id|expires_at|purpose|public_token`.
+- Query params: `exp`, `sig`, `p`.
+- Purposes: `view`, `download`, `thumb:sm`/`thumb:md`/`thumb:lg`.
+- Fail-closed: missing/expired/invalid signature denies access.
 
 ## RBAC permissions
 - `media.view`
 - `media.upload`
 - `media.delete`
+- `media.public.toggle`
 
 ## Thumbnails (v1.9.0)
 - Pre-generated only, no on-the-fly transforms.
@@ -115,6 +126,7 @@ storage/uploads/_cache/YYYY/MM/<sha256>/<variant>_v<algo>.webp
 - Only for media serve requests.
 - Fields: media id, mime, size, serve mode, masked disk path, storage driver, read time (ms).
 - Thumb fields: generated (yes/no), reason (if missing), algo version.
+- Access fields: access mode, signature valid, signature exp.
 
 ## Configuration (.env)
 ```
@@ -122,6 +134,10 @@ MEDIA_ALLOWED_MIME=image/jpeg,image/png,image/webp,application/pdf
 MEDIA_MAX_BYTES=10485760
 MEDIA_MAX_BYTES_BY_MIME={"image/jpeg":5242880,"image/png":5242880,"image/webp":5242880,"application/pdf":10485760}
 MEDIA_PUBLIC=false
+MEDIA_PUBLIC_MODE=private
+MEDIA_SIGNED_URLS_ENABLED=true
+MEDIA_SIGNED_URL_TTL_SECONDS=600
+MEDIA_SIGNED_URL_SECRET=change_me
 MEDIA_AV_ENABLED=false
 MEDIA_AV_SOCKET=/var/run/clamav/clamd.ctl
 MEDIA_AV_TIMEOUT=8
