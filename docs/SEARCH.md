@@ -36,3 +36,5 @@
 - Admin global search:
   - `/admin/search?q=...` aggregates pages/media/users
   - Results scoped by RBAC permissions
+
+**Last updated:** January 2026

@@ -1,4 +1,4 @@
-# Media (v1.10.0)
+# Media
 
 ## Overview
 - Module: `Media` (type `feature`)
@@ -179,3 +179,5 @@ storage/uploads/
       MM/
         <sha256>/<variant>_v<algo>.<ext>
 ```
+
+**Last updated:** January 2026

@@ -1,20 +1,207 @@
-# Release
+# LAAS CMS — Release Notes  
+## v0.1 → v2.2.1 (Human-readable)
 
-## Process
+Этот документ — **история взросления LAAS CMS**:  
+от раннего прототипа до стабильной, production-ready платформы.
 
-- Update `docs/VERSIONS.md`
-- Run CI (lint, tests, smoke, release-check)
-- Tag: `v2.0.0`
-- Push tag to create GitHub Release automatically
+Без маркетинга. Без воды. Про то, **что реально появлялось и зачем**.
 
-## Production Checklist
+---
 
-- See `docs/PRODUCTION.md`
-- Ensure `APP_ENV=prod`, `APP_DEBUG=false`, `DEVTOOLS_ENABLED=false`
-- Verify `/health` returns 200
-- Run `php tools/cli.php release:check`
+## 🌱 v0.x — Рождение идеи
 
-## Rollback
+### v0.1 – v0.9 (pre-history)
+**Статус:** прототип / исследование
 
-- See `UPGRADING.md` and `docs/BACKUP.md`
-- Keep a fresh backup before tagging
+- Kernel → Router → Controller → View
+- Отказ от фреймворков (осознанно)
+- Модульная структура
+- HTML-first подход
+- Bootstrap как UI-база
+- Первые admin-экраны
+
+📌 *Цель:* доказать, что простая CMS без фреймворков жизнеспособна.
+
+---
+
+## 🚧 v1.0 – v1.6 — Основа системы
+
+### Основные вехи
+- RBAC (roles / permissions)
+- Audit Log
+- i18n
+- Admin / Frontend разделение
+- DevTools (debug-only)
+- Validation layer
+- CLI и миграции
+
+📌 *Система стала использоваться как CMS, а не демо.*
+
+---
+
+## 🖼 v1.7 – v1.9 — Media как first-class feature
+
+### v1.7.x
+- DevTools polish
+- Улучшения UX админки
+
+### v1.8.x — Media Uploads
+- Hardened uploads:
+  - MIME sniffing
+  - quarantine flow
+  - size limits
+- Hash + deduplication
+- RBAC + Audit для media
+- HTMX-based UI
+
+### v1.9.x — Media Transforms
+- Pre-generated thumbnails
+- Deterministic output
+- Image hardening
+- Media Picker (reusable)
+
+📌 *Media перестала быть “прикрученной фичей” — стала сильной стороной CMS.*
+
+---
+
+## ⚙️ v1.10 – v1.11 — Production readiness
+
+### v1.10.x
+- Public Media
+- Signed URLs
+- S3 / MinIO storage driver
+
+### v1.11.0 — Ops & Stability
+- `/health` endpoint
+- Read-only mode
+- Backup / Restore CLI
+- Config sanity checks
+
+### v1.11.1 – v1.11.3
+- Ops safety polish
+- Backup/restore hardening
+- Production docs
+- Upgrade path
+- Known limitations (честно)
+
+📌 *Система стала безопасной для реального production.*
+
+---
+
+## 🤖 v1.12 — CI / QA / Release Engineering
+
+- GitHub Actions CI
+- PHPUnit, lint, sqlite smoke
+- `ops:check`
+- Release automation из тегов
+- Автогенерация release notes
+
+📌 *Ручные релизы ушли в прошлое.*
+
+---
+
+## 🚀 v1.13 – v1.15 — Зрелость платформы
+
+### v1.13 — Performance & Cache
+- Settings cache
+- Menu cache
+- Translations per request
+- Cache invalidation hooks
+- Template warmup CLI
+
+### v1.14 — Search
+- Pages search (frontend + admin)
+- Media search
+- Users search
+- HTMX live search
+- Safe highlight
+
+### v1.15 — Permissions & Audit maturity
+- Permission groups
+- Role cloning
+- Audit role changes
+- Audit filters (user/action/date)
+
+📌 *CMS стала удобной не только для пользователей, но и для администраторов.*
+
+---
+
+## 🏁 v2.0.0 — Stable CMS Release
+
+**Ключевой момент проекта.**
+
+### Что означает v2.0
+- Архитектура **зафиксирована**
+- Контракты стабильны
+- Обратная совместимость гарантируется
+- Debug-фичи исключены из prod
+
+### Definition of Done
+- Production-ready ops
+- Backup/restore протестированы
+- CI зелёный
+- Документация полная
+- Архитектурного долга нет
+
+📌 *С этого момента LAAS — платформа, а не эксперимент.*
+
+---
+
+## 🔧 v2.1.x — UX и операционная прозрачность
+
+### v2.1.0 — Config Snapshot
+- `config:export`
+- Безопасный JSON snapshot runtime конфигурации
+- Полезно для поддержки и diff окружений
+
+### v2.1.1 — Global Admin Search
+- Единый поиск в админке:
+  - Pages
+  - Media
+  - Users
+- HTMX UX
+- Учитывает permissions
+
+📌 *Админам стало быстрее и спокойнее работать.*
+
+---
+
+## 🛡 v2.2.x — Контроль и гарантии
+
+### v2.2.0 — RBAC Diagnostics
+- Permission introspection:
+  - кто
+  - почему
+  - через какие роли
+- Диагностика прав без догадок
+- Audit просмотра диагностики
+
+### v2.2.1 — Contract Tests
+- Контрактные тесты для:
+  - модулей
+  - storage
+  - media
+- Защита архитектуры v2.0
+- Основа для сторонних модулей
+
+📌 *Система защищена от “случайной деградации” в будущем.*
+
+---
+
+## 🧭 Итог
+
+С v0.1 до v2.2.1 LAAS CMS прошла путь:
+- от идеи
+- к рабочей CMS
+- к **надёжной, спокойной, поддерживаемой платформе**
+
+### Что отличает LAAS CMS:
+- минимум магии
+- предсказуемое поведение
+- честные ограничения
+- уважение к админам и DevOps
+- контроль вместо хаоса
+
+**Это CMS, которую не страшно поддерживать годами.**
+
+**Last updated:** January 2026

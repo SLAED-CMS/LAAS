@@ -1,4 +1,4 @@
-# Known Limitations (v1.11.3)
+# Known Limitations
 
 - No horizontal session scaling
   - Sessions are file-based by default.
@@ -20,3 +20,5 @@
   - Migrations may lock tables or block writes.
   - Becomes a problem for strict uptime requirements.
   - Workaround: maintenance window and read-only mode.
+
+**Last updated:** January 2026

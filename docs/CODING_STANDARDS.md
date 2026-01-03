@@ -74,3 +74,5 @@
 
 ## PR checklist
 - UI uses Bootstrap 5 + HTMX only (no custom UI libs)
+
+**Last updated:** January 2026

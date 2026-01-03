@@ -1,4 +1,4 @@
-# DevTools (v1.9.0)
+# DevTools
 
 ## Enable
 Set in `.env`:
@@ -35,3 +35,5 @@ DEVTOOLS_COLLECT_LOGS=false
 ```
 DEVTOOLS_ENABLED=false
 ```
+
+**Last updated:** January 2026

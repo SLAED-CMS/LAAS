@@ -1,4 +1,4 @@
-# Cache (v1.13.0)
+# Cache
 
 ## Overview
 - File-based cache under `storage/cache/data`.
@@ -23,3 +23,5 @@
 - `CACHE_ENABLED=true`
 - `CACHE_TTL_DEFAULT=300`
 - `CACHE_PREFIX=laas`
+
+**Last updated:** January 2026

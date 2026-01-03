@@ -1,4 +1,4 @@
-# LAAS Architecture (v1.11.1)
+# LAAS Architecture
 
 ## Общее устройство
 Поток обработки запроса:
@@ -38,7 +38,7 @@ tools/              CLI
 - Если шаблон `extends` layout — для `HX-Request` возвращается только `block content`.
 - Если `extends` нет — возвращается сам шаблон.
 
-## Template Engine (v1)
+## Template Engine
 - Синтаксис: `{% key %}`, `{% raw key %}`, `if/else/endif`, `foreach/endforeach`, `include`, `extends/blocks`.
 - Экранирование по умолчанию, raw только через `{% raw %}`.
 
@@ -67,17 +67,17 @@ ErrorHandler -> Session -> CSRF -> RateLimit -> SecurityHeaders -> Auth -> RBAC 
 - В тестах допускается SQLite in-memory.
 - Timestamps формируются в PHP (без `NOW()`).
 
-## Ops and Stability (v1.11.0)
+## Ops and Stability
 - Health endpoint: `GET /health` returns JSON with status and checks.
 - Read-only mode: blocks write methods at middleware level.
 - Backup/restore: CLI commands `backup:create` and `backup:restore`.
 
-## Ops Safety Polish (v1.11.1)
+## Ops Safety Polish
 - Health safe mode: no write-test by default, optional via `HEALTH_WRITE_CHECK=true`.
 - Degradation logging: single log on state change (OK↔DEGRADED), anti-spam with TTL.
 - Read-only whitelist for critical endpoints.
 
-## Cache Layer (v1.13.0)
+## Cache Layer
 - File cache at `storage/cache/data`.
 - Namespaced keys for settings and menus.
 - Invalidators on write operations.

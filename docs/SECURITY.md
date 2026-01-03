@@ -1,4 +1,4 @@
-# Security (v1.11.0)
+# Security
 
 ## Sessions
 - Session storage: `storage/sessions`.
@@ -64,3 +64,5 @@
 ## Admin UI
 - HTMX validation errors return HTTP 422.
 - Unified messages partials and indicators.
+
+**Last updated:** January 2026

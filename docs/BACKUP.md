@@ -1,4 +1,4 @@
-# Backup & Restore (v1.11.2)
+# Backup & Restore
 
 ## Overview
 - Backups are created via CLI and stored in `storage/backups/`.
@@ -57,3 +57,5 @@ php tools/cli.php backup:restore <file> [--force] [--dry-run]
 - `backup:inspect` fails → archive corrupted or incomplete.
 - Restore locked → another restore is running (remove lock only if safe).
 - In prod → use `--force` explicitly.
+
+**Last updated:** January 2026

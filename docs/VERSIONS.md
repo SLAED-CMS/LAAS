@@ -1,17 +1,17 @@
 # LAAS Versions
 
-- v2.1.0: Config snapshot (config:export)
-  - CLI config:export snapshot with redaction and file output
-  - Storage/media/security flags included in export
-- v2.1.1: Global Admin Search
-  - Admin search page for pages/media/users
-  - HTMX live search with debounce and safe highlights
-- v2.2.0: RBAC diagnostics
-  - Admin diagnostics page with effective permissions and explanations
-  - Audit event for diagnostics views
 - v2.2.1: Module contract tests template
   - Contract test base for module discovery requirements
   - Storage and media contract tests for core invariants
+- v2.2.0: RBAC diagnostics
+  - Admin diagnostics page with effective permissions and explanations
+  - Audit event for diagnostics views
+- v2.1.1: Global Admin Search
+  - Admin search page for pages/media/users
+  - HTMX live search with debounce and safe highlights
+- v2.1.0: Config snapshot (config:export)
+  - CLI config:export snapshot with redaction and file output
+  - Storage/media/security flags included in export
 - v2.0.0: Stable CMS Release
   - Release checks and prod hardening
   - DevTools disabled in prod
@@ -137,3 +137,5 @@
 - v0.3: CSRF middleware + /csrf endpoint + rate limiter (/api) + flock
 - v0.2: Middleware pipeline + sessions + security headers + error handler + Monolog
 - v0.1: Kernel/Router/Modules + System+Api routes
+
+**Last updated:** January 2026

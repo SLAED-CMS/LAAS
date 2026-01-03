@@ -23,3 +23,5 @@ modules/Foo/
 - `routes.php`: регистрирует `/hello`.
 - Controller возвращает View c шаблоном `themes/default/pages/hello.html`.
 - HTML не хранится в PHP.
+
+**Last updated:** January 2026
