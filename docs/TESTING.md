@@ -41,3 +41,9 @@ Coverage focuses on core and critical paths:
 - Health endpoint (200/503)
 - Backup inspect (dry-run)
 - Migrations status (smoke)
+
+## Testdox
+
+```bash
+vendor/bin/phpunit --testdox
+```

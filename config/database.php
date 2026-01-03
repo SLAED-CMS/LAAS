@@ -18,7 +18,7 @@ $envInt = static function (string $key, int $default) use ($env): int {
 };
 
 return [
-    'driver' => $envString('DB_CONNECTION', $envString('DB_DRIVER', 'sqlite')),
+    'driver' => $envString('DB_DRIVER', $envString('DB_CONNECTION', 'sqlite')),
     'host' => $envString('DB_HOST', '127.0.0.1'),
     'port' => $envInt('DB_PORT', 3306),
     'database' => $envString('DB_DATABASE', $envString('DB_NAME', ':memory:')),
