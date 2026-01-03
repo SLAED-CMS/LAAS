@@ -17,7 +17,8 @@
 3. **Dependencies:** `composer install --no-dev`
 4. **Migrations:** `php tools/cli.php migrate:up`
 5. **Cache:** `php tools/cli.php cache:clear && php tools/cli.php templates:warmup`
-6. **Sanity check:**
+6. **Reload PHP-FPM:** `systemctl reload php8.x-fpm` (or `service php-fpm reload`)
+7. **Sanity check:**
    - Health: `curl http://yourdomain.com/health`
    - Admin login: `/admin`
    - Key flows: test pages, media, search
@@ -26,7 +27,7 @@
 
 ## Version-Specific Upgrade Paths
 
-### v1.x → v2.2.1 (Current Stable)
+### v1.x → v2.2.3 (Current Stable)
 
 **Overview:** Major stability and maturity improvements.
 
@@ -439,4 +440,4 @@ php tools/cli.php rbac:grant admin media.upload
 
 ---
 
-**Last updated:** January 2026 (v2.2.1)
+**Last updated:** January 2026 (v2.2.3)

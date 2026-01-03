@@ -1,6 +1,6 @@
 # Production Deployment Guide
 
-**Complete guide** for deploying LAAS CMS v2.2.1 to production. This document covers environment configuration, security hardening, monitoring, backup strategies, and operational best practices.
+**Complete guide** for deploying LAAS CMS v2.2.3 to production. This document covers environment configuration, security hardening, monitoring, backup strategies, and operational best practices.
 
 ---
 
@@ -55,7 +55,7 @@ LAAS CMS is designed to be **production-ready** out of the box, but requires pro
 Before deploying to production, verify:
 
 ### Code & Dependencies
-- [ ] Latest stable release (v2.2.1 or newer)
+- [ ] Latest stable release (v2.2.3 or newer)
 - [ ] `composer install --no-dev --optimize-autoloader` executed
 - [ ] No uncommitted changes in working directory
 - [ ] Version tagged in git
@@ -641,6 +641,8 @@ setcookie('session_id', $value, [
 
 ## Performance & Caching
 
+**OPcache required:** See [docs/OPCACHE.md](OPCACHE.md).
+
 ### Template Caching
 
 **Always enable in production:**
@@ -676,6 +678,8 @@ opcache.max_accelerated_files=10000
 opcache.revalidate_freq=2
 opcache.fast_shutdown=1
 ```
+
+For production-safe configuration and deploy behavior, see [docs/OPCACHE.md](OPCACHE.md).
 
 ### CDN for Static Assets
 

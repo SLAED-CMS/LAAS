@@ -5,11 +5,11 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-8A2BE2.svg)](https://www.mysql.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)](#)
-[![Baseline](https://img.shields.io/badge/Baseline-v2.2.1-yellow.svg)](docs/VERSIONS.md)
+[![Baseline](https://img.shields.io/badge/Baseline-v2.2.3-yellow.svg)](docs/VERSIONS.md)
 
 **Modern, secure, HTML-first content management system.**
 
-**v2.2.1** — Stable release with contract tests and RBAC diagnostics.
+**v2.2.3** — Stable release with OPcache and deploy documentation.
 
 LAAS CMS is a modular, security-first CMS built for PHP 8.4+ with a lightweight template engine, middleware pipeline, and i18n support. Bootstrap 5 + HTMX ready.
 
@@ -123,6 +123,7 @@ http://laas.loc/
 ## Milestones
 
 ### v2.x — Mature Platform
+- **v2.2.3**: OPcache docs + safe deploy flow
 - **v2.2.1**: Contract tests (module/storage/media invariants)
 - **v2.2.0**: RBAC diagnostics (permission introspection)
 - **v2.1.1**: Global admin search (pages/media/users)
@@ -444,6 +445,8 @@ See [docs/RBAC.md](docs/RBAC.md) for detailed documentation.
 
 ### Operations
 - [Production](docs/PRODUCTION.md) — Production deployment checklist
+- [OPcache](docs/OPCACHE.md) — Recommended OPcache settings
+- [Deploy](docs/DEPLOY.md) — Safe deploy flow (PHP-FPM)
 - [Backup](docs/BACKUP.md) — Backup and restore procedures
 - [Limitations](docs/LIMITATIONS.md) — Known limitations and constraints
 

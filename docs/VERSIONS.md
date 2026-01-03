@@ -1,5 +1,8 @@
 # LAAS Versions
 
+- v2.2.3: OpCache docs + deploy flow
+  - OPcache production recommendations and safety notes
+  - Safe PHP-FPM deploy flow with reload guidance
 - v2.2.2: Performance must-have
   - Perf indexes for pages/media/audit
   - N+1 removal in users list (batched roles)
