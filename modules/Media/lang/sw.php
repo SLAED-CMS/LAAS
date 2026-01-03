@@ -32,4 +32,10 @@ return array (
     'media.upload_timeout' => 'Muda wa upakiaji umeisha. Jaribu tena.',
     'media.upload_virus_detected' => 'Upakiaji umekataliwa: virusi vimegunduliwa.',
     'media.upload_mime_too_large' => 'Faili ni kubwa sana kwa aina hii. Kikomo: {max}.',
+    'media.picker.empty' => 'Hakuna faili.',
+    'media.picker.title' => 'Chagua faili',
+    'media.picker.search' => 'Tafuta faili',
+    'media.picker.select' => 'Chagua',
+    'media.thumb.too_many_pixels' => 'Pikseli nyingi kwa kijipicha.',
+    'media.thumb.decode_failed' => 'Imeshindikana kuchakata picha.',
 );

@@ -51,12 +51,34 @@ foreach ($maxBytesByMime as $mime => $limit) {
     $maxBytesByMimeFiltered[$mime] = $limit;
 }
 
+$thumbVariants = $envJson('MEDIA_THUMB_VARIANTS', [
+    'sm' => 200,
+    'md' => 400,
+    'lg' => 800,
+]);
+$thumbVariantsFiltered = [];
+foreach ($thumbVariants as $name => $width) {
+    if (!is_string($name) || $name === '' || !is_numeric($width)) {
+        continue;
+    }
+    $width = (int) $width;
+    if ($width <= 0) {
+        continue;
+    }
+    $thumbVariantsFiltered[$name] = $width;
+}
+
 return [
     'max_bytes' => $envInt('MEDIA_MAX_BYTES', 10 * 1024 * 1024),
     'public' => $envBool('MEDIA_PUBLIC', false),
     'allowed_mime' => $allowedList,
     'max_bytes_by_mime' => $maxBytesByMimeFiltered,
+    'image_max_pixels' => $envInt('MEDIA_IMAGE_MAX_PIXELS', 40000000),
     'av_enabled' => $envBool('MEDIA_AV_ENABLED', false),
     'av_socket' => $envString('MEDIA_AV_SOCKET', '/var/run/clamav/clamd.ctl'),
     'av_timeout' => $envInt('MEDIA_AV_TIMEOUT', 8),
+    'thumb_variants' => $thumbVariantsFiltered,
+    'thumb_format' => $envString('MEDIA_THUMB_FORMAT', 'webp'),
+    'thumb_quality' => $envInt('MEDIA_THUMB_QUALITY', 82),
+    'thumb_algo_version' => $envInt('MEDIA_THUMB_ALGO_VERSION', 1),
 ];

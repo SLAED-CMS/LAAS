@@ -32,4 +32,10 @@ return array (
     'media.upload_timeout' => 'Unggahan kehabisan waktu. Coba lagi.',
     'media.upload_virus_detected' => 'Unggahan ditolak: terdeteksi virus.',
     'media.upload_mime_too_large' => 'Berkas terlalu besar untuk tipe ini. Maks: {max}.',
+    'media.picker.empty' => 'Tidak ada berkas.',
+    'media.picker.title' => 'Pilih berkas',
+    'media.picker.search' => 'Cari berkas',
+    'media.picker.select' => 'Pilih',
+    'media.thumb.too_many_pixels' => 'Terlalu banyak piksel untuk thumbnail.',
+    'media.thumb.decode_failed' => 'Pemrosesan gambar gagal.',
 );

@@ -127,6 +127,9 @@
           <div><span class="small text-secondary">{% t 'devtools.media_disk' %}</span>: {% devtools.media.disk %}</div>
           <div><span class="small text-secondary">{% t 'devtools.media_storage' %}</span>: {% devtools.media.storage %}</div>
           <div><span class="small text-secondary">{% t 'devtools.media_read_time' %}</span>: {% devtools.media.read_time_ms %}</div>
+          <div><span class="small text-secondary">{% t 'devtools.media_thumb_generated' %}</span>: {% if devtools.media.thumb_generated %}{% t 'devtools.yes' %}{% else %}{% t 'devtools.no' %}{% endif %}</div>
+          <div><span class="small text-secondary">{% t 'devtools.media_thumb_reason' %}</span>: {% if devtools.media.thumb_reason %}{% devtools.media.thumb_reason %}{% else %}-{% endif %}</div>
+          <div><span class="small text-secondary">{% t 'devtools.media_thumb_algo' %}</span>: {% devtools.media.thumb_algo %}</div>
         </div>
       </fieldset>
       {% endif %}

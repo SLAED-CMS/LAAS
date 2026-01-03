@@ -9,6 +9,10 @@ use Laas\Database\Repositories\RbacRepository;
 use Laas\Database\Repositories\RolesRepository;
 use Laas\Database\Repositories\SettingsRepository;
 use Laas\Database\Repositories\UsersRepository;
+use Laas\Modules\Media\Repository\MediaRepository;
+use Laas\Modules\Media\Service\MediaThumbnailService;
+use Laas\Modules\Media\Service\StorageService;
+use Laas\Support\AuditLogger;
 use Laas\Support\LoggerFactory;
 
 $rootPath = dirname(__DIR__);
@@ -373,6 +377,50 @@ $commands['rbac:revoke'] = function () use ($usersRepo, $rbacRepo, $args): int {
     $rbacRepo->revokePermissionFromRole('admin', $permission);
     echo "Revoked {$permission} from role admin\n";
     return 0;
+};
+
+$commands['media:thumbs:sync'] = function () use ($dbManager, $rootPath): int {
+    try {
+        if (!$dbManager->healthCheck()) {
+            echo "DB not available.\n";
+            return 1;
+        }
+
+        $repo = new MediaRepository($dbManager);
+        $config = require $rootPath . '/config/media.php';
+        $storage = new StorageService($rootPath);
+        $service = new MediaThumbnailService($storage, null, new AuditLogger($dbManager));
+
+        $total = $repo->count('');
+        $limit = 100;
+        $offset = 0;
+        $processed = 0;
+        $generated = 0;
+        $skipped = 0;
+        $failed = 0;
+
+        while ($offset < $total) {
+            $rows = $repo->list($limit, $offset, '');
+            foreach ($rows as $row) {
+                $processed++;
+                $result = $service->sync($row, is_array($config) ? $config : []);
+                $generated += $result['generated'];
+                $skipped += $result['skipped'];
+                $failed += $result['failed'];
+
+                if ($processed % 50 === 0) {
+                    echo "Processed {$processed}/{$total} | generated={$generated} skipped={$skipped} failed={$failed}\n";
+                }
+            }
+            $offset += $limit;
+        }
+
+        echo "Done. processed={$processed} generated={$generated} skipped={$skipped} failed={$failed}\n";
+        return 0;
+    } catch (Throwable $e) {
+        echo "Thumb sync failed: " . $e->getMessage() . "\n";
+        return 1;
+    }
 };
 
 if ($command === '' || !isset($commands[$command])) {

@@ -58,6 +58,9 @@ final class RequestCollector implements CollectorInterface
                 'disk' => (string) ($response->getHeader('X-Media-Disk') ?? ''),
                 'storage' => (string) ($response->getHeader('X-Media-Storage') ?? ''),
                 'read_time_ms' => $this->toFloat($response->getHeader('X-Media-Read-Time')) ?? 0.0,
+                'thumb_generated' => ($this->toInt($response->getHeader('X-Media-Thumb-Generated')) ?? 0) > 0,
+                'thumb_reason' => (string) ($response->getHeader('X-Media-Thumb-Reason') ?? ''),
+                'thumb_algo' => $this->toInt($response->getHeader('X-Media-Thumb-Algo')) ?? 0,
             ]);
         }
     }

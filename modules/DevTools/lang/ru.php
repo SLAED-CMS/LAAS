@@ -28,4 +28,9 @@ return [
     'devtools.media_disk' => 'Диск',
     'devtools.media_storage' => 'Хранилище',
     'devtools.media_read_time' => 'Время чтения (мс)',
+    'devtools.media_thumb_generated' => 'Миниатюра создана',
+    'devtools.media_thumb_reason' => 'Причина отсутствия',
+    'devtools.media_thumb_algo' => 'Алгоритм',
+    'devtools.yes' => 'Да',
+    'devtools.no' => 'Нет',
 ];

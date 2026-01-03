@@ -32,4 +32,10 @@ return array (
     'media.upload_timeout' => 'Upload timed out. Try again.',
     'media.upload_virus_detected' => 'Upload rejected: virus detected.',
     'media.upload_mime_too_large' => 'File too large for this type. Max: {max}.',
+    'media.picker.title' => 'Select media',
+    'media.picker.search' => 'Search media',
+    'media.picker.select' => 'Select',
+    'media.picker.empty' => 'No media found.',
+    'media.thumb.too_many_pixels' => 'Image too large for thumbnail.',
+    'media.thumb.decode_failed' => 'Image processing failed.',
 );
