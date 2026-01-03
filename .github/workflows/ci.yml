@@ -35,6 +35,7 @@ jobs:
     env:
       APP_ENV: test
       DB_DRIVER: sqlite
+      DB_CONNECTION: sqlite
       DB_NAME: ':memory:'
       CI_TEMPLATES_WARMUP: ${{ vars.CI_TEMPLATES_WARMUP }}
     steps:
@@ -58,6 +59,7 @@ jobs:
     env:
       APP_ENV: test
       DB_DRIVER: sqlite
+      DB_CONNECTION: sqlite
       DB_NAME: ':memory:'
       COVERAGE_MIN_LINES: 35
     steps:
@@ -87,6 +89,7 @@ jobs:
     env:
       APP_ENV: test
       DB_DRIVER: sqlite
+      DB_CONNECTION: sqlite
       DB_NAME: ${{ github.workspace }}/storage/tmp/ci.sqlite
     steps:
       - uses: actions/checkout@v4
@@ -105,6 +108,7 @@ jobs:
     env:
       APP_ENV: test
       DB_DRIVER: sqlite
+      DB_CONNECTION: sqlite
       DB_NAME: ${{ github.workspace }}/storage/tmp/release.sqlite
       RELEASE_CHECK_DB_DRIVER: pdo
     steps:
