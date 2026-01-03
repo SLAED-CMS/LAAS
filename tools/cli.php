@@ -30,6 +30,7 @@ require $rootPath . '/vendor/autoload.php';
 if (class_exists(\Dotenv\Dotenv::class)) {
     \Dotenv\Dotenv::createImmutable($rootPath)->safeLoad();
 }
+$_ENV = array_merge($_ENV, getenv());
 
 $command = $argv[1] ?? '';
 $args = array_slice($argv, 2);
