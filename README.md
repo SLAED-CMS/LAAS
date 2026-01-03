@@ -75,6 +75,7 @@ http://laas.loc/
 
 ## Milestones
 
+- **v1.14.0**: Search (Admin + Frontend)
 - **v1.10.1**: S3-compatible storage (MinIO/AWS)
 - **v1.10.0**: Public Media + Signed URLs
 - **v1.8.3**: Media AV, per-MIME limits, DevTools media panel
@@ -121,6 +122,7 @@ tools/                 # CLI utilities
 - `/echo` (POST)
 - `/login` (GET/POST)
 - `/logout` (POST)
+- `/search`
 - `/admin`
 - `/admin/modules`
 - `/admin/settings`
@@ -203,7 +205,9 @@ New install flow:
 
 - `/admin/modules`: HTMX toggle for modules (protected: System, Api, Admin)
 - `/admin/settings`: HTMX settings editor (site_name, default_locale, theme)
-- `/admin/media`: Media uploads and file list
+- `/admin/media`: Media uploads and file list (search)
+- `/admin/pages`: Pages list (search)
+- `/admin/users`: Users list (search)
 
 ---
 
@@ -252,6 +256,7 @@ WHERE u.username = 'admin';
 - `docs/I18N.md`
 - `docs/VERSIONS.md`
 - `docs/BACKUP.md`
+- `docs/SEARCH.md`
 - `docs/PRODUCTION.md`
 - `docs/LIMITATIONS.md`
 - `UPGRADING.md`

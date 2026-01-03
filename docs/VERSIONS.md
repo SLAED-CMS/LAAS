@@ -1,5 +1,9 @@
 # LAAS Versions
 
+- v1.14.0: Search (Admin + Frontend)
+  - LIKE-based search for pages/media/users with normalization + escaping
+  - HTMX live search with debounce and safe highlights
+  - Search indexes and documentation
 - v1.13.0: Performance & Cache Maturity
   - File cache for settings and menus with invalidation hooks
   - Per-request i18n caching and template warmup CLI
