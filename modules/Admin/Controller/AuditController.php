@@ -31,11 +31,52 @@ final class AuditController
 
         try {
             $repo = new AuditLogRepository($this->db);
+            $filters = $this->readFilters($request);
+            if (!$filters['valid']) {
+                $message = $this->view->translate('audit.filters.invalid_range');
+                if ($request->isHtmx()) {
+                    $response = $this->view->render('partials/messages.html', [
+                        'errors' => [$message],
+                    ], 422, [], [
+                        'theme' => 'admin',
+                        'render_partial' => true,
+                    ]);
+                    return $response->withHeader('HX-Retarget', '#page-messages');
+                }
+
+                $actions = $repo->listActions();
+                $actionOptions = array_map(static function (string $action) use ($filters): array {
+                    return [
+                        'name' => $action,
+                        'selected' => $action === $filters['values']['action'] ? 'selected' : '',
+                    ];
+                }, $actions);
+
+                return $this->view->render('pages/audit.html', [
+                    'logs' => [],
+                    'filters' => $filters['values'],
+                    'actions' => $actionOptions,
+                    'users' => $repo->listUsers(),
+                    'pagination' => $this->emptyPagination(),
+                    'errors' => [$message],
+                ], 422, [], [
+                    'theme' => 'admin',
+                ]);
+            }
+
             $page = $this->readPage($request);
             $limit = 50;
             $offset = ($page - 1) * $limit;
-            $total = $repo->countAll();
-            $rows = $repo->list($limit, $offset);
+            $total = $repo->countSearch($filters['values']);
+            $rows = $repo->search($filters['values'], $limit, $offset);
+            $actions = $repo->listActions();
+            $users = $repo->listUsers();
+            $actionOptions = array_map(static function (string $action) use ($filters): array {
+                return [
+                    'name' => $action,
+                    'selected' => $action === $filters['values']['action'] ? 'selected' : '',
+                ];
+            }, $actions);
         } catch (Throwable) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
@@ -58,11 +99,15 @@ final class AuditController
         $page = min($page, $totalPages);
         $hasPrev = $page > 1;
         $hasNext = $page < $totalPages;
-        $prevUrl = $hasPrev ? '/admin/audit?page=' . ($page - 1) : '#';
-        $nextUrl = $hasNext ? '/admin/audit?page=' . ($page + 1) : '#';
+        $query = $this->buildQueryString($filters['values']);
+        $prevUrl = $hasPrev ? '/admin/audit?page=' . ($page - 1) . $query : '#';
+        $nextUrl = $hasNext ? '/admin/audit?page=' . ($page + 1) . $query : '#';
 
-        return $this->view->render('pages/audit.html', [
+        $viewData = [
             'logs' => $logs,
+            'filters' => $filters['values'],
+            'actions' => $actionOptions,
+            'users' => $users,
             'pagination' => [
                 'page' => $page,
                 'total_pages' => $totalPages,
@@ -73,7 +118,16 @@ final class AuditController
                 'prev_disabled_class' => $hasPrev ? '' : 'disabled',
                 'next_disabled_class' => $hasNext ? '' : 'disabled',
             ],
-        ], 200, [], [
+        ];
+
+        if ($request->isHtmx()) {
+            return $this->view->render('partials/audit_table.html', $viewData, 200, [], [
+                'theme' => 'admin',
+                'render_partial' => true,
+            ]);
+        }
+
+        return $this->view->render('pages/audit.html', $viewData, 200, [], [
             'theme' => 'admin',
         ]);
     }
@@ -150,6 +204,91 @@ final class AuditController
 
         $page = (int) $raw;
         return $page > 0 ? $page : 1;
+    }
+
+    /** @return array{valid: bool, values: array{user: string, action: string, from: string, to: string}} */
+    private function readFilters(Request $request): array
+    {
+        $user = trim((string) ($request->query('user') ?? ''));
+        $action = trim((string) ($request->query('action') ?? ''));
+        $from = trim((string) ($request->query('from') ?? ''));
+        $to = trim((string) ($request->query('to') ?? ''));
+
+        $fromOk = $from === '' ? true : $this->isDate($from);
+        $toOk = $to === '' ? true : $this->isDate($to);
+        if (!$fromOk || !$toOk) {
+            return [
+                'valid' => false,
+                'values' => [
+                    'user' => $user,
+                    'action' => $action,
+                    'from' => $from,
+                    'to' => $to,
+                ],
+            ];
+        }
+
+        if ($from !== '' && $to !== '') {
+            $fromTime = strtotime($from . ' 00:00:00');
+            $toTime = strtotime($to . ' 23:59:59');
+            if ($fromTime !== false && $toTime !== false && $fromTime > $toTime) {
+                return [
+                    'valid' => false,
+                    'values' => [
+                        'user' => $user,
+                        'action' => $action,
+                        'from' => $from,
+                        'to' => $to,
+                    ],
+                ];
+            }
+        }
+
+        return [
+            'valid' => true,
+            'values' => [
+                'user' => $user,
+                'action' => $action,
+                'from' => $from,
+                'to' => $to,
+            ],
+        ];
+    }
+
+    private function isDate(string $value): bool
+    {
+        $dt = \DateTime::createFromFormat('Y-m-d', $value);
+        return $dt instanceof \DateTime && $dt->format('Y-m-d') === $value;
+    }
+
+    /** @param array{user: string, action: string, from: string, to: string} $filters */
+    private function buildQueryString(array $filters): string
+    {
+        $params = [];
+        foreach ($filters as $key => $value) {
+            if ($value !== '') {
+                $params[$key] = $value;
+            }
+        }
+        if ($params === []) {
+            return '';
+        }
+
+        return '&' . http_build_query($params);
+    }
+
+    private function emptyPagination(): array
+    {
+        return [
+            'page' => 1,
+            'total_pages' => 1,
+            'has_prev' => false,
+            'has_next' => false,
+            'prev_url' => '#',
+            'next_url' => '#',
+            'prev_disabled_class' => 'disabled',
+            'next_disabled_class' => 'disabled',
+        ];
     }
 
     private function summarizeContext(mixed $raw): string

@@ -1,5 +1,9 @@
 # LAAS Versions
 
+- v1.15.0: Permissions & Audit Maturity
+  - RBAC permission groups and role cloning
+  - RBAC change audit events
+  - Audit UI filters (user/action/date)
 - v1.14.0: Search (Admin + Frontend)
   - LIKE-based search for pages/media/users with normalization + escaping
   - HTMX live search with debounce and safe highlights

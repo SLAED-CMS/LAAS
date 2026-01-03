@@ -75,6 +75,7 @@ http://laas.loc/
 
 ## Milestones
 
+- **v1.15.0**: RBAC/Audit maturity (groups, cloning, filters)
 - **v1.14.0**: Search (Admin + Frontend)
 - **v1.10.1**: S3-compatible storage (MinIO/AWS)
 - **v1.10.0**: Public Media + Signed URLs
@@ -251,6 +252,8 @@ WHERE u.username = 'admin';
 - `docs/ARCHITECTURE.md`
 - `docs/SECURITY.md`
 - `docs/DEVTOOLS.md`
+- `docs/RBAC.md`
+- `docs/AUDIT.md`
 - `docs/MODULES.md`
 - `docs/TEMPLATES.md`
 - `docs/I18N.md`

@@ -8,45 +8,57 @@
     {% include "partials/messages.html" %}
   </div>
 
-  <table class="table table-striped table-hover align-middle">
-    <thead>
-      <tr>
-        <th>{% t 'admin.audit.date' %}</th>
-        <th>{% t 'admin.audit.user' %}</th>
-        <th>{% t 'admin.audit.action' %}</th>
-        <th>{% t 'admin.audit.entity' %}</th>
-        <th>{% t 'admin.audit.entity_id' %}</th>
-        <th>{% t 'admin.audit.context' %}</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% foreach logs as log %}
-      <tr>
-        <td>{% log.created_at %}</td>
-        <td>
-          {% if log.user %}{% log.user %}{% else %}-{% endif %}
-        </td>
-        <td>{% log.action %}</td>
-        <td>{% log.entity %}</td>
-        <td>{% raw log.entity_id %}</td>
-        <td>{% log.context_preview %}</td>
-      </tr>
-      {% endforeach %}
-    </tbody>
-  </table>
-
-  <div class="d-flex align-items-center justify-content-between">
-    <a class="btn btn-sm btn-outline-secondary {% pagination.prev_disabled_class %}"
-       href="{% pagination.prev_url %}">
-      {% t 'admin.audit.prev' %}
-    </a>
-    <div class="text-muted small">
-      {% t 'admin.audit.page' %} {% raw pagination.page %} / {% raw pagination.total_pages %}
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="fw-semibold mb-2">{% t 'audit.filters.title' %}</div>
+      <form method="get"
+            action="/admin/audit"
+            class="row g-2 align-items-end"
+            hx-get="/admin/audit"
+            hx-target="#audit-table"
+            hx-swap="innerHTML"
+            hx-indicator="#loading"
+            hx-trigger="keyup changed delay:300ms from:#audit-user, change from:#audit-action, change from:#audit-from, change from:#audit-to">
+        <div class="col-sm-3">
+          <label class="form-label">{% t 'audit.filters.user' %}</label>
+          <input class="form-control" id="audit-user" name="user" value="{% filters.user %}" list="audit-users">
+          <datalist id="audit-users">
+            {% foreach users as user %}
+              <option value="{% user.username %}"></option>
+            {% endforeach %}
+          </datalist>
+        </div>
+        <div class="col-sm-3">
+          <label class="form-label">{% t 'audit.filters.action' %}</label>
+          <select class="form-select" id="audit-action" name="action">
+            <option value="">-</option>
+            {% foreach actions as action %}
+              <option value="{% action.name %}" {% raw action.selected %}>{% action.name %}</option>
+            {% endforeach %}
+          </select>
+        </div>
+        <div class="col-sm-2">
+          <label class="form-label">{% t 'audit.filters.from' %}</label>
+          <input class="form-control" id="audit-from" type="date" name="from" value="{% filters.from %}">
+        </div>
+        <div class="col-sm-2">
+          <label class="form-label">{% t 'audit.filters.to' %}</label>
+          <input class="form-control" id="audit-to" type="date" name="to" value="{% filters.to %}">
+        </div>
+        <div class="col-sm-2 d-flex gap-2">
+          <button class="btn btn-outline-secondary w-100" type="submit">{% t 'admin.audit.action' %}</button>
+          <a class="btn btn-outline-secondary w-100" href="/admin/audit">{% t 'audit.filters.reset' %}</a>
+        </div>
+      </form>
     </div>
-    <a class="btn btn-sm btn-outline-secondary {% pagination.next_disabled_class %}"
-       href="{% pagination.next_url %}">
-      {% t 'admin.audit.next' %}
-    </a>
+  </div>
+
+  <div id="loading" class="htmx-indicator text-center my-3">
+    <div class="spinner-border" role="status" aria-hidden="true"></div>
+  </div>
+
+  <div id="audit-table">
+    {% include "partials/audit_table.html" %}
   </div>
   </div>
 </div>
