@@ -61,14 +61,23 @@ final class UsersController
             $users = $repo->list(100, 0);
         }
         $rows = [];
+        $userIds = [];
+        foreach ($users as $user) {
+            $userId = (int) ($user['id'] ?? 0);
+            if ($userId > 0) {
+                $userIds[] = $userId;
+            }
+        }
 
+        $rolesMap = $rbac->getRolesForUsers($userIds);
         foreach ($users as $user) {
             $userId = (int) ($user['id'] ?? 0);
             if ($userId <= 0) {
                 continue;
             }
 
-            $isAdmin = $rbac->userHasRole($userId, 'admin');
+            $roles = $rolesMap[$userId] ?? [];
+            $isAdmin = in_array('admin', $roles, true);
             $rows[] = $this->mapUserRow($user, $isAdmin, $currentUserId, $query);
         }
 

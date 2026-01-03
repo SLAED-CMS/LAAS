@@ -13,6 +13,7 @@ final class SettingsRepository
 {
     private CacheInterface $cache;
     private SettingsCacheInvalidator $invalidator;
+    private int $ttlSettings;
 
     public function __construct(private PDO $pdo, ?CacheInterface $cache = null)
     {
@@ -23,10 +24,20 @@ final class SettingsRepository
             $this->cache = CacheFactory::create($rootPath);
         }
         $this->invalidator = new SettingsCacheInvalidator($this->cache);
+        $rootPath = dirname(__DIR__, 3);
+        $config = CacheFactory::config($rootPath);
+        $this->ttlSettings = (int) ($config['ttl_settings'] ?? $config['ttl_default'] ?? 60);
     }
 
     public function get(string $key, mixed $default = null): mixed
     {
+        $all = $this->cache->get(CacheKey::settingsAll());
+        if (is_array($all) && isset($all['values']) && is_array($all['values'])) {
+            if (array_key_exists($key, $all['values'])) {
+                return $all['values'][$key];
+            }
+        }
+
         $cached = $this->cache->get(CacheKey::settingsKey($key));
         if (is_array($cached) && isset($cached['__missing__'])) {
             return $default;
@@ -39,17 +50,22 @@ final class SettingsRepository
         $stmt->execute(['key' => $key]);
         $row = $stmt->fetch();
         if (!$row) {
-            $this->cache->set(CacheKey::settingsKey($key), ['__missing__' => true]);
+            $this->cache->set(CacheKey::settingsKey($key), ['__missing__' => true], $this->ttlSettings);
             return $default;
         }
 
         $value = $this->deserialize((string) $row['value'], (string) $row['type']);
-        $this->cache->set(CacheKey::settingsKey($key), $value);
+        $this->cache->set(CacheKey::settingsKey($key), $value, $this->ttlSettings);
         return $value;
     }
 
     public function has(string $key): bool
     {
+        $all = $this->cache->get(CacheKey::settingsAll());
+        if (is_array($all) && isset($all['values']) && is_array($all['values'])) {
+            return array_key_exists($key, $all['values']);
+        }
+
         $cached = $this->cache->get(CacheKey::settingsKey($key));
         if (is_array($cached) && isset($cached['__missing__'])) {
             return false;
@@ -62,7 +78,7 @@ final class SettingsRepository
         $stmt->execute(['key' => $key]);
         $exists = (bool) $stmt->fetchColumn();
         if (!$exists) {
-            $this->cache->set(CacheKey::settingsKey($key), ['__missing__' => true]);
+            $this->cache->set(CacheKey::settingsKey($key), ['__missing__' => true], $this->ttlSettings);
         }
         return $exists;
     }
@@ -81,6 +97,38 @@ final class SettingsRepository
         ]);
 
         $this->invalidator->invalidateKey($key);
+    }
+
+    /** @return array<string, mixed> */
+    public function getAll(): array
+    {
+        $cached = $this->cache->get(CacheKey::settingsAll());
+        if (is_array($cached) && isset($cached['values']) && is_array($cached['values'])) {
+            return $cached['values'];
+        }
+
+        $stmt = $this->pdo->query('SELECT `key`, `value`, `type` FROM settings');
+        $rows = $stmt !== false ? $stmt->fetchAll() : [];
+        $values = [];
+        foreach ($rows as $row) {
+            $key = (string) ($row['key'] ?? '');
+            if ($key === '') {
+                continue;
+            }
+            $values[$key] = $this->deserialize((string) ($row['value'] ?? ''), (string) ($row['type'] ?? 'string'));
+        }
+
+        $sources = [];
+        foreach (array_keys($values) as $key) {
+            $sources[$key] = 'DB';
+        }
+
+        $this->cache->set(CacheKey::settingsAll(), [
+            'values' => $values,
+            'sources' => $sources,
+        ], $this->ttlSettings);
+
+        return $values;
     }
 
     private function serialize(mixed $value, string $type): string

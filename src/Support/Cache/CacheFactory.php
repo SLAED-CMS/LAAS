@@ -20,6 +20,12 @@ final class CacheFactory
         return new FileCache($dir, $prefix, $ttl);
     }
 
+    /** @return array<string, mixed> */
+    public static function config(string $rootPath): array
+    {
+        return self::loadConfig($rootPath);
+    }
+
     private static function loadConfig(string $rootPath): array
     {
         $path = rtrim($rootPath, '/\\') . '/config/cache.php';

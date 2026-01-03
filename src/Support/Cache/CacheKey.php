@@ -9,16 +9,26 @@ final class CacheKey
 
     public static function settingsAll(): string
     {
-        return 'settings.all.v' . self::VERSION;
+        return 'settings:v' . self::VERSION . ':all';
     }
 
     public static function settingsKey(string $name): string
     {
-        return 'settings.key.' . $name . '.v' . self::VERSION;
+        return 'settings:v' . self::VERSION . ':key:' . $name;
     }
 
     public static function menu(string $name, string $locale): string
     {
-        return 'menu.' . $name . '.' . $locale . '.v' . self::VERSION;
+        return 'menus:v' . self::VERSION . ':' . $name . ':' . $locale;
+    }
+
+    public static function permissionsRole(int $roleId): string
+    {
+        return 'permissions:v' . self::VERSION . ':role:' . $roleId;
+    }
+
+    public static function permissionsUser(int $userId): string
+    {
+        return 'permissions:v' . self::VERSION . ':user:' . $userId;
     }
 }

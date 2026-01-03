@@ -78,6 +78,8 @@ final class View
 
             $rootPath = dirname($this->cachePath, 3);
             $cache = CacheFactory::create($rootPath);
+            $cacheConfig = CacheFactory::config($rootPath);
+            $ttlMenus = (int) ($cacheConfig['ttl_menus'] ?? $cacheConfig['ttl_default'] ?? 60);
             $cacheKey = CacheKey::menu($name, $this->locale);
             $cached = $cache->get($cacheKey);
 
@@ -94,7 +96,7 @@ final class View
                 $cache->set($cacheKey, [
                     'menu' => $menu,
                     'items' => $items,
-                ]);
+                ], $ttlMenus);
             }
 
             $currentPath = $this->request?->getPath() ?? '/';

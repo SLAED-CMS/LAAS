@@ -17,6 +17,7 @@ final class SettingsProvider
     private array $values = [];
     private array $sources = [];
     private CacheInterface $cache;
+    private int $ttlSettings;
 
     /** @param array<string, mixed> $defaults */
     public function __construct(
@@ -26,6 +27,8 @@ final class SettingsProvider
     ) {
         $rootPath = dirname(__DIR__, 2);
         $this->cache = CacheFactory::create($rootPath);
+        $config = CacheFactory::config($rootPath);
+        $this->ttlSettings = (int) ($config['ttl_settings'] ?? $config['ttl_default'] ?? 60);
     }
 
     public function get(string $key, mixed $default = null): mixed
@@ -109,10 +112,10 @@ final class SettingsProvider
             $this->cache->set(CacheKey::settingsAll(), [
                 'values' => $this->values,
                 'sources' => $this->sources,
-            ]);
+            ], $this->ttlSettings);
             foreach ($this->values as $key => $value) {
                 if (is_string($key)) {
-                    $this->cache->set(CacheKey::settingsKey($key), $value);
+                    $this->cache->set(CacheKey::settingsKey($key), $value, $this->ttlSettings);
                 }
             }
         } catch (Throwable) {

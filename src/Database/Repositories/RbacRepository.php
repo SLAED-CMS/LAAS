@@ -3,39 +3,45 @@ declare(strict_types=1);
 
 namespace Laas\Database\Repositories;
 
+use Laas\Support\Cache\CacheFactory;
+use Laas\Support\Cache\CacheInterface;
+use Laas\Support\Cache\CacheKey;
 use PDO;
 
 final class RbacRepository
 {
     private RolesRepository $roles;
     private PermissionsRepository $permissions;
+    private CacheInterface $cache;
+    private int $ttlPermissions;
+    private bool $usePermissionsCache;
 
     public function __construct(private PDO $pdo)
     {
         $this->roles = new RolesRepository($pdo);
         $this->permissions = new PermissionsRepository($pdo);
+        $rootPath = dirname(__DIR__, 3);
+        $this->cache = CacheFactory::create($rootPath);
+        $config = CacheFactory::config($rootPath);
+        $this->ttlPermissions = (int) ($config['ttl_permissions'] ?? $config['ttl_default'] ?? 60);
+        $this->usePermissionsCache = $this->shouldUsePermissionsCache();
     }
 
     public function userHasPermission(int $userId, string $permission): bool
     {
-        $sql = <<<SQL
-SELECT 1
-FROM users u
-JOIN role_user ru ON ru.user_id = u.id
-JOIN roles r ON r.id = ru.role_id
-JOIN permission_role pr ON pr.role_id = r.id
-JOIN permissions p ON p.id = pr.permission_id
-WHERE u.id = :user_id AND p.name = :permission
-LIMIT 1
-SQL;
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([
-            'user_id' => $userId,
-            'permission' => $permission,
-        ]);
-        $row = $stmt->fetch();
+        $roleIds = $this->listUserRoleIds($userId);
+        if ($roleIds === []) {
+            return false;
+        }
 
-        return (bool) $row;
+        foreach ($roleIds as $roleId) {
+            $permissions = $this->listRolePermissions($roleId);
+            if (in_array($permission, $permissions, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function grantRoleToUser(int $userId, string $roleName): void
@@ -46,6 +52,7 @@ SQL;
             'user_id' => $userId,
             'role_id' => $roleId,
         ]);
+        $this->cache->delete(CacheKey::permissionsUser($userId));
     }
 
     public function revokeRoleFromUser(int $userId, string $roleName): void
@@ -60,6 +67,7 @@ SQL;
             'user_id' => $userId,
             'role_id' => $roleId,
         ]);
+        $this->cache->delete(CacheKey::permissionsUser($userId));
     }
 
     public function grantPermissionToRole(string $roleName, string $permissionName): void
@@ -71,6 +79,7 @@ SQL;
             'role_id' => $roleId,
             'permission_id' => $permId,
         ]);
+        $this->cache->delete(CacheKey::permissionsRole($roleId));
     }
 
     public function revokePermissionFromRole(string $roleName, string $permissionName): void
@@ -86,6 +95,7 @@ SQL;
             'role_id' => $roleId,
             'permission_id' => $permId,
         ]);
+        $this->cache->delete(CacheKey::permissionsRole($roleId));
     }
 
     public function ensureRole(string $roleName, ?string $title = null): int
@@ -122,6 +132,19 @@ SQL;
         return (bool) $stmt->fetch();
     }
 
+    /** @return array<int, int> */
+    private function listUserRoleIds(int $userId): array
+    {
+        $stmt = $this->pdo->prepare('SELECT role_id FROM role_user WHERE user_id = :user_id');
+        $stmt->execute(['user_id' => $userId]);
+        $rows = $stmt->fetchAll();
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map(static fn(array $row): int => (int) ($row['role_id'] ?? 0), $rows)));
+    }
+
     /** @return array<int, string> */
     public function listUserRoles(int $userId): array
     {
@@ -143,6 +166,13 @@ SQL;
     /** @return array<int, string> */
     public function listRolePermissions(int $roleId): array
     {
+        if ($this->usePermissionsCache) {
+            $cached = $this->cache->get(CacheKey::permissionsRole($roleId));
+            if (is_array($cached)) {
+                return array_values(array_filter(array_map(static fn($name): string => (string) $name, $cached)));
+            }
+        }
+
         $stmt = $this->pdo->prepare(
             'SELECT p.name FROM permissions p JOIN permission_role pr ON pr.permission_id = p.id WHERE pr.role_id = :role_id'
         );
@@ -153,7 +183,11 @@ SQL;
             return [];
         }
 
-        return array_map(static fn(array $row): string => (string) ($row['name'] ?? ''), $rows);
+        $names = array_values(array_filter(array_map(static fn(array $row): string => (string) ($row['name'] ?? ''), $rows)));
+        if ($this->usePermissionsCache) {
+            $this->cache->set(CacheKey::permissionsRole($roleId), $names, $this->ttlPermissions);
+        }
+        return $names;
     }
 
     /** @param array<int, int> $permissionIds */
@@ -188,9 +222,61 @@ SQL;
             }
         }
 
+        $this->cache->delete(CacheKey::permissionsRole($roleId));
+
         return [
             'added' => $toAdd,
             'removed' => $toRemove,
         ];
+    }
+
+    /** @return array<int, array<int, string>> */
+    public function getRolesForUsers(array $userIds): array
+    {
+        $userIds = array_values(array_unique(array_filter($userIds, static fn($id): bool => is_int($id) && $id > 0)));
+        if ($userIds === []) {
+            return [];
+        }
+
+        $placeholders = implode(', ', array_fill(0, count($userIds), '?'));
+        $sql = 'SELECT ru.user_id, r.name FROM role_user ru JOIN roles r ON r.id = ru.role_id WHERE ru.user_id IN (' . $placeholders . ')';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($userIds);
+        $rows = $stmt->fetchAll();
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($rows as $row) {
+            $uid = (int) ($row['user_id'] ?? 0);
+            $name = (string) ($row['name'] ?? '');
+            if ($uid <= 0 || $name === '') {
+                continue;
+            }
+            $result[$uid][] = $name;
+        }
+
+        return $result;
+    }
+
+    private function shouldUsePermissionsCache(): bool
+    {
+        $driver = (string) $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        if ($driver !== 'sqlite') {
+            return true;
+        }
+
+        try {
+            $stmt = $this->pdo->query('PRAGMA database_list');
+            $rows = $stmt !== false ? $stmt->fetchAll() : [];
+            if (!is_array($rows) || $rows === []) {
+                return false;
+            }
+            $file = (string) ($rows[0]['file'] ?? '');
+            return $file !== '' && $file !== ':memory:';
+        } catch (\Throwable) {
+            return false;
+        }
     }
 }
