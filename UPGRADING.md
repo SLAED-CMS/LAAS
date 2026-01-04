@@ -27,7 +27,7 @@
 
 ## Version-Specific Upgrade Paths
 
-### v1.x → v2.2.3 (Current Stable)
+### v1.x → v2.2.5 (Current Stable)
 
 **Overview:** Major stability and maturity improvements.
 
@@ -440,4 +440,4 @@ php tools/cli.php rbac:grant admin media.upload
 
 ---
 
-**Last updated:** January 2026 (v2.2.3)
+**Last updated:** January 2026

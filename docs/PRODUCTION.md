@@ -1,6 +1,6 @@
 # Production Deployment Guide
 
-**Complete guide** for deploying LAAS CMS v2.2.3 to production. This document covers environment configuration, security hardening, monitoring, backup strategies, and operational best practices.
+**Complete guide** for deploying LAAS CMS to production. This document covers environment configuration, security hardening, monitoring, backup strategies, and operational best practices.
 
 ---
 
@@ -55,7 +55,7 @@ LAAS CMS is designed to be **production-ready** out of the box, but requires pro
 Before deploying to production, verify:
 
 ### Code & Dependencies
-- [ ] Latest stable release (v2.2.3 or newer)
+- [ ] Latest stable release (v2.2.5 or newer)
 - [ ] `composer install --no-dev --optimize-autoloader` executed
 - [ ] No uncommitted changes in working directory
 - [ ] Version tagged in git

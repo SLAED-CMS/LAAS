@@ -24,8 +24,10 @@ namespace {
     use Laas\Modules\Media\Service\MediaUploadService;
     use Laas\Modules\Media\Service\MimeSniffer;
     use Laas\Modules\Media\Service\StorageService;
+    use PHPUnit\Framework\Attributes\Group;
     use PHPUnit\Framework\TestCase;
 
+    #[Group('security')]
     final class MediaUploadAntivirusTest extends TestCase
     {
         private string $rootPath;

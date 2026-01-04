@@ -1,4 +1,4 @@
-# LAAS CMS — Full Roadmap (v0.1 → v2.0)
+# LAAS CMS — Full Roadmap
 ## From Prototype to Production-Ready Mature Platform
 
 Документ описывает **все этапы развития LAAS CMS** — от первого каркаса до стабильной платформы уровня v2.0.  
@@ -451,7 +451,7 @@
 
 ## Итог
 
-LAAS CMS прошла путь от v0.1 до v2.2.1:
+LAAS CMS прошла путь от v0.1 до v2.2.5:
 - от идеи
 - к рабочей CMS
 - к стабильной v2.0

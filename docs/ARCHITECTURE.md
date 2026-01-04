@@ -1,6 +1,6 @@
 # Architecture Overview
 
-**Complete architectural guide** for LAAS CMS v2.2.4. This document describes the system design, core components, request lifecycle, and architectural principles.
+**Complete architectural guide** This document describes the system design, core components, request lifecycle, and architectural principles.
 
 ---
 

@@ -28,3 +28,5 @@
 ## Notes
 - No web-based opcache reset.
 - No curl or HTTP-based reset routes.
+
+**Last updated:** January 2026

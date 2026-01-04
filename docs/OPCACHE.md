@@ -67,3 +67,4 @@ Do not:
 - Add a web endpoint for OPcache reset.
 - Run opcache reset from HTTP requests.
 
+**Last updated:** January 2026

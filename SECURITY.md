@@ -36,7 +36,7 @@ We release security updates for the following versions of LAAS CMS:
 To help us address the issue quickly, please include:
 
 1. **Type of vulnerability** (e.g., XSS, SQL injection, CSRF bypass)
-2. **Affected version(s)** (e.g., v2.2.1, all versions)
+2. **Affected version(s)** (e.g., v2.2.5, all versions)
 3. **Steps to reproduce** (detailed, step-by-step instructions)
 4. **Proof of concept** (code, screenshots, or video)
 5. **Impact assessment** (what an attacker could achieve)
@@ -48,7 +48,7 @@ To help us address the issue quickly, please include:
 ```
 Subject: [SECURITY] SQL Injection in User Search
 
-Version: LAAS CMS v2.2.1
+Version: LAAS CMS v2.2.5
 Type: SQL Injection
 Severity: High
 

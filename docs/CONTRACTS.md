@@ -31,7 +31,7 @@ Contract tests validate **architectural invariants** — behaviors that MUST NOT
 - Validate critical security behaviors (e.g., media security headers)
 - Document expected system behavior
 
-**Introduced in:** v2.2.1
+**Introduced in:** v2.2.5
 
 **Location:** `tests/Contracts/`
 

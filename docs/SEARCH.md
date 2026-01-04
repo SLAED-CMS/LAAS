@@ -35,10 +35,6 @@ LAAS CMS provides **full-text search** functionality across multiple content typ
 - **Live search** — HTMX-powered instant results with debounce
 - **RBAC-aware** — Results filtered by user permissions
 
-**Introduced in:**
-- v1.14.0: Core search functionality
-- v2.1.1: Global admin search
-
 ---
 
 ## Features
@@ -638,7 +634,7 @@ $results = Cache::remember($cacheKey, 300, function() {
 });
 ```
 
-**Not currently implemented** (v2.2.1).
+**Not currently implemented**
 
 ---
 
