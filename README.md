@@ -3,9 +3,9 @@
 [![PHP Version](https://img.shields.io/badge/PHP-8.4+-slateblue.svg)](https://www.php.net/)
 [![MariaDB](https://img.shields.io/badge/MariaDB-10%2B-1F305F.svg)](https://mariadb.org/)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-00758F.svg)](https://www.mysql.com/)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)](#)
-[![Baseline](https://img.shields.io/badge/Baseline-v2.2.5-yellow.svg)](docs/VERSIONS.md)
+[![Baseline](https://img.shields.io/badge/Baseline-v2.2.5-orange.svg)](docs/VERSIONS.md)
 
 **Modern, secure, HTML-first content management system.**
 
@@ -279,7 +279,7 @@ tools/                 # CLI utilities
 ## Testing & Coverage
 
 - See [docs/TESTING.md](docs/TESTING.md) for full testing and coverage guidance.
-- Security regression suite: [docs/SECURITY_TESTING.md](docs/SECURITY_TESTING.md)
+- Security regression suite: [docs/TESTING.md](docs/TESTING.md)
 
 ```
 vendor/bin/phpunit
@@ -442,7 +442,7 @@ See [docs/RBAC.md](docs/RBAC.md) for detailed documentation.
 - [Contracts](docs/CONTRACTS.md) — Architectural contracts and tests
 
 ### Security & Access
-- [Security Testing](docs/SECURITY_TESTING.md) - Security regression tests
+- [Security Testing](docs/TESTING.md) — Security regression tests
 - [Security](docs/SECURITY.md) — Security features and hardening
 - [RBAC](docs/RBAC.md) — Role-based access control
 - [Audit](docs/AUDIT.md) — Audit log and tracking
@@ -460,8 +460,8 @@ See [docs/RBAC.md](docs/RBAC.md) for detailed documentation.
 - [Limitations](docs/LIMITATIONS.md) — Known limitations and constraints
 
 ### Development
-- [Coding Standards](docs/CODING_STANDARDS.md) - Code style and conventions
-- [Testing](docs/TESTING.md) - Running tests and coverage
+- [Coding Standards](docs/CODING_STANDARDS.md) — Code style and conventions
+- [Testing](docs/TESTING.md) — Running tests and coverage
 - [Versions](docs/VERSIONS.md) — Version history and changelog
 - [Release Notes](docs/RELEASE.md) — Human-readable release history
 - [Roadmap](docs/ROADMAP.md) — Project roadmap (v0.1 → v2.x)
