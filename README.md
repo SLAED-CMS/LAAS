@@ -1,9 +1,9 @@
 # LAAS CMS
 
-[![PHP Version](https://img.shields.io/badge/PHP-8.4+-blue.svg)](https://www.php.net/)
-[![MariaDB](https://img.shields.io/badge/MariaDB-10%2B-red.svg)](https://mariadb.org/)
-[![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-8A2BE2.svg)](https://www.mysql.com/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![PHP Version](https://img.shields.io/badge/PHP-8.4+-slateblue.svg)](https://www.php.net/)
+[![MariaDB](https://img.shields.io/badge/MariaDB-10%2B-1F305F.svg)](https://mariadb.org/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-00758F.svg)](https://www.mysql.com/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)](#)
 [![Baseline](https://img.shields.io/badge/Baseline-v2.2.5-yellow.svg)](docs/VERSIONS.md)
 
@@ -123,7 +123,10 @@ http://laas.loc/
 ## Milestones
 
 ### v2.x — Mature Platform
+- **v2.2.5**: Security regression test suite
+- **v2.2.4**: Coverage report + CI threshold
 - **v2.2.3**: OPcache docs + safe deploy flow
+- **v2.2.2**: Performance must-have
 - **v2.2.1**: Contract tests (module/storage/media invariants)
 - **v2.2.0**: RBAC diagnostics (permission introspection)
 - **v2.1.1**: Global admin search (pages/media/users)
