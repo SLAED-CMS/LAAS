@@ -39,14 +39,15 @@ namespace {
 
         protected function setUp(): void
         {
-            $this->rootPath = dirname(__DIR__);
-            $this->userId = 9002;
-            if (session_status() === PHP_SESSION_ACTIVE) {
-                session_unset();
-            }
-            $_FILES = [];
-            $_SERVER['CONTENT_LENGTH'] = '';
-            $_SERVER['REQUEST_TIME_FLOAT'] = microtime(true);
+        $this->rootPath = dirname(__DIR__);
+        $this->userId = 9002;
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_unset();
+        }
+        $this->clearRateLimit();
+        $_FILES = [];
+        $_SERVER['CONTENT_LENGTH'] = '';
+        $_SERVER['REQUEST_TIME_FLOAT'] = microtime(true);
         }
 
         public function testRejectUploadByContentLength(): void
@@ -268,6 +269,17 @@ namespace {
             $view->setRequest($request);
 
             return $view;
+        }
+
+        private function clearRateLimit(): void
+        {
+            $dir = $this->rootPath . '/storage/cache/ratelimit';
+            if (!is_dir($dir)) {
+                return;
+            }
+            foreach (glob($dir . '/*.json') ?: [] as $file) {
+                @unlink($file);
+            }
         }
     }
 }
