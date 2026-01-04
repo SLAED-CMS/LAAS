@@ -5,11 +5,11 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-8A2BE2.svg)](https://www.mysql.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)](#)
-[![Baseline](https://img.shields.io/badge/Baseline-v2.2.3-yellow.svg)](docs/VERSIONS.md)
+[![Baseline](https://img.shields.io/badge/Baseline-v2.2.5-yellow.svg)](docs/VERSIONS.md)
 
 **Modern, secure, HTML-first content management system.**
 
-**v2.2.3** — Stable release with OPcache and deploy documentation.
+**v2.2.5** — Complete CI fixes, documentation expansion, and stability improvements.
 
 LAAS CMS is a modular, security-first CMS built for PHP 8.4+ with a lightweight template engine, middleware pipeline, and i18n support. Bootstrap 5 + HTMX ready.
 
@@ -276,9 +276,11 @@ tools/                 # CLI utilities
 ## Testing & Coverage
 
 - See [docs/TESTING.md](docs/TESTING.md) for full testing and coverage guidance.
+- Security regression suite: [docs/SECURITY_TESTING.md](docs/SECURITY_TESTING.md)
 
 ```
 vendor/bin/phpunit
+vendor/bin/phpunit --group security
 vendor/bin/phpunit --coverage-html coverage/html --coverage-clover coverage/clover.xml
 ```
 
@@ -437,6 +439,7 @@ See [docs/RBAC.md](docs/RBAC.md) for detailed documentation.
 - [Contracts](docs/CONTRACTS.md) — Architectural contracts and tests
 
 ### Security & Access
+- [Security Testing](docs/SECURITY_TESTING.md) - Security regression tests
 - [Security](docs/SECURITY.md) — Security features and hardening
 - [RBAC](docs/RBAC.md) — Role-based access control
 - [Audit](docs/AUDIT.md) — Audit log and tracking
@@ -483,8 +486,3 @@ MIT License — see [LICENSE](LICENSE).
 - Email: info@laas-cms.org
 
 **Last updated:** January 2026
-
-
-
-
-

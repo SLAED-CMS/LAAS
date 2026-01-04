@@ -1,5 +1,9 @@
 # LAAS Versions
 
+- v2.2.5: Security regression test suite
+  - Dedicated PHPUnit security group with regression coverage
+  - CI job for security tests
+  - Security testing documentation
 - v2.2.4: Coverage report + CI threshold
   - PHPUnit coverage reports (Clover + HTML)
   - CI coverage artifacts and line threshold gate
