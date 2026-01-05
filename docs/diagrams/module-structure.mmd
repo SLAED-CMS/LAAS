@@ -1,0 +1,64 @@
+graph TD
+    %% LAAS CMS v2.2.5 - Module Architecture
+    %% 8 modules: System, API, Admin, Users, Pages, Media, Menu, DevTools
+    %% Loading: Kernel scans modules/ -> reads config/modules.php -> includes routes.php
+    %% Types: Core (required), Content (can disable), Admin (dev-only)
+    %% Version: v2.2.5 (2025-01-05)
+
+    subgraph Core["Core Framework"]
+        Kernel["Kernel<br/>Bootstrap & DI Container"]
+        Router["Router<br/>FastRoute"]
+        Middleware["Middleware Pipeline<br/>7 middlewares"]
+        View["View<br/>Template Engine"]
+        DB["Database<br/>PDO Connection Pool"]
+    end
+
+    subgraph Modules["8 Installed Modules"]
+        System["System Module<br/>Health, Backup, Audit"]
+        API["API Module<br/>REST Endpoints"]
+        Admin["Admin Module<br/>Backend UI"]
+        Users["Users Module<br/>Auth & RBAC"]
+        Pages["Pages Module<br/>CMS Content"]
+        Media["Media Module<br/>File Management"]
+        Menu["Menu Module<br/>Navigation"]
+        DevTools["DevTools Module<br/>Debug Tools"]
+    end
+
+    subgraph ModuleStructure["Module Structure (Example: Media)"]
+        Routes["routes.php<br/>GET /media, POST /media/upload"]
+        Controllers["Controllers/<br/>MediaController.php"]
+        Repos["Repositories/<br/>MediaRepository.php"]
+        Migrations["Migrations/<br/>001_create_media_table.sql"]
+        Translations["Translations/<br/>de.php, en.php"]
+    end
+
+    Kernel --> Modules
+    Router --> Modules
+    Middleware --> Modules
+    Modules --> DB
+    Modules --> View
+
+    Media -.-> Routes
+    Media -.-> Controllers
+    Media -.-> Repos
+    Media -.-> Migrations
+    Media -.-> Translations
+
+    style Kernel fill:#ff6b6b
+    style Router fill:#4ecdc4
+    style Middleware fill:#ffe66d
+    style View fill:#95e1d3
+    style DB fill:#a8e6cf
+
+    style System fill:#c7ceea
+    style API fill:#ffd3b6
+    style Admin fill:#ffaaa5
+    style Users fill:#a8e6cf
+    style Pages fill:#95e1d3
+    style Media fill:#4ecdc4
+    style Menu fill:#ffe66d
+    style DevTools fill:#ff6b6b
+
+    %% Notes
+    Note1["Module Loading:<br/>1. Kernel scans modules/ directory<br/>2. Loads routes.php from each module<br/>3. Registers in DI Container<br/>4. Runs migrations on install"]
+    Note2["Module Types:<br/>Core: System, API, Users<br/>Content: Pages, Media, Menu<br/>Admin: Admin, DevTools"]

@@ -1,0 +1,83 @@
+sequenceDiagram
+    %% LAAS CMS v2.2.5 - HTTP Request Lifecycle
+    %% Flow: Bootstrap -> Middleware -> Routing -> Business Logic -> View -> Response
+    %% Performance: Cold 80-120ms, Warm 15-25ms (cache hit 99%)
+    %% Version: v2.2.5 (2025-01-05)
+
+    participant Browser
+    participant Nginx
+    participant PHP as PHP-FPM
+    participant Index as public/index.php
+    participant Dotenv
+    participant Kernel
+    participant MW as Middleware Pipeline
+    participant Router
+    participant Controller
+    participant Repo as Repository
+    participant DB as MariaDB/MySQL
+    participant View
+    participant Engine as TemplateEngine
+    participant Theme as ThemeManager
+
+    Browser->>Nginx: GET /pages/welcome
+    Nginx->>PHP: FastCGI Request
+    PHP->>Index: Execute index.php
+
+    Note over Index,Dotenv: Bootstrap Phase
+    Index->>Dotenv: Load .env file
+    Dotenv-->>Index: $_ENV populated
+    Index->>Kernel: new Kernel($rootPath)
+
+    Note over Kernel,MW: Middleware Pipeline (Order matters!)
+    Kernel->>MW: ErrorHandlerMiddleware
+    MW->>MW: SessionMiddleware (start session)
+    MW->>MW: CSRFMiddleware (skip for GET)
+    MW->>MW: RateLimitMiddleware (check limits)
+    MW->>MW: SecurityHeadersMiddleware (CSP, etc)
+    MW->>MW: AuthMiddleware (load user if session exists)
+    MW->>MW: RBACMiddleware (check permissions for /admin)
+
+    Note over MW,Router: Routing Phase
+    MW->>Router: Dispatch request
+    Router->>Router: Match route: GET /pages/{slug}
+    Router->>Controller: PagesController::show($slug)
+
+    Note over Controller,DB: Business Logic Phase
+    Controller->>Repo: PagesRepository::findBySlug('welcome')
+    Repo->>DB: SELECT * FROM pages WHERE slug = ? AND status = 1
+    DB-->>Repo: Row data (array)
+    Repo-->>Controller: $page array or null
+
+    alt Page not found
+        Controller-->>Kernel: throw NotFoundException()
+        Kernel-->>Browser: HTTP 404
+    else Page found
+        Note over Controller,Theme: View Rendering Phase
+        Controller->>View: render('pages/show.html', ['page' => $page])
+        View->>Theme: Resolve theme path (default or admin)
+        Theme-->>View: themes/default/pages/show.html
+        View->>Engine: compile($template, $data)
+
+        Note over Engine: Template Compilation
+        Engine->>Engine: Check cache (storage/cache/templates/)
+        alt Cache miss
+            Engine->>Engine: Compile {% %} syntax to PHP
+            Engine->>Engine: Auto-escape variables (XSS protection)
+            Engine->>Engine: Save to cache
+        end
+        Engine-->>View: Compiled HTML
+
+        View-->>Controller: Response HTML
+        Controller->>Controller: new Response($html, 200)
+        Controller-->>Kernel: Response object
+
+        Note over Kernel,Browser: Response Phase
+        Kernel->>Kernel: Apply security headers
+        Kernel->>Kernel: Set cookies (session, csrf)
+        Kernel-->>PHP: Response->send()
+        PHP-->>Nginx: HTTP Response
+        Nginx-->>Browser: HTML + Headers
+    end
+
+    Note over Browser,Nginx: HTMX Support
+    Note over View,Engine: If HX-Request header present:<br/>Return only content block (no layout)

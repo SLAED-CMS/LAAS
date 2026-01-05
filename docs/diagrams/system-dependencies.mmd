@@ -1,0 +1,108 @@
+graph TB
+    %% LAAS CMS v2.2.5 - System Dependencies
+    %% 5 Layers: Bootstrap, Core Services, Security, View, Application Services
+    %% DI Container: Lazy-loaded singletons, ~20 services
+    %% External: FastRoute, Dotenv, Monolog, CommonMark, AWS SDK (optional)
+    %% Version: v2.2.5 (2025-01-05)
+
+    subgraph Bootstrap["Bootstrap Layer"]
+        Index["public/index.php<br/>Entry Point"]
+        Dotenv["vlucas/phpdotenv<br/>Environment Config"]
+        Kernel["Kernel<br/>Application Bootstrap"]
+    end
+
+    subgraph Core["Core Services"]
+        Container["DI Container<br/>Service Registry"]
+        ModuleManager["ModuleManager<br/>Module Loading"]
+        Router["Router<br/>nikic/fast-route v1.3"]
+        DB["Database<br/>PDO Connection Pool"]
+        Cache["Cache<br/>File-based Storage"]
+    end
+
+    subgraph Security["Security Layer"]
+        Session["SessionMiddleware<br/>PHP Session"]
+        CSRF["CSRFMiddleware<br/>Token Validation"]
+        RateLimit["RateLimitMiddleware<br/>Request Throttling"]
+        SecurityHeaders["SecurityHeadersMiddleware<br/>CSP, HSTS, etc"]
+        Auth["AuthMiddleware<br/>User Authentication"]
+        RBAC["RBACMiddleware<br/>Permission Checks"]
+    end
+
+    subgraph View["View Layer"]
+        ViewEngine["View Service<br/>Template Rendering"]
+        TemplateEngine["TemplateEngine<br/>Compiler & Cache"]
+        ThemeManager["ThemeManager<br/>Theme Resolution"]
+    end
+
+    subgraph Services["Application Services"]
+        Backup["BackupService<br/>Database Backups"]
+        Health["HealthService<br/>System Monitoring"]
+        Audit["AuditLogger<br/>Activity Logging"]
+        Search["SearchService<br/>Full-text Search"]
+    end
+
+    subgraph External["External Dependencies"]
+        Composer["Composer Packages:<br/>- monolog/monolog v3.9<br/>- league/commonmark v2.6<br/>- aws/aws-sdk-php v3.335"]
+    end
+
+    Index --> Dotenv
+    Index --> Kernel
+    Kernel --> Container
+    Container --> ModuleManager
+    Container --> Router
+    Container --> DB
+    Container --> Cache
+
+    Kernel --> Session
+    Session --> CSRF
+    CSRF --> RateLimit
+    RateLimit --> SecurityHeaders
+    SecurityHeaders --> Auth
+    Auth --> RBAC
+
+    Container --> ViewEngine
+    ViewEngine --> TemplateEngine
+    ViewEngine --> ThemeManager
+    TemplateEngine --> Cache
+
+    Container --> Backup
+    Container --> Health
+    Container --> Audit
+    Container --> Search
+
+    Backup --> DB
+    Health --> DB
+    Health --> Cache
+    Audit --> DB
+    Search --> DB
+
+    Router --> Auth
+    Router --> RBAC
+
+    Composer -.-> Kernel
+    Composer -.-> DB
+    Composer -.-> Backup
+
+    style Kernel fill:#ff6b6b
+    style Container fill:#4ecdc4
+    style Router fill:#ffe66d
+    style DB fill:#a8e6cf
+
+    style Session fill:#c7ceea
+    style CSRF fill:#ffd3b6
+    style RateLimit fill:#ffaaa5
+    style Auth fill:#95e1d3
+    style RBAC fill:#a8e6cf
+
+    style ViewEngine fill:#4ecdc4
+    style TemplateEngine fill:#ffe66d
+    style ThemeManager fill:#95e1d3
+
+    style Backup fill:#c7ceea
+    style Health fill:#ffd3b6
+    style Audit fill:#ffaaa5
+    style Search fill:#95e1d3
+
+    %% Notes
+    Note1["Dependency Injection:<br/>All services registered in Container<br/>Lazy-loaded on first request<br/>Singleton pattern for shared resources"]
+    Note2["No Event System:<br/>v2.2.5 uses direct method calls<br/>No EventBus or Plugin system<br/>Simple, predictable flow"]

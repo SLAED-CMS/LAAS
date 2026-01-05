@@ -1,0 +1,41 @@
+graph LR
+    %% LAAS CMS v2.2.5 - Middleware Pipeline
+    %% 7 middlewares in strict order (Session before Auth, Auth before RBAC)
+    %% Security: CSRF, Rate Limiting, CSP, HSTS, RBAC
+    %% Performance: Total overhead 5-10ms
+    %% Version: v2.2.5 (2025-01-05)
+
+    Request["HTTP Request<br/>(from Nginx)"] --> ErrorHandler
+
+    subgraph Pipeline["Middleware Pipeline (Ordered)"]
+        ErrorHandler["1. ErrorHandlerMiddleware<br/>Catch all exceptions"]
+        Session["2. SessionMiddleware<br/>Start PHP session"]
+        CSRF["3. CSRFMiddleware<br/>Validate token (POST/PUT/DELETE)"]
+        RateLimit["4. RateLimitMiddleware<br/>Check rate limits (login, API)"]
+        Security["5. SecurityHeadersMiddleware<br/>CSP, X-Frame-Options, etc"]
+        Auth["6. AuthMiddleware<br/>Load authenticated user"]
+        RBAC["7. RBACMiddleware<br/>Check permissions (/admin)"]
+
+        ErrorHandler --> Session
+        Session --> CSRF
+        CSRF --> RateLimit
+        RateLimit --> Security
+        Security --> Auth
+        Auth --> RBAC
+    end
+
+    RBAC --> Router["Router<br/>Dispatch to Controller"]
+    Router --> Response["HTTP Response<br/>(to Browser)"]
+
+    style ErrorHandler fill:#ff6b6b
+    style Session fill:#4ecdc4
+    style CSRF fill:#ffe66d
+    style RateLimit fill:#ff6b6b
+    style Security fill:#95e1d3
+    style Auth fill:#a8e6cf
+    style RBAC fill:#ffd3b6
+    style Router fill:#c7ceea
+
+    %% Notes
+    Note1["Note: Each middleware can:<br/>- Modify request<br/>- Short-circuit (return early)<br/>- Pass to next middleware"]
+    Note2["Critical: Order matters!<br/>Session must come before Auth<br/>Auth must come before RBAC"]

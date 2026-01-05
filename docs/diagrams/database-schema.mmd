@@ -1,0 +1,128 @@
+erDiagram
+    %% LAAS CMS v2.2.5 - Database Schema
+    %% 13 tables, 27 migrations, InnoDB/SQLite
+    %% Indexes: slug (0.5-1ms), status, uuid, timestamps
+    %% Security: Argon2id, audit logging, hard deletes
+    %% Version: v2.2.5 (2025-01-05)
+
+    users ||--o{ role_user : "has"
+    roles ||--o{ role_user : "assigned to"
+    roles ||--o{ permission_role : "has"
+    permissions ||--o{ permission_role : "granted to"
+    users ||--o{ media_files : "uploads"
+    users ||--o{ audit_logs : "creates"
+    menus ||--o{ menu_items : "contains"
+    menu_items ||--o{ menu_items : "parent-child"
+
+    users {
+        int id PK
+        varchar username UK "Unique, 50 chars"
+        varchar email UK "Nullable, 190 chars"
+        varchar password_hash "255 chars, Argon2id"
+        tinyint status "1=active, 0=inactive"
+        datetime created_at
+        datetime updated_at
+        datetime last_login_at "Nullable"
+        varchar last_login_ip "Nullable, 45 chars (IPv6)"
+    }
+
+    roles {
+        int id PK
+        varchar name UK "50 chars"
+        text description "Nullable"
+        datetime created_at
+    }
+
+    permissions {
+        int id PK
+        varchar name UK "100 chars, e.g. pages.create"
+        text description "Nullable"
+        datetime created_at
+    }
+
+    role_user {
+        int role_id FK
+        int user_id FK
+    }
+
+    permission_role {
+        int permission_id FK
+        int role_id FK
+    }
+
+    pages {
+        int id PK
+        varchar title "255 chars"
+        varchar slug UK "255 chars, URL-safe"
+        text content "Markdown or HTML"
+        varchar status "draft|published|archived"
+        datetime created_at
+        datetime updated_at
+    }
+
+    menus {
+        int id PK
+        varchar name UK "100 chars"
+        varchar location "header|footer|sidebar"
+        datetime created_at
+        datetime updated_at
+    }
+
+    menu_items {
+        int id PK
+        int menu_id FK
+        int parent_id FK "Nullable, self-reference"
+        varchar title "255 chars"
+        varchar url "500 chars"
+        int order_position "Display order"
+        tinyint is_external "0=internal, 1=external link"
+        datetime created_at
+        datetime updated_at
+    }
+
+    media_files {
+        int id PK
+        varchar uuid UK "36 chars, UUID v4"
+        varchar disk_path "255 chars, storage/uploads/..."
+        varchar original_name "255 chars"
+        varchar mime_type "100 chars, e.g. image/jpeg"
+        bigint size_bytes "File size in bytes"
+        char sha256 "64 chars, file hash (nullable)"
+        int uploaded_by FK "Nullable, references users"
+        tinyint is_public "0=private, 1=public"
+        varchar public_url "Nullable, CDN URL"
+        text alt_text "Nullable, accessibility"
+        datetime created_at
+    }
+
+    audit_logs {
+        int id PK
+        int user_id FK "Nullable"
+        varchar action "50 chars: login|create|update|delete"
+        varchar entity_type "50 chars: page|user|media"
+        int entity_id "Nullable"
+        text old_values "JSON, before state"
+        text new_values "JSON, after state"
+        varchar ip_address "45 chars (IPv6)"
+        text user_agent "Browser info"
+        datetime created_at
+    }
+
+    settings {
+        varchar key PK "100 chars"
+        text value "JSON or plain text"
+    }
+
+    modules {
+        varchar name PK "50 chars"
+        varchar version "20 chars"
+        tinyint enabled "0=disabled, 1=enabled"
+        datetime installed_at
+    }
+
+    migrations {
+        int id PK
+        varchar migration UK "255 chars, filename"
+        int batch "Migration batch number"
+        datetime applied_at
+    }
