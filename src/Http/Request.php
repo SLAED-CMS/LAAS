@@ -3,16 +3,23 @@ declare(strict_types=1);
 
 namespace Laas\Http;
 
+use Laas\Session\PhpSession;
+use Laas\Session\SessionInterface;
+
 final class Request
 {
+    private ?SessionInterface $session = null;
+
     public function __construct(
         private string $method,
         private string $path,
         private array $query,
         private array $post,
         private array $headers,
-        private string $body
+        private string $body,
+        ?SessionInterface $session = null
     ) {
+        $this->session = $session;
     }
 
     public static function fromGlobals(): self
@@ -120,5 +127,15 @@ final class Request
     public function getBody(): string
     {
         return $this->body;
+    }
+
+    public function setSession(SessionInterface $session): void
+    {
+        $this->session = $session;
+    }
+
+    public function session(): SessionInterface
+    {
+        return $this->session ?? new PhpSession();
     }
 }

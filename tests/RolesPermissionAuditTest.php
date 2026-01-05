@@ -12,6 +12,7 @@ use Laas\View\Template\TemplateEngine;
 use Laas\View\Theme\ThemeManager;
 use Laas\View\View;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\InMemorySession;
 
 final class RolesPermissionAuditTest extends TestCase
 {
@@ -21,9 +22,6 @@ final class RolesPermissionAuditTest extends TestCase
     protected function setUp(): void
     {
         $this->rootPath = dirname(__DIR__);
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_unset();
-        }
     }
 
     public function testPermissionUpdatesAreAudited(): void
@@ -42,11 +40,9 @@ final class RolesPermissionAuditTest extends TestCase
         $pdo->exec("INSERT INTO role_user (user_id, role_id) VALUES ({$this->userId}, 1)");
 
         $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-        $_SESSION['user_id'] = $this->userId;
-
+        $session = new InMemorySession();
+        $session->start();
+        $session->set('user_id', $this->userId);
         $request = new Request('POST', '/admin/users/roles/save', [], [
             '_token' => 'token',
             'id' => '2',
@@ -56,6 +52,7 @@ final class RolesPermissionAuditTest extends TestCase
         ], [
             'hx-request' => 'true',
         ], '');
+        $request->setSession($session);
         $view = $this->createView($db, $request);
         $controller = new RolesController($view, $db);
 

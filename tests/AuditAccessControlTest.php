@@ -12,6 +12,7 @@ use Laas\View\Template\TemplateEngine;
 use Laas\View\Theme\ThemeManager;
 use Laas\View\View;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\InMemorySession;
 
 final class AuditAccessControlTest extends TestCase
 {
@@ -20,9 +21,6 @@ final class AuditAccessControlTest extends TestCase
     protected function setUp(): void
     {
         $this->rootPath = dirname(__DIR__);
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_unset();
-        }
     }
 
     public function testAuditDeniedWithoutPermission(): void
@@ -32,12 +30,9 @@ final class AuditAccessControlTest extends TestCase
         $pdo->exec("INSERT INTO users (id, username, email) VALUES (1, 'admin', 'admin@example.com')");
 
         $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-        $_SESSION['user_id'] = 1;
-
+        $session = $this->buildSession(1);
         $request = new Request('GET', '/admin/audit', [], [], ['accept' => 'application/json'], '');
+        $request->setSession($session);
         $view = $this->createView($db, $request);
         $controller = new AuditController($view, $db);
 
@@ -97,5 +92,13 @@ final class AuditAccessControlTest extends TestCase
         $view->setRequest($request);
 
         return $view;
+    }
+
+    private function buildSession(int $userId): InMemorySession
+    {
+        $session = new InMemorySession();
+        $session->start();
+        $session->set('user_id', $userId);
+        return $session;
     }
 }

@@ -13,6 +13,7 @@ use Laas\View\Template\TemplateEngine;
 use Laas\View\Theme\ThemeManager;
 use Laas\View\View;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\InMemorySession;
 
 final class MediaRateLimitTest extends TestCase
 {
@@ -27,9 +28,6 @@ final class MediaRateLimitTest extends TestCase
         $this->userId = 9001;
         $this->ipUpload = '127.0.0.101';
         $this->ipDelete = '127.0.0.102';
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_unset();
-        }
         $_SERVER['REQUEST_TIME_FLOAT'] = microtime(true);
     }
 
@@ -47,10 +45,6 @@ final class MediaRateLimitTest extends TestCase
         $this->seedRbac($pdo, $this->userId, ['media.upload']);
 
         $_SERVER['REMOTE_ADDR'] = $this->ipUpload;
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-        $_SESSION['user_id'] = $this->userId;
 
         $security = require $this->rootPath . '/config/security.php';
         $rate = $security['rate_limit']['media_upload'];
@@ -69,6 +63,7 @@ final class MediaRateLimitTest extends TestCase
         $request = new Request('POST', '/admin/media/upload', [], [], [
             'hx-request' => 'true',
         ], '');
+        $this->attachSession($request);
         $view = $this->createView($db, $request);
         $controller = new AdminMediaController($view, $db);
 
@@ -86,10 +81,6 @@ final class MediaRateLimitTest extends TestCase
             VALUES (1, 'uuid-test', 'uploads/2026/01/uuid-test.jpg', 'test.jpg', 'image/jpeg', 10, 'hash', {$this->userId}, '2026-01-02 12:00:00')");
 
         $_SERVER['REMOTE_ADDR'] = $this->ipDelete;
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-        $_SESSION['user_id'] = $this->userId;
 
         $security = require $this->rootPath . '/config/security.php';
         $rate = $security['rate_limit']['media_upload'];
@@ -109,6 +100,7 @@ final class MediaRateLimitTest extends TestCase
         ], [
             'hx-request' => 'true',
         ], '');
+        $this->attachSession($request);
         $view = $this->createView($db, $request);
         $controller = new AdminMediaController($view, $db);
 
@@ -201,5 +193,13 @@ final class MediaRateLimitTest extends TestCase
         if (is_file($file)) {
             unlink($file);
         }
+    }
+
+    private function attachSession(Request $request): void
+    {
+        $session = new InMemorySession();
+        $session->start();
+        $session->set('user_id', $this->userId);
+        $request->setSession($session);
     }
 }

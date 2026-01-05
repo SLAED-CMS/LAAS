@@ -3,35 +3,53 @@ declare(strict_types=1);
 
 namespace Laas\Security;
 
+use Laas\Session\SessionInterface;
+
 final class Csrf
 {
     public const SESSION_KEY = '_csrf_token';
     public const FORM_KEY = '_token';
     public const HEADER_KEY = 'X-CSRF-Token';
 
+    public function __construct(private SessionInterface $session)
+    {
+    }
+
     public function getToken(): string
     {
-        if (!isset($_SESSION[self::SESSION_KEY])) {
-            $_SESSION[self::SESSION_KEY] = $this->generateToken();
+        if (!$this->session->isStarted()) {
+            return '';
         }
 
-        return (string) $_SESSION[self::SESSION_KEY];
+        if (!$this->session->has(self::SESSION_KEY)) {
+            $this->session->set(self::SESSION_KEY, $this->generateToken());
+        }
+
+        return (string) $this->session->get(self::SESSION_KEY, '');
     }
 
     public function rotate(): string
     {
-        $_SESSION[self::SESSION_KEY] = $this->generateToken();
+        if (!$this->session->isStarted()) {
+            return '';
+        }
 
-        return (string) $_SESSION[self::SESSION_KEY];
+        $this->session->set(self::SESSION_KEY, $this->generateToken());
+
+        return (string) $this->session->get(self::SESSION_KEY, '');
     }
 
     public function validate(?string $token): bool
     {
+        if (!$this->session->isStarted()) {
+            return false;
+        }
+
         if ($token === null || $token === '') {
             return false;
         }
 
-        $known = $_SESSION[self::SESSION_KEY] ?? '';
+        $known = (string) $this->session->get(self::SESSION_KEY, '');
         if ($known === '') {
             return false;
         }

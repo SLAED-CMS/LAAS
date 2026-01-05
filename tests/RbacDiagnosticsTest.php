@@ -13,6 +13,7 @@ use Laas\View\Template\TemplateEngine;
 use Laas\View\Theme\ThemeManager;
 use Laas\View\View;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\InMemorySession;
 
 final class RbacDiagnosticsTest extends TestCase
 {
@@ -21,9 +22,6 @@ final class RbacDiagnosticsTest extends TestCase
     protected function setUp(): void
     {
         $this->rootPath = dirname(__DIR__);
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_unset();
-        }
     }
 
     public function testDiagnosticsRequiresPermission(): void
@@ -36,12 +34,8 @@ final class RbacDiagnosticsTest extends TestCase
         $pdo->exec("INSERT INTO role_user (user_id, role_id) VALUES (1, 1)");
 
         $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-        $_SESSION['user_id'] = 1;
-
         $request = new Request('GET', '/admin/rbac/diagnostics', [], [], [], '');
+        $this->attachSession($request, 1);
         $view = $this->createView($db, $request);
         $controller = new RbacDiagnosticsController($view, $db);
 
@@ -79,12 +73,8 @@ final class RbacDiagnosticsTest extends TestCase
         $pdo->exec("INSERT INTO permission_role (role_id, permission_id) VALUES (1, 1)");
 
         $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-        $_SESSION['user_id'] = 1;
-
         $request = new Request('GET', '/admin/rbac/diagnostics', ['user_id' => '1'], [], ['hx-request' => 'true'], '');
+        $this->attachSession($request, 1);
         $view = $this->createView($db, $request);
         $controller = new RbacDiagnosticsController($view, $db);
 
@@ -155,5 +145,13 @@ final class RbacDiagnosticsTest extends TestCase
         $view->setRequest($request);
 
         return $view;
+    }
+
+    private function attachSession(Request $request, int $userId): void
+    {
+        $session = new InMemorySession();
+        $session->start();
+        $session->set('user_id', $userId);
+        $request->setSession($session);
     }
 }

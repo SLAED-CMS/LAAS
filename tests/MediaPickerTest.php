@@ -12,6 +12,7 @@ use Laas\View\Template\TemplateEngine;
 use Laas\View\Theme\ThemeManager;
 use Laas\View\View;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\InMemorySession;
 
 final class MediaPickerTest extends TestCase
 {
@@ -21,9 +22,6 @@ final class MediaPickerTest extends TestCase
     protected function setUp(): void
     {
         $this->rootPath = dirname(__DIR__);
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_unset();
-        }
     }
 
     public function testPickerIndexReturns200(): void
@@ -34,12 +32,8 @@ final class MediaPickerTest extends TestCase
             VALUES (1, 'uuid', 'uploads/2026/01/a.jpg', 'a.jpg', 'image/jpeg', 10, 'hash', {$this->userId}, '2026-01-02 12:00:00')");
 
         $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-        $_SESSION['user_id'] = $this->userId;
-
         $request = new Request('GET', '/admin/media/picker', [], [], [], '');
+        $this->attachSession($request);
         $view = $this->createView($db, $request);
         $controller = new AdminMediaPickerController($view, $db);
 
@@ -57,14 +51,10 @@ final class MediaPickerTest extends TestCase
             VALUES (2, 'uuid2', 'uploads/2026/01/b.pdf', 'beta.pdf', 'application/pdf', 10, 'hash2', {$this->userId}, '2026-01-02 12:00:00')");
 
         $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-        $_SESSION['user_id'] = $this->userId;
-
         $request = new Request('GET', '/admin/media/picker', ['q' => 'alpha'], [], [
             'hx-request' => 'true',
         ], '');
+        $this->attachSession($request);
         $view = $this->createView($db, $request);
         $controller = new AdminMediaPickerController($view, $db);
 
@@ -82,16 +72,12 @@ final class MediaPickerTest extends TestCase
             VALUES (1, 'uuid', 'uploads/2026/01/a.jpg', 'alpha.jpg', 'image/jpeg', 10, 'hash', {$this->userId}, '2026-01-02 12:00:00')");
 
         $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-        $_SESSION['user_id'] = $this->userId;
-
         $request = new Request('POST', '/admin/media/picker/select', [], [
             'media_id' => '1',
         ], [
             'hx-request' => 'true',
         ], '');
+        $this->attachSession($request);
         $view = $this->createView($db, $request);
         $controller = new AdminMediaPickerController($view, $db);
 
@@ -104,12 +90,8 @@ final class MediaPickerTest extends TestCase
     {
         $db = $this->createDatabase();
         $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-        $_SESSION['user_id'] = $this->userId;
-
         $request = new Request('GET', '/admin/media/picker', [], [], [], '');
+        $this->attachSession($request);
         $view = $this->createView($db, $request);
         $controller = new AdminMediaPickerController($view, $db);
 
@@ -194,5 +176,13 @@ final class MediaPickerTest extends TestCase
         $view->setRequest($request);
 
         return $view;
+    }
+
+    private function attachSession(Request $request): void
+    {
+        $session = new InMemorySession();
+        $session->start();
+        $session->set('user_id', $this->userId);
+        $request->setSession($session);
     }
 }

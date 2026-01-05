@@ -20,7 +20,7 @@ final class DevToolsController
 
     public function ping(Request $request): Response
     {
-        if (!$this->isAllowed()) {
+        if (!$this->isAllowed($request)) {
             return Response::json(['error' => 'forbidden'], 403);
         }
 
@@ -29,7 +29,7 @@ final class DevToolsController
 
     public function panel(Request $request): Response
     {
-        if (!$this->isAllowed()) {
+        if (!$this->isAllowed($request)) {
             return Response::json(['error' => 'forbidden'], 403);
         }
 
@@ -61,7 +61,7 @@ final class DevToolsController
         ]);
     }
 
-    private function isAllowed(): bool
+    private function isAllowed(Request $request): bool
     {
         $appConfig = require dirname(__DIR__, 3) . '/config/app.php';
         $env = strtolower((string) ($appConfig['env'] ?? ''));
@@ -78,11 +78,12 @@ final class DevToolsController
             return false;
         }
 
-        if (session_status() !== PHP_SESSION_ACTIVE) {
+        $session = $request->session();
+        if (!$session->isStarted()) {
             return false;
         }
 
-        $userId = $_SESSION['user_id'] ?? null;
+        $userId = $session->get('user_id');
         if (!is_int($userId) && !(is_string($userId) && ctype_digit($userId))) {
             return false;
         }

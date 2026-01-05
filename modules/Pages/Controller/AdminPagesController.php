@@ -39,7 +39,7 @@ final class AdminPagesController
 
     public function index(Request $request): Response
     {
-        if (!$this->canEdit()) {
+        if (!$this->canEdit($request)) {
             return $this->forbidden();
         }
 
@@ -115,7 +115,7 @@ final class AdminPagesController
 
     public function createForm(Request $request): Response
     {
-        if (!$this->canEdit()) {
+        if (!$this->canEdit($request)) {
             return $this->forbidden();
         }
 
@@ -132,7 +132,7 @@ final class AdminPagesController
 
     public function editForm(Request $request, array $params = []): Response
     {
-        if (!$this->canEdit()) {
+        if (!$this->canEdit($request)) {
             return $this->forbidden();
         }
 
@@ -165,7 +165,7 @@ final class AdminPagesController
 
     public function save(Request $request): Response
     {
-        if (!$this->canEdit()) {
+        if (!$this->canEdit($request)) {
             return $this->forbidden();
         }
 
@@ -215,7 +215,7 @@ final class AdminPagesController
             ]);
         }
 
-        $audit = new AuditLogger($this->db);
+        $audit = new AuditLogger($this->db, $request->session());
 
         if ($id === null) {
             $newId = $repo->create([
@@ -233,7 +233,7 @@ final class AdminPagesController
                     'slug' => $slug,
                     'status' => $status,
                 ],
-                $this->currentUserId(),
+                $this->currentUserId($request),
                 $request->ip()
             );
         } else {
@@ -252,7 +252,7 @@ final class AdminPagesController
                     'slug' => $slug,
                     'status' => $status,
                 ],
-                $this->currentUserId(),
+                $this->currentUserId($request),
                 $request->ip()
             );
         }
@@ -273,7 +273,7 @@ final class AdminPagesController
 
     public function delete(Request $request): Response
     {
-        if (!$this->canEdit()) {
+        if (!$this->canEdit($request)) {
             return $this->forbidden();
         }
 
@@ -293,7 +293,7 @@ final class AdminPagesController
         }
 
         $repo->delete($id);
-        (new AuditLogger($this->db))->log(
+        (new AuditLogger($this->db, $request->session()))->log(
             'pages.delete',
             'page',
             $id,
@@ -301,7 +301,7 @@ final class AdminPagesController
                 'title' => (string) ($page['title'] ?? ''),
                 'slug' => (string) ($page['slug'] ?? ''),
             ],
-            $this->currentUserId(),
+            $this->currentUserId($request),
             $request->ip()
         );
 
@@ -316,7 +316,7 @@ final class AdminPagesController
 
     public function toggleStatus(Request $request): Response
     {
-        if (!$this->canEdit()) {
+        if (!$this->canEdit($request)) {
             return $this->errorResponse($request, 'forbidden', 403);
         }
 
@@ -369,13 +369,13 @@ final class AdminPagesController
         }
     }
 
-    private function canEdit(): bool
+    private function canEdit(Request $request): bool
     {
         if ($this->db === null || !$this->db->healthCheck()) {
             return false;
         }
 
-        $userId = $this->currentUserId();
+        $userId = $this->currentUserId($request);
         if ($userId === null) {
             return false;
         }
@@ -388,21 +388,20 @@ final class AdminPagesController
         }
     }
 
-    private function currentUserId(): ?int
+    private function currentUserId(Request $request): ?int
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
+        $session = $request->session();
+        if (!$session->isStarted()) {
             return null;
         }
 
-        $raw = $_SESSION['user_id'] ?? null;
+        $raw = $session->get('user_id');
         if (is_int($raw)) {
             return $raw;
         }
-
         if (is_string($raw) && ctype_digit($raw)) {
             return (int) $raw;
         }
-
         return null;
     }
 
@@ -529,3 +528,4 @@ final class AdminPagesController
         ];
     }
 }
+

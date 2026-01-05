@@ -26,7 +26,7 @@ final class AdminMenusController
 
     public function index(Request $request): Response
     {
-        if (!$this->canEdit()) {
+        if (!$this->canEdit($request)) {
             return $this->forbidden();
         }
 
@@ -46,7 +46,7 @@ final class AdminMenusController
 
     public function newItemForm(Request $request): Response
     {
-        if (!$this->canEdit()) {
+        if (!$this->canEdit($request)) {
             return $this->errorResponse($request, 'forbidden', 403);
         }
 
@@ -60,7 +60,7 @@ final class AdminMenusController
 
     public function editItemForm(Request $request, array $params = []): Response
     {
-        if (!$this->canEdit()) {
+        if (!$this->canEdit($request)) {
             return $this->errorResponse($request, 'forbidden', 403);
         }
 
@@ -89,7 +89,7 @@ final class AdminMenusController
 
     public function saveItem(Request $request): Response
     {
-        if (!$this->canEdit()) {
+        if (!$this->canEdit($request)) {
             return $this->errorResponse($request, 'forbidden', 403);
         }
 
@@ -157,7 +157,7 @@ final class AdminMenusController
         }
         $itemId = $repo->saveItem($payload);
         $action = $id === null ? 'menus.item.create' : 'menus.item.update';
-        (new AuditLogger($this->db))->log(
+        (new AuditLogger($this->db, $request->session()))->log(
             $action,
             'menu_item',
             $itemId,
@@ -168,7 +168,7 @@ final class AdminMenusController
                 'is_external' => (int) $isExternalValue,
                 'sort_order' => (int) $sortOrderValue,
             ],
-            $this->currentUserId(),
+            $this->currentUserId($request),
             $request->ip()
         );
 
@@ -187,7 +187,7 @@ final class AdminMenusController
 
     public function toggleItem(Request $request): Response
     {
-        if (!$this->canEdit()) {
+        if (!$this->canEdit($request)) {
             return $this->errorResponse($request, 'forbidden', 403);
         }
 
@@ -214,7 +214,7 @@ final class AdminMenusController
         $enabled = !empty($item['enabled']) ? 1 : 0;
         $nextEnabled = $enabled === 1 ? 0 : 1;
         $repo->setEnabled($id, $nextEnabled);
-        (new AuditLogger($this->db))->log(
+        (new AuditLogger($this->db, $request->session()))->log(
             $nextEnabled === 1 ? 'menus.item.enable' : 'menus.item.disable',
             'menu_item',
             $id,
@@ -223,7 +223,7 @@ final class AdminMenusController
                 'url' => (string) ($item['url'] ?? ''),
                 'enabled' => $nextEnabled,
             ],
-            $this->currentUserId(),
+            $this->currentUserId($request),
             $request->ip()
         );
 
@@ -234,7 +234,7 @@ final class AdminMenusController
 
     public function deleteItem(Request $request): Response
     {
-        if (!$this->canEdit()) {
+        if (!$this->canEdit($request)) {
             return $this->errorResponse($request, 'forbidden', 403);
         }
 
@@ -254,7 +254,7 @@ final class AdminMenusController
         }
         $item = $repo->findById($id);
         $repo->deleteItem($id);
-        (new AuditLogger($this->db))->log(
+        (new AuditLogger($this->db, $request->session()))->log(
             'menus.item.delete',
             'menu_item',
             $id,
@@ -262,7 +262,7 @@ final class AdminMenusController
                 'label' => (string) ($item['label'] ?? ''),
                 'url' => (string) ($item['url'] ?? ''),
             ],
-            $this->currentUserId(),
+            $this->currentUserId($request),
             $request->ip()
         );
 
@@ -398,13 +398,13 @@ final class AdminMenusController
         }
     }
 
-    private function canEdit(): bool
+    private function canEdit(Request $request): bool
     {
         if ($this->db === null || !$this->db->healthCheck()) {
             return false;
         }
 
-        $userId = $this->currentUserId();
+        $userId = $this->currentUserId($request);
         if ($userId === null) {
             return false;
         }
@@ -417,21 +417,20 @@ final class AdminMenusController
         }
     }
 
-    private function currentUserId(): ?int
+    private function currentUserId(Request $request): ?int
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
+        $session = $request->session();
+        if (!$session->isStarted()) {
             return null;
         }
 
-        $raw = $_SESSION['user_id'] ?? null;
+        $raw = $session->get('user_id');
         if (is_int($raw)) {
             return $raw;
         }
-
         if (is_string($raw) && ctype_digit($raw)) {
             return (int) $raw;
         }
-
         return null;
     }
 
@@ -524,3 +523,4 @@ final class AdminMenusController
         return $messages;
     }
 }
+

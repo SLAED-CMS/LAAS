@@ -108,7 +108,7 @@ final class SettingsController
         $repo->set('site_name', $siteName, 'string');
         $repo->set('default_locale', $defaultLocale, 'string');
         $repo->set('theme', $theme, 'string');
-        (new AuditLogger($this->db))->log(
+        (new AuditLogger($this->db, $request->session()))->log(
             'settings.update',
             'setting',
             null,
@@ -117,7 +117,7 @@ final class SettingsController
                 'default_locale' => $defaultLocale,
                 'theme' => $theme,
             ],
-            $this->currentUserId(),
+            $this->currentUserId($request),
             $request->ip()
         );
 
@@ -278,21 +278,20 @@ final class SettingsController
         return $options;
     }
 
-    private function currentUserId(): ?int
+    private function currentUserId(Request $request): ?int
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
+        $session = $request->session();
+        if (!$session->isStarted()) {
             return null;
         }
 
-        $raw = $_SESSION['user_id'] ?? null;
+        $raw = $session->get('user_id');
         if (is_int($raw)) {
             return $raw;
         }
-
         if (is_string($raw) && ctype_digit($raw)) {
             return (int) $raw;
         }
-
         return null;
     }
 }

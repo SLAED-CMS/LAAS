@@ -31,7 +31,7 @@ final class AdminMediaController
 
     public function index(Request $request, array $params = []): Response
     {
-        if (!$this->canView()) {
+        if (!$this->canView($request)) {
             return $this->forbidden();
         }
 
@@ -120,7 +120,7 @@ final class AdminMediaController
 
     public function upload(Request $request, array $params = []): Response
     {
-        if (!$this->canUpload()) {
+        if (!$this->canUpload($request)) {
             return $this->errorResponse($request, 'forbidden', 403);
         }
 
@@ -138,11 +138,11 @@ final class AdminMediaController
         }
 
         if ($maxBytes > 0 && $contentLength !== null && $contentLength > $maxBytes) {
-            return $this->uploadTooLargeResponse($request, $this->currentUserId(), $contentLength, $maxBytes);
+            return $this->uploadTooLargeResponse($request, $this->currentUserId($request), $contentLength, $maxBytes);
         }
 
         if ($this->isUploadTimedOut()) {
-            return $this->uploadTimeoutResponse($request, $this->currentUserId(), $contentLength, $maxBytes);
+            return $this->uploadTimeoutResponse($request, $this->currentUserId($request), $contentLength, $maxBytes);
         }
 
         $rateLimited = $this->enforceUploadRateLimit($request);
@@ -157,7 +157,7 @@ final class AdminMediaController
 
         $fileSize = (int) ($file['size'] ?? 0);
         if ($maxBytes > 0 && $fileSize > $maxBytes) {
-            return $this->uploadTooLargeResponse($request, $this->currentUserId(), $contentLength, $maxBytes);
+            return $this->uploadTooLargeResponse($request, $this->currentUserId($request), $contentLength, $maxBytes);
         }
 
         if (empty($file['tmp_name'])) {
@@ -175,10 +175,10 @@ final class AdminMediaController
             $this->storage(),
             new MimeSniffer(),
             $scanner,
-            new AuditLogger($this->db),
+            new AuditLogger($this->db, $request->session()),
             $request->ip()
         );
-        $result = $service->upload($file, $originalName, $config, $this->currentUserId());
+        $result = $service->upload($file, $originalName, $config, $this->currentUserId($request));
         if (($result['status'] ?? '') === 'error') {
             return $this->validationError($request, $result['errors'] ?? []);
         }
@@ -190,7 +190,7 @@ final class AdminMediaController
         $size = (int) ($row['size_bytes'] ?? 0);
         $successKey = $existing ? 'admin.media.success_deduped' : 'admin.media.success_uploaded';
 
-        (new AuditLogger($this->db))->log(
+        (new AuditLogger($this->db, $request->session()))->log(
             'media.upload',
             'media_file',
             $mediaId,
@@ -200,7 +200,7 @@ final class AdminMediaController
                 'mime' => $mime,
                 'size' => $size,
             ],
-            $this->currentUserId(),
+            $this->currentUserId($request),
             $request->ip()
         );
 
@@ -210,7 +210,7 @@ final class AdminMediaController
 
     public function delete(Request $request, array $params = []): Response
     {
-        if (!$this->canDelete()) {
+        if (!$this->canDelete($request)) {
             return $this->errorResponse($request, 'forbidden', 403);
         }
 
@@ -251,7 +251,7 @@ final class AdminMediaController
                 ]);
             }
             $repo->delete($id);
-            (new AuditLogger($this->db))->log(
+            (new AuditLogger($this->db, $request->session()))->log(
                 'media.delete',
                 'media_file',
                 $id,
@@ -261,7 +261,7 @@ final class AdminMediaController
                     'mime' => (string) ($row['mime_type'] ?? ''),
                     'size' => (int) ($row['size_bytes'] ?? 0),
                 ],
-                $this->currentUserId(),
+                $this->currentUserId($request),
                 $request->ip()
             );
         }
@@ -283,7 +283,7 @@ final class AdminMediaController
 
     public function togglePublic(Request $request, array $params = []): Response
     {
-        if (!$this->canTogglePublic()) {
+        if (!$this->canTogglePublic($request)) {
             return $this->errorResponse($request, 'forbidden', 403);
         }
 
@@ -308,14 +308,14 @@ final class AdminMediaController
 
         $repo->setPublic($id, $newPublic, $token);
 
-        (new AuditLogger($this->db))->log(
+        (new AuditLogger($this->db, $request->session()))->log(
             $newPublic ? 'media.public.enabled' : 'media.public.disabled',
             'media_file',
             $id,
             [
                 'id' => $id,
             ],
-            $this->currentUserId(),
+            $this->currentUserId($request),
             $request->ip()
         );
 
@@ -339,7 +339,7 @@ final class AdminMediaController
 
     public function signed(Request $request, array $params = []): Response
     {
-        if (!$this->canView()) {
+        if (!$this->canView($request)) {
             return $this->errorResponse($request, 'forbidden', 403);
         }
 
@@ -398,7 +398,7 @@ final class AdminMediaController
             if ($url === '') {
                 return $this->signedErrorResponse($request, 'media.signed.invalid', 400);
             }
-            (new AuditLogger($this->db))->log(
+            (new AuditLogger($this->db, $request->session()))->log(
                 'media.signed.issued',
                 'media_file',
                 $id,
@@ -407,7 +407,7 @@ final class AdminMediaController
                     'p' => $purpose,
                     'exp' => $exp,
                 ],
-                $this->currentUserId(),
+                $this->currentUserId($request),
                 $request->ip()
             );
         }
@@ -593,33 +593,33 @@ final class AdminMediaController
         return is_array($config) ? $config : [];
     }
 
-    private function canView(): bool
+    private function canView(Request $request): bool
     {
-        return $this->hasPermission('media.view');
+        return $this->hasPermission($request, 'media.view');
     }
 
-    private function canUpload(): bool
+    private function canUpload(Request $request): bool
     {
-        return $this->hasPermission('media.upload');
+        return $this->hasPermission($request, 'media.upload');
     }
 
-    private function canDelete(): bool
+    private function canDelete(Request $request): bool
     {
-        return $this->hasPermission('media.delete');
+        return $this->hasPermission($request, 'media.delete');
     }
 
-    private function canTogglePublic(): bool
+    private function canTogglePublic(Request $request): bool
     {
-        return $this->hasPermission('media.public.toggle');
+        return $this->hasPermission($request, 'media.public.toggle');
     }
 
-    private function hasPermission(string $permission): bool
+    private function hasPermission(Request $request, string $permission): bool
     {
         if ($this->db === null || !$this->db->healthCheck()) {
             return false;
         }
 
-        $userId = $this->currentUserId();
+        $userId = $this->currentUserId($request);
         if ($userId === null) {
             return false;
         }
@@ -632,21 +632,20 @@ final class AdminMediaController
         }
     }
 
-    private function currentUserId(): ?int
+    private function currentUserId(Request $request): ?int
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
+        $session = $request->session();
+        if (!$session->isStarted()) {
             return null;
         }
 
-        $raw = $_SESSION['user_id'] ?? null;
+        $raw = $session->get('user_id');
         if (is_int($raw)) {
             return $raw;
         }
-
         if (is_string($raw) && ctype_digit($raw)) {
             return (int) $raw;
         }
-
         return null;
     }
 
@@ -722,7 +721,7 @@ final class AdminMediaController
         $max = (int) ($rateConfig['max'] ?? 10);
 
         $ip = $request->ip();
-        $userId = $this->currentUserId();
+        $userId = $this->currentUserId($request);
 
         try {
             $limiter = new RateLimiter($this->rootPath());
@@ -750,7 +749,7 @@ final class AdminMediaController
             $context['user_id'] = $userId;
         }
 
-        (new AuditLogger($this->db))->log(
+        (new AuditLogger($this->db, $request->session()))->log(
             'media.upload.rate_limited',
             'media_upload',
             null,
@@ -866,7 +865,7 @@ final class AdminMediaController
 
     private function auditUploadRejected(string $action, Request $request, ?int $userId, ?int $contentLength, int $maxBytes): void
     {
-        (new AuditLogger($this->db))->log(
+        (new AuditLogger($this->db, $request->session()))->log(
             $action,
             'media_upload',
             null,
@@ -995,3 +994,5 @@ final class AdminMediaController
         ]);
     }
 }
+
+

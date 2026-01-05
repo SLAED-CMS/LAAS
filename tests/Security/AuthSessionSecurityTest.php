@@ -11,6 +11,7 @@ use Laas\Modules\Users\Controller\AuthController;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Tests\Security\Support\SecurityTestHelper;
+use Tests\Support\InMemorySession;
 
 #[Group('security')]
 final class AuthSessionSecurityTest extends TestCase
@@ -20,10 +21,6 @@ final class AuthSessionSecurityTest extends TestCase
     protected function setUp(): void
     {
         $this->rootPath = SecurityTestHelper::rootPath();
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_unset();
-            session_destroy();
-        }
         $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
         $this->clearRateLimit();
     }
@@ -35,8 +32,9 @@ final class AuthSessionSecurityTest extends TestCase
         SecurityTestHelper::insertUser($pdo, 1, 'admin', password_hash('secret', PASSWORD_DEFAULT));
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
 
-        SecurityTestHelper::startSession($this->rootPath);
-        $auth = new AuthService(new UsersRepository($pdo));
+        $session = new InMemorySession();
+        $session->start();
+        $auth = new AuthService(new UsersRepository($pdo), $session);
 
         $requestMissing = new Request('POST', '/login', [], [
             'username' => 'missing',
@@ -81,18 +79,21 @@ final class AuthSessionSecurityTest extends TestCase
         SecurityTestHelper::seedRbacTables($pdo);
         SecurityTestHelper::insertUser($pdo, 1, 'admin', password_hash('secret', PASSWORD_DEFAULT));
 
-        SecurityTestHelper::startSession($this->rootPath);
-        $before = session_id();
-        $auth = new AuthService(new UsersRepository($pdo));
+        $session = new InMemorySession();
+        $session->start();
+        $auth = new AuthService(new UsersRepository($pdo), $session);
         $this->assertTrue($auth->attempt('admin', 'secret', '127.0.0.1'));
-        $after = session_id();
 
-        $this->assertNotSame($before, $after);
-        $this->assertSame(1, $_SESSION['user_id'] ?? 0);
+        $this->assertSame(1, $session->regenerateCalls);
+        $this->assertSame(1, $session->get('user_id'));
     }
 
     public function testSessionCookieFlags(): void
     {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_unset();
+            session_destroy();
+        }
         SecurityTestHelper::startSession($this->rootPath, [
             'secure' => true,
             'httponly' => true,

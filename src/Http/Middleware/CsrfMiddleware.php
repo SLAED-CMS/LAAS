@@ -11,22 +11,19 @@ final class CsrfMiddleware implements MiddlewareInterface
 {
     private const METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
 
-    public function __construct(private Csrf $csrf)
-    {
-    }
-
     public function process(Request $request, callable $next): Response
     {
         if (!in_array($request->getMethod(), self::METHODS, true)) {
             return $next($request);
         }
 
+        $csrf = new Csrf($request->session());
         $token = $request->post(Csrf::FORM_KEY);
         if ($token === null || $token === '') {
             $token = $request->header(Csrf::HEADER_KEY);
         }
 
-        if (!$this->csrf->validate($token)) {
+        if (!$csrf->validate($token)) {
             if ($request->wantsJson()) {
                 return Response::json(['error' => 'csrf_mismatch'], 419);
             }

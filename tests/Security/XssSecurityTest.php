@@ -10,6 +10,7 @@ use Laas\Modules\Pages\Controller\PagesController;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Tests\Security\Support\SecurityTestHelper;
+use Tests\Support\InMemorySession;
 
 #[Group('security')]
 final class XssSecurityTest extends TestCase
@@ -19,10 +20,6 @@ final class XssSecurityTest extends TestCase
     protected function setUp(): void
     {
         $this->rootPath = SecurityTestHelper::rootPath();
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_unset();
-            session_destroy();
-        }
     }
 
     public function testPagesSearchEscapesStoredContent(): void
@@ -58,10 +55,8 @@ final class XssSecurityTest extends TestCase
         $pdo->exec("INSERT INTO media_files (id, uuid, disk_path, original_name, mime_type, size_bytes, sha256, uploaded_by, created_at, is_public) VALUES (1, 'u', 'uploads/x.png', '<img src=x onerror=alert(1)>', 'image/png', 12, 'hash', 1, '2026-01-01 00:00:00', 0)");
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
 
-        SecurityTestHelper::startSession($this->rootPath);
-        $_SESSION['user_id'] = 1;
-
         $request = new Request('GET', '/admin/media', [], [], [], '');
+        $this->attachSession($request, 1);
         $view = SecurityTestHelper::createView($db, $request, 'admin');
         $controller = new AdminMediaController($view, $db);
 
@@ -88,10 +83,8 @@ final class XssSecurityTest extends TestCase
         $pdo->exec("INSERT INTO menu_items (id, menu_id, label, url, sort_order, enabled, is_external, created_at, updated_at) VALUES (1, 1, '<script>alert(1)</script>', '/', 1, 1, 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00')");
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
 
-        SecurityTestHelper::startSession($this->rootPath);
-        $_SESSION['user_id'] = 1;
-
         $request = new Request('GET', '/admin/menus', [], [], [], '');
+        $this->attachSession($request, 1);
         $view = SecurityTestHelper::createView($db, $request, 'admin');
         $controller = new AdminMenusController($view, $db);
 
@@ -100,5 +93,13 @@ final class XssSecurityTest extends TestCase
 
         $this->assertStringNotContainsString('<script>', $body);
         $this->assertStringContainsString('&lt;script&gt;', $body);
+    }
+
+    private function attachSession(Request $request, int $userId): void
+    {
+        $session = new InMemorySession();
+        $session->start();
+        $session->set('user_id', $userId);
+        $request->setSession($session);
     }
 }

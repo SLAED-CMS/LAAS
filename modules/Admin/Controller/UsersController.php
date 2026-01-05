@@ -53,7 +53,7 @@ final class UsersController
             ]);
         }
 
-        $currentUserId = $this->currentUserId();
+        $currentUserId = $this->currentUserId($request);
         if ($query !== '') {
             $search = new SearchQuery($query, 50, 1, 'users');
             $users = $repo->search($search->q, $search->limit, $search->offset);
@@ -112,7 +112,7 @@ final class UsersController
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
-        $currentUserId = $this->currentUserId();
+        $currentUserId = $this->currentUserId($request);
         if ($currentUserId !== null && $userId === $currentUserId) {
             return $this->errorResponse($request, 'self_protected', 400);
         }
@@ -146,7 +146,7 @@ final class UsersController
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
-        $currentUserId = $this->currentUserId();
+        $currentUserId = $this->currentUserId($request);
         if ($currentUserId !== null && $userId === $currentUserId) {
             return $this->errorResponse($request, 'self_protected', 400);
         }
@@ -164,7 +164,7 @@ final class UsersController
         }
 
         $actorId = $currentUserId;
-        $audit = new AuditLogger($this->db);
+        $audit = new AuditLogger($this->db, $request->session());
         $audit->log('rbac.user.roles.updated', 'user', $userId, [
             'actor_user_id' => $actorId,
             'target_user_id' => $userId,
@@ -229,21 +229,20 @@ final class UsersController
         return $id > 0 ? $id : null;
     }
 
-    private function currentUserId(): ?int
+    private function currentUserId(Request $request): ?int
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
+        $session = $request->session();
+        if (!$session->isStarted()) {
             return null;
         }
 
-        $raw = $_SESSION['user_id'] ?? null;
+        $raw = $session->get('user_id');
         if (is_int($raw)) {
             return $raw;
         }
-
         if (is_string($raw) && ctype_digit($raw)) {
             return (int) $raw;
         }
-
         return null;
     }
 

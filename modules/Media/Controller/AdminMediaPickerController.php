@@ -24,7 +24,7 @@ final class AdminMediaPickerController
 
     public function index(Request $request, array $params = []): Response
     {
-        if (!$this->canView()) {
+        if (!$this->canView($request)) {
             return $this->forbidden();
         }
 
@@ -56,7 +56,7 @@ final class AdminMediaPickerController
 
     public function select(Request $request, array $params = []): Response
     {
-        if (!$this->canView()) {
+        if (!$this->canView($request)) {
             return $this->errorResponse($request, 'forbidden', 403);
         }
 
@@ -150,13 +150,13 @@ final class AdminMediaPickerController
         return is_array($config) ? $config : [];
     }
 
-    private function canView(): bool
+    private function canView(Request $request): bool
     {
         if ($this->db === null || !$this->db->healthCheck()) {
             return false;
         }
 
-        $userId = $this->currentUserId();
+        $userId = $this->currentUserId($request);
         if ($userId === null) {
             return false;
         }
@@ -169,21 +169,20 @@ final class AdminMediaPickerController
         }
     }
 
-    private function currentUserId(): ?int
+    private function currentUserId(Request $request): ?int
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
+        $session = $request->session();
+        if (!$session->isStarted()) {
             return null;
         }
 
-        $raw = $_SESSION['user_id'] ?? null;
+        $raw = $session->get('user_id');
         if (is_int($raw)) {
             return $raw;
         }
-
         if (is_string($raw) && ctype_digit($raw)) {
             return (int) $raw;
         }
-
         return null;
     }
 

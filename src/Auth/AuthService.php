@@ -4,12 +4,14 @@ declare(strict_types=1);
 namespace Laas\Auth;
 
 use Laas\Database\Repositories\UsersRepository;
+use Laas\Session\SessionInterface;
 use Psr\Log\LoggerInterface;
 
 final class AuthService implements AuthInterface
 {
     public function __construct(
         private UsersRepository $users,
+        private SessionInterface $session,
         private ?LoggerInterface $logger = null
     ) {
     }
@@ -28,7 +30,7 @@ final class AuthService implements AuthInterface
             return false;
         }
 
-        $regenerated = session_regenerate_id(true);
+        $regenerated = $this->session->regenerate(true);
         if ($regenerated === false && $this->logger !== null) {
             $this->logger->warning('Session ID regeneration failed', [
                 'username' => $username,
@@ -36,7 +38,7 @@ final class AuthService implements AuthInterface
             ]);
         }
 
-        $_SESSION['user_id'] = (int) $user['id'];
+        $this->session->set('user_id', (int) $user['id']);
         $this->users->updateLoginMeta((int) $user['id'], $ip);
 
         return true;
@@ -44,12 +46,12 @@ final class AuthService implements AuthInterface
 
     public function logout(): void
     {
-        unset($_SESSION['user_id']);
+        $this->session->remove('user_id');
     }
 
     public function user(): ?array
     {
-        $id = (int) ($_SESSION['user_id'] ?? 0);
+        $id = (int) $this->session->get('user_id', 0);
         if ($id <= 0) {
             return null;
         }

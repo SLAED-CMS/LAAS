@@ -11,7 +11,9 @@ final class CsrfController
 {
     public function get(Request $request): Response
     {
-        $token = (new Csrf())->getToken();
+        $session = $request->session();
+        $session->start();
+        $token = (new Csrf($session))->getToken();
 
         return Response::json(['token' => $token]);
     }

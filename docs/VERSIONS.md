@@ -1,5 +1,8 @@
 # LAAS Versions
 
+- v2.2.6: Session abstraction (SessionInterface)
+  - SessionInterface + PhpSession with Request::session() access
+  - Removed direct $_SESSION usage outside session layer
 - v2.2.5: Security regression test suite
   - Dedicated PHPUnit security group with regression coverage
   - CI job for security tests

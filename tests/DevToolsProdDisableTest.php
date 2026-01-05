@@ -12,6 +12,7 @@ use Laas\View\Template\TemplateEngine;
 use Laas\View\Theme\ThemeManager;
 use Laas\View\View;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\InMemorySession;
 
 final class DevToolsProdDisableTest extends TestCase
 {
@@ -30,12 +31,11 @@ final class DevToolsProdDisableTest extends TestCase
         $db = $this->createDatabase();
         $this->seedRbac($db->pdo(), 1, ['debug.view']);
 
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-        $_SESSION['user_id'] = 1;
-
+        $session = new InMemorySession();
+        $session->start();
+        $session->set('user_id', 1);
         $request = new Request('GET', '/__devtools/ping', [], [], [], '');
+        $request->setSession($session);
         $view = $this->createView($db, $request);
         $controller = new DevToolsController($view, $db);
 

@@ -12,6 +12,7 @@ use Laas\Security\Csrf;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Tests\Security\Support\SecurityTestHelper;
+use Tests\Support\InMemorySession;
 
 #[Group('security')]
 final class CsrfSecurityTest extends TestCase
@@ -21,17 +22,15 @@ final class CsrfSecurityTest extends TestCase
     protected function setUp(): void
     {
         $this->rootPath = SecurityTestHelper::rootPath();
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_unset();
-            session_destroy();
-        }
     }
 
     public function testPostWithoutCsrfRejected(): void
     {
-        SecurityTestHelper::startSession($this->rootPath);
-        $middleware = new CsrfMiddleware(new Csrf());
+        $session = new InMemorySession();
+        $session->start();
+        $middleware = new CsrfMiddleware();
         $request = new Request('POST', '/admin/media/upload', [], [], [], '');
+        $request->setSession($session);
 
         $response = $middleware->process($request, static fn(): Response => new Response('ok', 200));
         $this->assertSame(419, $response->getStatus());
@@ -39,13 +38,15 @@ final class CsrfSecurityTest extends TestCase
 
     public function testInvalidCsrfRejected(): void
     {
-        SecurityTestHelper::startSession($this->rootPath);
-        (new Csrf())->getToken();
-        $middleware = new CsrfMiddleware(new Csrf());
+        $session = new InMemorySession();
+        $session->start();
+        (new Csrf($session))->getToken();
+        $middleware = new CsrfMiddleware();
 
         $request = new Request('POST', '/admin/media/upload', [], [
             '_token' => 'invalid',
         ], [], '');
+        $request->setSession($session);
         $response = $middleware->process($request, static fn(): Response => new Response('ok', 200));
         $this->assertSame(419, $response->getStatus());
     }

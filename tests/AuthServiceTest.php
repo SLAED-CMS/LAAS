@@ -5,17 +5,16 @@ use Laas\Auth\AuthService;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\UsersRepository;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\InMemorySession;
 
 final class AuthServiceTest extends TestCase
 {
+    private InMemorySession $session;
+
     protected function setUp(): void
     {
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_unset();
-            session_destroy();
-        }
-        session_start();
-        $_SESSION = [];
+        $this->session = new InMemorySession();
+        $this->session->start();
     }
 
     public function testAttemptFailsWithBadPassword(): void
@@ -35,12 +34,12 @@ final class AuthServiceTest extends TestCase
         $pdo->exec("INSERT INTO users (username, password_hash, status) VALUES ('admin', '{$hash}', 1)");
 
         $repo = new UsersRepository($db->pdo());
-        $auth = new AuthService($repo);
+        $auth = new AuthService($repo, $this->session);
 
         $ok = $auth->attempt('admin', 'wrong', '127.0.0.1');
 
         $this->assertFalse($ok);
-        $this->assertArrayNotHasKey('user_id', $_SESSION);
+        $this->assertFalse($this->session->has('user_id'));
     }
 
     public function testAttemptFailsForDisabledUser(): void
@@ -60,11 +59,11 @@ final class AuthServiceTest extends TestCase
         $pdo->exec("INSERT INTO users (username, password_hash, status) VALUES ('admin', '{$hash}', 0)");
 
         $repo = new UsersRepository($db->pdo());
-        $auth = new AuthService($repo);
+        $auth = new AuthService($repo, $this->session);
 
         $ok = $auth->attempt('admin', 'secret', '127.0.0.1');
 
         $this->assertFalse($ok);
-        $this->assertArrayNotHasKey('user_id', $_SESSION);
+        $this->assertFalse($this->session->has('user_id'));
     }
 }

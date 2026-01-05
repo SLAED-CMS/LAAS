@@ -12,6 +12,7 @@ use Laas\View\Template\TemplateEngine;
 use Laas\View\Theme\ThemeManager;
 use Laas\View\View;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\InMemorySession;
 
 final class AdminSearchControllerTest extends TestCase
 {
@@ -20,9 +21,6 @@ final class AdminSearchControllerTest extends TestCase
     protected function setUp(): void
     {
         $this->rootPath = dirname(__DIR__);
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_unset();
-        }
     }
 
     public function testControllerHidesScopesWithoutPermission(): void
@@ -41,12 +39,9 @@ final class AdminSearchControllerTest extends TestCase
         $pdo->exec("INSERT INTO users (id, username, email) VALUES (2, 'testuser', 'user@example.com')");
 
         $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-        $_SESSION['user_id'] = 1;
-
+        $session = $this->buildSession(1);
         $request = new Request('GET', '/admin/search', ['q' => 'test'], [], ['hx-request' => 'true'], '');
+        $request->setSession($session);
         $view = $this->createView($db, $request);
         $controller = new AdminSearchController($view, $db);
 
@@ -84,12 +79,9 @@ final class AdminSearchControllerTest extends TestCase
         $pdo->exec("INSERT INTO pages (id, title, slug, status, content, updated_at) VALUES (1, '<script>alert(1)</script>', 'x', 'draft', 'x', '2026-01-01 00:00:00')");
 
         $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-        $_SESSION['user_id'] = 1;
-
+        $session = $this->buildSession(1);
         $request = new Request('GET', '/admin/search', ['q' => 'alert'], [], ['hx-request' => 'true'], '');
+        $request->setSession($session);
         $view = $this->createView($db, $request);
         $controller = new AdminSearchController($view, $db);
 
@@ -152,5 +144,13 @@ final class AdminSearchControllerTest extends TestCase
         $view->setRequest($request);
 
         return $view;
+    }
+
+    private function buildSession(int $userId): InMemorySession
+    {
+        $session = new InMemorySession();
+        $session->start();
+        $session->set('user_id', $userId);
+        return $session;
     }
 }

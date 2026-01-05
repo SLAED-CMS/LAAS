@@ -5,11 +5,15 @@ namespace Laas\Support;
 
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\AuditLogRepository;
+use Laas\Session\SessionInterface;
 use Throwable;
 
 final class AuditLogger
 {
-    public function __construct(private ?DatabaseManager $db = null)
+    public function __construct(
+        private ?DatabaseManager $db = null,
+        private ?SessionInterface $session = null
+    )
     {
     }
 
@@ -43,19 +47,17 @@ final class AuditLogger
 
     private function resolveUserId(): ?int
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
+        if ($this->session === null || !$this->session->isStarted()) {
             return null;
         }
 
-        $raw = $_SESSION['user_id'] ?? null;
+        $raw = $this->session->get('user_id');
         if (is_int($raw)) {
             return $raw;
         }
-
         if (is_string($raw) && ctype_digit($raw)) {
             return (int) $raw;
         }
-
         return null;
     }
 

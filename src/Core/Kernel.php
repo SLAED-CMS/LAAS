@@ -27,9 +27,9 @@ use Laas\I18n\LocaleResolver;
 use Laas\I18n\Translator;
 use Laas\Modules\ModuleManager;
 use Laas\Routing\Router;
-use Laas\Security\Csrf;
 use Laas\Security\RateLimiter;
 use Laas\Security\SecurityHeaders;
+use Laas\Session\PhpSession;
 use Laas\Settings\SettingsProvider;
 use Laas\Support\LoggerFactory;
 use Laas\Support\ConfigSanityChecker;
@@ -123,7 +123,7 @@ final class Kernel
             });
         }
 
-        $authService = $this->createAuthService($logger);
+        $authService = $this->createAuthService($logger, new PhpSession());
         $authorization = $this->createAuthorizationService();
 
         $templateEngine = new TemplateEngine(
@@ -180,7 +180,7 @@ final class Kernel
             new ErrorHandlerMiddleware($logger, (bool) ($appConfig['debug'] ?? false), $requestId),
             new SessionMiddleware(new SessionManager($this->rootPath, $securityConfig)),
             new ReadOnlyMiddleware((bool) ($appConfig['read_only'] ?? false), $translator, $view),
-            new CsrfMiddleware(new Csrf()),
+            new CsrfMiddleware(),
             new RateLimitMiddleware(new RateLimiter($this->rootPath), $securityConfig),
             new SecurityHeadersMiddleware(new SecurityHeaders($securityConfig)),
             new AuthMiddleware($authService),
@@ -198,11 +198,11 @@ final class Kernel
         return $response->withHeader('X-Request-Id', $requestId);
     }
 
-    private function createAuthService(\Psr\Log\LoggerInterface $logger): AuthInterface
+    private function createAuthService(\Psr\Log\LoggerInterface $logger, PhpSession $session): AuthInterface
     {
         try {
             $usersRepository = new UsersRepository($this->database()->pdo());
-            return new AuthService($usersRepository, $logger);
+            return new AuthService($usersRepository, $session, $logger);
         } catch (\Throwable) {
             return new NullAuthService();
         }

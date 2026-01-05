@@ -35,9 +35,6 @@ namespace {
         protected function setUp(): void
         {
             $this->rootPath = dirname(__DIR__);
-            if (session_status() === PHP_SESSION_ACTIVE) {
-                session_unset();
-            }
             $_FILES = [];
         }
 

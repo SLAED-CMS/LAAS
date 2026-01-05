@@ -12,6 +12,7 @@ use Laas\View\Template\TemplateEngine;
 use Laas\View\Theme\ThemeManager;
 use Laas\View\View;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\InMemorySession;
 
 final class AuditControllerInvalidRangeTest extends TestCase
 {
@@ -21,9 +22,6 @@ final class AuditControllerInvalidRangeTest extends TestCase
     protected function setUp(): void
     {
         $this->rootPath = dirname(__DIR__);
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_unset();
-        }
     }
 
     public function testInvalidDateRangeReturns422(): void
@@ -32,15 +30,14 @@ final class AuditControllerInvalidRangeTest extends TestCase
         $this->seedRbac($db->pdo(), $this->userId, ['audit.view']);
 
         $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-        $_SESSION['user_id'] = $this->userId;
-
+        $session = new InMemorySession();
+        $session->start();
+        $session->set('user_id', $this->userId);
         $request = new Request('GET', '/admin/audit', [
             'from' => '2026-01-03',
             'to' => '2026-01-01',
         ], [], [], '');
+        $request->setSession($session);
         $view = $this->createView($db, $request);
         $controller = new AuditController($view, $db);
 

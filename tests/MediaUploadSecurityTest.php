@@ -31,6 +31,7 @@ namespace {
     use Laas\View\Theme\ThemeManager;
     use Laas\View\View;
     use PHPUnit\Framework\TestCase;
+    use Tests\Support\InMemorySession;
 
     final class MediaUploadSecurityTest extends TestCase
     {
@@ -39,15 +40,12 @@ namespace {
 
         protected function setUp(): void
         {
-        $this->rootPath = dirname(__DIR__);
-        $this->userId = 9002;
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_unset();
-        }
-        $this->clearRateLimit();
-        $_FILES = [];
-        $_SERVER['CONTENT_LENGTH'] = '';
-        $_SERVER['REQUEST_TIME_FLOAT'] = microtime(true);
+            $this->rootPath = dirname(__DIR__);
+            $this->userId = 9002;
+            $this->clearRateLimit();
+            $_FILES = [];
+            $_SERVER['CONTENT_LENGTH'] = '';
+            $_SERVER['REQUEST_TIME_FLOAT'] = microtime(true);
         }
 
         public function testRejectUploadByContentLength(): void
@@ -60,15 +58,12 @@ namespace {
 
             $_SERVER['REMOTE_ADDR'] = '127.0.0.10';
             $_SERVER['CONTENT_LENGTH'] = (string) ($max + 1);
-            if (session_status() !== PHP_SESSION_ACTIVE) {
-                session_start();
-            }
-            $_SESSION['user_id'] = $this->userId;
 
             $request = new Request('POST', '/admin/media/upload', [], [], [
                 'content-length' => (string) ($max + 1),
                 'hx-request' => 'true',
             ], '');
+            $this->attachSession($request);
             $view = $this->createView($db, $request);
             $controller = new AdminMediaController($view, $db);
 
@@ -86,10 +81,6 @@ namespace {
 
             $_SERVER['REMOTE_ADDR'] = '127.0.0.11';
             $_SERVER['CONTENT_LENGTH'] = (string) ($max);
-            if (session_status() !== PHP_SESSION_ACTIVE) {
-                session_start();
-            }
-            $_SESSION['user_id'] = $this->userId;
 
             $_FILES['file'] = [
                 'name' => 'big.jpg',
@@ -103,6 +94,7 @@ namespace {
                 'content-length' => (string) $max,
                 'hx-request' => 'true',
             ], '');
+            $this->attachSession($request);
             $view = $this->createView($db, $request);
             $controller = new AdminMediaController($view, $db);
 
@@ -122,10 +114,6 @@ namespace {
 
             $_SERVER['REMOTE_ADDR'] = '127.0.0.13';
             $_SERVER['CONTENT_LENGTH'] = (string) $size;
-            if (session_status() !== PHP_SESSION_ACTIVE) {
-                session_start();
-            }
-            $_SESSION['user_id'] = $this->userId;
 
             $_FILES['file'] = [
                 'name' => 'icon.svg',
@@ -139,6 +127,7 @@ namespace {
                 'content-length' => (string) $size,
                 'hx-request' => 'true',
             ], '');
+            $this->attachSession($request);
             $view = $this->createView($db, $request);
             $controller = new AdminMediaController($view, $db);
 
@@ -161,10 +150,6 @@ namespace {
 
             $_SERVER['REMOTE_ADDR'] = '127.0.0.12';
             $_SERVER['CONTENT_LENGTH'] = (string) $size;
-            if (session_status() !== PHP_SESSION_ACTIVE) {
-                session_start();
-            }
-            $_SESSION['user_id'] = $this->userId;
 
             $_FILES['file'] = [
                 'name' => 'pixel.png',
@@ -178,6 +163,7 @@ namespace {
                 'content-length' => (string) $size,
                 'hx-request' => 'true',
             ], '');
+            $this->attachSession($request);
             $view = $this->createView($db, $request);
             $controller = new AdminMediaController($view, $db);
 
@@ -280,6 +266,14 @@ namespace {
             foreach (glob($dir . '/*.json') ?: [] as $file) {
                 @unlink($file);
             }
+        }
+
+        private function attachSession(Request $request): void
+        {
+            $session = new InMemorySession();
+            $session->start();
+            $session->set('user_id', $this->userId);
+            $request->setSession($session);
         }
     }
 }

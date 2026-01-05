@@ -23,7 +23,7 @@ final class RbacDiagnosticsController
 
     public function index(Request $request): Response
     {
-        if (!$this->canDiagnostics()) {
+        if (!$this->canDiagnostics($request)) {
             return $this->forbidden($request);
         }
 
@@ -55,7 +55,7 @@ final class RbacDiagnosticsController
 
     public function checkPermission(Request $request): Response
     {
-        if (!$this->canDiagnostics()) {
+        if (!$this->canDiagnostics($request)) {
             return $this->forbidden($request);
         }
 
@@ -109,9 +109,9 @@ final class RbacDiagnosticsController
         $perms = $service->getUserEffectivePermissions($userId);
         $groups = $perms['groups'] ?? [];
 
-        (new AuditLogger($this->db))->log('rbac.diagnostics.viewed', 'rbac', $userId, [
+        (new AuditLogger($this->db, $request->session()))->log('rbac.diagnostics.viewed', 'rbac', $userId, [
             'target_user_id' => $userId,
-        ], $this->currentUserId(), $request->ip());
+        ], $this->currentUserId($request), $request->ip());
 
         return [
             'user_id' => $userId,
@@ -179,13 +179,13 @@ final class RbacDiagnosticsController
         return $id > 0 ? $id : null;
     }
 
-    private function canDiagnostics(): bool
+    private function canDiagnostics(Request $request): bool
     {
         if ($this->db === null || !$this->db->healthCheck()) {
             return false;
         }
 
-        $userId = $this->currentUserId();
+        $userId = $this->currentUserId($request);
         if ($userId === null) {
             return false;
         }
@@ -198,21 +198,20 @@ final class RbacDiagnosticsController
         }
     }
 
-    private function currentUserId(): ?int
+    private function currentUserId(Request $request): ?int
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
+        $session = $request->session();
+        if (!$session->isStarted()) {
             return null;
         }
 
-        $raw = $_SESSION['user_id'] ?? null;
+        $raw = $session->get('user_id');
         if (is_int($raw)) {
             return $raw;
         }
-
         if (is_string($raw) && ctype_digit($raw)) {
             return (int) $raw;
         }
-
         return null;
     }
 

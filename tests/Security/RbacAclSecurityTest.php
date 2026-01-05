@@ -14,6 +14,7 @@ use Laas\Modules\Media\Controller\AdminMediaController;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Tests\Security\Support\SecurityTestHelper;
+use Tests\Support\InMemorySession;
 
 #[Group('security')]
 final class RbacAclSecurityTest extends TestCase
@@ -23,10 +24,6 @@ final class RbacAclSecurityTest extends TestCase
     protected function setUp(): void
     {
         $this->rootPath = SecurityTestHelper::rootPath();
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_unset();
-            session_destroy();
-        }
     }
 
     public function testAdminRequiresAdminAccess(): void
@@ -63,10 +60,8 @@ final class RbacAclSecurityTest extends TestCase
         SecurityTestHelper::assignRole($pdo, 1, 1);
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
 
-        SecurityTestHelper::startSession($this->rootPath);
-        $_SESSION['user_id'] = 1;
-
         $request = new Request('POST', '/admin/media/upload', [], [], ['accept' => 'application/json'], '');
+        $this->attachSession($request, 1);
         $view = SecurityTestHelper::createView($db, $request, 'admin');
         $controller = new AdminMediaController($view, $db);
 
@@ -84,10 +79,8 @@ final class RbacAclSecurityTest extends TestCase
         SecurityTestHelper::assignRole($pdo, 1, 1);
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
 
-        SecurityTestHelper::startSession($this->rootPath);
-        $_SESSION['user_id'] = 1;
-
         $request = new Request('POST', '/admin/media/delete', [], ['id' => '1'], ['accept' => 'application/json'], '');
+        $this->attachSession($request, 1);
         $view = SecurityTestHelper::createView($db, $request, 'admin');
         $controller = new AdminMediaController($view, $db);
 
@@ -105,14 +98,20 @@ final class RbacAclSecurityTest extends TestCase
         SecurityTestHelper::assignRole($pdo, 1, 1);
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
 
-        SecurityTestHelper::startSession($this->rootPath);
-        $_SESSION['user_id'] = 1;
-
         $request = new Request('GET', '/admin/audit', [], [], ['accept' => 'application/json'], '');
+        $this->attachSession($request, 1);
         $view = SecurityTestHelper::createView($db, $request, 'admin');
         $controller = new AuditController($view, $db);
 
         $response = $controller->index($request);
         $this->assertSame(403, $response->getStatus());
+    }
+
+    private function attachSession(Request $request, int $userId): void
+    {
+        $session = new InMemorySession();
+        $session->start();
+        $session->set('user_id', $userId);
+        $request->setSession($session);
     }
 }

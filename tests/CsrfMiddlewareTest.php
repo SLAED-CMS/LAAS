@@ -6,25 +6,25 @@ use Laas\Http\Response;
 use Laas\Http\Middleware\CsrfMiddleware;
 use Laas\Security\Csrf;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\InMemorySession;
 
 final class CsrfMiddlewareTest extends TestCase
 {
+    private InMemorySession $session;
+
     protected function setUp(): void
     {
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_unset();
-            session_destroy();
-        }
-        session_start();
-        $_SESSION = [];
+        $this->session = new InMemorySession();
+        $this->session->start();
     }
 
     public function testAllowsValidToken(): void
     {
-        $csrf = new Csrf();
+        $csrf = new Csrf($this->session);
         $token = $csrf->getToken();
-        $middleware = new CsrfMiddleware($csrf);
+        $middleware = new CsrfMiddleware();
         $request = new Request('POST', '/submit', [], [Csrf::FORM_KEY => $token], [], '');
+        $request->setSession($this->session);
 
         $response = $middleware->process($request, function (): Response {
             return new Response('ok', 200);
@@ -36,10 +36,11 @@ final class CsrfMiddlewareTest extends TestCase
 
     public function testRejectsInvalidToken(): void
     {
-        $csrf = new Csrf();
+        $csrf = new Csrf($this->session);
         $csrf->getToken();
-        $middleware = new CsrfMiddleware($csrf);
+        $middleware = new CsrfMiddleware();
         $request = new Request('POST', '/submit', [], [Csrf::FORM_KEY => 'bad'], [], '');
+        $request->setSession($this->session);
 
         $response = $middleware->process($request, function (): Response {
             return new Response('ok', 200);

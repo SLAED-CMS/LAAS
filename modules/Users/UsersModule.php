@@ -10,6 +10,7 @@ use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\UsersRepository;
 use Laas\Modules\ModuleInterface;
 use Laas\Routing\Router;
+use Laas\Session\SessionInterface;
 use Laas\View\View;
 
 final class UsersModule implements ModuleInterface
@@ -35,21 +36,21 @@ final class UsersModule implements ModuleInterface
             }
 
             $router->addRoute($method, $path, function ($request, array $vars = []) use ($class, $action) {
-                $auth = $this->createAuthService();
+                $auth = $this->createAuthService($request->session());
                 $controller = new $class($this->view, $auth);
                 return $controller->{$action}($request);
             });
         }
     }
 
-    private function createAuthService(): AuthInterface
+    private function createAuthService(SessionInterface $session): AuthInterface
     {
         if ($this->db === null) {
             return new NullAuthService();
         }
 
         try {
-            return new AuthService(new UsersRepository($this->db->pdo()));
+            return new AuthService(new UsersRepository($this->db->pdo()), $session);
         } catch (\Throwable) {
             return new NullAuthService();
         }

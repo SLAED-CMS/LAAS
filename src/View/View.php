@@ -165,8 +165,9 @@ final class View
     private function globalContext(): array
     {
         $csrfToken = '';
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            $csrfToken = (new Csrf())->getToken();
+        $session = $this->request?->session();
+        if ($session !== null && $session->isStarted()) {
+            $csrfToken = (new Csrf($session))->getToken();
         }
 
         return [

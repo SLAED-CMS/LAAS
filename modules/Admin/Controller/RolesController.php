@@ -24,7 +24,7 @@ final class RolesController
 
     public function index(Request $request): Response
     {
-        if (!$this->canManage()) {
+        if (!$this->canManage($request)) {
             return $this->forbidden($request);
         }
 
@@ -42,7 +42,7 @@ final class RolesController
 
     public function createForm(Request $request): Response
     {
-        if (!$this->canManage()) {
+        if (!$this->canManage($request)) {
             return $this->forbidden($request);
         }
 
@@ -57,7 +57,7 @@ final class RolesController
 
     public function editForm(Request $request, array $params = []): Response
     {
-        if (!$this->canManage()) {
+        if (!$this->canManage($request)) {
             return $this->forbidden($request);
         }
 
@@ -77,7 +77,7 @@ final class RolesController
 
     public function save(Request $request): Response
     {
-        if (!$this->canManage()) {
+        if (!$this->canManage($request)) {
             return $this->forbidden($request);
         }
 
@@ -119,8 +119,8 @@ final class RolesController
             ], $permissionNames, 422, $errors);
         }
 
-        $audit = new AuditLogger($this->db);
-        $actorId = $this->currentUserId();
+        $audit = new AuditLogger($this->db, $request->session());
+        $actorId = $this->currentUserId($request);
         if ($id === null) {
             $id = $rolesRepo->create($name, $title !== '' ? $title : null);
             $audit->log('rbac.role.created', 'rbac_role', $id, [
@@ -180,7 +180,7 @@ final class RolesController
 
     public function delete(Request $request): Response
     {
-        if (!$this->canManage()) {
+        if (!$this->canManage($request)) {
             return $this->forbidden($request);
         }
 
@@ -200,10 +200,10 @@ final class RolesController
         }
 
         $rolesRepo->delete($id);
-        (new AuditLogger($this->db))->log('rbac.role.deleted', 'rbac_role', $id, [
-            'actor_user_id' => $this->currentUserId(),
+        (new AuditLogger($this->db, $request->session()))->log('rbac.role.deleted', 'rbac_role', $id, [
+            'actor_user_id' => $this->currentUserId($request),
             'target_role_id' => $id,
-        ], $this->currentUserId(), $request->ip());
+        ], $this->currentUserId($request), $request->ip());
 
         if ($request->isHtmx()) {
             return new Response('', 200);
@@ -216,7 +216,7 @@ final class RolesController
 
     public function cloneForm(Request $request, array $params = []): Response
     {
-        if (!$this->canManage()) {
+        if (!$this->canManage($request)) {
             return $this->forbidden($request);
         }
 
@@ -241,7 +241,7 @@ final class RolesController
 
     public function clone(Request $request, array $params = []): Response
     {
-        if (!$this->canManage()) {
+        if (!$this->canManage($request)) {
             return $this->forbidden($request);
         }
 
@@ -285,12 +285,12 @@ final class RolesController
         $rbac = new RbacRepository($this->db->pdo());
         $rbac->setRolePermissions($newId, $permissionIds);
 
-        (new AuditLogger($this->db))->log('rbac.role.cloned', 'rbac_role', $newId, [
-            'actor_user_id' => $this->currentUserId(),
+        (new AuditLogger($this->db, $request->session()))->log('rbac.role.cloned', 'rbac_role', $newId, [
+            'actor_user_id' => $this->currentUserId($request),
             'source_role_id' => $id,
             'new_role_id' => $newId,
             'permission_count' => count($permissionIds),
-        ], $this->currentUserId(), $request->ip());
+        ], $this->currentUserId($request), $request->ip());
 
         if ($request->isHtmx()) {
             return new Response('', 200, [
@@ -496,13 +496,13 @@ final class RolesController
         return $id > 0 ? $id : null;
     }
 
-    private function canManage(): bool
+    private function canManage(Request $request): bool
     {
         if ($this->db === null || !$this->db->healthCheck()) {
             return false;
         }
 
-        $userId = $this->currentUserId();
+        $userId = $this->currentUserId($request);
         if ($userId === null) {
             return false;
         }
@@ -515,21 +515,20 @@ final class RolesController
         }
     }
 
-    private function currentUserId(): ?int
+    private function currentUserId(Request $request): ?int
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
+        $session = $request->session();
+        if (!$session->isStarted()) {
             return null;
         }
 
-        $raw = $_SESSION['user_id'] ?? null;
+        $raw = $session->get('user_id');
         if (is_int($raw)) {
             return $raw;
         }
-
         if (is_string($raw) && ctype_digit($raw)) {
             return (int) $raw;
         }
-
         return null;
     }
 

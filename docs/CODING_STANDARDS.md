@@ -40,6 +40,17 @@
 - `t` (translator)
 - `blocks` (stub for future)
 
+## Sessions
+- Direct `$_SESSION` access is forbidden outside `PhpSession`
+- Use `SessionInterface` via `Request::session()` in controllers/services
+- Avoid direct `session_*` calls outside SessionManager/PhpSession
+
+**Example:**
+```php
+$session = $request->session();
+$session->set('user_id', $userId);
+```
+
 ## Migration rules
 - Location:
   - Core: `database/migrations/core`

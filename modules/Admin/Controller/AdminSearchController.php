@@ -49,7 +49,7 @@ final class AdminSearchController
             ]);
         }
 
-        $search = $this->buildSearch($query);
+        $search = $this->buildSearch($request, $query);
         $data = [
             'q' => $query,
             'errors' => [],
@@ -69,7 +69,7 @@ final class AdminSearchController
         ]);
     }
 
-    private function buildSearch(string $query): array
+    private function buildSearch(Request $request, string $query): array
     {
         $result = $this->emptySearch($query);
         if ($query === '') {
@@ -81,7 +81,7 @@ final class AdminSearchController
             return $result;
         }
 
-        $userId = $this->currentUserId();
+        $userId = $this->currentUserId($request);
         $rbac = $this->getRbacRepository();
         if ($userId === null || $rbac === null) {
             return $result;
@@ -196,21 +196,20 @@ final class AdminSearchController
         ];
     }
 
-    private function currentUserId(): ?int
+    private function currentUserId(Request $request): ?int
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
+        $session = $request->session();
+        if (!$session->isStarted()) {
             return null;
         }
 
-        $raw = $_SESSION['user_id'] ?? null;
+        $raw = $session->get('user_id');
         if (is_int($raw)) {
             return $raw;
         }
-
         if (is_string($raw) && ctype_digit($raw)) {
             return (int) $raw;
         }
-
         return null;
     }
 
