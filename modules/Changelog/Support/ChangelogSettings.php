@@ -52,7 +52,6 @@ final class ChangelogSettings
     {
         $values = self::defaults($rootPath);
         if ($repo === null) {
-            error_log('[ChangelogSettings] load() - repo is NULL, using defaults');
             return $values;
         }
 
@@ -76,10 +75,7 @@ final class ChangelogSettings
             $has = $repo->has($key);
             if ($has) {
                 $val = $repo->get($key, $values[$target] ?? null);
-                error_log("[ChangelogSettings] load() - {$key} EXISTS, value: " . json_encode($val, JSON_UNESCAPED_SLASHES));
                 $values[$target] = $val;
-            } else {
-                error_log("[ChangelogSettings] load() - {$key} MISSING, using default: " . json_encode($values[$target] ?? null, JSON_UNESCAPED_SLASHES));
             }
         }
 
