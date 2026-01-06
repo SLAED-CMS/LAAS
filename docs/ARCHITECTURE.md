@@ -1179,6 +1179,19 @@ php tools/cli.php templates:warmup
 php tools/cli.php templates:clear
 ```
 
+### Request-Scope Cache
+
+**Purpose:** Avoid duplicate DB work within a single HTTP request.
+
+**Current uses:**
+- Current user lookup (auth user).
+- Modules list (enabled/version).
+- Database health check (`SELECT 1`) limited to 1 per request.
+
+**Implementation:**
+- Request attributes are used when available.
+- Fallback in-memory scope is used only when a Request is not present.
+
 ---
 
 ## Storage & Media

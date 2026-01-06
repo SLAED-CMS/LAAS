@@ -5,11 +5,11 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-00758F.svg)](https://www.mysql.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)](#)
-[![Baseline](https://img.shields.io/badge/Baseline-v2.3.18-orange.svg)](docs/VERSIONS.md)
+[![Baseline](https://img.shields.io/badge/Baseline-v2.3.28-orange.svg)](docs/VERSIONS.md)
 
 **Modern, secure, HTML-first content management system.**
 
-**v2.3.18** - Security hardening complete: XSS/SSRF/URL injection fixes, RBAC hardening for users/modules/settings, menu URL validation, comprehensive security review (C-01..H-02).
+**v2.3.28** - DevTools Terminal UI with Bluloco theme, request-scope caching, duplicate query detection, security hardening complete (XSS/SSRF/URL injection, RBAC).
 
 LAAS CMS is a modular, security-first CMS built for PHP 8.4+ with a lightweight template engine, middleware pipeline, and i18n support. Bootstrap 5 + HTMX ready.
 
@@ -128,6 +128,15 @@ http://laas.loc/
 ## Milestones
 
 ### v2.x — Mature Platform
+- **v2.3.28**: DevTools Terminal UI with Bluloco theme (one-window, settings, expand all)
+- **v2.3.27**: DevTools pastel terminal theme
+- **v2.3.26**: DevTools Terminal view (prompt/summary/warnings/timeline)
+- **v2.3.24**: DevTools compact CLI view (PowerShell-style)
+- **v2.3.23**: DevTools SQL accordion layout
+- **v2.3.22**: DevTools compact overview layout
+- **v2.3.21**: DevTools overview-first profiler
+- **v2.3.20**: DevTools SQL UI (grouped/raw views, duplicate details)
+- **v2.3.19**: Request-scope caching + DevTools duplicate query detector
 - **v2.3.18**: Security hardening (XSS/SSRF/URL injection, RBAC hardening, menu URL validation)
 - **v2.3.17**: Final security review (C-01..H-02 checklist verification)
 - **v2.3.16**: Menu URL injection hardening

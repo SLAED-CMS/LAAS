@@ -1,5 +1,30 @@
 # LAAS Versions
 
+- v2.3.28: DevTools: terminal one-window + theme via settings + inline details + expand all
+  - Bluloco palette with italic muted hints and HTTP verb coloring
+- v2.3.27: DevTools: pastel terminal theme
+  - Pastel terminal palette with semantic classes for prompt/status/sql/nums
+- v2.3.26: DevTools: Terminal UI (one-screen, minimal clicks)
+  - Terminal view with prompt/summary/warnings/offenders/timeline
+  - Inline details collapse with controls (refresh/copy/expand/settings/hide)
+- v2.3.24: DevTools: Compact CLI view (PowerShell-style)
+  - Compact mode with status line and top offenders
+- v2.3.23: DevTools SQL: accordion layout (important open by default)
+  - SQL tab uses accordion with duplicates/slow open by default
+- v2.3.22: DevTools compact overview layout
+  - Single-line summary, bottleneck row, mini timeline, compact issues table
+- v2.3.21: DevTools overview-first profiler
+  - Overview summary, top issues, and timeline
+  - Guided drill-down links to SQL/duplicates/request sections
+- v2.3.20: DevTools SQL UI grouped/raw views
+  - Grouped/Raw tabs with duplicate details and stacktrace in dev
+  - SQL summary counts (raw total, unique, duplicates)
+  - Raw view includes per-query index
+
+- v2.3.19: Request-scope caching and DevTools duplicates
+  - Request-scope caching for current user and modules list
+  - DevTools duplicate query detector with grouped counts/avg time
+  - Reduced repeated SELECT 1 per request
 - v2.3.18: H-02 hardening for menu URLs
   - Reject control characters in menu URLs
 - v2.3.17: Final security review (C-01..H-02)

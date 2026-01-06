@@ -27,18 +27,23 @@
 
 ## Version-Specific Upgrade Paths
 
-### v1.x / v2.x → v2.3.18 (Current Stable)
+### v1.x / v2.x → v2.3.28 (Current Stable)
 
-**Overview:** Security hardening complete, API maturity, changelog module.
+**Overview:** DevTools maturity + performance optimization, security hardening complete, API maturity, changelog module.
 
-**Key security improvements (v2.3.11-18):**
+**Key improvements (v2.3.19-28):**
+- **Request-scope caching:** Optimized current user and modules list queries
+- **DevTools enhancements:** Terminal UI with Bluloco theme, duplicate query detector, overview-first profiler
+- **Performance:** Reduced SELECT 1 queries, duplicate detection, grouped SQL views
+
+**Security hardening (v2.3.11-18):**
 - **Stored XSS fix:** Server-side HTML sanitization for page content
 - **RBAC hardening:** New permissions for users, modules, settings management
 - **SSRF hardening:** GitHub changelog API with host allowlist, IP blocking
 - **URL injection prevention:** Menu URL validation with scheme allowlist
 - **Security review:** Final checklist verification (C-01..H-02)
 
-**Other changes:**
+**Earlier features (v2.3.3-10):**
 - **API v1:** REST endpoints with Bearer token authentication, CORS, rate limiting
 - **Changelog Module:** Git-based changelog (GitHub API or local git provider)
 - **API Tokens:** Token management in admin UI with rotation support
@@ -66,6 +71,24 @@
    - [docs/CHANGELOG_MODULE.md](docs/CHANGELOG_MODULE.md) - Changelog module
    - [docs/RBAC.md](docs/RBAC.md) - New permissions
 6. Verify menu URLs (v2.3.16+): Menu URLs with `javascript:`, `data:`, or `vbscript:` schemes will be rejected
+
+---
+
+### v2.3.18 → v2.3.28
+
+**DevTools maturity and performance optimization.**
+
+**Changes:**
+- **v2.3.19:** Request-scope caching, DevTools duplicate query detection
+- **v2.3.20-28:** DevTools UI improvements (Terminal view, Bluloco theme, compact layouts)
+- Performance optimizations (reduced duplicate queries, request-scope caching)
+
+**No breaking changes.** Upgrade is safe.
+
+**Upgrade steps:**
+1. Follow standard upgrade flow
+2. Clear cache: `php tools/cli.php cache:clear`
+3. Test DevTools (if enabled): Visit `/admin` with `debug.view` permission
 
 ---
 
