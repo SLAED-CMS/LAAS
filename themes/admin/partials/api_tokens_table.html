@@ -5,6 +5,7 @@
       <th>{% t 'admin.api_tokens.table.created_at' %}</th>
       <th>{% t 'admin.api_tokens.table.last_used_at' %}</th>
       <th>{% t 'admin.api_tokens.table.expires_at' %}</th>
+      <th>{% t 'admin.api_tokens.table.status' %}</th>
       <th>{% t 'admin.api_tokens.table.actions' %}</th>
     </tr>
   </thead>
@@ -16,22 +17,46 @@
         <td>{% token.created_at %}</td>
         <td>{% token.last_used_at %}</td>
         <td>{% token.expires_at %}</td>
+        <td><span class="badge {% token.status_class %}">{% token.status_label %}</span></td>
         <td>
-          <form method="post" action="/admin/api/tokens/revoke"
-                hx-post="/admin/api/tokens/revoke"
-                hx-target="#api-token-created"
-                hx-swap="innerHTML"
-                hx-confirm="{% t 'admin.api_tokens.revoke_confirm' %}">
-            <input type="hidden" name="_token" value="{% csrf_token %}">
-            <input type="hidden" name="id" value="{% token.id %}">
-            <button class="btn btn-sm btn-outline-danger" type="submit">{% t 'admin.api_tokens.revoke' %}</button>
-          </form>
+          <div class="d-flex flex-column gap-2">
+            <form method="post" action="/admin/api/tokens/rotate"
+                  hx-post="/admin/api/tokens/rotate"
+                  hx-target="#api-token-created"
+                  hx-swap="innerHTML">
+              <input type="hidden" name="_token" value="{% csrf_token %}">
+              <input type="hidden" name="id" value="{% token.id %}">
+              <input type="hidden" name="expires_at" value="{% token.expires_at_raw %}">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" name="revoke_old" value="1"
+                       id="revoke-old-{% token.id %}" checked>
+                <label class="form-check-label small" for="revoke-old-{% token.id %}">
+                  {% t 'admin.api_tokens.rotate_revoke_old' %}
+                </label>
+              </div>
+              <button class="btn btn-sm btn-outline-primary" type="submit">
+                {% t 'admin.api_tokens.rotate' %}
+              </button>
+            </form>
+            <form method="post" action="/admin/api/tokens/revoke"
+                  hx-post="/admin/api/tokens/revoke"
+                  hx-target="#api-token-created"
+                  hx-swap="innerHTML"
+                  hx-confirm="{% t 'admin.api_tokens.revoke_confirm' %}">
+              <input type="hidden" name="_token" value="{% csrf_token %}">
+              <input type="hidden" name="id" value="{% token.id %}">
+              <button class="btn btn-sm btn-outline-danger" type="submit"
+                      {% token.revoke_disabled %}>
+                {% t 'admin.api_tokens.revoke' %}
+              </button>
+            </form>
+          </div>
         </td>
       </tr>
       {% endforeach %}
     {% else %}
       <tr>
-        <td colspan="5">
+        <td colspan="6">
           <div class="alert alert-secondary mb-0">{% t 'admin.api_tokens.empty' %}</div>
         </td>
       </tr>

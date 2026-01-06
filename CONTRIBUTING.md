@@ -421,11 +421,12 @@ type(scope): brief description (max 50 chars)
 
 - **core** — Core framework changes
 - **auth** — Authentication/authorization
+- **api** — API endpoints and tokens
 - **media** — Media module
 - **pages** — Pages module
+- **changelog** — Changelog module
 - **rbac** — RBAC system
 - **admin** — Admin UI
-- **api** — API endpoints
 - **i18n** — Internationalization
 - **docs** — Documentation
 

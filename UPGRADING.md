@@ -27,7 +27,64 @@
 
 ## Version-Specific Upgrade Paths
 
-### v1.x → v2.2.5 (Current Stable)
+### v1.x / v2.x → v2.3.10 (Current Stable)
+
+**Overview:** API maturity, changelog module, enhanced security.
+
+**Key changes:**
+- **API v1:** REST endpoints with Bearer token authentication, CORS, rate limiting
+- **Changelog Module:** Git-based changelog (GitHub API or local git provider)
+- **API Tokens:** Token management in admin UI with rotation support
+- **Enhanced Security:** Token expiry/revocation, audit logging for auth failures
+
+**Upgrade steps:**
+1. Follow standard upgrade flow
+2. New tables: `api_tokens` created automatically via migrations
+3. Test API endpoints: `/api/v1/ping`, `/api/v1/health`
+4. Configure changelog (optional): `/admin/changelog`
+5. Review API documentation: [docs/API.md](docs/API.md)
+6. Review changelog docs: [docs/CHANGELOG_MODULE.md](docs/CHANGELOG_MODULE.md)
+
+---
+
+### v2.2.x → v2.3.x
+
+**Changes:**
+- API v1 module with Bearer tokens, RBAC, CORS, rate limiting
+- Changelog module for displaying git commit history
+- API token management UI (`/admin/api/tokens`)
+- Token rotation flow with audit trail
+- Dedicated API rate limit bucket (separate from login/media)
+
+**New permissions:**
+- `api.tokens.view`, `api.tokens.manage`, `api.tokens.revoke`
+- `changelog.view`, `changelog.admin`, `changelog.cache.clear`
+
+**Upgrade steps:**
+1. Follow standard upgrade flow
+2. Grant API permissions (if needed):
+   ```bash
+   php tools/cli.php rbac:grant admin api.tokens.view
+   php tools/cli.php rbac:grant admin api.tokens.manage
+   ```
+3. Grant changelog permissions (if needed):
+   ```bash
+   php tools/cli.php rbac:grant admin changelog.view
+   php tools/cli.php rbac:grant admin changelog.admin
+   ```
+4. Configure API settings in `.env` (optional):
+   ```env
+   API_RATE_LIMIT_PER_MINUTE=60
+   API_RATE_LIMIT_BURST=10
+   API_CORS_ENABLED=true
+   API_CORS_ORIGINS=https://yourfrontend.com
+   ```
+5. Test API: `curl -H "Authorization: Bearer TOKEN" http://yourdomain.com/api/v1/ping`
+6. Configure changelog: `/admin/changelog` (GitHub or local git)
+
+---
+
+### v1.x → v2.2.5
 
 **Overview:** Major stability and maturity improvements.
 

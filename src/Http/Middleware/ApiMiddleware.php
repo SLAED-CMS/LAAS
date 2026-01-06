@@ -9,15 +9,21 @@ use Laas\Auth\AuthorizationService;
 use Laas\Database\DatabaseManager;
 use Laas\Http\Request;
 use Laas\Http\Response;
+use Laas\Support\AuditLogger;
+use Laas\Support\AuditSpamGuard;
 
 final class ApiMiddleware implements MiddlewareInterface
 {
     public function __construct(
         private DatabaseManager $db,
         private AuthorizationService $authorization,
-        private array $config
+        private array $config,
+        ?string $rootPath = null
     ) {
+        $this->rootPath = $rootPath ?? dirname(__DIR__, 3);
     }
+
+    private string $rootPath;
 
     public function process(Request $request, callable $next): Response
     {
@@ -33,34 +39,39 @@ final class ApiMiddleware implements MiddlewareInterface
 
         $cors = $this->corsConfig();
         $origin = $this->origin($request);
-        $corsHeaders = $this->corsHeaders($origin, $cors);
+        $corsHeaders = $this->corsHeaders($origin, $cors, $request);
 
         if ($this->isCorsPreflight($request)) {
-            if ($corsHeaders === null) {
+            if ($corsHeaders === null || !$corsHeaders['allowed']) {
                 return $this->applyHeaders(ApiResponse::error('forbidden', 'Forbidden', [], 403), $request, null);
             }
 
-            return $this->applyHeaders(new Response('', 204), $request, $corsHeaders);
+            return $this->applyHeaders(new Response('', 204), $request, $corsHeaders['headers']);
         }
 
         $token = $this->bearerToken($request);
+        $authReason = 'missing_token';
         if ($token !== null) {
             if (!$this->db->healthCheck()) {
                 return $this->applyHeaders(ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503), $request, $corsHeaders);
             }
 
-            $auth = (new ApiTokenService($this->db))->authenticate($token);
-            if ($auth === null) {
+            $auth = (new ApiTokenService($this->db))->authenticateWithReason($token);
+            if (!$auth['ok']) {
+                $authReason = (string) ($auth['reason'] ?? 'invalid');
+                $this->auditAuthFailure($request, $authReason, $token, $auth['token'] ?? null);
                 return $this->applyHeaders($this->unauthorized(), $request, $corsHeaders);
             }
 
             $request->setAttribute('api.user', $auth['user'] ?? null);
             $request->setAttribute('api.token', $auth['token'] ?? null);
+            $authReason = 'ok';
         }
 
         if ($this->requiresAuth($request)) {
             $user = $request->getAttribute('api.user');
             if (!is_array($user)) {
+                $this->auditAuthFailure($request, $authReason, $token, $request->getAttribute('api.token'));
                 return $this->applyHeaders($this->unauthorized(), $request, $corsHeaders);
             }
 
@@ -73,7 +84,7 @@ final class ApiMiddleware implements MiddlewareInterface
 
         $response = $this->normalizeResponse($request, $response);
 
-        return $this->applyHeaders($response, $request, $corsHeaders);
+        return $this->applyHeaders($response, $request, $corsHeaders['headers'] ?? $corsHeaders);
     }
 
     private function normalizeResponse(Request $request, Response $response): Response
@@ -148,7 +159,7 @@ final class ApiMiddleware implements MiddlewareInterface
         return is_array($cors) ? $cors : [];
     }
 
-    private function corsHeaders(?string $origin, array $corsConfig): ?array
+    private function corsHeaders(?string $origin, array $corsConfig, Request $request): ?array
     {
         $enabled = !empty($corsConfig['enabled']);
         if (!$enabled || $origin === null) {
@@ -166,6 +177,7 @@ final class ApiMiddleware implements MiddlewareInterface
 
         $methods = $corsConfig['methods'] ?? ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
         $headers = $corsConfig['headers'] ?? ['Authorization', 'Content-Type', 'X-Requested-With'];
+        $maxAge = (int) ($corsConfig['max_age'] ?? 600);
 
         if (!is_array($methods)) {
             $methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
@@ -174,11 +186,44 @@ final class ApiMiddleware implements MiddlewareInterface
             $headers = ['Authorization', 'Content-Type', 'X-Requested-With'];
         }
 
+        $requestedMethod = $request->getHeader('access-control-request-method');
+        $requestedHeaders = $request->getHeader('access-control-request-headers');
+
+        if ($this->isCorsPreflight($request)) {
+            if ($requestedMethod === null || !in_array(strtoupper($requestedMethod), array_map('strtoupper', $methods), true)) {
+                return null;
+            }
+
+            if ($requestedHeaders !== null) {
+                $headerList = array_map('trim', explode(',', $requestedHeaders));
+                foreach ($headerList as $hdr) {
+                    if ($hdr === '') {
+                        continue;
+                    }
+                    if (!in_array(strtolower($hdr), array_map('strtolower', $headers), true)) {
+                        return null;
+                    }
+                }
+            }
+
+            return [
+                'allowed' => true,
+                'headers' => [
+                    'Access-Control-Allow-Origin' => $origin,
+                    'Access-Control-Allow-Methods' => implode(', ', $methods),
+                    'Access-Control-Allow-Headers' => implode(', ', $headers),
+                    'Access-Control-Max-Age' => (string) max(0, $maxAge),
+                    'Vary' => 'Origin',
+                ],
+            ];
+        }
+
         return [
-            'Access-Control-Allow-Origin' => $origin,
-            'Access-Control-Allow-Methods' => implode(', ', $methods),
-            'Access-Control-Allow-Headers' => implode(', ', $headers),
-            'Vary' => 'Origin',
+            'allowed' => true,
+            'headers' => [
+                'Access-Control-Allow-Origin' => $origin,
+                'Vary' => 'Origin',
+            ],
         ];
     }
 
@@ -191,9 +236,6 @@ final class ApiMiddleware implements MiddlewareInterface
         foreach ($allowlist as $allowed) {
             if (!is_string($allowed) || $allowed === '') {
                 continue;
-            }
-            if ($allowed === '*') {
-                return true;
             }
             if (strcasecmp($allowed, $origin) === 0) {
                 return true;
@@ -284,5 +326,36 @@ final class ApiMiddleware implements MiddlewareInterface
         return ApiResponse::error('unauthorized', 'Unauthorized', [], 401, [
             'WWW-Authenticate' => 'Bearer',
         ]);
+    }
+
+    private function auditAuthFailure(Request $request, string $reason, ?string $plainToken, mixed $tokenRow): void
+    {
+        $guard = new AuditSpamGuard($this->rootPath, 60);
+        $ip = $request->ip();
+        $tokenPrefix = null;
+
+        if (is_array($tokenRow) && isset($tokenRow['token_hash'])) {
+            $tokenPrefix = substr((string) $tokenRow['token_hash'], 0, 12);
+        } elseif ($plainToken !== null) {
+            $tokenPrefix = substr(hash('sha256', $plainToken), 0, 12);
+        }
+
+        $key = 'api.auth.failed:' . ($tokenPrefix !== null ? 't:' . $tokenPrefix : 'ip:' . $ip) . ':' . date('YmdHi');
+        if (!$guard->shouldLog($key)) {
+            return;
+        }
+
+        (new AuditLogger($this->db, $request->session()))->log(
+            'api.auth.failed',
+            'api',
+            null,
+            [
+                'reason' => $reason,
+                'token_prefix' => $tokenPrefix,
+                'path' => $request->getPath(),
+            ],
+            null,
+            $ip
+        );
     }
 }

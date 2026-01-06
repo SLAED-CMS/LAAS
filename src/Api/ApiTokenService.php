@@ -34,31 +34,58 @@ final class ApiTokenService
     /** @return array{user: array<string, mixed>, token: array<string, mixed>}|null */
     public function authenticate(string $token): ?array
     {
+        $result = $this->authenticateWithReason($token);
+        if (!$result['ok']) {
+            return null;
+        }
+
+        return [
+            'user' => $result['user'],
+            'token' => $result['token'],
+        ];
+    }
+
+    /**
+     * @return array{
+     *   ok: bool,
+     *   reason: string,
+     *   user?: array<string, mixed>,
+     *   token?: array<string, mixed>
+     * }
+     */
+    public function authenticateWithReason(string $token): array
+    {
         $hash = hash('sha256', $token);
         $row = $this->tokens->findByHash($hash);
         if ($row === null) {
-            return null;
+            return ['ok' => false, 'reason' => 'not_found'];
+        }
+
+        if (!empty($row['revoked_at'])) {
+            return ['ok' => false, 'reason' => 'revoked'];
         }
 
         if (!empty($row['expires_at'])) {
             $expiresAt = strtotime((string) $row['expires_at']);
             if ($expiresAt !== false && $expiresAt < time()) {
-                return null;
+                return ['ok' => false, 'reason' => 'expired'];
             }
         }
 
         $user = $this->users->findById((int) ($row['user_id'] ?? 0));
         if ($user === null) {
-            return null;
+            return ['ok' => false, 'reason' => 'user_not_found'];
         }
 
         if ((int) ($user['status'] ?? 0) !== 1) {
-            return null;
+            return ['ok' => false, 'reason' => 'user_inactive'];
         }
 
         $this->tokens->touchLastUsed((int) ($row['id'] ?? 0));
 
         return [
+            'ok' => true,
+            'reason' => 'ok',
             'user' => $user,
             'token' => $row,
         ];

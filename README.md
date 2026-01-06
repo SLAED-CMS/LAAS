@@ -5,11 +5,11 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-00758F.svg)](https://www.mysql.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)](#)
-[![Baseline](https://img.shields.io/badge/Baseline-v2.3.3-orange.svg)](docs/VERSIONS.md)
+[![Baseline](https://img.shields.io/badge/Baseline-v2.3.10-orange.svg)](docs/VERSIONS.md)
 
 **Modern, secure, HTML-first content management system.**
 
-**v2.3.3** - Headless & API-first with REST API v1, Bearer token auth, and Changelog fixes (race condition, git binary path).
+**v2.3.10** - API/security maturity: token expiry/revocation + rotation, audited auth failures (anti-spam), dedicated API rate limit, strict CORS allowlist, secrets hygiene, API test suite + CI.
 
 LAAS CMS is a modular, security-first CMS built for PHP 8.4+ with a lightweight template engine, middleware pipeline, and i18n support. Bootstrap 5 + HTMX ready.
 
@@ -62,6 +62,9 @@ http://laas.loc/
 - Copy `.env.example` to `.env`
 - Adjust values for your local setup
 - `.env` is loaded in web and CLI via Dotenv
+- API env knobs:
+  - `API_CORS_ENABLED`, `API_CORS_ORIGINS`, `API_CORS_METHODS`, `API_CORS_HEADERS`, `API_CORS_MAX_AGE`
+  - `API_RATE_LIMIT_PER_MINUTE`, `API_RATE_LIMIT_BURST`
 
 ---
 
@@ -90,9 +93,11 @@ http://laas.loc/
 
 ### Security
 - **RBAC** — Role-based access control with permission groups
-- **Audit Log** — Track all important actions
+- **Audit Log** — Track all important actions (incl. API tokens/auth failures)
 - **CSRF Protection** — Token-based CSRF protection
-- **Rate Limiting** — Protect against brute force and abuse
+- **Rate Limiting** — Dedicated API bucket (token/IP) + login/media buckets
+- **API Tokens** — SHA-256 hashes, expiry/revocation, rotation flow, audit trail
+- **CORS** — Default deny with strict allowlist for API v1
 - **Security Headers** — CSP, X-Frame-Options, etc.
 - **Media Hardening** — MIME validation, ClamAV scanning, quarantine
 
@@ -123,6 +128,13 @@ http://laas.loc/
 ## Milestones
 
 ### v2.x — Mature Platform
+- **v2.3.10**: API/security test suites + CI api-tests (token/CORS/rate-limit regressions)
+- **v2.3.9**: Token rotation flow and docs
+- **v2.3.8**: API secrets hygiene (masking, no Authorization logs)
+- **v2.3.7**: Strict CORS allowlist for API v1
+- **v2.3.6**: Dedicated API rate limit (token/IP buckets)
+- **v2.3.5**: Auth/token audit events with anti-spam
+- **v2.3.4**: Token revocation + expiry enforcement
 - **v2.3.3**: Headless & API-first + Changelog fixes (REST API v1, Bearer tokens, atomic save, git binary path)
 - **v2.3.2**: Changelog module (GitHub/local git providers)
 - **v2.3.1**: Homepage UX/visual polish (improved layout, unified search, performance panel)
@@ -208,6 +220,7 @@ tools/                 # CLI utilities
 - `/` — Homepage (system showcase with live data)
 - `/search` — Frontend search
 - `/pages/{slug}` — Page view
+- `/changelog` — Changelog feed (GitHub/git providers)
 
 ### API
 - `/api/v1/ping` — Health check (public)
@@ -216,6 +229,7 @@ tools/                 # CLI utilities
 - `/api/v1/menus/{name}` — Menu by name (public)
 - `/api/v1/auth/token` — Issue token (admin or password mode)
 - `/api/v1/me` — Token identity
+- `/api/v1/auth/revoke` — Revoke current token
 - `/health` — System health endpoint
 - `/csrf` — CSRF token refresh
 
@@ -234,6 +248,8 @@ tools/                 # CLI utilities
 - `/admin/audit` — Audit log
 - `/admin/search` — Global admin search
 - `/admin/diagnostics` — RBAC diagnostics
+- `/admin/api/tokens` — API tokens (issue, rotate, revoke)
+- `/admin/changelog` — Changelog management (GitHub/git providers)
 
 ### Media
 - `/media/{hash}.{ext}` — Media file serving
@@ -293,6 +309,7 @@ tools/                 # CLI utilities
 
 ```
 vendor/bin/phpunit
+vendor/bin/phpunit --group api
 vendor/bin/phpunit --group security
 vendor/bin/phpunit --coverage-html coverage/html --coverage-clover coverage/clover.xml
 ```
@@ -394,6 +411,10 @@ New install flow:
 - `/admin/audit` — Audit log (read-only, filtered by user/action/date)
 - `/admin/menus` — Menu management
 
+### API & Integrations
+- `/admin/api/tokens` — API token management (issue, rotate, revoke)
+- `/admin/changelog` — Changelog configuration (GitHub/local git providers)
+
 ---
 
 ## Runtime Settings Overlay
@@ -456,6 +477,7 @@ See [docs/RBAC.md](docs/RBAC.md) for detailed documentation.
 - [Security](docs/SECURITY.md) — Security features and hardening
 - [RBAC](docs/RBAC.md) — Role-based access control
 - [Audit](docs/AUDIT.md) — Audit log and tracking
+- [API](docs/API.md) — Headless API v1, auth, CORS, rate limits, rotation
 
 ### Features
 - [Media](docs/MEDIA.md) — Media uploads, storage, and signed URLs

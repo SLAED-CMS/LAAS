@@ -20,6 +20,7 @@ return [
     ['GET', '/admin/audit', [\Laas\Modules\Admin\Controller\AuditController::class, 'index']],
     ['GET', '/admin/api/tokens', [\Laas\Modules\Admin\Controller\ApiTokensController::class, 'index']],
     ['POST', '/admin/api/tokens', [\Laas\Modules\Admin\Controller\ApiTokensController::class, 'create']],
+    ['POST', '/admin/api/tokens/rotate', [\Laas\Modules\Admin\Controller\ApiTokensController::class, 'rotate']],
     ['POST', '/admin/api/tokens/revoke', [\Laas\Modules\Admin\Controller\ApiTokensController::class, 'revoke']],
     ['GET', '/admin/search', [\Laas\Modules\Admin\Controller\AdminSearchController::class, 'index']],
     ['GET', '/admin/rbac/diagnostics', [\Laas\Modules\Admin\Controller\RbacDiagnosticsController::class, 'index']],

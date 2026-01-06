@@ -21,11 +21,17 @@ final class RateLimitMiddleware implements MiddlewareInterface
         $path = $request->getPath();
 
         if (str_starts_with($path, '/api/')) {
-            $apiConfig = $this->config['rate_limit']['api'] ?? ['window' => 60, 'max' => 60];
+            $apiConfig = $this->config['rate_limit']['api'] ?? ['window' => 60, 'max' => 120, 'burst' => 30];
             $window = (int) ($apiConfig['window'] ?? 60);
-            $max = (int) ($apiConfig['max'] ?? 60);
+            $max = (int) ($apiConfig['max'] ?? ($apiConfig['per_minute'] ?? 120));
+            $burst = isset($apiConfig['burst']) ? (int) $apiConfig['burst'] : 30;
 
-            $result = $this->rateLimiter->hit('api', $request->ip(), $window, $max);
+            $token = $request->getAttribute('api.token');
+            $key = is_array($token) && !empty($token['token_hash'])
+                ? (string) $token['token_hash']
+                : $request->ip();
+
+            $result = $this->rateLimiter->hit('api', $key, $window, $max, $burst);
 
             if (!$result['allowed']) {
                 return ApiResponse::error('rate_limited', 'Too Many Requests', [], 429)

@@ -24,6 +24,7 @@ Coverage output:
 
 - Coverage HTML and Clover XML are uploaded as CI artifacts on the `coverage` job.
 - JUnit report is uploaded as `junit` on the `test` job.
+- API JUnit report is uploaded as `junit-api` on the `api-tests` job.
 
 ## Coverage threshold
 
@@ -91,6 +92,22 @@ Adding new security tests:
 - Add `@group security` to the test class
 - Keep tests isolated and deterministic
 - No network calls or real external services
+
+## API tests
+
+API-specific coverage lives under `@group api`.
+
+Run:
+
+```bash
+vendor/bin/phpunit --group api
+```
+
+Focus areas:
+- Token lifecycle (issue, expiry, revocation, rotation)
+- API auth failures/audit behavior
+- API rate limits (token/IP buckets)
+- CORS allowlist behavior
 
 ## Testdox
 

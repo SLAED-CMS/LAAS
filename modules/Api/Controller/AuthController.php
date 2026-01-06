@@ -160,6 +160,7 @@ final class AuthController
             $tokenId,
             [
                 'token_id' => $tokenId,
+                'user_id' => $userId,
             ],
             $userId,
             $request->ip()

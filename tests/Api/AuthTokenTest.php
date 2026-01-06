@@ -4,8 +4,11 @@ declare(strict_types=1);
 use Laas\Api\ApiTokenService;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\ApiTokensRepository;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
+#[Group('api')]
+#[Group('security')]
 final class AuthTokenTest extends TestCase
 {
     public function testIssueTokenStoresHashOnly(): void
@@ -47,6 +50,10 @@ final class AuthTokenTest extends TestCase
         $result = $service->issueToken(1, 'CLI');
 
         $this->assertTrue($service->revoke((int) $result['token_id'], 1));
+        $repo = new ApiTokensRepository($db->pdo());
+        $row = $repo->findById((int) $result['token_id']);
+        $this->assertNotNull($row);
+        $this->assertNotEmpty($row['revoked_at']);
         $this->assertNull($service->authenticate($result['token']));
     }
 
@@ -76,6 +83,7 @@ final class AuthTokenTest extends TestCase
             token_hash CHAR(64) NOT NULL UNIQUE,
             last_used_at DATETIME NULL,
             expires_at DATETIME NULL,
+            revoked_at DATETIME NULL,
             created_at DATETIME NOT NULL
         )');
 

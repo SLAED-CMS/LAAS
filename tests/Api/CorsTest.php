@@ -6,8 +6,11 @@ use Laas\Database\DatabaseManager;
 use Laas\Http\Middleware\ApiMiddleware;
 use Laas\Http\Request;
 use Laas\Http\Response;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
+#[Group('api')]
+#[Group('security')]
 final class CorsTest extends TestCase
 {
     public function testCorsDisabledByDefault(): void
@@ -15,7 +18,7 @@ final class CorsTest extends TestCase
         $middleware = new ApiMiddleware($this->createDb(), new AuthorizationService(null), [
             'enabled' => true,
             'cors' => ['enabled' => false],
-        ]);
+        ], dirname(__DIR__, 2));
 
         $request = new Request('OPTIONS', '/api/v1/pages', [], [], [
             'origin' => 'https://example.com',
@@ -37,7 +40,7 @@ final class CorsTest extends TestCase
                 'methods' => ['GET'],
                 'headers' => ['Authorization'],
             ],
-        ]);
+        ], dirname(__DIR__, 2));
 
         $request = new Request('OPTIONS', '/api/v1/pages', [], [], [
             'origin' => 'https://example.com',
@@ -58,7 +61,7 @@ final class CorsTest extends TestCase
                 'enabled' => true,
                 'origins' => ['https://example.com'],
             ],
-        ]);
+        ], dirname(__DIR__, 2));
 
         $request = new Request('OPTIONS', '/api/v1/pages', [], [], [
             'origin' => 'https://evil.test',
@@ -68,6 +71,46 @@ final class CorsTest extends TestCase
         $response = $middleware->process($request, static fn (Request $req): Response => new Response('OK', 200));
 
         $this->assertSame(403, $response->getStatus());
+    }
+
+    public function testSimpleRequestAddsCorsHeadersWhenAllowed(): void
+    {
+        $middleware = new ApiMiddleware($this->createDb(), new AuthorizationService(null), [
+            'enabled' => true,
+            'cors' => [
+                'enabled' => true,
+                'origins' => ['https://example.com'],
+                'methods' => ['GET'],
+                'headers' => ['Authorization'],
+            ],
+        ], dirname(__DIR__, 2));
+
+        $request = new Request('GET', '/api/v1/pages', [], [], [
+            'origin' => 'https://example.com',
+        ], '');
+
+        $response = $middleware->process($request, static fn (Request $req): Response => new Response('OK', 200));
+
+        $this->assertSame('https://example.com', $response->getHeader('Access-Control-Allow-Origin'));
+    }
+
+    public function testSimpleRequestNoHeadersWhenNotAllowed(): void
+    {
+        $middleware = new ApiMiddleware($this->createDb(), new AuthorizationService(null), [
+            'enabled' => true,
+            'cors' => [
+                'enabled' => true,
+                'origins' => ['https://example.com'],
+            ],
+        ], dirname(__DIR__, 2));
+
+        $request = new Request('GET', '/api/v1/pages', [], [], [
+            'origin' => 'https://evil.test',
+        ], '');
+
+        $response = $middleware->process($request, static fn (Request $req): Response => new Response('OK', 200));
+
+        $this->assertNull($response->getHeader('Access-Control-Allow-Origin'));
     }
 
     private function createDb(): DatabaseManager

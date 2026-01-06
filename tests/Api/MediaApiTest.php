@@ -7,8 +7,10 @@ use Laas\Http\Middleware\ApiMiddleware;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Api\Controller\MediaController;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
+#[Group('api')]
 final class MediaApiTest extends TestCase
 {
     public function testPrivateRequiresPermission(): void
@@ -55,7 +57,7 @@ final class MediaApiTest extends TestCase
             $middleware = new ApiMiddleware($db, new AuthorizationService(null), [
                 'enabled' => true,
                 'cors' => ['enabled' => false],
-            ]);
+            ], dirname(__DIR__, 2));
 
             $request = new Request('GET', '/api/v1/media', [], [], [], '');
             $response = $middleware->process($request, static fn (Request $req): Response => $controller->index($req));

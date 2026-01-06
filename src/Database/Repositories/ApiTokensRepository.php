@@ -14,8 +14,8 @@ final class ApiTokensRepository
     public function create(int $userId, string $name, string $tokenHash, ?string $expiresAt): int
     {
         $stmt = $this->pdo->prepare(
-            'INSERT INTO api_tokens (user_id, name, token_hash, last_used_at, expires_at, created_at)
-             VALUES (:user_id, :name, :token_hash, :last_used_at, :expires_at, :created_at)'
+            'INSERT INTO api_tokens (user_id, name, token_hash, last_used_at, expires_at, revoked_at, created_at)
+             VALUES (:user_id, :name, :token_hash, :last_used_at, :expires_at, :revoked_at, :created_at)'
         );
         $stmt->execute([
             'user_id' => $userId,
@@ -23,6 +23,7 @@ final class ApiTokensRepository
             'token_hash' => $tokenHash,
             'last_used_at' => null,
             'expires_at' => $expiresAt,
+            'revoked_at' => null,
             'created_at' => $this->now(),
         ]);
 
@@ -51,7 +52,7 @@ final class ApiTokensRepository
     public function listByUser(int $userId, int $limit, int $offset): array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT id, user_id, name, last_used_at, expires_at, created_at
+            'SELECT id, user_id, name, last_used_at, expires_at, revoked_at, created_at
              FROM api_tokens WHERE user_id = :user_id
              ORDER BY created_at DESC, id DESC LIMIT :limit OFFSET :offset'
         );
@@ -69,6 +70,7 @@ final class ApiTokensRepository
     {
         $stmt = $this->pdo->prepare(
             'SELECT api_tokens.id, api_tokens.user_id, api_tokens.name, api_tokens.last_used_at, api_tokens.expires_at,
+                    api_tokens.revoked_at,
                     api_tokens.created_at, users.username
              FROM api_tokens LEFT JOIN users ON users.id = api_tokens.user_id
              ORDER BY api_tokens.created_at DESC, api_tokens.id DESC LIMIT :limit OFFSET :offset'
@@ -109,16 +111,19 @@ final class ApiTokensRepository
 
     public function revoke(int $id, ?int $userId = null): bool
     {
+        $sql = 'UPDATE api_tokens SET revoked_at = :revoked_at WHERE id = :id AND revoked_at IS NULL';
+        $params = [
+            'id' => $id,
+            'revoked_at' => $this->now(),
+        ];
+
         if ($userId !== null) {
-            $stmt = $this->pdo->prepare('DELETE FROM api_tokens WHERE id = :id AND user_id = :user_id');
-            $stmt->execute([
-                'id' => $id,
-                'user_id' => $userId,
-            ]);
-        } else {
-            $stmt = $this->pdo->prepare('DELETE FROM api_tokens WHERE id = :id');
-            $stmt->execute(['id' => $id]);
+            $sql .= ' AND user_id = :user_id';
+            $params['user_id'] = $userId;
         }
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
 
         return $stmt->rowCount() > 0;
     }

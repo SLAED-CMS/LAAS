@@ -180,7 +180,7 @@ final class Kernel
         $middleware = new MiddlewareQueue([
             new ErrorHandlerMiddleware($logger, (bool) ($appConfig['debug'] ?? false), $requestId),
             new SessionMiddleware(new SessionManager($this->rootPath, $securityConfig)),
-            new ApiMiddleware($this->database(), $authorization, $this->config['api'] ?? []),
+            new ApiMiddleware($this->database(), $authorization, $this->config['api'] ?? [], $this->rootPath),
             new ReadOnlyMiddleware((bool) ($appConfig['read_only'] ?? false), $translator, $view),
             new CsrfMiddleware(),
             new RateLimitMiddleware(new RateLimiter($this->rootPath), $securityConfig),

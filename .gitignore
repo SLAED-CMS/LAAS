@@ -8,15 +8,12 @@
 /.osp/
 *.log
 .phpunit.result.cache
-docs/IMPROVEMENTS*.md
+docs/IMPROVEMENTS-*.md
 docs/prompts/*
 
 # Apache (nicht benötigt für Nginx)
 .htaccess
 public/.htaccess
-
-# Composer
-composer.phar
 
 # OS
 .DS_Store

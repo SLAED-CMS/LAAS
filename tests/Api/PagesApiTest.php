@@ -4,8 +4,10 @@ declare(strict_types=1);
 use Laas\Database\DatabaseManager;
 use Laas\Http\Request;
 use Laas\Modules\Api\Controller\PagesController;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
+#[Group('api')]
 final class PagesApiTest extends TestCase
 {
     public function testListPublishedOnly(): void

@@ -6,13 +6,13 @@ We release security updates for the following versions of LAAS CMS:
 
 | Version | Supported          | Status                  |
 | ------- | ------------------ | ----------------------- |
-| 2.2.x   | :white_check_mark: | Current stable release  |
+| 2.3.x   | :white_check_mark: | Current stable release  |
+| 2.2.x   | :white_check_mark: | Security fixes only     |
 | 2.1.x   | :white_check_mark: | Security fixes only     |
-| 2.0.x   | :white_check_mark: | Security fixes only     |
-| 1.15.x  | :warning:          | Critical fixes only     |
-| < 1.15  | :x:                | No longer supported     |
+| 2.0.x   | :warning:          | Critical fixes only     |
+| < 2.0   | :x:                | No longer supported     |
 
-**Recommendation:** Always use the latest stable release (v2.2.x) for the best security posture.
+**Recommendation:** Always use the latest stable release (v2.3.x) for the best security posture.
 
 ---
 
@@ -103,10 +103,12 @@ LAAS CMS is built with security as a first-class concern. Current security featu
 
 ### Authentication & Authorization
 
-- **Password hashing** with PHP's `password_hash()` (bcrypt)
+- **Password hashing** with Argon2id (64MB memory, 4 iterations)
 - **Session regeneration** on login to prevent fixation
-- **Session security** (HttpOnly, SameSite=Lax)
+- **Session security** (HttpOnly, Secure, SameSite=Strict)
 - **Login rate limiting** to prevent brute force attacks
+- **API Bearer tokens** with SHA-256 hashing, expiry, and revocation
+- **Token rotation** with audit trail
 - **RBAC** (Role-Based Access Control) for granular permissions
 - **Permission groups** for easier management
 - **Admin diagnostics** for permission introspection
@@ -124,8 +126,11 @@ LAAS CMS is built with security as a first-class concern. Current security featu
 - **CSRF tokens** for all state-changing operations
 - **Token refresh endpoint** (`/csrf`)
 - **Rate limiting** middleware with configurable buckets
-- **Per-IP and per-user** rate limiting
+- **Per-IP and per-token** rate limiting
+- **Dedicated API bucket** (60 requests/minute, configurable burst)
+- **Login rate limiting** (5 attempts per 5 minutes)
 - **Upload rate limiting** for media
+- **CORS allowlist** for API v1 (strict origin validation)
 
 ### Media Security
 
@@ -149,8 +154,9 @@ LAAS CMS is built with security as a first-class concern. Current security featu
 
 ### Audit & Monitoring
 
-- **Audit log** for all important actions (login, RBAC changes, media operations)
-- **Structured logging** with Monolog
+- **Audit log** for all important actions (login, RBAC changes, media operations, API tokens)
+- **Auth failure tracking** with anti-spam (rate-limited by IP/token prefix)
+- **Structured logging** with Monolog (no Authorization headers logged)
 - **Request correlation** (X-Request-Id)
 - **DevTools panel** (debug mode only, requires permission)
 - **Health endpoint** (`/health`) for monitoring

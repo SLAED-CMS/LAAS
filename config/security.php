@@ -54,7 +54,9 @@ return [
     'rate_limit' => [
         'api' => [
             'window' => 60,
-            'max' => 60,
+            'max' => $envInt('API_RATE_LIMIT_PER_MINUTE', 120),
+            'per_minute' => $envInt('API_RATE_LIMIT_PER_MINUTE', 120),
+            'burst' => $envInt('API_RATE_LIMIT_BURST', 30),
         ],
         'login' => [
             'window' => 60,

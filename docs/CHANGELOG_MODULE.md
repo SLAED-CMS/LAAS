@@ -1,6 +1,6 @@
 # Changelog Module
 
-**Current version:** v2.3.3
+**Current version:** v2.3.10
 
 ## Overview
 - Provides a read-only changelog feed for commits

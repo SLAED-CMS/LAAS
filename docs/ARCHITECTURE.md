@@ -535,6 +535,29 @@ $html = $view->render('pages/show.html', [
 - `feature` modules can be enabled/disabled via `/admin/modules`
 - Other types are always enabled and not shown in admin UI
 
+### Installed Modules (v2.3.10)
+
+**Core Modules (Always Enabled):**
+
+| Module | Type | Description |
+|--------|------|-------------|
+| System | `internal` | Core system (health, backup, home, CSRF) |
+| Api | `api` | REST API v1 with Bearer token authentication |
+| Admin | `admin` | Admin panel UI and management |
+| Users | `internal` | Authentication and RBAC |
+
+**Feature Modules (Manageable):**
+
+| Module | Type | Description |
+|--------|------|-------------|
+| Pages | `feature` | CMS content management |
+| Media | `feature` | File uploads, storage, thumbnails |
+| Menu | `feature` | Navigation menu management |
+| Changelog | `feature` | Git-based changelog (GitHub/local git) |
+| DevTools | `internal` | Debug toolbar (dev-only) |
+
+**Total:** 9 modules
+
 ### Module Bootstrap
 
 **Module class implements `ModuleInterface`:**

@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS api_tokens (
   token_hash CHAR(64) NOT NULL UNIQUE,
   last_used_at DATETIME NULL,
   expires_at DATETIME NULL,
+  revoked_at DATETIME NULL,
   created_at DATETIME NOT NULL
 )
 SQL;
@@ -28,6 +29,7 @@ CREATE TABLE IF NOT EXISTS api_tokens (
   token_hash CHAR(64) NOT NULL UNIQUE,
   last_used_at DATETIME NULL,
   expires_at DATETIME NULL,
+  revoked_at DATETIME NULL,
   created_at DATETIME NOT NULL,
   INDEX idx_api_tokens_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

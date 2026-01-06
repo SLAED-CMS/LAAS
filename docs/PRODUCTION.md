@@ -55,7 +55,7 @@ LAAS CMS is designed to be **production-ready** out of the box, but requires pro
 Before deploying to production, verify:
 
 ### Code & Dependencies
-- [ ] Latest stable release (v2.2.5 or newer)
+- [ ] Latest stable release (v2.3.10 or newer)
 - [ ] `composer install --no-dev --optimize-autoloader` executed
 - [ ] No uncommitted changes in working directory
 - [ ] Version tagged in git
@@ -85,6 +85,9 @@ Before deploying to production, verify:
 - [ ] CSRF protection enabled (default)
 - [ ] Rate limiting configured
 - [ ] RBAC permissions reviewed
+- [ ] API rate limits set (`API_RATE_LIMIT_PER_MINUTE`, `API_RATE_LIMIT_BURST`)
+- [ ] API CORS allowlist set (no `*` when Authorization is used)
+- [ ] Token hygiene reviewed (rotation plan, revocation, no Authorization logs)
 
 ### Monitoring
 - [ ] `/health` endpoint accessible
@@ -151,6 +154,9 @@ API_CORS_ENABLED=false
 API_CORS_ORIGINS=
 API_CORS_METHODS=GET,POST,PUT,PATCH,DELETE,OPTIONS
 API_CORS_HEADERS=Authorization,Content-Type,X-Requested-With
+API_CORS_MAX_AGE=600
+API_RATE_LIMIT_PER_MINUTE=120
+API_RATE_LIMIT_BURST=30
 ```
 
 ### Critical Settings
@@ -1084,6 +1090,14 @@ LOG_LEVEL=warning
 - Database: apply security updates
 - Dependencies: `composer update` regularly
 - Review security advisories: [SECURITY.md](../SECURITY.md)
+
+### API Token Hygiene
+
+- Store tokens in a vault; plaintext is shown only once on creation/rotation.
+- Enforce expirations where possible; avoid perpetual tokens.
+- Rotate regularly: issue new token, copy immediately, revoke the old one.
+- Audit auth failures and token events; investigate repeated failures per IP/token prefix.
+- Never log `Authorization` headers or plaintext tokens.
 
 ---
 

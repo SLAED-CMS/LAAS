@@ -25,6 +25,13 @@ $envCsv = static function (string $key, array $default) use ($env): array {
     $parts = array_map('trim', explode(',', (string) $value));
     return array_values(array_filter($parts, static fn ($item): bool => $item !== ''));
 };
+$envInt = static function (string $key, int $default) use ($env): int {
+    $value = $env[$key] ?? null;
+    if ($value === null || $value === '') {
+        return $default;
+    }
+    return is_numeric($value) ? (int) $value : $default;
+};
 
 return [
     'enabled' => $envBool('API_ENABLED', true),
@@ -34,5 +41,6 @@ return [
         'origins' => $envCsv('API_CORS_ORIGINS', []),
         'methods' => $envCsv('API_CORS_METHODS', ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']),
         'headers' => $envCsv('API_CORS_HEADERS', ['Authorization', 'Content-Type', 'X-Requested-With']),
+        'max_age' => $envInt('API_CORS_MAX_AGE', 600),
     ],
 ];

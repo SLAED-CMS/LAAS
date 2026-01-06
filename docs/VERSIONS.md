@@ -1,5 +1,25 @@
 # LAAS Versions
 
+- v2.3.10: API/security test suites + CI api-tests
+  - PHPUnit `@group api` coverage for tokens, auth failures, rate limits, CORS
+  - GitHub Actions job `api-tests` (junit-api artifact)
+  - Testing docs updated for API/security groups
+- v2.3.9: Token rotation flow and docs
+  - Admin token rotate action (copy-once, optional revoke old token)
+  - Rotation/revocation guidance in API/PRODUCTION docs
+- v2.3.8: Secrets hygiene for API tokens
+  - No Authorization logging, token masking in dev tools
+  - Admin tokens list hides hashes/plaintext (shown once on create/rotate)
+- v2.3.7: Strict CORS allowlist for API v1
+  - Default deny, allowlisted origins/methods/headers, max-age
+  - Preflight validation (Origin + method + headers), no wildcards with Authorization
+- v2.3.6: Dedicated rate limit policy for API v1
+  - Token/IP buckets, per-minute + burst config, Retry-After on 429
+  - Headers: X-RateLimit-Limit/Remaining/Reset
+- v2.3.5: Auth/token audit events with anti-spam
+  - Audit for token creation/revocation and auth failures (per IP/token prefix per minute)
+- v2.3.4: Token revocation and expiry enforcement
+  - `revoked_at` column, expiry checks, /api/v1/auth/revoke, admin status badges
 - v2.3.3: Headless & API-first + Changelog fixes
   - REST API v1 with unified response envelope
   - Bearer token auth + RBAC + audit

@@ -101,6 +101,93 @@ final class ApiTokensController
         return $this->renderPage($request, $tokens, $plain, $name, $success, [], 201);
     }
 
+    public function rotate(Request $request): Response
+    {
+        if (!$this->canManage($request)) {
+            return $this->forbidden($request);
+        }
+
+        $repo = $this->repository();
+        if ($repo === null) {
+            return $this->errorResponse($request, 'db_unavailable', 503);
+        }
+
+        $userId = $this->currentUserId($request);
+        if ($userId === null) {
+            return $this->forbidden($request);
+        }
+
+        $id = $this->readId($request);
+        if ($id === null) {
+            return $this->errorResponse($request, 'invalid_request', 400);
+        }
+
+        $existing = $repo->findById($id);
+        if ($existing === null || (int) ($existing['user_id'] ?? 0) !== $userId) {
+            return $this->errorResponse($request, 'not_found', 404);
+        }
+
+        $nameRaw = trim((string) ($request->post('name') ?? ''));
+        $name = $nameRaw !== '' ? $nameRaw : $this->rotateName((string) ($existing['name'] ?? ''));
+        $expiresRaw = trim((string) ($request->post('expires_at') ?? ''));
+        $revokeOld = (string) ($request->post('revoke_old') ?? '') === '1';
+
+        $errors = [];
+        if ($name === '' || strlen($name) > 100) {
+            $errors[] = $this->view->translate('admin.settings.error_invalid');
+        }
+
+        $expiresAt = null;
+        if ($expiresRaw !== '') {
+            $expiresAt = $this->parseExpiresAt($expiresRaw);
+            if ($expiresAt === null) {
+                $errors[] = $this->view->translate('admin.settings.error_invalid');
+            }
+        }
+
+        if ($errors !== []) {
+            $tokens = $this->mapTokens($repo->listByUser($userId, 100, 0));
+            return $this->renderPage($request, $tokens, null, null, null, $errors, 422);
+        }
+
+        $service = new ApiTokenService($this->db);
+        $created = $service->issueToken($userId, $name, $expiresAt);
+
+        (new AuditLogger($this->db, $request->session()))->log(
+            'api.token.created',
+            'api_token',
+            (int) ($created['token_id'] ?? 0),
+            [
+                'name' => $name,
+                'expires_at' => $expiresAt,
+                'rotated_from' => $id,
+            ],
+            $userId,
+            $request->ip()
+        );
+
+        if ($revokeOld && $repo->revoke($id, $userId)) {
+            (new AuditLogger($this->db, $request->session()))->log(
+                'api.token.revoked',
+                'api_token',
+                $id,
+                [
+                    'token_id' => $id,
+                    'user_id' => $userId,
+                    'rotated_to' => (int) ($created['token_id'] ?? 0),
+                ],
+                $userId,
+                $request->ip()
+            );
+        }
+
+        $tokens = $this->mapTokens($repo->listByUser($userId, 100, 0));
+        $plain = (string) ($created['token'] ?? '');
+
+        $success = $this->view->translate('admin.api_tokens.rotated');
+        return $this->renderPage($request, $tokens, $plain, $name, $success, [], 201);
+    }
+
     public function revoke(Request $request): Response
     {
         if (!$this->canManage($request)) {
@@ -130,6 +217,7 @@ final class ApiTokensController
                 $id,
                 [
                     'token_id' => $id,
+                    'user_id' => $userId,
                 ],
                 $userId,
                 $request->ip()
@@ -263,12 +351,22 @@ final class ApiTokensController
         foreach ($rows as $row) {
             $lastUsed = (string) ($row['last_used_at'] ?? '');
             $expiresAt = (string) ($row['expires_at'] ?? '');
+            $revokedAt = (string) ($row['revoked_at'] ?? '');
+            $status = $this->status($expiresAt, $revokedAt);
+            $statusLabel = $this->statusLabel($status);
+            $statusClass = $this->statusClass($status);
             $items[] = [
                 'id' => (int) ($row['id'] ?? 0),
                 'name' => (string) ($row['name'] ?? ''),
                 'last_used_at' => $lastUsed !== '' ? $lastUsed : '-',
                 'expires_at' => $expiresAt !== '' ? $expiresAt : '-',
+                'expires_at_raw' => $expiresAt,
+                'revoked_at' => $revokedAt !== '' ? $revokedAt : '-',
                 'created_at' => (string) ($row['created_at'] ?? ''),
+                'status' => $status,
+                'status_label' => $statusLabel,
+                'status_class' => $statusClass,
+                'revoke_disabled' => $status === 'active' ? '' : 'disabled',
             ];
         }
 
@@ -283,5 +381,47 @@ final class ApiTokensController
         }
 
         return date('Y-m-d H:i:s', $ts);
+    }
+
+    private function status(string $expiresAt, string $revokedAt): string
+    {
+        if ($revokedAt !== '') {
+            return 'revoked';
+        }
+        if ($expiresAt !== '') {
+            $ts = strtotime($expiresAt);
+            if ($ts !== false && $ts < time()) {
+                return 'expired';
+            }
+        }
+
+        return 'active';
+    }
+
+    private function rotateName(string $name): string
+    {
+        if ($name === '') {
+            return 'Rotated token';
+        }
+
+        return $name . ' (rotated)';
+    }
+
+    private function statusLabel(string $status): string
+    {
+        return $this->view->translate(match ($status) {
+            'revoked' => 'admin.api_tokens.status.revoked',
+            'expired' => 'admin.api_tokens.status.expired',
+            default => 'admin.api_tokens.status.active',
+        });
+    }
+
+    private function statusClass(string $status): string
+    {
+        return match ($status) {
+            'revoked' => 'bg-danger',
+            'expired' => 'bg-warning text-dark',
+            default => 'bg-success',
+        };
     }
 }
