@@ -1,0 +1,81 @@
+<div id="page-messages">
+  {% include "partials/messages.html" %}
+</div>
+
+<form id="changelog-settings-form"
+      method="post"
+      action="/admin/changelog/save"
+      hx-post="/admin/changelog/save"
+      hx-target="#changelog-form"
+      hx-swap="outerHTML"
+      hx-indicator="#loading">
+  <input type="hidden" name="_token" value="{% csrf_token %}">
+
+  <div class="row g-3">
+    <div class="col-12 col-md-4">
+      <label class="form-label fw-semibold">Enabled</label>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="enabled" value="1" {% if settings.enabled %}checked{% endif %}>
+        <label class="form-check-label">Changelog enabled</label>
+      </div>
+    </div>
+    <div class="col-12 col-md-4">
+      <label class="form-label fw-semibold">Source</label>
+      <select class="form-select"
+              name="source_type"
+              hx-get="/admin/changelog?partial=source"
+              hx-target="#changelog-source-fields"
+              hx-include="[name=source_type]"
+              hx-swap="innerHTML">
+        <option value="github" {% if source_is_github %}selected{% endif %}>{% t 'changelog.admin.source.github' %}</option>
+        <option value="git" {% if source_is_git %}selected{% endif %}>{% t 'changelog.admin.source.git' %}</option>
+      </select>
+    </div>
+    <div class="col-12 col-md-4">
+      <label class="form-label fw-semibold">Branch</label>
+      <input class="form-control" type="text" name="branch" value="{% settings.branch %}">
+    </div>
+
+    <div class="col-12 col-md-4">
+      <label class="form-label fw-semibold">Cache TTL (sec)</label>
+      <input class="form-control" type="number" name="cache_ttl_seconds" min="30" max="3600" value="{% settings.cache_ttl_seconds %}">
+    </div>
+    <div class="col-12 col-md-4">
+      <label class="form-label fw-semibold">Per page</label>
+      <input class="form-control" type="number" name="per_page" min="1" max="50" value="{% settings.per_page %}">
+    </div>
+    <div class="col-12 col-md-4">
+      <label class="form-label fw-semibold">Merges</label>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="show_merges" value="1" {% if settings.show_merges %}checked{% endif %}>
+        <label class="form-check-label">{% t 'changelog.include_merges' %}</label>
+      </div>
+    </div>
+  </div>
+
+  <div id="changelog-source-fields" class="mt-3">
+    {% include "changelog/source_fields.html" %}
+  </div>
+
+  <div class="d-flex flex-wrap gap-2 mt-3">
+    <button class="btn btn-primary" type="submit">Save</button>
+    <button class="btn btn-outline-secondary"
+            type="button"
+            hx-post="/admin/changelog/test"
+            hx-include="#changelog-settings-form"
+            hx-target="#changelog-form"
+            hx-swap="outerHTML"
+            hx-indicator="#loading">
+      Test source
+    </button>
+    <button class="btn btn-outline-danger"
+            type="button"
+            hx-post="/admin/changelog/cache/clear"
+            hx-target="#changelog-form"
+            hx-swap="outerHTML"
+            hx-confirm="Clear changelog cache?"
+            hx-indicator="#loading">
+      Clear cache
+    </button>
+  </div>
+</form>

@@ -1,0 +1,31 @@
+{% if source_is_git %}
+  <div class="small text-muted mb-2">Источник: Local git</div>
+{% else %}
+  <div class="small text-muted mb-2">Источник: GitHub</div>
+{% endif %}
+
+{% if error %}
+  <div class="alert alert-danger mb-0">{% error %}</div>
+{% else %}
+  {% if groups %}
+    {% foreach groups as group %}
+      <div class="text-uppercase small text-muted fw-semibold mb-2 mt-3">{% group.date %}</div>
+      <div class="list-group mb-3">
+        {% foreach group.items as commit %}
+          <div class="list-group-item">
+            <div class="fw-semibold">{% commit.title %}</div>
+            <div class="small text-muted">{% commit.author_name %} · {% commit.committed_at %}</div>
+            {% if commit.body %}
+              <details class="mt-2">
+                <summary class="small">Details</summary>
+                <pre class="small mb-0">{% commit.body %}</pre>
+              </details>
+            {% endif %}
+          </div>
+        {% endforeach %}
+      </div>
+    {% endforeach %}
+  {% else %}
+    <div class="alert alert-secondary mb-0">{% t 'changelog.no_results' %}</div>
+  {% endif %}
+{% endif %}

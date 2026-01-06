@@ -1,0 +1,56 @@
+{% if groups %}
+  {% foreach groups as group %}
+    <div class="text-uppercase small text-muted fw-semibold mb-2 mt-3">{% group.date %}</div>
+    <div class="list-group mb-3">
+      {% foreach group.items as commit %}
+        <div class="list-group-item">
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div class="fw-semibold">{% commit.title %}</div>
+            <div class="small text-muted">
+              {% if commit.url %}
+                <a href="{% commit.url %}" class="text-decoration-none">{% commit.short_sha %}</a>
+              {% else %}
+                {% commit.short_sha %}
+              {% endif %}
+            </div>
+          </div>
+          <div class="small text-muted">
+            {% commit.author_name %} - {% commit.committed_at %}
+          </div>
+          {% if commit.body %}
+            <details class="mt-2">
+              <summary class="small">Details</summary>
+              <pre class="small mb-0">{% commit.body %}</pre>
+            </details>
+          {% endif %}
+        </div>
+      {% endforeach %}
+    </div>
+  {% endforeach %}
+
+  <nav>
+    <ul class="pagination mb-0">
+      <li class="page-item {% prev_class %}">
+        <a class="page-link"
+           href="/changelog?page={% prev_page %}{% query_suffix %}"
+           hx-get="/changelog?page={% prev_page %}{% query_suffix %}"
+           hx-target="#changelog-list"
+           hx-swap="innerHTML"
+           hx-push-url="true">Prev</a>
+      </li>
+      <li class="page-item disabled">
+        <span class="page-link">Page {% page %}</span>
+      </li>
+      <li class="page-item {% next_class %}">
+        <a class="page-link"
+           href="/changelog?page={% next_page %}{% query_suffix %}"
+           hx-get="/changelog?page={% next_page %}{% query_suffix %}"
+           hx-target="#changelog-list"
+           hx-swap="innerHTML"
+           hx-push-url="true">Next</a>
+      </li>
+    </ul>
+  </nav>
+{% else %}
+  <div class="alert alert-secondary mb-0">{% t 'changelog.no_results' %}</div>
+{% endif %}

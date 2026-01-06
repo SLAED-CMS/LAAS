@@ -1,0 +1,7 @@
+{
+    "name": "Changelog",
+    "version": "0.1.0",
+    "description": "Changelog viewer (GitHub/local git)",
+    "enabled": true,
+    "type": "feature"
+}

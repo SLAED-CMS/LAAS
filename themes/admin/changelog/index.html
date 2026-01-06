@@ -1,0 +1,34 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <h1 class="h4 mb-3">{% t 'changelog.admin.title' %}</h1>
+
+    <div id="changelog-form">
+      {% include "changelog/form_partial.html" %}
+    </div>
+
+    <div class="mt-4">
+      <div class="d-flex align-items-center justify-content-between">
+        <h2 class="h6 mb-2">Preview</h2>
+        <button class="btn btn-outline-secondary btn-sm"
+                type="button"
+                hx-get="/admin/changelog/preview"
+                hx-target="#changelog-preview"
+                hx-swap="innerHTML"
+                hx-indicator="#loading">
+          Preview
+        </button>
+      </div>
+      <div id="changelog-preview">
+        {% include "changelog/preview_list.html" %}
+      </div>
+    </div>
+
+    <div id="loading" class="text-center my-3 htmx-indicator" style="display:none;">
+      <div class="spinner-border" role="status" aria-hidden="true"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

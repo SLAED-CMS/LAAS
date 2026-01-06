@@ -1,0 +1,45 @@
+{% if source_is_github %}
+  <div class="row g-3">
+    <div class="col-12 col-md-4">
+      <label class="form-label fw-semibold">Owner</label>
+      <input class="form-control" type="text" name="github_owner" value="{% settings.github_owner %}">
+    </div>
+    <div class="col-12 col-md-4">
+      <label class="form-label fw-semibold">Repo</label>
+      <input class="form-control" type="text" name="github_repo" value="{% settings.github_repo %}">
+    </div>
+    <div class="col-12 col-md-4">
+      <label class="form-label fw-semibold">Token mode</label>
+      <select class="form-select" name="github_token_mode">
+        <option value="env" {% if token_mode_env %}selected{% endif %}>env</option>
+        <option value="db" {% if token_mode_db %}selected{% endif %} {% token_db_disabled_attr %}>db</option>
+      </select>
+      {% if token_db_disabled %}
+        <div class="form-text text-warning">{% t 'changelog.admin.token_db_disabled' %}</div>
+      {% endif %}
+    </div>
+    <div class="col-12 col-md-4">
+      <label class="form-label fw-semibold">Env key</label>
+      <input class="form-control" type="text" name="github_token_env_key" value="{% settings.github_token_env_key %}">
+    </div>
+    <div class="col-12 col-md-8">
+      <label class="form-label fw-semibold">DB token (disabled)</label>
+      <input class="form-control" type="password" name="github_token_db" value="" disabled>
+    </div>
+  </div>
+{% else %}
+  <div class="row g-3">
+    <div class="col-12 col-md-8">
+      <label class="form-label fw-semibold">Repository path</label>
+      <input class="form-control" type="text" name="git_repo_path" value="{% settings.git_repo_path %}" placeholder="{% masked_repo_path %}">
+      {% if masked_repo_path %}
+        <div class="form-text text-muted">Stored: {% masked_repo_path %}</div>
+      {% endif %}
+    </div>
+    <div class="col-12 col-md-4">
+      <label class="form-label fw-semibold">Git binary path</label>
+      <input class="form-control" type="text" name="git_binary_path" value="{% settings.git_binary_path %}" placeholder="git">
+      <div class="form-text text-muted">Example: C:\Program Files\Git\cmd\git.exe</div>
+    </div>
+  </div>
+{% endif %}

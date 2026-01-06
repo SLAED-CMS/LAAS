@@ -1,0 +1,67 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="card">
+    <div class="card-body">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+        <h1 class="h4 mb-0">{% t 'changelog.title' %}</h1>
+      </div>
+
+      <form method="get"
+            action="/changelog"
+            class="row g-2 align-items-end mb-3"
+            hx-get="/changelog"
+            hx-target="#changelog-list"
+            hx-swap="innerHTML"
+            hx-push-url="true"
+            hx-indicator="#loading">
+        <input type="hidden" name="page" value="1">
+        <div class="col-12 col-md-3">
+          <label class="form-label small">Search</label>
+          <input class="form-control" type="search" name="search" value="{% filters.search %}" placeholder="Title or body">
+        </div>
+        <div class="col-12 col-md-3">
+          <label class="form-label small">Author</label>
+          <input class="form-control" type="text" name="author" value="{% filters.author %}" placeholder="Name or email">
+        </div>
+        <div class="col-12 col-md-3">
+          <label class="form-label small">File</label>
+          <input class="form-control" type="text" name="file" value="{% filters.file %}" placeholder="path/to/file">
+        </div>
+        <div class="col-6 col-md-1">
+          <label class="form-label small">From</label>
+          <input class="form-control" type="date" name="datefrom" value="{% filters.date_from %}">
+        </div>
+        <div class="col-6 col-md-1">
+          <label class="form-label small">To</label>
+          <input class="form-control" type="date" name="dateto" value="{% filters.date_to %}">
+        </div>
+        <div class="col-12 col-md-1">
+          <div class="form-check mb-2">
+            <input class="form-check-input"
+                   type="checkbox"
+                   name="merges"
+                   value="1"
+                   id="changelog-merges"
+                   {% if include_merges_checked %}checked{% endif %}>
+            <label class="form-check-label small" for="changelog-merges">{% t 'changelog.include_merges' %}</label>
+          </div>
+        </div>
+        <div class="col-12 col-md-12 d-flex flex-wrap gap-2">
+          <button class="btn btn-primary" type="submit">Apply</button>
+          <a class="btn btn-outline-secondary" href="/changelog">Reset</a>
+        </div>
+      </form>
+
+      <div id="changelog-list">
+        {% include "changelog/_list.html" %}
+      </div>
+
+      <div id="loading" class="text-center my-3 htmx-indicator" style="display:none;">
+        <div class="spinner-border" role="status" aria-hidden="true"></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
