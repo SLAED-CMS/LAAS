@@ -143,6 +143,14 @@ LOG_LEVEL=warning
 
 # DevTools (MUST be disabled in production)
 DEVTOOLS_ENABLED=false
+
+# API (Headless)
+API_ENABLED=true
+API_TOKEN_ISSUE_MODE=admin
+API_CORS_ENABLED=false
+API_CORS_ORIGINS=
+API_CORS_METHODS=GET,POST,PUT,PATCH,DELETE,OPTIONS
+API_CORS_HEADERS=Authorization,Content-Type,X-Requested-With
 ```
 
 ### Critical Settings
@@ -163,6 +171,11 @@ DEVTOOLS_ENABLED=false
 **APP_READ_ONLY:**
 - **false (normal operation):** Write operations allowed
 - **true (maintenance):** All write operations blocked
+
+**API_CORS_ENABLED / API_CORS_ORIGINS:**
+- **disabled by default** (recommended)
+- enable only for trusted origins
+- avoid `*` in production unless you intend public access
 
 ---
 

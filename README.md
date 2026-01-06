@@ -5,11 +5,11 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-00758F.svg)](https://www.mysql.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)](#)
-[![Baseline](https://img.shields.io/badge/Baseline-v2.2.6-orange.svg)](docs/VERSIONS.md)
+[![Baseline](https://img.shields.io/badge/Baseline-v2.3.0-orange.svg)](docs/VERSIONS.md)
 
 **Modern, secure, HTML-first content management system.**
 
-**v2.2.6** - Session abstraction (SessionInterface) and removal of direct session globals.
+**v2.3.0** - Homepage integration showcase demonstrating all system features with real data (read-only).
 
 LAAS CMS is a modular, security-first CMS built for PHP 8.4+ with a lightweight template engine, middleware pipeline, and i18n support. Bootstrap 5 + HTMX ready.
 
@@ -123,6 +123,7 @@ http://laas.loc/
 ## Milestones
 
 ### v2.x — Mature Platform
+- **v2.3.0**: Home Showcase (integration demo with real data)
 - **v2.2.6**: Session abstraction (SessionInterface, PhpSession)
 - **v2.2.5**: Security regression test suite
 - **v2.2.4**: Coverage report + CI threshold
@@ -201,12 +202,17 @@ tools/                 # CLI utilities
 ## Routes
 
 ### Public
-- `/` — Homepage
+- `/` — Homepage (system showcase with live data)
 - `/search` — Frontend search
 - `/pages/{slug}` — Page view
 
 ### API
 - `/api/v1/ping` — Health check (public)
+- `/api/v1/pages` — Pages list (public)
+- `/api/v1/media` — Media list (public, depends on mode)
+- `/api/v1/menus/{name}` — Menu by name (public)
+- `/api/v1/auth/token` — Issue token (admin or password mode)
+- `/api/v1/me` — Token identity
 - `/health` — System health endpoint
 - `/csrf` — CSRF token refresh
 
@@ -450,8 +456,10 @@ See [docs/RBAC.md](docs/RBAC.md) for detailed documentation.
 
 ### Features
 - [Media](docs/MEDIA.md) — Media uploads, storage, and signed URLs
+- [Changelog](docs/CHANGELOG_MODULE.md) - Changelog module (GitHub/local git)
 - [Search](docs/SEARCH.md) — Search functionality (admin + frontend)
 - [DevTools](docs/DEVTOOLS.md) — Debug toolbar and diagnostics
+- [API](docs/API.md) — Headless API v1
 
 ### Operations
 - [Production](docs/PRODUCTION.md) — Production deployment checklist

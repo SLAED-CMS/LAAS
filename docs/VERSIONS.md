@@ -1,5 +1,18 @@
 # LAAS Versions
 
+- v2.4.0: Headless & API-first
+  - REST API v1 with unified response envelope
+  - Bearer token auth + RBAC + audit
+  - API rate limit bucket and CORS allowlist
+  - Admin UI for API token management
+- v2.3.2: Changelog module (GitHub/local git)
+  - Frontend changelog feed with pagination
+  - Admin settings, source test, preview, cache clear
+  - GitHub API and local git providers with cache
+- v2.3.0: Home Showcase
+  - Homepage integration showcase (pages, media, menus, search, auth, audit)
+  - Read-only blocks with optional config toggles
+  - Dev-only performance panel when debug enabled
 - v2.2.6: Session abstraction (SessionInterface)
   - SessionInterface + PhpSession with Request::session() access
   - Removed direct $_SESSION usage outside session layer
