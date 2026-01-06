@@ -59,10 +59,6 @@ final class DevToolsMiddleware implements MiddlewareInterface
 
     private function collect(Request $request, Response $response): void
     {
-        foreach ($this->collectors as $collector) {
-            $collector->collect($request, $response, $this->context);
-        }
-
         $user = $this->auth->user();
         $roles = [];
         if (is_array($user) && $this->db !== null) {
@@ -81,6 +77,10 @@ final class DevToolsMiddleware implements MiddlewareInterface
             'username' => $user['username'] ?? null,
             'roles' => $roles,
         ]);
+
+        foreach ($this->collectors as $collector) {
+            $collector->collect($request, $response, $this->context);
+        }
     }
 
     private function shouldShow(Request $request, Response $response): bool

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Laas\Modules\Media\Service;
 
 use RuntimeException;
+use Laas\Support\RequestScope;
 
 final class S3Storage implements StorageDriverInterface
 {
@@ -193,6 +194,7 @@ final class S3Storage implements StorageDriverInterface
     /** @return array{status: int, headers: array<string, string>, body: string} */
     private function curlRequest(string $method, string $url, array $headers, ?string $body): array
     {
+        $started = microtime(true);
         $ch = curl_init($url);
         if ($ch === false) {
             throw new RuntimeException('s3_request_failed');
@@ -223,6 +225,11 @@ final class S3Storage implements StorageDriverInterface
         $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $headerSize = (int) curl_getinfo($ch, CURLINFO_HEADER_SIZE);
         curl_close($ch);
+        $durationMs = (microtime(true) - $started) * 1000;
+        $context = RequestScope::get('devtools.context');
+        if ($context instanceof \Laas\DevTools\DevToolsContext) {
+            $context->addExternalCall($method, $url, $status, $durationMs);
+        }
 
         $rawHeaders = substr($raw, 0, $headerSize);
         $body = substr($raw, $headerSize);

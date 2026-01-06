@@ -120,4 +120,21 @@ final class UsersRepository
             'status' => $status,
         ]);
     }
+
+    public function setPasswordHash(int $id, string $hash): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE users SET password_hash = :hash, updated_at = NOW() WHERE id = :id');
+        $stmt->execute([
+            'id' => $id,
+            'hash' => $hash,
+        ]);
+    }
+
+    public function delete(int $id): void
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM users WHERE id = :id');
+        $stmt->execute([
+            'id' => $id,
+        ]);
+    }
 }

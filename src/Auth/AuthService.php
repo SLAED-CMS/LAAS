@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Laas\Auth;
 
 use Laas\Database\Repositories\UsersRepository;
+use Laas\Support\RequestScope;
 use Laas\Session\SessionInterface;
 use Psr\Log\LoggerInterface;
 
@@ -51,12 +52,20 @@ final class AuthService implements AuthInterface
 
     public function user(): ?array
     {
+        if (RequestScope::has('auth.current_user')) {
+            $cached = RequestScope::get('auth.current_user');
+            return is_array($cached) ? $cached : null;
+        }
+
         $id = (int) $this->session->get('user_id', 0);
         if ($id <= 0) {
+            RequestScope::set('auth.current_user', false);
             return null;
         }
 
-        return $this->users->findById($id);
+        $user = $this->users->findById($id);
+        RequestScope::set('auth.current_user', $user ?? false);
+        return $user;
     }
 
     public function check(): bool

@@ -17,6 +17,8 @@ use Throwable;
 
 final class UsersController
 {
+    private const MIN_PASSWORD_LENGTH = 8;
+
     public function __construct(
         private View $view,
         private ?DatabaseManager $db = null
@@ -25,6 +27,10 @@ final class UsersController
 
     public function index(Request $request): Response
     {
+        if (!$this->canManage($request)) {
+            return $this->forbidden($request);
+        }
+
         $repo = $this->getUsersRepository();
         $rbac = $this->getRbacRepository();
         if ($repo === null || $rbac === null) {
@@ -101,6 +107,10 @@ final class UsersController
 
     public function toggleStatus(Request $request): Response
     {
+        if (!$this->canManage($request)) {
+            return $this->forbidden($request);
+        }
+
         $userId = $this->readUserId($request);
         if ($userId === null) {
             return $this->errorResponse($request, 'invalid_request', 400);
@@ -126,6 +136,21 @@ final class UsersController
         $nextStatus = $currentStatus === 1 ? 0 : 1;
         $repo->setStatus($userId, $nextStatus);
 
+        $actorId = $currentUserId;
+        (new AuditLogger($this->db, $request->session()))->log(
+            'users.status.updated',
+            'user',
+            $userId,
+            [
+                'actor_user_id' => $actorId,
+                'target_user_id' => $userId,
+                'from_status' => $currentStatus,
+                'to_status' => $nextStatus,
+            ],
+            $actorId,
+            $request->ip()
+        );
+
         $isAdmin = $rbac->userHasRole($userId, 'admin');
         $row = $this->mapUserRow($user, $isAdmin, $currentUserId);
         $row['status'] = $nextStatus;
@@ -135,6 +160,10 @@ final class UsersController
 
     public function toggleAdmin(Request $request): Response
     {
+        if (!$this->canManage($request)) {
+            return $this->forbidden($request);
+        }
+
         $userId = $this->readUserId($request);
         if ($userId === null) {
             return $this->errorResponse($request, 'invalid_request', 400);
@@ -174,6 +203,136 @@ final class UsersController
 
         $row = $this->mapUserRow($user, !$isAdmin, $currentUserId);
         return $this->renderRow($request, $row);
+    }
+
+    public function changePassword(Request $request): Response
+    {
+        if (!$this->canManage($request)) {
+            return $this->forbidden($request);
+        }
+
+        $userId = $this->readUserId($request);
+        if ($userId === null) {
+            return $this->errorResponse($request, 'invalid_request', 400);
+        }
+
+        $password = (string) ($request->post('password') ?? '');
+        if (trim($password) === '') {
+            return $this->passwordError($request, 'admin.users.password_required');
+        }
+        if ($this->passwordLength($password) < self::MIN_PASSWORD_LENGTH) {
+            return $this->passwordError($request, 'admin.users.password_too_short', [
+                'min' => self::MIN_PASSWORD_LENGTH,
+            ]);
+        }
+        if ($this->passwordWeak($password)) {
+            return $this->passwordError($request, 'admin.users.password_weak');
+        }
+
+        $repo = $this->getUsersRepository();
+        if ($repo === null) {
+            return $this->errorResponse($request, 'db_unavailable', 503);
+        }
+
+        $user = $repo->findById($userId);
+        if ($user === null) {
+            return $this->errorResponse($request, 'not_found', 404);
+        }
+
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+        if ($hash === false) {
+            return $this->errorResponse($request, 'invalid_request', 400);
+        }
+
+        $repo->setPasswordHash($userId, $hash);
+
+        $actorId = $this->currentUserId($request);
+        (new AuditLogger($this->db, $request->session()))->log(
+            'users.password.changed',
+            'user',
+            $userId,
+            [
+                'actor_user_id' => $actorId,
+                'target_user_id' => $userId,
+            ],
+            $actorId,
+            $request->ip()
+        );
+
+        if ($request->isHtmx()) {
+            return $this->renderMessages($request, [
+                'success' => $this->view->translate('admin.users.password_changed'),
+            ]);
+        }
+
+        if ($request->wantsJson()) {
+            return Response::json(['ok' => true], 200);
+        }
+
+        return new Response('', 302, [
+            'Location' => '/admin/users',
+        ]);
+    }
+
+    public function delete(Request $request): Response
+    {
+        if (!$this->canManage($request)) {
+            return $this->forbidden($request);
+        }
+
+        $userId = $this->readUserId($request);
+        if ($userId === null) {
+            return $this->errorResponse($request, 'invalid_request', 400);
+        }
+
+        $repo = $this->getUsersRepository();
+        if ($repo === null || $this->db === null || !$this->db->healthCheck()) {
+            return $this->errorResponse($request, 'db_unavailable', 503);
+        }
+
+        $currentUserId = $this->currentUserId($request);
+        if ($currentUserId !== null && $userId === $currentUserId) {
+            return $this->errorResponse($request, 'self_protected', 400);
+        }
+
+        $user = $repo->findById($userId);
+        if ($user === null) {
+            return $this->errorResponse($request, 'not_found', 404);
+        }
+
+        $stmt = $this->db->pdo()->prepare('DELETE FROM role_user WHERE user_id = :user_id');
+        $stmt->execute(['user_id' => $userId]);
+        $repo->delete($userId);
+
+        $actorId = $currentUserId;
+        (new AuditLogger($this->db, $request->session()))->log(
+            'users.deleted',
+            'user',
+            $userId,
+            [
+                'actor_user_id' => $actorId,
+                'target_user_id' => $userId,
+                'username' => (string) ($user['username'] ?? ''),
+            ],
+            $actorId,
+            $request->ip()
+        );
+
+        if ($request->isHtmx()) {
+            return $this->renderMessages($request, [
+                'success' => $this->view->translate('admin.users.deleted'),
+            ], 200, [
+                'HX-Trigger' => 'users:refresh',
+            ]);
+        }
+
+        if ($request->wantsJson()) {
+            return Response::json(['ok' => true], 200);
+        }
+
+        return new Response('', 302, [
+            'Location' => '/admin/users',
+        ]);
     }
 
     private function renderRow(Request $request, array $row): Response
@@ -244,6 +403,83 @@ final class UsersController
             return (int) $raw;
         }
         return null;
+    }
+
+    private function canManage(Request $request): bool
+    {
+        return $this->hasPermission($request, 'users.manage');
+    }
+
+    private function hasPermission(Request $request, string $permission): bool
+    {
+        if ($this->db === null || !$this->db->healthCheck()) {
+            return false;
+        }
+
+        $userId = $this->currentUserId($request);
+        if ($userId === null) {
+            return false;
+        }
+
+        try {
+            $rbac = new RbacRepository($this->db->pdo());
+            return $rbac->userHasPermission($userId, $permission);
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    private function forbidden(Request $request): Response
+    {
+        if ($request->isHtmx() || $request->wantsJson()) {
+            return Response::json(['error' => 'forbidden'], 403);
+        }
+
+        return $this->view->render('pages/403.html', [], 403, [], [
+            'theme' => 'admin',
+        ]);
+    }
+
+    private function renderMessages(Request $request, array $data, int $status = 200, array $headers = []): Response
+    {
+        $response = $this->view->render('partials/messages.html', $data, $status, [], [
+            'theme' => 'admin',
+            'render_partial' => true,
+        ]);
+
+        $response = $response->withHeader('HX-Retarget', '#page-messages')
+            ->withHeader('HX-Reswap', 'innerHTML');
+
+        foreach ($headers as $name => $value) {
+            $response = $response->withHeader($name, $value);
+        }
+
+        return $response;
+    }
+
+    private function passwordError(Request $request, string $key, array $params = []): Response
+    {
+        if ($request->isHtmx()) {
+            return $this->renderMessages($request, [
+                'errors' => [$this->view->translate($key, $params)],
+            ], 422);
+        }
+
+        return $this->errorResponse($request, 'invalid_request', 400);
+    }
+
+    private function passwordLength(string $value): int
+    {
+        if (function_exists('mb_strlen')) {
+            return mb_strlen($value, 'UTF-8');
+        }
+
+        return strlen($value);
+    }
+
+    private function passwordWeak(string $value): bool
+    {
+        return !preg_match('/[A-Za-z]/', $value) || !preg_match('/\d/', $value);
     }
 
     private function getUsersRepository(): ?UsersRepository

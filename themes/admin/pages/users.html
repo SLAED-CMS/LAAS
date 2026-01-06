@@ -26,6 +26,12 @@
   <div id="users-table">
     {% include "partials/users_table.html" %}
   </div>
+  <div class="d-none"
+       hx-get="/admin/users"
+       hx-trigger="users:refresh from:body"
+       hx-target="#users-table"
+       hx-include="#q"
+       hx-swap="innerHTML"></div>
   <div id="loading" class="htmx-indicator text-center my-3">
     <div class="spinner-border" role="status" aria-hidden="true"></div>
   </div>

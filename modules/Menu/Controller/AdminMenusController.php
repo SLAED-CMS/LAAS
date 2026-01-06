@@ -11,6 +11,7 @@ use Laas\Database\Repositories\RbacRepository;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Support\AuditLogger;
+use Laas\Support\UrlValidator;
 use Laas\Modules\Menu\Repository\MenuItemsRepository;
 use Laas\Modules\Menu\Repository\MenusRepository;
 use Laas\Modules\Menu\Service\MenuCacheInvalidator;
@@ -136,6 +137,24 @@ final class AdminMenusController
                 'sort_order' => $sortOrderValue,
             ]);
             return $this->renderFormResponse($request, $menu, $result, [
+                ...$form,
+            ], 422, false, null);
+        }
+        if (!UrlValidator::isSafe($url)) {
+            $form = $this->formFromInput([
+                'id' => $id ?? 0,
+                'label' => $label,
+                'url' => $url,
+                'enabled' => $enabledValue,
+                'is_external' => $isExternalValue,
+                'sort_order' => $sortOrderValue,
+            ]);
+            return $this->renderFormResponse($request, $menu, [
+                [
+                    'key' => 'admin.menus.error_invalid',
+                    'params' => [],
+                ],
+            ], [
                 ...$form,
             ], 422, false, null);
         }

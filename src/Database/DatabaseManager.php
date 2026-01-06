@@ -5,6 +5,7 @@ namespace Laas\Database;
 
 use Laas\DevTools\DevToolsContext;
 use Laas\DevTools\Db\ProxyPDO;
+use Laas\Support\RequestScope;
 use PDO;
 
 final class DatabaseManager
@@ -86,9 +87,16 @@ final class DatabaseManager
 
     public function healthCheck(): bool
     {
+        if (RequestScope::has('db.healthcheck')) {
+            $cached = RequestScope::get('db.healthcheck');
+            return $cached === true;
+        }
+
         try {
             $stmt = $this->pdo()->query('SELECT 1');
-            return $stmt !== false;
+            $ok = $stmt !== false;
+            RequestScope::set('db.healthcheck', $ok);
+            return $ok;
         } catch (\Throwable $e) {
             // Debug output for CI/test environments
             if (getenv('CI') === 'true' || getenv('APP_ENV') === 'test') {
@@ -97,6 +105,7 @@ final class DatabaseManager
                 fwrite(STDERR, "DEBUG: Database config database: " . ($this->config['database'] ?? 'none') . "\n");
                 fwrite(STDERR, "DEBUG: PDO is null: " . ($this->pdo === null ? 'yes' : 'no') . "\n");
             }
+            RequestScope::set('db.healthcheck', false);
             return false;
         }
     }

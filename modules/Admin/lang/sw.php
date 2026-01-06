@@ -64,4 +64,13 @@ return array (
     'admin.users.status' => 'Hali',
     'admin.users.title' => 'Watumiaji',
     'admin.users.username' => 'Jina la mtumiaji',
+    'admin.users.change_password' => 'Change password',
+    'admin.users.password_changed' => 'Password updated.',
+    'admin.users.password_required' => 'Password is required.',
+    'admin.users.password_too_short' => 'Password must be at least {min} characters.',
+    'admin.users.password_weak' => 'Password must contain letters and numbers.',
+    'admin.users.new_password' => 'New password',
+    'admin.users.delete' => 'Delete',
+    'admin.users.delete_confirm' => 'Delete this user?',
+    'admin.users.deleted' => 'User deleted.',
 );

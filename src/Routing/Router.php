@@ -48,6 +48,12 @@ final class Router
             case Dispatcher::FOUND:
                 $handler = $routeInfo[1];
                 $vars = $routeInfo[2];
+                $routePattern = $this->findRoutePattern($request, $handler);
+                if ($routePattern !== null) {
+                    $request->setAttribute('route.pattern', $routePattern);
+                }
+                $request->setAttribute('route.handler', $handler);
+                $request->setAttribute('route.vars', $vars);
 
                 $response = $handler($request, $vars);
                 if ($response instanceof Response) {
@@ -60,5 +66,20 @@ final class Router
         return new Response('Unhandled Router State', 500, [
             'Content-Type' => 'text/plain; charset=utf-8',
         ]);
+    }
+
+    private function findRoutePattern(Request $request, callable $handler): ?string
+    {
+        $method = strtoupper($request->getMethod());
+        foreach ($this->routes as [$routeMethod, $path, $routeHandler]) {
+            if (strtoupper((string) $routeMethod) !== $method) {
+                continue;
+            }
+            if ($routeHandler === $handler) {
+                return is_string($path) ? $path : null;
+            }
+        }
+
+        return null;
     }
 }

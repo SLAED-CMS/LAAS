@@ -35,6 +35,7 @@ use Laas\Settings\SettingsProvider;
 use Laas\Support\LoggerFactory;
 use Laas\Support\ConfigSanityChecker;
 use Laas\Support\LogSpamGuard;
+use Laas\Support\RequestScope;
 use Laas\DevTools\DevToolsContext;
 use Laas\DevTools\RequestCollector;
 use Laas\DevTools\PerformanceCollector;
@@ -58,11 +59,15 @@ final class Kernel
 
     public function handle(Request $request): Response
     {
+        RequestScope::reset();
+        RequestScope::setRequest($request);
+
+        try {
         $router = new Router();
 
         $appConfig = $this->config['app'] ?? [];
         $securityConfig = $this->config['security'] ?? [];
-        $devtoolsConfig = $appConfig['devtools'] ?? [];
+        $devtoolsConfig = array_merge($this->config['devtools'] ?? [], $appConfig['devtools'] ?? []);
         $env = strtolower((string) ($appConfig['env'] ?? ''));
         $devtoolsEnabled = (bool) ($appConfig['debug'] ?? false) && (bool) ($devtoolsConfig['enabled'] ?? false);
         if ($env === 'prod') {
@@ -79,11 +84,17 @@ final class Kernel
             'enabled' => $devtoolsEnabled,
             'debug' => (bool) ($appConfig['debug'] ?? false),
             'env' => (string) ($appConfig['env'] ?? ''),
+            'is_dev' => $env !== 'prod',
+            'root_path' => $this->rootPath,
+            'budgets' => $devtoolsConfig['budgets'] ?? [],
+            'terminal_theme' => $devtoolsConfig['terminal'] ?? [],
+            'show_secrets' => (bool) ($devtoolsConfig['show_secrets'] ?? false),
             'collect_db' => (bool) ($devtoolsConfig['collect_db'] ?? false),
             'collect_request' => (bool) ($devtoolsConfig['collect_request'] ?? false),
             'collect_logs' => (bool) ($devtoolsConfig['collect_logs'] ?? false),
             'request_id' => $requestId,
         ]);
+        RequestScope::set('devtools.context', $devtoolsContext);
 
         $this->database()->enableDevTools($devtoolsContext, $devtoolsConfig);
 
@@ -198,6 +209,10 @@ final class Kernel
             $response = $response->withHeader('Set-Cookie', $localeResolver->cookieHeader($locale));
         }
         return $response->withHeader('X-Request-Id', $requestId);
+        } finally {
+            RequestScope::reset();
+            RequestScope::setRequest(null);
+        }
     }
 
     private function createAuthService(\Psr\Log\LoggerInterface $logger, PhpSession $session): AuthInterface
@@ -247,6 +262,7 @@ final class Kernel
             'media' => $configDir . '/media.php',
             'storage' => $configDir . '/storage.php',
             'api' => $configDir . '/api.php',
+            'devtools' => $configDir . '/devtools.php',
         ];
 
         $config = [];

@@ -5,9 +5,12 @@ namespace Laas\Modules\Admin\Controller;
 
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\ModulesRepository;
+use Laas\Database\Repositories\RbacRepository;
 use Laas\Http\Request;
 use Laas\Http\Response;
+use Laas\Support\AuditLogger;
 use Laas\View\View;
+use Throwable;
 
 final class ModulesController
 {
@@ -19,6 +22,10 @@ final class ModulesController
 
     public function index(Request $request): Response
     {
+        if (!$this->canManage($request)) {
+            return $this->forbidden($request);
+        }
+
         $modules = [];
         $discovered = $this->discoverModules();
         $configEnabled = $this->loadConfigEnabled();
@@ -80,6 +87,10 @@ final class ModulesController
 
     public function toggle(Request $request): Response
     {
+        if (!$this->canManage($request)) {
+            return $this->forbidden($request);
+        }
+
         $name = $request->post('name') ?? '';
         if ($name === '') {
             return $this->errorResponse($request, 'invalid_request', 400);
@@ -103,6 +114,21 @@ final class ModulesController
         } else {
             $repo->enable($name);
         }
+
+        $actorId = $this->currentUserId($request);
+        (new AuditLogger($this->db, $request->session()))->log(
+            'modules.toggled',
+            'module',
+            null,
+            [
+                'actor_user_id' => $actorId,
+                'module' => $name,
+                'from_enabled' => $enabled,
+                'to_enabled' => !$enabled,
+            ],
+            $actorId,
+            $request->ip()
+        );
 
         $row = $current[$name] ?? ['enabled' => !$enabled, 'version' => null];
         $typeLabel = $this->typeLabel($type);
@@ -225,6 +251,58 @@ final class ModulesController
 
         return new Response('Error', $status, [
             'Content-Type' => 'text/plain; charset=utf-8',
+        ]);
+    }
+
+    private function currentUserId(Request $request): ?int
+    {
+        $session = $request->session();
+        if (!$session->isStarted()) {
+            return null;
+        }
+
+        $raw = $session->get('user_id');
+        if (is_int($raw)) {
+            return $raw;
+        }
+        if (is_string($raw) && ctype_digit($raw)) {
+            return (int) $raw;
+        }
+        return null;
+    }
+
+    private function canManage(Request $request): bool
+    {
+        return $this->hasPermission($request, 'admin.modules.manage');
+    }
+
+    private function hasPermission(Request $request, string $permission): bool
+    {
+        if ($this->db === null || !$this->db->healthCheck()) {
+            return false;
+        }
+
+        $userId = $this->currentUserId($request);
+        if ($userId === null) {
+            return false;
+        }
+
+        try {
+            $rbac = new RbacRepository($this->db->pdo());
+            return $rbac->userHasPermission($userId, $permission);
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    private function forbidden(Request $request): Response
+    {
+        if ($request->isHtmx() || $request->wantsJson()) {
+            return Response::json(['error' => 'forbidden'], 403);
+        }
+
+        return $this->view->render('pages/403.html', [], 403, [], [
+            'theme' => 'admin',
         ]);
     }
 

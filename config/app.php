@@ -28,7 +28,7 @@ $envList = static function (string $key, array $default) use ($env): array {
 
 return [
     'name' => 'LAAS',
-    'version' => $envString('APP_VERSION', 'v1.11.1'),
+    'version' => $envString('APP_VERSION', 'v2.3.28'),
     'key' => $envString('APP_KEY', ''),
     'env' => $envString('APP_ENV', 'dev'),
     'debug' => $envBool('APP_DEBUG', true),

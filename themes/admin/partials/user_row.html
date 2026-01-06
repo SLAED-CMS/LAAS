@@ -65,7 +65,41 @@
         <button class="btn btn-outline-primary" type="submit">{% t 'admin.users.make_admin' %}</button>
         {% endif %}
       </form>
+      <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#user-pass-{% user.id %}" aria-expanded="false" aria-controls="user-pass-{% user.id %}">
+        {% t 'admin.users.change_password' %}
+      </button>
+      <form method="post"
+            class="d-inline"
+            action="/admin/users/delete"
+            hx-post="/admin/users/delete"
+            hx-confirm="{% t 'admin.users.delete_confirm' %}"
+            hx-target="#page-messages"
+            hx-swap="innerHTML"
+            hx-indicator="#loading">
+        <input type="hidden" name="_token" value="{% csrf_token %}">
+        <input type="hidden" name="user_id" value="{% user.id %}">
+        <button class="btn btn-outline-danger" type="submit">{% t 'admin.users.delete' %}</button>
+      </form>
       {% endif %}
     </div>
+  </td>
+</tr>
+<tr class="collapse" id="user-pass-{% user.id %}">
+  <td colspan="6">
+    <form method="post"
+          class="d-flex flex-wrap gap-2 align-items-end"
+          action="/admin/users/password"
+          hx-post="/admin/users/password"
+          hx-target="#page-messages"
+          hx-swap="innerHTML"
+          hx-indicator="#loading">
+      <input type="hidden" name="_token" value="{% csrf_token %}">
+      <input type="hidden" name="user_id" value="{% user.id %}">
+      <div>
+        <label class="form-label mb-1">{% t 'admin.users.new_password' %}</label>
+        <input class="form-control form-control-sm" type="password" name="password" minlength="8" autocomplete="new-password" required>
+      </div>
+      <button class="btn btn-sm btn-outline-primary" type="submit">{% t 'admin.users.change_password' %}</button>
+    </form>
   </td>
 </tr>

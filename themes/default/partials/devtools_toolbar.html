@@ -1,195 +1,349 @@
-<div class="laas-devtools position-fixed bottom-0 start-0 end-0 bg-dark text-light border-top small z-3">
-  <div class="d-flex flex-wrap gap-3 align-items-center px-3 py-2">
-    <strong>{% t 'devtools.title' %}</strong>
-    <div class="flex-grow-1">
-      {% t 'devtools.time' %}: {% devtools.duration_ms %} ms |
-      {% t 'devtools.db' %}: {% devtools.db.count %} / {% devtools.db.total_ms %} ms |
-      {% t 'devtools.mem' %}: {% devtools.memory_mb %} MB |
-      {% t 'devtools.request_id' %}: {% devtools.request_id %}
+﻿<div class="laas-devtools position-fixed bottom-0 start-0 end-0 border-top z-3" id="devtools-root" style="{% devtools.theme.terminal.css_vars %}">
+  <style>
+    .laas-devtools.devtools-hidden { display: none; }
+    .laas-devtools { background: var(--dt-panel-bg, #1b1c25); color: var(--dt-text, #d6d6d6); border-top: 1px solid var(--dt-border, rgba(255,255,255,0.08)); }
+    .laas-devtools .devtools-terminal { font-family: var(--dt-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); font-size: var(--dt-font-size, 12px); line-height: var(--dt-line-height, 1.25); background: var(--dt-bg, #1e1f29); color: var(--dt-text, #d6d6d6); border: 1px solid var(--dt-border, rgba(255,255,255,0.08)); border-radius: 8px; padding: var(--dt-padding, 8px); max-height: 50vh; overflow: hidden; }
+    .laas-devtools .terminal-body { max-height: calc(50vh - 36px); overflow: auto; }
+    .laas-devtools .devtools-terminal pre { white-space: pre-wrap; }
+    .laas-devtools .muted { color: var(--dt-muted, #8a8da8); font-style: italic; }
+    .laas-devtools .info { color: var(--dt-info, #82aaff); }
+    .laas-devtools .ok { color: var(--dt-ok, #73c991); }
+    .laas-devtools .warn { color: var(--dt-warn, #ffcb6b); }
+    .laas-devtools .err { color: var(--dt-err, #ff6c6b); }
+    .laas-devtools .sql { color: var(--dt-sql, #c792ea); }
+    .laas-devtools .num { color: var(--dt-num, #89ddff); }
+    .laas-devtools .http-get { color: var(--dt-http-get, #82aaff); }
+    .laas-devtools .http-post { color: var(--dt-http-post, #c3e88d); }
+    .laas-devtools .http-put { color: var(--dt-http-put, #ffcb6b); }
+    .laas-devtools .http-delete { color: var(--dt-http-delete, #ff6c6b); }
+    .laas-devtools .devtools-toolbar { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .laas-devtools .devtools-toolbar .btn { padding: 0.15rem 0.4rem; }
+    .laas-devtools .devtools-btn { border: 1px solid var(--dt-border, rgba(255,255,255,0.12)); background: var(--dt-btn-bg, rgba(255,255,255,0.03)); color: var(--dt-text, #d6d6d6); }
+    .laas-devtools .devtools-btn:hover { background: var(--dt-btn-bg-hover, rgba(255,255,255,0.07)); }
+    .laas-devtools .devtools-terminal a { color: var(--dt-info, #82aaff); text-decoration: none; }
+    .laas-devtools .devtools-terminal a:hover { text-decoration: underline; }
+  </style>
+  <div class="devtools-terminal" id="devtools-terminal">
+    <div class="devtools-toolbar">
+      <span class="muted small me-auto">{% t 'devtools.title' %}</span>
+      <button class="btn btn-sm devtools-btn" type="button" data-devtools-action="refresh" title="Refresh">&#x27F3;</button>
+      <button class="btn btn-sm devtools-btn" type="button" data-devtools-action="copy" title="Copy">&#x29C9;</button>
+      <button class="btn btn-sm devtools-btn" type="button" data-devtools-action="expand" title="Expand all">&#x2912;</button>
+      <button class="btn btn-sm devtools-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#devtools-settings" aria-controls="devtools-settings" title="Settings">&#x2699;</button>
+      <button class="btn btn-sm devtools-btn" type="button" data-devtools-action="hide" title="Hide">&#x2715;</button>
     </div>
-    <button class="btn btn-sm btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#devtools-details" aria-expanded="false" aria-controls="devtools-details">
-      {% t 'devtools.details' %}
-    </button>
-  </div>
-  <div id="devtools-details" class="collapse border-top laas-devtools-panel" data-devtools-collapse="1" data-devtools-id="details">
-    <div class="px-3 py-3">
-      <div class="row g-2">
-        <div class="col-12 col-md-4 col-lg-3">
-          <fieldset class="border border-secondary rounded p-2">
-            <legend class="float-none w-auto px-2 fs-6 text-secondary mb-0 fw-bold">
-              <a class="text-decoration-none laas-collapse-toggle" data-bs-toggle="collapse" href="#devtools-user" role="button" aria-expanded="false" aria-controls="devtools-user">
-                <span class="badge bg-primary">{% t 'devtools.user' %}</span>
-              </a>
-            </legend>
-            <div id="devtools-user" class="collapse" data-devtools-id="user">
-              <div>{% devtools.user.username %}</div>
-              <div class="small text-secondary mt-2">{% t 'devtools.roles' %}</div>
-              {% if devtools.user.roles %}
-              {% foreach devtools.user.roles as role %}
-              <div>{% role %}</div>
-              {% endforeach %}
-              {% else %}
-              <div>-</div>
-              {% endif %}
-            </div>
-          </fieldset>
-        </div>
-        <div class="col-12 col-md-4 col-lg-3">
-          <fieldset class="border border-secondary rounded p-2">
-            <legend class="float-none w-auto px-2 fs-6 text-secondary mb-0 fw-bold">
-              <a class="text-decoration-none laas-collapse-toggle" data-bs-toggle="collapse" href="#devtools-get" role="button" aria-expanded="false" aria-controls="devtools-get">
-                <span class="badge bg-info text-dark">{% t 'devtools.get' %}</span>
-              </a>
-            </legend>
-            <div id="devtools-get" class="collapse" data-devtools-id="get">
-              {% if devtools.request.get %}
-              {% foreach devtools.request.get as row %}
-              <div><span class="small text-secondary">{% row.key %}</span>: {% row.value %}</div>
-              {% endforeach %}
-              {% else %}
-              <div>-</div>
-              {% endif %}
-            </div>
-          </fieldset>
-        </div>
-        <div class="col-12 col-md-4 col-lg-3">
-          <fieldset class="border border-secondary rounded p-2">
-            <legend class="float-none w-auto px-2 fs-6 text-secondary mb-0 fw-bold">
-              <a class="text-decoration-none laas-collapse-toggle" data-bs-toggle="collapse" href="#devtools-post" role="button" aria-expanded="false" aria-controls="devtools-post">
-                <span class="badge bg-warning text-dark">{% t 'devtools.post' %}</span>
-              </a>
-            </legend>
-            <div id="devtools-post" class="collapse" data-devtools-id="post">
-              {% if devtools.request.post %}
-              {% foreach devtools.request.post as row %}
-              <div><span class="small text-secondary">{% row.key %}</span>: {% row.value %}</div>
-              {% endforeach %}
-              {% else %}
-              <div>-</div>
-              {% endif %}
-            </div>
-          </fieldset>
-        </div>
-        <div class="col-12 col-md-4 col-lg-3">
-          <fieldset class="border border-secondary rounded p-2">
-            <legend class="float-none w-auto px-2 fs-6 text-secondary mb-0 fw-bold">
-              <a class="text-decoration-none laas-collapse-toggle" data-bs-toggle="collapse" href="#devtools-cookies" role="button" aria-expanded="false" aria-controls="devtools-cookies">
-                <span class="badge bg-secondary">{% t 'devtools.cookies' %}</span>
-              </a>
-            </legend>
-            <div id="devtools-cookies" class="collapse" data-devtools-id="cookies">
+    <div class="terminal-body" id="devtools-terminal-body">
+<pre id="devtools-terminal-dump" class="mb-2"><span class="info">laas&gt;</span> <span class="{% devtools.profile.terminal.prompt.method_class %}">{% devtools.profile.terminal.prompt.method %}</span> <span class="muted">{% devtools.profile.terminal.prompt.path %}</span> <span class="{% devtools.profile.terminal.prompt.status_class %}">{% devtools.profile.terminal.prompt.status %}</span> <span class="num">{% devtools.profile.terminal.prompt.total_ms %}ms</span> <span class="muted">mem</span> <span class="num">{% devtools.profile.terminal.prompt.memory_mb %}MB</span> <span class="muted">rid</span> <span class="muted">{% devtools.profile.terminal.prompt.request_id %}</span>
+{% foreach devtools.profile.terminal.summary_segments as seg %}{% if seg.available %}<a class="text-decoration-none" href="{% seg.href %}"><span class="info">{% seg.label %}</span> <span class="num">{% seg.value %}</span></a>{% else %}<span class="info">{% seg.label %}</span> <span class="num">{% seg.value %}</span>{% endif %}{% seg.sep %}{% endforeach %}
+{% if devtools.profile.terminal.warning_tokens %}<span class="warn">WARN</span>{% foreach devtools.profile.terminal.warning_tokens as tok %} <span class="{% tok.class %}">{% tok.text %}</span>{% endforeach %}{% else %}<span class="ok">WARN OK</span>{% endif %}
+{% if devtools.profile.terminal.offenders %}{% foreach devtools.profile.terminal.offenders as off %}<a class="text-decoration-none" data-bs-toggle="collapse" href="#{% off.id %}" role="button" aria-expanded="false" aria-controls="{% off.id %}"><span class="warn">{% off.marker %}</span> <span class="info">{% off.type %}</span> {% if off.is_http %}<span class="{% off.detail_method_class %}">{% off.detail_method %}</span> <span class="muted">{% off.detail_url %}</span>{% else %}<span class="{% if off.is_sqlish %}sql{% else %}muted{% endif %}">{% off.detail_text %}</span>{% endif %} <span class="num">{% off.value %}</span></a>
+{% endforeach %}{% else %}<span class="muted">No offenders</span>
+{% endif %}{% if devtools.profile.terminal.timeline_line %}<span class="muted">{% devtools.profile.terminal.timeline_line %}</span>{% endif %}<a class="text-decoration-none" data-bs-toggle="collapse" href="#devtools-details" role="button" aria-expanded="false" aria-controls="devtools-details"><span class="info">Details</span> <span class="muted">toggle</span></a>
+</pre>
+    {% foreach devtools.profile.terminal.offenders as off %}
+    <div class="collapse devtools-detail small text-secondary mb-1" id="{% off.id %}">
+      {% if off.is_http %}
+      <div>HTTP: <span class="{% off.detail_method_class %}">{% off.detail_method %}</span> <span class="muted">{% off.detail_url %}</span> (<span class="{% off.detail_status_class %}">{% off.detail.status %}</span>, <span class="num">{% off.detail.total_ms %}</span> ms)</div>
+      {% endif %}
+      {% if off.is_sqld %}
+      <div>SQLD: {% off.detail.count %} calls (avg <span class="num">{% off.detail.avg_ms %}</span> ms)</div>
+      <div><code class="small text-break">{% off.detail.sql %}</code></div>
+      {% if off.detail.trace %}
+      <ol class="mb-0">
+        {% foreach off.detail.trace as t %}
+        <li><code>{% t.call %}</code> <span class="text-muted">{% t.file %}</span></li>
+        {% endforeach %}
+      </ol>
+      {% endif %}
+      {% endif %}
+      {% if off.is_sql %}
+      <div>SQL: <span class="num">{% off.detail.total_ms %}</span> ms</div>
+      <div><code class="small text-break">{% off.detail.sql %}</code></div>
+      {% endif %}
+    </div>
+    {% endforeach %}
+      <div id="devtools-details" class="collapse devtools-detail terminal-details" data-devtools-collapse="1" data-devtools-id="details">
+        <div class="small">
+          <div class="mb-2" id="devtools-overview">
+            <span class="info">Overview</span>
+            <div class="muted">Total: <span class="num">{% devtools.profile.total_duration_ms %}</span> ms</div>
+            <div class="muted">SQL: <span class="num">{% devtools.db.count %}</span> raw / <span class="num">{% devtools.db.unique %}</span> unique / <span class="num">{% devtools.db.duplicate_count %}</span> dup / <span class="num">{% devtools.db.total_ms %}</span> ms</div>
+            {% if devtools.external.available %}<div class="muted">HTTP: <span class="num">{% devtools.external.count %}</span> calls / <span class="num">{% devtools.external.total_ms %}</span> ms</div>{% else %}<div class="muted">HTTP: n/a</div>{% endif %}
+            {% if devtools.cache.available %}<div class="muted">Cache: <span class="num">{% devtools.cache.hit_rate %}</span>% (hits {% devtools.cache.hits %}, misses {% devtools.cache.misses %}, sets {% devtools.cache.sets %})</div>{% else %}<div class="muted">Cache: n/a</div>{% endif %}
+          </div>
+
+          <div class="mb-2" id="devtools-budgets">
+            <span class="info">Budgets</span>
+            <div class="muted">Total: {% devtools.profile.budget.total_time.status %} (warn {% devtools.flags.budgets.total_time_warn %}, bad {% devtools.flags.budgets.total_time_bad %})</div>
+            <div class="muted">Slow SQL: {% devtools.profile.budget.slow_sql.status %} (warn {% devtools.flags.budgets.slow_sql_warn %}, bad {% devtools.flags.budgets.slow_sql_bad %})</div>
+            <div class="muted">Slow HTTP: {% devtools.profile.budget.slow_http.status %} (warn {% devtools.flags.budgets.slow_http_warn %}, bad {% devtools.flags.budgets.slow_http_bad %})</div>
+            <div class="muted">Duplicates: {% devtools.profile.budget.duplicates.status %}</div>
+          </div>
+
+          <div class="mb-2" id="devtools-issues">
+            <span class="info">Issues</span>
+            {% if devtools.profile.issues_compact %}
+            {% foreach devtools.profile.issues_compact as issue %}
+            <div class="muted"><a href="{% issue.href %}">{% issue.label %}</a> — {% issue.value %} ({% issue.action_label %})</div>
+            {% endforeach %}
+            {% else %}<div class="muted">none</div>{% endif %}
+          </div>
+
+          <div class="mb-2" id="devtools-warnings">
+            <span class="info">Warnings</span>
+            {% if devtools.profile.warnings %}
+            {% foreach devtools.profile.warnings as w %}
+            <div class="muted">{% w %}</div>
+            {% endforeach %}
+            {% else %}<div class="muted">none</div>{% endif %}
+          </div>
+
+          <div class="mb-2" id="devtools-errors">
+            <span class="info">Errors</span>
+            {% if devtools.profile.errors %}
+            {% foreach devtools.profile.errors as e %}
+            <div class="muted">{% e.type %}: {% e.message %}</div>
+            {% endforeach %}
+            {% else %}<div class="muted">none</div>{% endif %}
+          </div>
+
+          <div class="mb-2" id="devtools-segments">
+            <span class="info">Segments</span>
+            {% if devtools.profile.segments %}
+            {% foreach devtools.profile.segments as s %}
+            <div class="muted">{% s.name %}: <span class="num">{% s.ms %}</span> ms (<span class="num">{% s.percent %}</span>%)</div>
+            {% endforeach %}
+            {% else %}<div class="muted">n/a</div>{% endif %}
+          </div>
+
+          <div class="mb-2" id="devtools-request">
+            <span class="info">Request</span>
+            <div class="muted">Method: {% devtools.request.method %} / Path: {% devtools.request.path %}</div>
+            {% if devtools.request.route %}<div class="muted">Route: {% devtools.request.route %}</div>{% endif %}
+            {% if devtools.request.controller %}<div class="muted">Controller: {% devtools.request.controller %}::{% devtools.request.action %}</div>{% endif %}
+            <div class="mt-1"><span class="muted">GET</span> <span class="num">{% devtools.request.get_raw %}</span></div>
+            <div class="mt-1"><span class="muted">POST</span> <span class="num">{% devtools.request.post_raw %}</span></div>
+            <div class="mt-1">
+              <span class="muted">Cookies</span>
               {% if devtools.request.cookies %}
-              {% foreach devtools.request.cookies as row %}
-              <div><span class="small text-secondary">{% row.key %}</span>: {% row.value %}</div>
-              {% endforeach %}
-              {% else %}
-              <div>-</div>
-              {% endif %}
+              {% foreach devtools.request.cookies as c %}<div>{% c.key %}: {% c.value %}</div>{% endforeach %}
+              {% else %}<div class="muted">n/a</div>{% endif %}
             </div>
-          </fieldset>
-        </div>
-      </div>
-      <div class="row g-2 mt-1">
-        <div class="col-12">
-          <fieldset class="border border-secondary rounded p-2">
-            <legend class="float-none w-auto px-2 fs-6 text-secondary mb-0 fw-bold">
-              <a class="text-decoration-none laas-collapse-toggle" data-bs-toggle="collapse" href="#devtools-headers" role="button" aria-expanded="false" aria-controls="devtools-headers">
-                <span class="badge bg-danger">{% t 'devtools.headers' %}</span>
-              </a>
-            </legend>
-            <div id="devtools-headers" class="collapse" data-devtools-id="headers">
+            <div class="mt-1">
+              <span class="muted">Headers</span>
               {% if devtools.request.headers %}
-              {% foreach devtools.request.headers as row %}
-              <div><span class="small text-secondary">{% row.key %}</span>: {% row.value %}</div>
-              {% endforeach %}
-              {% else %}
-              <div>-</div>
+              {% foreach devtools.request.headers as h %}<div>{% h.key %}: {% h.value %}</div>{% endforeach %}
+              {% else %}<div class="muted">n/a</div>{% endif %}
+            </div>
+          </div>
+
+          <div class="mb-2" id="devtools-response">
+            <span class="info">Response</span>
+            <div class="muted">Status: <span class="num">{% devtools.response.status %}</span></div>
+            <div class="muted">Content-Type: {% devtools.response.content_type %}</div>
+          </div>
+          {% if devtools.flags.enabled %}{% if devtools.media.id %}
+          <div class="mb-2" id="devtools-media">
+            <span class="info">Media</span>
+            <div class="muted">Media ID: {% devtools.media.id %}</div>
+            <div class="muted">Mime: {% devtools.media.mime %}</div>
+            <div class="muted">Size: {% devtools.media.size %}</div>
+            <div class="muted">Mode: {% devtools.media.mode %}</div>
+            <div class="muted">Disk: {% devtools.media.disk %}</div>
+            <div class="muted">Storage: {% devtools.media.storage %}</div>
+            <div class="muted">Read time: {% devtools.media.read_time_ms %} ms</div>
+            {% if devtools.media.object_key %}<div class="muted">Object key: {% devtools.media.object_key %}</div>{% endif %}
+            {% if devtools.media.access_mode %}<div class="muted">Access mode: {% devtools.media.access_mode %}</div>{% endif %}
+            {% if devtools.media.signature_valid %}<div class="muted">Signature valid: {% devtools.media.signature_valid %}</div>{% endif %}
+            {% if devtools.media.signature_exp %}<div class="muted">Signature exp: {% devtools.media.signature_exp %}</div>{% endif %}
+            {% if devtools.media.thumb_generated %}<div class="muted">Thumb: {% devtools.media.thumb_generated %}</div>{% endif %}
+            {% if devtools.media.thumb_reason %}<div class="muted">Thumb reason: {% devtools.media.thumb_reason %}</div>{% endif %}
+            {% if devtools.media.thumb_algo %}<div class="muted">Thumb algo: {% devtools.media.thumb_algo %}</div>{% endif %}
+            {% if devtools.media.s3_requests %}<div class="muted">S3 requests: {% devtools.media.s3_requests %}</div>{% endif %}
+            {% if devtools.media.s3_time_ms %}<div class="muted">S3 time: {% devtools.media.s3_time_ms %} ms</div>{% endif %}
+          </div>
+          {% endif %}{% endif %}
+
+          <div class="mb-2" id="devtools-sql-slow">
+            <span class="info">SQL top slow</span>
+            {% if devtools.db.top_slow %}
+            {% foreach devtools.db.top_slow as s %}
+            <div class="mt-1">
+              <span class="num">{% s.duration_ms %}</span> ms
+              <div><code class="small text-break">{% s.sql %}</code></div>
+            </div>
+            {% endforeach %}
+            {% else %}<div class="muted">none</div>{% endif %}
+          </div>
+
+          <div class="mb-2" id="devtools-sql-duplicates">
+            <span class="info">SQL duplicates</span>
+            {% if devtools.db.duplicates %}
+            {% foreach devtools.db.duplicates as d %}
+            <div class="mt-1">
+              <span class="warn">x{% d.count %}</span> <span class="num">{% d.avg_ms %}</span> ms avg
+              <div><code class="small text-break">{% d.sql %}</code></div>
+              {% if d.trace %}
+              <ol class="mb-0">
+                {% foreach d.trace as t %}
+                <li><code>{% t.call %}</code> <span class="text-muted">{% t.file %}</span></li>
+                {% endforeach %}
+              </ol>
               {% endif %}
             </div>
-          </fieldset>
+            {% endforeach %}
+            {% else %}<div class="muted">none</div>{% endif %}
+          </div>
+
+          <div class="mb-2" id="devtools-sql-grouped">
+            <span class="info">SQL grouped</span>
+            {% if devtools.db.grouped %}
+            {% foreach devtools.db.grouped as g %}
+            <div class="mt-1">
+              <span class="num">{% g.count %}</span> calls / <span class="num">{% g.total_ms %}</span> ms
+              <div><code class="small text-break">{% g.sql %}</code></div>
+            </div>
+            {% endforeach %}
+            {% else %}<div class="muted">none</div>{% endif %}
+          </div>
+
+          <div class="mb-2" id="devtools-sql-raw">
+            <span class="info">SQL raw</span>
+            {% if devtools.db.queries %}
+            {% foreach devtools.db.queries as q %}
+            <div class="mt-1">
+              <span class="num">#{% q.index %}</span> <span class="num">{% q.duration_ms %}</span> ms (params {% q.params %})
+              <div><code class="small text-break">{% q.sql %}</code></div>
+            </div>
+            {% endforeach %}
+            {% else %}<div class="muted">none</div>{% endif %}
+          </div>
+
+          <div class="mb-2" id="devtools-external">
+            <span class="info">External</span>
+            {% if devtools.external.available %}
+            {% foreach devtools.external.top3_slowest_calls as call %}
+            <div class="mt-1">
+              <span class="{% call.method_class %}">{% call.method %}</span> <span class="muted">{% call.host %}{% call.path %}</span> <span class="num">{% call.total_ms %}</span> ms <span class="{% call.status_class %}">{% call.status %}</span>
+            </div>
+            {% endforeach %}
+            {% else %}<div class="muted">n/a</div>{% endif %}
+          </div>
+
+          <div class="mb-2" id="devtools-user">
+            <span class="info">User</span>
+            <div class="muted">ID: {% devtools.user.id %}</div>
+            <div class="muted">Name: {% devtools.user.username %}</div>
+            {% if devtools.user.roles %}<div class="muted">Roles: {% foreach devtools.user.roles as r %}{% r %} {% endforeach %}</div>{% endif %}
+          </div>
         </div>
       </div>
-
-      {% if devtools.media.id %}
-      {% if devtools.flags.debug %}
-      {% if devtools.flags.enabled %}
-      <fieldset class="border border-secondary rounded p-2 mt-3">
-        <legend class="float-none w-auto px-2 fs-6 text-secondary mb-0 fw-bold">
-          <a class="text-decoration-none laas-collapse-toggle" data-bs-toggle="collapse" href="#devtools-media" role="button" aria-expanded="false" aria-controls="devtools-media">
-            <span class="badge bg-light text-dark">{% t 'devtools.media' %}</span>
-          </a>
-        </legend>
-        <div id="devtools-media" class="collapse" data-devtools-id="media">
-          <div><span class="small text-secondary">{% t 'devtools.media_id' %}</span>: {% devtools.media.id %}</div>
-          <div><span class="small text-secondary">{% t 'devtools.media_mime' %}</span>: {% devtools.media.mime %}</div>
-          <div><span class="small text-secondary">{% t 'devtools.media_size' %}</span>: {% devtools.media.size %}</div>
-          <div><span class="small text-secondary">{% t 'devtools.media_mode' %}</span>: {% devtools.media.mode %}</div>
-          <div><span class="small text-secondary">{% t 'devtools.media_disk' %}</span>: {% devtools.media.disk %}</div>
-          <div><span class="small text-secondary">{% t 'devtools.media_storage' %}</span>: {% devtools.media.storage %}</div>
-          <div><span class="small text-secondary">{% t 'devtools.media_object_key' %}</span>: {% if devtools.media.object_key %}{% devtools.media.object_key %}{% else %}-{% endif %}</div>
-          <div><span class="small text-secondary">{% t 'devtools.media_read_time' %}</span>: {% devtools.media.read_time_ms %}</div>
-          <div><span class="small text-secondary">{% t 'devtools.media_thumb_generated' %}</span>: {% if devtools.media.thumb_generated %}{% t 'devtools.yes' %}{% else %}{% t 'devtools.no' %}{% endif %}</div>
-          <div><span class="small text-secondary">{% t 'devtools.media_thumb_reason' %}</span>: {% if devtools.media.thumb_reason %}{% devtools.media.thumb_reason %}{% else %}-{% endif %}</div>
-          <div><span class="small text-secondary">{% t 'devtools.media_thumb_algo' %}</span>: {% devtools.media.thumb_algo %}</div>
-          <div><span class="small text-secondary">{% t 'devtools.media_access_mode' %}</span>: {% devtools.media.access_mode %}</div>
-          <div><span class="small text-secondary">{% t 'devtools.media_signature_valid' %}</span>: {% if devtools.media.signature_valid %}{% t 'devtools.yes' %}{% else %}{% t 'devtools.no' %}{% endif %}</div>
-          <div><span class="small text-secondary">{% t 'devtools.media_signature_exp' %}</span>: {% if devtools.media.signature_exp %}{% devtools.media.signature_exp %}{% else %}-{% endif %}</div>
-          <div><span class="small text-secondary">{% t 'devtools.media_s3_requests' %}</span>: {% devtools.media.s3_requests %}</div>
-          <div><span class="small text-secondary">{% t 'devtools.media_s3_time' %}</span>: {% devtools.media.s3_time_ms %}</div>
-        </div>
-      </fieldset>
-      {% endif %}
-      {% endif %}
-      {% endif %}
-
-      <fieldset class="border border-secondary rounded p-2 mt-3">
-        <legend class="float-none w-auto px-2 fs-6 text-secondary mb-0 fw-bold">
-          <a class="text-decoration-none laas-collapse-toggle" data-bs-toggle="collapse" href="#devtools-sql" role="button" aria-expanded="false" aria-controls="devtools-sql">
-            <span class="badge bg-success">{% t 'devtools.sql' %}</span>
-          </a>
-        </legend>
-        <div id="devtools-sql" class="collapse" data-devtools-id="sql">
-          {% if devtools.db.top_slow %}
-          <div class="mt-2 mb-2 fw-semibold">{% t 'devtools.top_slow' %}</div>
-          <table class="table table-dark table-striped table-hover align-middle mb-3">
-            <thead>
-              <tr>
-                <th>{% t 'devtools.sql' %}</th>
-                <th>{% t 'devtools.params' %}</th>
-                <th>{% t 'devtools.duration' %}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% foreach devtools.db.top_slow as q %}
-              <tr>
-                <td>{% q.sql %}</td>
-                <td>{% q.params %}</td>
-                <td>{% q.duration_ms %}</td>
-              </tr>
-              {% endforeach %}
-            </tbody>
-          </table>
-          {% endif %}
-          <table class="table table-dark table-striped table-hover align-middle mt-2 mb-0">
-            <thead>
-              <tr>
-                <th>{% t 'devtools.sql' %}</th>
-                <th>{% t 'devtools.params' %}</th>
-                <th>{% t 'devtools.duration' %}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% foreach devtools.db.queries as q %}
-              <tr>
-                <td>{% q.sql %}</td>
-                <td>{% q.params %}</td>
-                <td>{% q.duration_ms %}</td>
-              </tr>
-              {% endforeach %}
-            </tbody>
-          </table>
-        </div>
-      </fieldset>
     </div>
   </div>
+
+  <div class="offcanvas offcanvas-end text-bg-dark" tabindex="-1" id="devtools-settings" aria-labelledby="devtools-settings-label">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title" id="devtools-settings-label">DevTools Settings</h5>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+      <div class="mb-2">
+        <label class="form-label small">Total time warn</label>
+        <input class="form-control form-control-sm" type="text" value="{% devtools.flags.budgets.total_time_warn %}" readonly>
+      </div>
+      <div class="mb-2">
+        <label class="form-label small">Total time bad</label>
+        <input class="form-control form-control-sm" type="text" value="{% devtools.flags.budgets.total_time_bad %}" readonly>
+      </div>
+      <div class="mb-2">
+        <label class="form-label small">Slow SQL warn</label>
+        <input class="form-control form-control-sm" type="text" value="{% devtools.flags.budgets.slow_sql_warn %}" readonly>
+      </div>
+      <div class="mb-2">
+        <label class="form-label small">Slow SQL bad</label>
+        <input class="form-control form-control-sm" type="text" value="{% devtools.flags.budgets.slow_sql_bad %}" readonly>
+      </div>
+      <div class="mb-2">
+        <label class="form-label small">Slow HTTP warn</label>
+        <input class="form-control form-control-sm" type="text" value="{% devtools.flags.budgets.slow_http_warn %}" readonly>
+      </div>
+      <div class="mb-3">
+        <label class="form-label small">Slow HTTP bad</label>
+        <input class="form-control form-control-sm" type="text" value="{% devtools.flags.budgets.slow_http_bad %}" readonly>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="devtools-show-secrets" {% if devtools.flags.show_secrets %}checked{% endif %} disabled>
+        <label class="form-check-label" for="devtools-show-secrets">Show secrets (admin + dev)</label>
+      </div>
+      <div class="small text-muted mt-2">Toggle requires DEVTOOLS_SHOW_SECRETS=true and admin in dev/local.</div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var root = document.getElementById('devtools-root');
+      if (!root) {
+        return;
+      }
+      try {
+        if (localStorage.getItem('devtoolsHidden') === '1') {
+          root.classList.add('devtools-hidden');
+        }
+      } catch (e) {
+      }
+
+      var refreshBtn = root.querySelector('[data-devtools-action="refresh"]');
+      if (refreshBtn) {
+        refreshBtn.addEventListener('click', function () {
+          location.reload();
+        });
+      }
+
+      var copyBtn = root.querySelector('[data-devtools-action="copy"]');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', function () {
+          var dump = root.querySelector('#devtools-terminal-body');
+          if (!dump || !navigator.clipboard) {
+            return;
+          }
+          navigator.clipboard.writeText(dump.textContent || '');
+        });
+      }
+
+      var hideBtn = root.querySelector('[data-devtools-action="hide"]');
+      if (hideBtn) {
+        hideBtn.addEventListener('click', function () {
+          root.classList.toggle('devtools-hidden');
+          try {
+            localStorage.setItem('devtoolsHidden', root.classList.contains('devtools-hidden') ? '1' : '0');
+          } catch (e) {
+          }
+        });
+      }
+
+      var expandBtn = root.querySelector('[data-devtools-action="expand"]');
+      if (expandBtn && window.bootstrap && window.bootstrap.Collapse) {
+        expandBtn.addEventListener('click', function () {
+          var targets = root.querySelectorAll('.devtools-detail');
+          if (!targets.length) {
+            return;
+          }
+          var shouldShow = false;
+          targets.forEach(function (el) {
+            if (!el.classList.contains('show')) {
+              shouldShow = true;
+            }
+          });
+          targets.forEach(function (el) {
+            var inst = window.bootstrap.Collapse.getOrCreateInstance(el, { toggle: false });
+            if (shouldShow) {
+              inst.show();
+            } else {
+              inst.hide();
+            }
+          });
+        });
+      }
+    })();
+  </script>
 </div>

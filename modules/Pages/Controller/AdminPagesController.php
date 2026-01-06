@@ -11,6 +11,7 @@ use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Pages\Repository\PagesRepository;
 use Laas\Database\Repositories\RbacRepository;
+use Laas\Security\HtmlSanitizer;
 use Laas\Support\AuditLogger;
 use Laas\Support\Search\Highlighter;
 use Laas\Support\Search\SearchNormalizer;
@@ -216,13 +217,15 @@ final class AdminPagesController
             ]);
         }
 
+        $sanitizedContent = (new HtmlSanitizer())->sanitize($content);
+
         $audit = new AuditLogger($this->db, $request->session());
 
         if ($id === null) {
             $newId = $repo->create([
                 'title' => $title,
                 'slug' => $slug,
-                'content' => $content,
+                'content' => $sanitizedContent,
                 'status' => $status,
             ]);
             $audit->log(
@@ -241,7 +244,7 @@ final class AdminPagesController
             $repo->update($id, [
                 'title' => $title,
                 'slug' => $slug,
-                'content' => $content,
+                'content' => $sanitizedContent,
                 'status' => $status,
             ]);
             $audit->log(

@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Laas\Support\Cache;
 
+use Laas\Support\RequestScope;
+
 final class FileCache implements CacheInterface
 {
     private string $dir;
@@ -23,11 +25,13 @@ final class FileCache implements CacheInterface
             error_log("[FileCache] get({$key}) - path: {$path}, exists: " . (is_file($path) ? 'YES' : 'NO'));
         }
         if (!is_file($path)) {
+            $this->recordCacheGet(false);
             return null;
         }
 
         $raw = @file_get_contents($path);
         if ($raw === false) {
+            $this->recordCacheGet(false);
             return null;
         }
 
@@ -39,15 +43,18 @@ final class FileCache implements CacheInterface
         $expires = (int) ($data['expires_at'] ?? 0);
         if ($expires > 0 && $expires < time()) {
             @unlink($path);
+            $this->recordCacheGet(false);
             return null;
         }
 
         $payload = (string) ($data['value'] ?? '');
         if ($payload === '') {
+            $this->recordCacheGet(false);
             return null;
         }
 
         $result = @unserialize($payload, ['allowed_classes' => false]);
+        $this->recordCacheGet($result !== false);
         if ($key === 'settings:v1:all' && $this->shouldLog()) {
             $keys = is_array($result) && isset($result['values']) ? array_keys($result['values']) : [];
             error_log("[FileCache] get({$key}) - returning data with keys: " . implode(', ', $keys));
@@ -81,6 +88,9 @@ final class FileCache implements CacheInterface
         }
 
         $result = @rename($tmp, $this->pathForKey($key));
+        if ($result) {
+            $this->recordCacheSet();
+        }
         if ($key === 'settings:v1:all' && $this->shouldLog()) {
             error_log("[FileCache] set({$key}) - result: " . ($result ? 'OK' : 'FAILED'));
         }
@@ -135,5 +145,21 @@ final class FileCache implements CacheInterface
             return false;
         }
         return true;
+    }
+
+    private function recordCacheGet(bool $hit): void
+    {
+        $context = RequestScope::get('devtools.context');
+        if ($context instanceof \Laas\DevTools\DevToolsContext) {
+            $context->recordCacheGet($hit);
+        }
+    }
+
+    private function recordCacheSet(): void
+    {
+        $context = RequestScope::get('devtools.context');
+        if ($context instanceof \Laas\DevTools\DevToolsContext) {
+            $context->recordCacheSet();
+        }
     }
 }

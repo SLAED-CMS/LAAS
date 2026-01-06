@@ -135,6 +135,7 @@ final class SecurityTestHelper
             entity TEXT NULL,
             entity_id INTEGER NULL,
             context TEXT NULL,
+            ip_address TEXT NULL,
             created_at TEXT NOT NULL
         )');
     }

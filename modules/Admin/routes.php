@@ -10,6 +10,8 @@ return [
     ['GET', '/admin/users', [\Laas\Modules\Admin\Controller\UsersController::class, 'index']],
     ['POST', '/admin/users/status', [\Laas\Modules\Admin\Controller\UsersController::class, 'toggleStatus']],
     ['POST', '/admin/users/admin', [\Laas\Modules\Admin\Controller\UsersController::class, 'toggleAdmin']],
+    ['POST', '/admin/users/password', [\Laas\Modules\Admin\Controller\UsersController::class, 'changePassword']],
+    ['POST', '/admin/users/delete', [\Laas\Modules\Admin\Controller\UsersController::class, 'delete']],
     ['GET', '/admin/users/roles', [\Laas\Modules\Admin\Controller\RolesController::class, 'index']],
     ['GET', '/admin/users/roles/new', [\Laas\Modules\Admin\Controller\RolesController::class, 'createForm']],
     ['GET', '/admin/users/roles/{id:\d+}/edit', [\Laas\Modules\Admin\Controller\RolesController::class, 'editForm']],

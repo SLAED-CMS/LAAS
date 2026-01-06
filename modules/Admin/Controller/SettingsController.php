@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Laas\Modules\Admin\Controller;
 
 use Laas\Database\DatabaseManager;
+use Laas\Database\Repositories\RbacRepository;
 use Laas\Database\Repositories\SettingsRepository;
 use Laas\Http\Request;
 use Laas\Http\Response;
@@ -21,6 +22,10 @@ final class SettingsController
 
     public function index(Request $request): Response
     {
+        if (!$this->canManage($request)) {
+            return $this->forbidden($request);
+        }
+
         $appConfig = $this->loadAppConfig();
         $apiConfig = $this->loadApiConfig();
         $locales = $this->normalizeList($appConfig['locales'] ?? []);
@@ -87,6 +92,10 @@ final class SettingsController
 
     public function save(Request $request): Response
     {
+        if (!$this->canManage($request)) {
+            return $this->forbidden($request);
+        }
+
         $appConfig = $this->loadAppConfig();
         $apiConfig = $this->loadApiConfig();
         $locales = $this->normalizeList($appConfig['locales'] ?? []);
@@ -354,5 +363,40 @@ final class SettingsController
             return (int) $raw;
         }
         return null;
+    }
+
+    private function canManage(Request $request): bool
+    {
+        return $this->hasPermission($request, 'admin.settings.manage');
+    }
+
+    private function hasPermission(Request $request, string $permission): bool
+    {
+        if ($this->db === null || !$this->db->healthCheck()) {
+            return false;
+        }
+
+        $userId = $this->currentUserId($request);
+        if ($userId === null) {
+            return false;
+        }
+
+        try {
+            $rbac = new RbacRepository($this->db->pdo());
+            return $rbac->userHasPermission($userId, $permission);
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    private function forbidden(Request $request): Response
+    {
+        if ($request->isHtmx() || $request->wantsJson()) {
+            return Response::json(['error' => 'forbidden'], 403);
+        }
+
+        return $this->view->render('pages/403.html', [], 403, [], [
+            'theme' => 'admin',
+        ]);
     }
 }

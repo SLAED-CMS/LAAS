@@ -30,11 +30,28 @@ final class Request
         $uri = $_SERVER['REQUEST_URI'] ?? '/';
         $path = parse_url($uri, PHP_URL_PATH) ?? '/';
         $query = $_GET ?? [];
+        if ($query === [] && is_string($uri)) {
+            $queryString = parse_url($uri, PHP_URL_QUERY);
+            if (is_string($queryString) && $queryString !== '') {
+                parse_str($queryString, $parsed);
+                if (is_array($parsed)) {
+                    $query = $parsed;
+                }
+            }
+        }
         $post = $_POST ?? [];
         $rawHeaders = function_exists('getallheaders') ? getallheaders() : [];
         $headers = [];
         foreach ($rawHeaders as $name => $value) {
             $headers[strtolower((string) $name)] = (string) $value;
+        }
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? ($_SERVER['HTTP_CONTENT_TYPE'] ?? null);
+        if (!isset($headers['content-type']) && is_string($contentType) && $contentType !== '') {
+            $headers['content-type'] = $contentType;
+        }
+        $contentLength = $_SERVER['CONTENT_LENGTH'] ?? ($_SERVER['HTTP_CONTENT_LENGTH'] ?? null);
+        if (!isset($headers['content-length']) && is_string($contentLength) && $contentLength !== '') {
+            $headers['content-length'] = $contentLength;
         }
         $body = (string) file_get_contents('php://input');
 

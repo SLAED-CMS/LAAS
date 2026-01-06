@@ -123,15 +123,7 @@ final class SettingsRepository
         if ($this->shouldLog()) {
             error_log("[SettingsRepo] set({$key}) - serialized: {$stored}");
         }
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO settings (`key`, `value`, `type`, `updated_at`) VALUES (:key, :value, :type, NOW())
-             ON DUPLICATE KEY UPDATE `value` = VALUES(`value`), `type` = VALUES(`type`), `updated_at` = NOW()'
-        );
-        $stmt->execute([
-            'key' => $key,
-            'value' => $stored,
-            'type' => $type,
-        ]);
+        $this->persistSetting($key, $stored, $type);
         if ($this->shouldLog()) {
             error_log("[SettingsRepo] set({$key}) - DB write OK");
         }
@@ -151,15 +143,7 @@ final class SettingsRepository
             error_log("[SettingsRepo] setWithoutInvalidation({$key}) - value: " . json_encode($value) . ", type: {$type}");
         }
         $stored = $this->serialize($value, $type);
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO settings (`key`, `value`, `type`, `updated_at`) VALUES (:key, :value, :type, NOW())
-             ON DUPLICATE KEY UPDATE `value` = VALUES(`value`), `type` = VALUES(`type`), `updated_at` = NOW()'
-        );
-        $stmt->execute([
-            'key' => $key,
-            'value' => $stored,
-            'type' => $type,
-        ]);
+        $this->persistSetting($key, $stored, $type);
         if ($this->shouldLog()) {
             error_log("[SettingsRepo] setWithoutInvalidation({$key}) - DB write OK (no cache invalidation)");
         }
@@ -257,5 +241,49 @@ final class SettingsRepository
             return false;
         }
         return true;
+    }
+
+    private function persistSetting(string $key, string $stored, string $type): void
+    {
+        $driver = (string) $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        if ($driver === 'sqlite') {
+            $now = date('Y-m-d H:i:s');
+            $stmt = $this->pdo->prepare('SELECT 1 FROM settings WHERE `key` = :key');
+            $stmt->execute(['key' => $key]);
+            $exists = (bool) $stmt->fetchColumn();
+            if ($exists) {
+                $stmt = $this->pdo->prepare(
+                    'UPDATE settings SET `value` = :value, `type` = :type, `updated_at` = :updated_at WHERE `key` = :key'
+                );
+                $stmt->execute([
+                    'key' => $key,
+                    'value' => $stored,
+                    'type' => $type,
+                    'updated_at' => $now,
+                ]);
+                return;
+            }
+
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO settings (`key`, `value`, `type`, `updated_at`) VALUES (:key, :value, :type, :updated_at)'
+            );
+            $stmt->execute([
+                'key' => $key,
+                'value' => $stored,
+                'type' => $type,
+                'updated_at' => $now,
+            ]);
+            return;
+        }
+
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO settings (`key`, `value`, `type`, `updated_at`) VALUES (:key, :value, :type, NOW())
+             ON DUPLICATE KEY UPDATE `value` = VALUES(`value`), `type` = VALUES(`type`), `updated_at` = NOW()'
+        );
+        $stmt->execute([
+            'key' => $key,
+            'value' => $stored,
+            'type' => $type,
+        ]);
     }
 }
