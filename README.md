@@ -520,6 +520,6 @@ MIT License — see [LICENSE](LICENSE).
 
 **Eduard Laas**
 - Website: https://laas-cms.org
-- Email: eduard.laas@badessen.de
+- Email: info@laas-cms.org
 
 **Last updated:** January 2026

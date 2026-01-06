@@ -27,7 +27,7 @@ We release security updates for the following versions of LAAS CMS:
 - This allows private disclosure and collaboration
 
 **Alternative Method:**
-- Email: **eduard.laas@badessen.de**
+- Email: **info@laas-cms.org**
 - Subject: `[SECURITY] Brief description`
 - Include: Detailed description, steps to reproduce, impact assessment
 
@@ -313,7 +313,7 @@ We follow a coordinated disclosure policy. After we've patched a vulnerability:
 
 ## Security Contact
 
-- **Email:** eduard.laas@badessen.de
+- **Email:** info@laas-cms.org
 - **GitHub:** [Security Advisories](https://github.com/eduardlaas/laas-cms/security/advisories/new)
 - **Website:** https://laas-cms.org/security
 
