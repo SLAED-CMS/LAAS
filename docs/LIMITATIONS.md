@@ -1,5 +1,9 @@
 # Known Limitations
 
+**Note:** These are architectural constraints for extreme horizontal scaling scenarios (dozens of servers). LAAS CMS handles high traffic well on single or few servers. Limitations become relevant only when scaling across many parallel application servers.
+
+---
+
 - No horizontal session scaling
   - Sessions are file-based by default.
   - Becomes a problem with multiple app servers.
