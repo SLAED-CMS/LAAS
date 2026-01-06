@@ -20,5 +20,13 @@
   - Migrations may lock tables or block writes.
   - Becomes a problem for strict uptime requirements.
   - Workaround: maintenance window and read-only mode.
+- No distributed rate limiting
+  - Rate limits are per-server (in-memory buckets).
+  - Becomes a problem with multiple app servers.
+  - Workaround: external rate limiter (Redis) or load balancer rules.
+- Changelog GitHub API limits
+  - Subject to GitHub rate limits (60/hour unauthenticated, 5000/hour with token).
+  - Becomes a problem with frequent cache refreshes.
+  - Workaround: use local git provider or increase cache TTL.
 
 **Last updated:** January 2026
