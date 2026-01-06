@@ -61,23 +61,54 @@ final class SettingsRepository
 
     public function has(string $key): bool
     {
+        if ($this->shouldLog()) {
+            error_log("[SettingsRepo] has({$key}) START");
+        }
+
         $all = $this->cache->get(CacheKey::settingsAll());
+        if ($this->shouldLog()) {
+            error_log("[SettingsRepo] has({$key}) - settingsAll() cache: " . ($all === null ? 'NULL' : 'EXISTS'));
+        }
         if (is_array($all) && isset($all['values']) && is_array($all['values'])) {
-            return array_key_exists($key, $all['values']);
+            $result = array_key_exists($key, $all['values']);
+            if ($this->shouldLog()) {
+                error_log("[SettingsRepo] has({$key}) - found in settingsAll: " . ($result ? 'YES' : 'NO'));
+            }
+            if ($result) {
+                return true;
+            }
         }
 
         $cached = $this->cache->get(CacheKey::settingsKey($key));
+        if ($this->shouldLog()) {
+            error_log("[SettingsRepo] has({$key}) - individual cache: " . json_encode($cached));
+        }
         if (is_array($cached) && isset($cached['__missing__'])) {
+            if ($this->shouldLog()) {
+                error_log("[SettingsRepo] has({$key}) - __missing__ marker found, returning FALSE");
+            }
             return false;
         }
         if ($cached !== null) {
+            if ($this->shouldLog()) {
+                error_log("[SettingsRepo] has({$key}) - cached value exists, returning TRUE");
+            }
             return true;
         }
 
+        if ($this->shouldLog()) {
+            error_log("[SettingsRepo] has({$key}) - checking DB");
+        }
         $stmt = $this->pdo->prepare('SELECT 1 FROM settings WHERE `key` = :key LIMIT 1');
         $stmt->execute(['key' => $key]);
         $exists = (bool) $stmt->fetchColumn();
+        if ($this->shouldLog()) {
+            error_log("[SettingsRepo] has({$key}) - DB result: " . ($exists ? 'EXISTS' : 'MISSING'));
+        }
         if (!$exists) {
+            if ($this->shouldLog()) {
+                error_log("[SettingsRepo] has({$key}) - setting __missing__ marker in cache");
+            }
             $this->cache->set(CacheKey::settingsKey($key), ['__missing__' => true], $this->ttlSettings);
         }
         return $exists;
@@ -85,6 +116,40 @@ final class SettingsRepository
 
     public function set(string $key, mixed $value, string $type = 'string'): void
     {
+        if ($this->shouldLog()) {
+            error_log("[SettingsRepo] set({$key}) START - value: " . json_encode($value) . ", type: {$type}");
+        }
+        $stored = $this->serialize($value, $type);
+        if ($this->shouldLog()) {
+            error_log("[SettingsRepo] set({$key}) - serialized: {$stored}");
+        }
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO settings (`key`, `value`, `type`, `updated_at`) VALUES (:key, :value, :type, NOW())
+             ON DUPLICATE KEY UPDATE `value` = VALUES(`value`), `type` = VALUES(`type`), `updated_at` = NOW()'
+        );
+        $stmt->execute([
+            'key' => $key,
+            'value' => $stored,
+            'type' => $type,
+        ]);
+        if ($this->shouldLog()) {
+            error_log("[SettingsRepo] set({$key}) - DB write OK");
+        }
+
+        if ($this->shouldLog()) {
+            error_log("[SettingsRepo] set({$key}) - calling invalidateKey()");
+        }
+        $this->invalidator->invalidateKey($key);
+        if ($this->shouldLog()) {
+            error_log("[SettingsRepo] set({$key}) - DONE");
+        }
+    }
+
+    public function setWithoutInvalidation(string $key, mixed $value, string $type = 'string'): void
+    {
+        if ($this->shouldLog()) {
+            error_log("[SettingsRepo] setWithoutInvalidation({$key}) - value: " . json_encode($value) . ", type: {$type}");
+        }
         $stored = $this->serialize($value, $type);
         $stmt = $this->pdo->prepare(
             'INSERT INTO settings (`key`, `value`, `type`, `updated_at`) VALUES (:key, :value, :type, NOW())
@@ -95,18 +160,42 @@ final class SettingsRepository
             'value' => $stored,
             'type' => $type,
         ]);
+        if ($this->shouldLog()) {
+            error_log("[SettingsRepo] setWithoutInvalidation({$key}) - DB write OK (no cache invalidation)");
+        }
+    }
 
-        $this->invalidator->invalidateKey($key);
+    public function invalidateSettings(): void
+    {
+        if ($this->shouldLog()) {
+            error_log("[SettingsRepo] invalidateSettings() - clearing ALL settings cache");
+        }
+        $this->cache->delete(CacheKey::settingsAll());
+        if ($this->shouldLog()) {
+            error_log("[SettingsRepo] invalidateSettings() - DONE");
+        }
     }
 
     /** @return array<string, mixed> */
     public function getAll(): array
     {
+        if ($this->shouldLog()) {
+            error_log("[SettingsRepo] getAll() START");
+        }
         $cached = $this->cache->get(CacheKey::settingsAll());
+        if ($this->shouldLog()) {
+            error_log("[SettingsRepo] getAll() - cache: " . ($cached === null ? 'NULL' : 'EXISTS'));
+        }
         if (is_array($cached) && isset($cached['values']) && is_array($cached['values'])) {
+            if ($this->shouldLog()) {
+                error_log("[SettingsRepo] getAll() - returning cached values, keys: " . implode(', ', array_keys($cached['values'])));
+            }
             return $cached['values'];
         }
 
+        if ($this->shouldLog()) {
+            error_log("[SettingsRepo] getAll() - cache miss, loading from DB");
+        }
         $stmt = $this->pdo->query('SELECT `key`, `value`, `type` FROM settings');
         $rows = $stmt !== false ? $stmt->fetchAll() : [];
         $values = [];
@@ -118,11 +207,18 @@ final class SettingsRepository
             $values[$key] = $this->deserialize((string) ($row['value'] ?? ''), (string) ($row['type'] ?? 'string'));
         }
 
+        if ($this->shouldLog()) {
+            error_log("[SettingsRepo] getAll() - loaded from DB, keys: " . implode(', ', array_keys($values)));
+        }
+
         $sources = [];
         foreach (array_keys($values) as $key) {
             $sources[$key] = 'DB';
         }
 
+        if ($this->shouldLog()) {
+            error_log("[SettingsRepo] getAll() - setting cache");
+        }
         $this->cache->set(CacheKey::settingsAll(), [
             'values' => $values,
             'sources' => $sources,
@@ -149,5 +245,17 @@ final class SettingsRepository
             'json' => json_decode($value, true),
             default => $value,
         };
+    }
+
+    private function shouldLog(): bool
+    {
+        $env = strtolower((string) getenv('APP_ENV'));
+        if ($env === 'test') {
+            return false;
+        }
+        if (getenv('CI') === 'true') {
+            return false;
+        }
+        return true;
     }
 }

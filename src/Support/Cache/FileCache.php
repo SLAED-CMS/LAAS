@@ -19,6 +19,9 @@ final class FileCache implements CacheInterface
     public function get(string $key): mixed
     {
         $path = $this->pathForKey($key);
+        if ($key === 'settings:v1:all' && $this->shouldLog()) {
+            error_log("[FileCache] get({$key}) - path: {$path}, exists: " . (is_file($path) ? 'YES' : 'NO'));
+        }
         if (!is_file($path)) {
             return null;
         }
@@ -44,11 +47,21 @@ final class FileCache implements CacheInterface
             return null;
         }
 
-        return @unserialize($payload, ['allowed_classes' => false]);
+        $result = @unserialize($payload, ['allowed_classes' => false]);
+        if ($key === 'settings:v1:all' && $this->shouldLog()) {
+            $keys = is_array($result) && isset($result['values']) ? array_keys($result['values']) : [];
+            error_log("[FileCache] get({$key}) - returning data with keys: " . implode(', ', $keys));
+        }
+        return $result;
     }
 
     public function set(string $key, mixed $value, ?int $ttl = null): bool
     {
+        if ($key === 'settings:v1:all' && $this->shouldLog()) {
+            $keys = is_array($value) && isset($value['values']) ? array_keys($value['values']) : [];
+            error_log("[FileCache] set({$key}) START - keys: " . implode(', ', $keys));
+        }
+
         if (!$this->ensureDir()) {
             return false;
         }
@@ -67,17 +80,34 @@ final class FileCache implements CacheInterface
             return false;
         }
 
-        return @rename($tmp, $this->pathForKey($key));
+        $result = @rename($tmp, $this->pathForKey($key));
+        if ($key === 'settings:v1:all' && $this->shouldLog()) {
+            error_log("[FileCache] set({$key}) - result: " . ($result ? 'OK' : 'FAILED'));
+        }
+        return $result;
     }
 
     public function delete(string $key): bool
     {
         $path = $this->pathForKey($key);
+        if ($this->shouldLog()) {
+            error_log("[FileCache] delete({$key}) - path: {$path}");
+        }
         if (!is_file($path)) {
+            if ($this->shouldLog()) {
+                error_log("[FileCache] delete({$key}) - file does not exist, returning true");
+            }
             return true;
         }
 
-        return @unlink($path);
+        $result = @unlink($path);
+        if ($this->shouldLog()) {
+            error_log("[FileCache] delete({$key}) - unlink result: " . ($result ? 'OK' : 'FAILED'));
+            if ($result && is_file($path)) {
+                error_log("[FileCache] delete({$key}) - WARNING: file still exists after unlink!");
+            }
+        }
+        return $result;
     }
 
     private function pathForKey(string $key): string
@@ -93,5 +123,17 @@ final class FileCache implements CacheInterface
         }
 
         return mkdir($this->dir, 0775, true) || is_dir($this->dir);
+    }
+
+    private function shouldLog(): bool
+    {
+        $env = strtolower((string) getenv('APP_ENV'));
+        if ($env === 'test') {
+            return false;
+        }
+        if (getenv('CI') === 'true') {
+            return false;
+        }
+        return true;
     }
 }
