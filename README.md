@@ -5,11 +5,11 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-00758F.svg)](https://www.mysql.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)](#)
-[![Baseline](https://img.shields.io/badge/Baseline-v2.3.0-orange.svg)](docs/VERSIONS.md)
+[![Baseline](https://img.shields.io/badge/Baseline-v2.3.3-orange.svg)](docs/VERSIONS.md)
 
 **Modern, secure, HTML-first content management system.**
 
-**v2.3.0** - Homepage integration showcase demonstrating all system features with real data (read-only).
+**v2.3.3** - Headless & API-first with REST API v1, Bearer token auth, and Changelog fixes (race condition, git binary path).
 
 LAAS CMS is a modular, security-first CMS built for PHP 8.4+ with a lightweight template engine, middleware pipeline, and i18n support. Bootstrap 5 + HTMX ready.
 
@@ -123,6 +123,9 @@ http://laas.loc/
 ## Milestones
 
 ### v2.x — Mature Platform
+- **v2.3.3**: Headless & API-first + Changelog fixes (REST API v1, Bearer tokens, atomic save, git binary path)
+- **v2.3.2**: Changelog module (GitHub/local git providers)
+- **v2.3.1**: Homepage UX/visual polish (improved layout, unified search, performance panel)
 - **v2.3.0**: Home Showcase (integration demo with real data)
 - **v2.2.6**: Session abstraction (SessionInterface, PhpSession)
 - **v2.2.5**: Security regression test suite

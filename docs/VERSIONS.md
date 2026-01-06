@@ -1,14 +1,28 @@
 # LAAS Versions
 
-- v2.4.0: Headless & API-first
+- v2.3.3: Headless & API-first + Changelog fixes
   - REST API v1 with unified response envelope
   - Bearer token auth + RBAC + audit
   - API rate limit bucket and CORS allowlist
   - Admin UI for API token management
+  - Fixed race condition in settings cache during parallel requests
+  - Atomic save pattern (setWithoutInvalidation + invalidateSettings)
+  - Configurable git binary path for Local Git provider
+  - Enhanced error logging for git execution diagnostics
 - v2.3.2: Changelog module (GitHub/local git)
   - Frontend changelog feed with pagination
   - Admin settings, source test, preview, cache clear
   - GitHub API and local git providers with cache
+- v2.3.1: Homepage UX and visual polish
+  - Improved visual hierarchy and first-screen layout
+  - Status panel with health, cache, and media mode indicators
+  - List-group based pages/media blocks with live search
+  - Unified global search (pages + media)
+  - Interactive media showcase with hover overlays
+  - Audit log with color-coded action badges
+  - Debug-only performance panel with thresholds
+  - Empty states for all content blocks
+  - Maturity matrix for feature readiness
 - v2.3.0: Home Showcase
   - Homepage integration showcase (pages, media, menus, search, auth, audit)
   - Read-only blocks with optional config toggles
