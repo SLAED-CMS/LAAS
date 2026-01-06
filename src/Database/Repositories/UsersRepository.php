@@ -104,6 +104,14 @@ final class UsersRepository
         return (int) ($row['cnt'] ?? 0);
     }
 
+    public function countAll(): int
+    {
+        $stmt = $this->pdo->query('SELECT COUNT(*) AS cnt FROM users');
+        $row = $stmt->fetch();
+
+        return (int) ($row['cnt'] ?? 0);
+    }
+
     public function setStatus(int $id, int $status): void
     {
         $stmt = $this->pdo->prepare('UPDATE users SET status = :status, updated_at = NOW() WHERE id = :id');

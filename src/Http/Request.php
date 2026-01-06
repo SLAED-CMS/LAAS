@@ -9,6 +9,7 @@ use Laas\Session\SessionInterface;
 final class Request
 {
     private ?SessionInterface $session = null;
+    private array $attributes = [];
 
     public function __construct(
         private string $method,
@@ -137,5 +138,15 @@ final class Request
     public function session(): SessionInterface
     {
         return $this->session ?? new PhpSession();
+    }
+
+    public function setAttribute(string $key, mixed $value): void
+    {
+        $this->attributes[$key] = $value;
+    }
+
+    public function getAttribute(string $key, mixed $default = null): mixed
+    {
+        return $this->attributes[$key] ?? $default;
     }
 }

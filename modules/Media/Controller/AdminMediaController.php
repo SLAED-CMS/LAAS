@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Laas\Modules\Media\Controller;
 
+use Laas\Api\ApiCacheInvalidator;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Http\Request;
@@ -204,6 +205,8 @@ final class AdminMediaController
             $request->ip()
         );
 
+        (new ApiCacheInvalidator())->bumpMedia();
+
         $success = $this->view->translate($successKey);
         return $this->tableResponse($request, $repo, $success, [], $mediaId > 0 ? $mediaId : null);
     }
@@ -266,6 +269,8 @@ final class AdminMediaController
             );
         }
 
+        (new ApiCacheInvalidator())->bumpMedia();
+
         $success = $this->view->translate('admin.media.success_deleted');
         if ($request->isHtmx()) {
             return $this->view->render('partials/media_row_deleted.html', [
@@ -318,6 +323,8 @@ final class AdminMediaController
             $this->currentUserId($request),
             $request->ip()
         );
+
+        (new ApiCacheInvalidator())->bumpMedia();
 
         $updated = $repo->findById($id);
         $config = $this->mediaConfig();

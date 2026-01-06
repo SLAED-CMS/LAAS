@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Laas\Http\Middleware;
 
+use Laas\Api\ApiResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\I18n\Translator;
@@ -38,6 +39,10 @@ final class ReadOnlyMiddleware implements MiddlewareInterface
         }
 
         $message = $this->translator->trans('system.read_only');
+        if (str_starts_with($path, '/api/')) {
+            return ApiResponse::error('read_only', $message, [], 503);
+        }
+
         if ($request->isHtmx() && $this->view !== null) {
             $theme = str_starts_with($path, '/admin') ? 'admin' : null;
             return $this->view->render('partials/messages.html', [

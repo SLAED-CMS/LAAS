@@ -13,6 +13,10 @@ final class CsrfMiddleware implements MiddlewareInterface
 
     public function process(Request $request, callable $next): Response
     {
+        if (str_starts_with($request->getPath(), '/api/')) {
+            return $next($request);
+        }
+
         if (!in_array($request->getMethod(), self::METHODS, true)) {
             return $next($request);
         }

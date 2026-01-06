@@ -57,6 +57,40 @@ final class PagesRepository
     }
 
     /** @return array<int, array<string, mixed>> */
+    public function listPublished(int $limit = 10, int $offset = 0): array
+    {
+        $sql = 'SELECT id, title, slug, content, updated_at FROM pages WHERE status = :status ORDER BY updated_at DESC, id DESC';
+        $sql .= ' LIMIT ' . (int) $limit . ' OFFSET ' . (int) $offset;
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(['status' => 'published']);
+        $rows = $stmt->fetchAll();
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function listByStatus(?string $status, int $limit, int $offset): array
+    {
+        $sql = 'SELECT id, title, slug, content, status, updated_at FROM pages';
+        $params = [];
+
+        if ($status !== null && $status !== '' && $status !== 'all') {
+            $sql .= ' WHERE status = :status';
+            $params['status'] = $status;
+        }
+
+        $sql .= ' ORDER BY updated_at DESC, id DESC';
+        $sql .= ' LIMIT ' . (int) $limit . ' OFFSET ' . (int) $offset;
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll();
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    /** @return array<int, array<string, mixed>> */
     public function listForAdmin(
         int $limit = 100,
         int $offset = 0,
@@ -147,6 +181,23 @@ final class PagesRepository
         $params = ['contains' => $contains];
         if ($status !== null && $status !== '' && $status !== 'all') {
             $sql .= ' AND status = :status';
+            $params['status'] = $status;
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch();
+
+        return (int) ($row['cnt'] ?? 0);
+    }
+
+    public function countByStatus(?string $status = null): int
+    {
+        $sql = 'SELECT COUNT(*) AS cnt FROM pages';
+        $params = [];
+
+        if ($status !== null && $status !== '' && $status !== 'all') {
+            $sql .= ' WHERE status = :status';
             $params['status'] = $status;
         }
 

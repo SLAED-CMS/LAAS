@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="card mb-3">
+  <div class="card-body">
+    <h1 class="h4 mb-3">{% t 'admin.api_tokens.title' %}</h1>
+    <div id="page-messages">
+      {% include "partials/messages.html" %}
+    </div>
+    <div id="api-token-created">
+      {% include "partials/api_token_created.html" %}
+    </div>
+    <form class="row g-3" method="post" action="/admin/api/tokens"
+          hx-post="/admin/api/tokens"
+          hx-target="#api-token-created"
+          hx-swap="innerHTML">
+      <input type="hidden" name="_token" value="{% csrf_token %}">
+      <div class="col-md-6">
+        <label class="form-label" for="token-name">{% t 'admin.api_tokens.name_label' %}</label>
+        <input class="form-control" id="token-name" name="name" placeholder="{% t 'admin.api_tokens.name_placeholder' %}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="token-expires">{% t 'admin.api_tokens.expires_label' %}</label>
+        <input class="form-control" id="token-expires" name="expires_at" placeholder="{% t 'admin.api_tokens.expires_placeholder' %}">
+      </div>
+      <div class="col-12">
+        <button class="btn btn-primary" type="submit">{% t 'admin.api_tokens.create_button' %}</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <h2 class="h6 mb-3">{% t 'admin.api_tokens.list_title' %}</h2>
+    <div id="api-token-table">
+      {% include "partials/api_tokens_table.html" %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -87,6 +87,49 @@ final class MediaRepository
         return (int) ($row['cnt'] ?? 0);
     }
 
+    /** @return array<int, array<string, mixed>> */
+    public function listPublic(int $limit, int $offset, string $query = ''): array
+    {
+        $sql = 'SELECT * FROM media_files WHERE is_public = 1';
+        $params = [];
+
+        if ($query !== '') {
+            $escaped = LikeEscaper::escape($query);
+            $sql .= ' AND (original_name LIKE :q ESCAPE \'\\\' OR mime_type LIKE :q ESCAPE \'\\\')';
+            $params['q'] = '%' . $escaped . '%';
+        }
+
+        $sql .= ' ORDER BY id DESC LIMIT :limit OFFSET :offset';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue('offset', $offset, PDO::PARAM_INT);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+        $stmt->execute();
+        $rows = $stmt->fetchAll();
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    public function countPublic(string $query = ''): int
+    {
+        $sql = 'SELECT COUNT(*) AS cnt FROM media_files WHERE is_public = 1';
+        $params = [];
+
+        if ($query !== '') {
+            $escaped = LikeEscaper::escape($query);
+            $sql .= ' AND (original_name LIKE :q ESCAPE \'\\\' OR mime_type LIKE :q ESCAPE \'\\\')';
+            $params['q'] = '%' . $escaped . '%';
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch();
+
+        return (int) ($row['cnt'] ?? 0);
+    }
+
     public function countSearch(string $query): int
     {
         $query = trim($query);

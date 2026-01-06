@@ -42,5 +42,18 @@
       {% endforeach %}
     </select>
   </div>
+  <div class="mb-3">
+    <label class="form-label" for="api-token-issue-mode">
+      {% t 'admin.settings.api_token_issue_mode' %}
+      {% if source.api_token_issue_mode %}
+      <span class="badge bg-secondary-subtle text-secondary ms-2">{% source.api_token_issue_mode %}</span>
+      {% endif %}
+    </label>
+    <select class="form-select" id="api-token-issue-mode" name="api_token_issue_mode">
+      {% foreach apiTokenIssueModeOptions as opt %}
+      <option value="{% opt.value %}" {% raw opt.selected_attr %}>{% opt.label %}</option>
+      {% endforeach %}
+    </select>
+  </div>
   <button class="btn btn-primary" type="submit">{% t 'admin.settings.save' %}</button>
 </form>

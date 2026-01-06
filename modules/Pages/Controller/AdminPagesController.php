@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Laas\Modules\Pages\Controller;
 
+use Laas\Api\ApiCacheInvalidator;
 use Laas\Database\DatabaseManager;
 use Laas\Core\Validation\Validator;
 use Laas\Core\Validation\ValidationResult;
@@ -257,6 +258,8 @@ final class AdminPagesController
             );
         }
 
+        (new ApiCacheInvalidator())->bumpPages();
+
         if ($request->isHtmx()) {
             return $this->view->render('partials/page_form_messages.html', [
                 'success' => $this->view->translate('admin.pages.saved'),
@@ -305,6 +308,8 @@ final class AdminPagesController
             $request->ip()
         );
 
+        (new ApiCacheInvalidator())->bumpPages();
+
         if ($request->isHtmx()) {
             return new Response('', 200);
         }
@@ -342,6 +347,8 @@ final class AdminPagesController
         $page['status'] = $nextStatus;
         $row = $this->buildPageRow($page, true);
         $row['flash'] = true;
+
+        (new ApiCacheInvalidator())->bumpPages();
 
         if ($request->isHtmx()) {
             return $this->view->render('partials/page_row.html', [

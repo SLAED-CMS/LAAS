@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Laas\Http\Middleware;
 
+use Laas\Api\ApiResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Psr\Log\LoggerInterface;
@@ -26,6 +27,20 @@ final class ErrorHandlerMiddleware implements MiddlewareInterface
                 'exception' => $e,
                 'request_id' => $this->requestId,
             ]);
+
+            if (str_starts_with($request->getPath(), '/api/')) {
+                $details = [
+                    'request_id' => $this->requestId,
+                ];
+
+                if ($this->debug) {
+                    $details['message'] = $e->getMessage();
+                    $details['trace'] = $e->getTraceAsString();
+                }
+
+                return ApiResponse::error('internal_error', 'Internal Server Error', $details, 500)
+                    ->withHeader('X-Request-Id', $this->requestId);
+            }
 
             if ($request->expectsJson()) {
                 $payload = [

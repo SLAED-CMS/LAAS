@@ -22,13 +22,16 @@ final class SettingsController
     public function index(Request $request): Response
     {
         $appConfig = $this->loadAppConfig();
+        $apiConfig = $this->loadApiConfig();
         $locales = $this->normalizeList($appConfig['locales'] ?? []);
         $themes = $this->discoverThemes();
+        $tokenIssueModes = $this->apiTokenIssueModes();
 
         $defaults = [
             'site_name' => 'LAAS CMS',
             'default_locale' => (string) ($appConfig['default_locale'] ?? 'en'),
             'theme' => (string) ($appConfig['theme'] ?? 'default'),
+            'api_token_issue_mode' => (string) ($apiConfig['token_issue_mode'] ?? 'admin'),
         ];
 
         $settings = $defaults;
@@ -36,15 +39,18 @@ final class SettingsController
             'site_name' => 'CONFIG',
             'default_locale' => 'CONFIG',
             'theme' => 'CONFIG',
+            'api_token_issue_mode' => 'CONFIG',
         ];
         $repo = $this->getRepository();
         if ($repo !== null) {
             $settings['site_name'] = (string) $repo->get('site_name', $defaults['site_name']);
             $settings['default_locale'] = (string) $repo->get('default_locale', $defaults['default_locale']);
             $settings['theme'] = (string) $repo->get('theme', $defaults['theme']);
+            $settings['api_token_issue_mode'] = (string) $repo->get('api.token_issue_mode', $defaults['api_token_issue_mode']);
             $sources['site_name'] = $repo->has('site_name') ? 'DB' : 'CONFIG';
             $sources['default_locale'] = $repo->has('default_locale') ? 'DB' : 'CONFIG';
             $sources['theme'] = $repo->has('theme') ? 'DB' : 'CONFIG';
+            $sources['api_token_issue_mode'] = $repo->has('api.token_issue_mode') ? 'DB' : 'CONFIG';
         }
 
         if (!in_array($settings['default_locale'], $locales, true)) {
@@ -52,6 +58,9 @@ final class SettingsController
         }
         if (!in_array($settings['theme'], $themes, true)) {
             $settings['theme'] = $defaults['theme'];
+        }
+        if (!array_key_exists($settings['api_token_issue_mode'], $tokenIssueModes)) {
+            $settings['api_token_issue_mode'] = $defaults['api_token_issue_mode'];
         }
 
         $saved = $request->query('saved') === '1';
@@ -64,6 +73,7 @@ final class SettingsController
             'source' => $sources,
             'localesOptions' => $this->buildOptions($locales, $settings['default_locale']),
             'themesOptions' => $this->buildOptions($themes, $settings['theme']),
+            'apiTokenIssueModeOptions' => $this->buildOptionsWithLabels($tokenIssueModes, $settings['api_token_issue_mode']),
             'success' => $successMessage,
             'errors' => $errorMessages,
             'form' => [
@@ -78,12 +88,15 @@ final class SettingsController
     public function save(Request $request): Response
     {
         $appConfig = $this->loadAppConfig();
+        $apiConfig = $this->loadApiConfig();
         $locales = $this->normalizeList($appConfig['locales'] ?? []);
         $themes = $this->discoverThemes();
+        $tokenIssueModes = $this->apiTokenIssueModes();
 
         $siteName = trim((string) ($request->post('site_name') ?? ''));
         $defaultLocale = (string) ($request->post('default_locale') ?? '');
         $theme = (string) ($request->post('theme') ?? '');
+        $apiTokenIssueMode = (string) ($request->post('api_token_issue_mode') ?? ($apiConfig['token_issue_mode'] ?? 'admin'));
 
         $errors = [];
         if ($siteName === '' || strlen($siteName) > 80) {
@@ -95,19 +108,23 @@ final class SettingsController
         if (!in_array($theme, $themes, true)) {
             $errors[] = 'theme';
         }
+        if (!array_key_exists($apiTokenIssueMode, $tokenIssueModes)) {
+            $errors[] = 'api_token_issue_mode';
+        }
 
         $repo = $this->getRepository();
         if ($repo === null) {
-            return $this->saveErrorResponse($request, $siteName, $defaultLocale, $theme, $locales, $themes, 503);
+            return $this->saveErrorResponse($request, $siteName, $defaultLocale, $theme, $apiTokenIssueMode, $locales, $themes, $tokenIssueModes, 503);
         }
 
         if ($errors !== []) {
-            return $this->saveErrorResponse($request, $siteName, $defaultLocale, $theme, $locales, $themes, 422);
+            return $this->saveErrorResponse($request, $siteName, $defaultLocale, $theme, $apiTokenIssueMode, $locales, $themes, $tokenIssueModes, 422);
         }
 
         $repo->set('site_name', $siteName, 'string');
         $repo->set('default_locale', $defaultLocale, 'string');
         $repo->set('theme', $theme, 'string');
+        $repo->set('api.token_issue_mode', $apiTokenIssueMode, 'string');
         (new AuditLogger($this->db, $request->session()))->log(
             'settings.update',
             'setting',
@@ -116,16 +133,18 @@ final class SettingsController
                 'site_name' => $siteName,
                 'default_locale' => $defaultLocale,
                 'theme' => $theme,
+                'api_token_issue_mode' => $apiTokenIssueMode,
             ],
             $this->currentUserId($request),
             $request->ip()
         );
 
         if ($request->isHtmx()) {
-            return $this->renderFormPartial($siteName, $defaultLocale, $theme, $locales, $themes, true, false, 200, [
+            return $this->renderFormPartial($siteName, $defaultLocale, $theme, $apiTokenIssueMode, $locales, $themes, $tokenIssueModes, true, false, 200, [
                 'site_name' => 'DB',
                 'default_locale' => 'DB',
                 'theme' => 'DB',
+                'api_token_issue_mode' => 'DB',
             ]);
         }
 
@@ -139,24 +158,28 @@ final class SettingsController
         string $siteName,
         string $defaultLocale,
         string $theme,
+        string $apiTokenIssueMode,
         array $locales,
         array $themes,
+        array $tokenIssueModes,
         int $status
     ): Response {
         $sources = [
             'site_name' => 'DB',
             'default_locale' => 'DB',
             'theme' => 'DB',
+            'api_token_issue_mode' => 'DB',
         ];
         $repo = $this->getRepository();
         if ($repo !== null) {
             $sources['site_name'] = $repo->has('site_name') ? 'DB' : 'CONFIG';
             $sources['default_locale'] = $repo->has('default_locale') ? 'DB' : 'CONFIG';
             $sources['theme'] = $repo->has('theme') ? 'DB' : 'CONFIG';
+            $sources['api_token_issue_mode'] = $repo->has('api.token_issue_mode') ? 'DB' : 'CONFIG';
         }
 
         if ($request->isHtmx()) {
-            return $this->renderFormPartial($siteName, $defaultLocale, $theme, $locales, $themes, false, true, $status, $sources);
+            return $this->renderFormPartial($siteName, $defaultLocale, $theme, $apiTokenIssueMode, $locales, $themes, $tokenIssueModes, false, true, $status, $sources);
         }
 
         return new Response('', 302, [
@@ -168,8 +191,10 @@ final class SettingsController
         string $siteName,
         string $defaultLocale,
         string $theme,
+        string $apiTokenIssueMode,
         array $locales,
         array $themes,
+        array $tokenIssueModes,
         bool $saved,
         bool $error,
         int $status,
@@ -180,10 +205,12 @@ final class SettingsController
                 'site_name' => $siteName,
                 'default_locale' => $defaultLocale,
                 'theme' => $theme,
+                'api_token_issue_mode' => $apiTokenIssueMode,
             ],
             'source' => $sources,
             'localesOptions' => $this->buildOptions($locales, $defaultLocale),
             'themesOptions' => $this->buildOptions($themes, $theme),
+            'apiTokenIssueModeOptions' => $this->buildOptionsWithLabels($tokenIssueModes, $apiTokenIssueMode),
             'success' => $saved ? $this->view->translate('admin.settings.saved') : null,
             'errors' => $error ? [$this->view->translate('admin.settings.error_invalid')] : [],
             'form' => [
@@ -211,6 +238,18 @@ final class SettingsController
     private function loadAppConfig(): array
     {
         $configPath = dirname(__DIR__, 3) . '/config/app.php';
+        $configPath = realpath($configPath) ?: $configPath;
+        if (!is_file($configPath)) {
+            return [];
+        }
+
+        $config = require $configPath;
+        return is_array($config) ? $config : [];
+    }
+
+    private function loadApiConfig(): array
+    {
+        $configPath = dirname(__DIR__, 3) . '/config/api.php';
         $configPath = realpath($configPath) ?: $configPath;
         if (!is_file($configPath)) {
             return [];
@@ -276,6 +315,28 @@ final class SettingsController
         }
 
         return $options;
+    }
+
+    private function buildOptionsWithLabels(array $values, string $selected): array
+    {
+        $options = [];
+        foreach ($values as $value => $label) {
+            $options[] = [
+                'value' => $value,
+                'label' => $label,
+                'selected_attr' => $value === $selected ? 'selected' : '',
+            ];
+        }
+
+        return $options;
+    }
+
+    private function apiTokenIssueModes(): array
+    {
+        return [
+            'admin' => $this->view->translate('admin.settings.api_token_issue_mode.admin'),
+            'admin_or_password' => $this->view->translate('admin.settings.api_token_issue_mode.admin_or_password'),
+        ];
     }
 
     private function currentUserId(Request $request): ?int

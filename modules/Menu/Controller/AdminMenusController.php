@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Laas\Modules\Menu\Controller;
 
+use Laas\Api\ApiCacheInvalidator;
 use Laas\Core\Validation\Validator;
 use Laas\Core\Validation\ValidationResult;
 use Laas\Database\DatabaseManager;
@@ -173,6 +174,7 @@ final class AdminMenusController
         );
 
         (new MenuCacheInvalidator())->invalidate((string) ($menu['name'] ?? ''));
+        (new ApiCacheInvalidator())->invalidateMenu((string) ($menu['name'] ?? ''));
 
         return $this->renderFormResponse(
             $request,
@@ -228,6 +230,7 @@ final class AdminMenusController
         );
 
         (new MenuCacheInvalidator())->invalidate((string) ($menu['name'] ?? ''));
+        (new ApiCacheInvalidator())->invalidateMenu((string) ($menu['name'] ?? ''));
 
         return $this->renderTableResponse($menu, $request, [], true, $id);
     }
@@ -267,6 +270,7 @@ final class AdminMenusController
         );
 
         (new MenuCacheInvalidator())->invalidate((string) ($menu['name'] ?? ''));
+        (new ApiCacheInvalidator())->invalidateMenu((string) ($menu['name'] ?? ''));
 
         return $this->renderTableResponse($menu, $request, [], true, null);
     }

@@ -1,0 +1,40 @@
+<table class="table table-striped table-hover align-middle">
+  <thead>
+    <tr>
+      <th>{% t 'admin.api_tokens.table.name' %}</th>
+      <th>{% t 'admin.api_tokens.table.created_at' %}</th>
+      <th>{% t 'admin.api_tokens.table.last_used_at' %}</th>
+      <th>{% t 'admin.api_tokens.table.expires_at' %}</th>
+      <th>{% t 'admin.api_tokens.table.actions' %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% if tokens %}
+      {% foreach tokens as token %}
+      <tr>
+        <td>{% token.name %}</td>
+        <td>{% token.created_at %}</td>
+        <td>{% token.last_used_at %}</td>
+        <td>{% token.expires_at %}</td>
+        <td>
+          <form method="post" action="/admin/api/tokens/revoke"
+                hx-post="/admin/api/tokens/revoke"
+                hx-target="#api-token-created"
+                hx-swap="innerHTML"
+                hx-confirm="{% t 'admin.api_tokens.revoke_confirm' %}">
+            <input type="hidden" name="_token" value="{% csrf_token %}">
+            <input type="hidden" name="id" value="{% token.id %}">
+            <button class="btn btn-sm btn-outline-danger" type="submit">{% t 'admin.api_tokens.revoke' %}</button>
+          </form>
+        </td>
+      </tr>
+      {% endforeach %}
+    {% else %}
+      <tr>
+        <td colspan="5">
+          <div class="alert alert-secondary mb-0">{% t 'admin.api_tokens.empty' %}</div>
+        </td>
+      </tr>
+    {% endif %}
+  </tbody>
+</table>

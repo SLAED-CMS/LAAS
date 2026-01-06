@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Laas\Http\Middleware;
 
+use Laas\Api\ApiResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Security\RateLimiter;
@@ -27,7 +28,7 @@ final class RateLimitMiddleware implements MiddlewareInterface
             $result = $this->rateLimiter->hit('api', $request->ip(), $window, $max);
 
             if (!$result['allowed']) {
-                return Response::json(['error' => 'rate_limited'], 429)
+                return ApiResponse::error('rate_limited', 'Too Many Requests', [], 429)
                     ->withHeader('Retry-After', (string) $result['retry_after']);
             }
 

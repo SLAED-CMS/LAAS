@@ -10,6 +10,7 @@ use Laas\Auth\AuthService;
 use Laas\Auth\AuthorizationService;
 use Laas\Auth\NullAuthService;
 use Laas\Http\Middleware\AuthMiddleware;
+use Laas\Http\Middleware\ApiMiddleware;
 use Laas\Http\Middleware\RbacMiddleware;
 use Laas\Http\Middleware\ErrorHandlerMiddleware;
 use Laas\Http\Middleware\CsrfMiddleware;
@@ -179,6 +180,7 @@ final class Kernel
         $middleware = new MiddlewareQueue([
             new ErrorHandlerMiddleware($logger, (bool) ($appConfig['debug'] ?? false), $requestId),
             new SessionMiddleware(new SessionManager($this->rootPath, $securityConfig)),
+            new ApiMiddleware($this->database(), $authorization, $this->config['api'] ?? []),
             new ReadOnlyMiddleware((bool) ($appConfig['read_only'] ?? false), $translator, $view),
             new CsrfMiddleware(),
             new RateLimitMiddleware(new RateLimiter($this->rootPath), $securityConfig),
@@ -244,6 +246,7 @@ final class Kernel
             'database' => $configDir . '/database.php',
             'media' => $configDir . '/media.php',
             'storage' => $configDir . '/storage.php',
+            'api' => $configDir . '/api.php',
         ];
 
         $config = [];
