@@ -198,11 +198,11 @@ Grouping is **purely for UI presentation**. Permissions are still checked indivi
 
 ### Admin Permissions
 
-| Permission           | Description                              |
-|----------------------|------------------------------------------|
-| `admin.access`       | Access admin panel (required for all)    |
-| `admin.settings`     | Edit system settings                     |
-| `admin.modules`      | Enable/disable modules                   |
+| Permission                  | Description                              | Added   |
+|-----------------------------|------------------------------------------|---------|
+| `admin.access`              | Access admin panel (required for all)    | v1.0    |
+| `admin.settings.manage`     | Edit system settings                     | v2.3.14 |
+| `admin.modules.manage`      | Enable/disable modules                   | v2.3.13 |
 
 ### Pages Permissions
 
@@ -223,14 +223,15 @@ Grouping is **purely for UI presentation**. Permissions are still checked indivi
 
 ### Users Permissions
 
-| Permission           | Description                              |
-|----------------------|------------------------------------------|
-| `users.view`         | View user list                           |
-| `users.create`       | Create new users                         |
-| `users.edit`         | Edit existing users                      |
-| `users.delete`       | Delete users                             |
-| `rbac.manage`        | Manage roles and permissions             |
-| `rbac.diagnostics`   | View RBAC diagnostics page               |
+| Permission           | Description                              | Added   |
+|----------------------|------------------------------------------|---------|
+| `users.view`         | View user list                           | v1.0    |
+| `users.create`       | Create new users                         | v1.0    |
+| `users.edit`         | Edit existing users                      | v1.0    |
+| `users.delete`       | Delete users                             | v1.0    |
+| `users.manage`       | User management operations (status, admin toggle, password reset) | v2.3.12 |
+| `rbac.manage`        | Manage roles and permissions             | v1.0    |
+| `rbac.diagnostics`   | View RBAC diagnostics page               | v2.2.0  |
 
 ### Menus Permissions
 

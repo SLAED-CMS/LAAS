@@ -1,5 +1,29 @@
 # LAAS Versions
 
+- v2.3.18: H-02 hardening for menu URLs
+  - Reject control characters in menu URLs
+- v2.3.17: Final security review (C-01..H-02)
+  - Checklist verification and regression scan
+- v2.3.16: Menu URL injection hardening
+  - URL allowlist (http/https/relative)
+  - Blocked javascript/data/vbscript schemes
+- v2.3.15: SSRF hardening for GitHub changelog
+  - Enforced HTTPS + allowlisted GitHub hosts
+  - Blocked private/localhost/link-local IPs
+  - cURL protocol and redirect restrictions
+- v2.3.14: RBAC hardening for Settings
+  - New permission `admin.settings.manage`
+  - Audit log for settings updates
+- v2.3.13: RBAC hardening for Modules management
+  - New permission `admin.modules.manage`
+  - Audit log for module enable/disable
+- v2.3.12: RBAC hardening for User Management
+  - New permission `users.manage` required for admin users list and actions
+  - Audit log for user status changes
+- v2.3.11: Stored XSS fix (pages)
+  - Server-side HTML sanitizer for page content (allowlist)
+  - Sanitization enforced on save; unsafe tags/attrs stripped
+  - Page template renders sanitized content with raw block
 - v2.3.10: API/security test suites + CI api-tests
   - PHPUnit `@group api` coverage for tokens, auth failures, rate limits, CORS
   - GitHub Actions job `api-tests` (junit-api artifact)

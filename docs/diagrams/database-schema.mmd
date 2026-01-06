@@ -1,9 +1,9 @@
 erDiagram
-    %% LAAS CMS v2.3.10 - Database Schema
-    %% 14 tables, 30 migrations, InnoDB/SQLite
-    %% Indexes: slug (0.5-1ms), status, uuid, timestamps
-    %% Security: Argon2id, audit logging, hard deletes, API tokens
-    %% Version: v2.3.10 (2026-01-05)
+    %% LAAS CMS v2.3.18 - Database Schema
+    %% 15 tables, 33+ migrations, InnoDB/SQLite
+    %% Indexes: slug (0.5-1ms), status, uuid, timestamps, token_hash
+    %% Security: Argon2id, audit logging, hard deletes, API tokens, XSS/SSRF hardening
+    %% Version: v2.3.18 (2026-01-06)
 
     users ||--o{ role_user : "has"
     roles ||--o{ role_user : "assigned to"
@@ -11,6 +11,7 @@ erDiagram
     permissions ||--o{ permission_role : "granted to"
     users ||--o{ media_files : "uploads"
     users ||--o{ audit_logs : "creates"
+    users ||--o{ api_tokens : "owns"
     menus ||--o{ menu_items : "contains"
     menu_items ||--o{ menu_items : "parent-child"
 
@@ -125,4 +126,15 @@ erDiagram
         varchar migration UK "255 chars, filename"
         int batch "Migration batch number"
         datetime applied_at
+    }
+
+    api_tokens {
+        int id PK
+        int user_id FK "References users"
+        varchar name "100 chars, token label"
+        char token_hash UK "64 chars, SHA-256 hash"
+        datetime last_used_at "Nullable"
+        datetime expires_at "Nullable"
+        datetime revoked_at "Nullable, v2.3.4+"
+        datetime created_at
     }

@@ -27,27 +27,88 @@
 
 ## Version-Specific Upgrade Paths
 
-### v1.x / v2.x → v2.3.10 (Current Stable)
+### v1.x / v2.x → v2.3.18 (Current Stable)
 
-**Overview:** API maturity, changelog module, enhanced security.
+**Overview:** Security hardening complete, API maturity, changelog module.
 
-**Key changes:**
+**Key security improvements (v2.3.11-18):**
+- **Stored XSS fix:** Server-side HTML sanitization for page content
+- **RBAC hardening:** New permissions for users, modules, settings management
+- **SSRF hardening:** GitHub changelog API with host allowlist, IP blocking
+- **URL injection prevention:** Menu URL validation with scheme allowlist
+- **Security review:** Final checklist verification (C-01..H-02)
+
+**Other changes:**
 - **API v1:** REST endpoints with Bearer token authentication, CORS, rate limiting
 - **Changelog Module:** Git-based changelog (GitHub API or local git provider)
 - **API Tokens:** Token management in admin UI with rotation support
-- **Enhanced Security:** Token expiry/revocation, audit logging for auth failures
 
 **Upgrade steps:**
 1. Follow standard upgrade flow
-2. New tables: `api_tokens` created automatically via migrations
-3. Test API endpoints: `/api/v1/ping`, `/api/v1/health`
-4. Configure changelog (optional): `/admin/changelog`
-5. Review API documentation: [docs/API.md](docs/API.md)
-6. Review changelog docs: [docs/CHANGELOG_MODULE.md](docs/CHANGELOG_MODULE.md)
+2. New tables created automatically via migrations:
+   - `api_tokens` (API authentication)
+   - Permission seeds for `users.manage`, `admin.modules.manage`, `admin.settings.manage`
+3. Grant new permissions to admin role:
+   ```bash
+   php tools/cli.php rbac:grant admin users.manage
+   php tools/cli.php rbac:grant admin admin.modules.manage
+   php tools/cli.php rbac:grant admin admin.settings.manage
+   ```
+4. Test critical flows:
+   - API endpoints: `/api/v1/ping`, `/api/v1/me`
+   - User management: `/admin/users`
+   - Module management: `/admin/modules`
+   - Settings management: `/admin/settings`
+   - Changelog (if enabled): `/changelog`, `/admin/changelog`
+5. Review updated documentation:
+   - [SECURITY.md](SECURITY.md) - Security features and hardening
+   - [docs/API.md](docs/API.md) - API documentation
+   - [docs/CHANGELOG_MODULE.md](docs/CHANGELOG_MODULE.md) - Changelog module
+   - [docs/RBAC.md](docs/RBAC.md) - New permissions
+6. Verify menu URLs (v2.3.16+): Menu URLs with `javascript:`, `data:`, or `vbscript:` schemes will be rejected
 
 ---
 
-### v2.2.x → v2.3.x
+### v2.3.10 → v2.3.18
+
+**Security-focused release.**
+
+**Changes:**
+- **v2.3.11:** Stored XSS fix with server-side HTML sanitization
+- **v2.3.12-14:** RBAC hardening for users/modules/settings management
+- **v2.3.15:** SSRF hardening for GitHub changelog provider
+- **v2.3.16-18:** Menu URL injection prevention with validation
+- **v2.3.17:** Final security review (C-01..H-02)
+
+**New permissions:**
+- `users.manage` - User management operations
+- `admin.modules.manage` - Module enable/disable
+- `admin.settings.manage` - Settings updates
+
+**Breaking changes:**
+- **Menu URLs:** `javascript:`, `data:`, `vbscript:` schemes are now rejected
+- **Page content:** Unsafe HTML tags/attributes are stripped on save (script, iframe, SVG, on* attributes)
+- **RBAC:** Admin users without `users.manage` cannot access `/admin/users`
+- **RBAC:** Admin users without `admin.modules.manage` cannot manage modules
+- **RBAC:** Admin users without `admin.settings.manage` cannot update settings
+
+**Upgrade steps:**
+1. Follow standard upgrade flow
+2. Grant new permissions to admin role:
+   ```bash
+   php tools/cli.php rbac:grant admin users.manage
+   php tools/cli.php rbac:grant admin admin.modules.manage
+   php tools/cli.php rbac:grant admin admin.settings.manage
+   ```
+3. Review existing menu URLs for disallowed schemes (migrations will reject invalid URLs)
+4. Review page content - unsafe HTML will be sanitized on next save
+5. Test all admin operations to ensure permissions are correctly assigned
+
+**Rollback:** If needed, restore from backup and downgrade to v2.3.10
+
+---
+
+### v2.2.x → v2.3.10
 
 **Changes:**
 - API v1 module with Bearer tokens, RBAC, CORS, rate limiting

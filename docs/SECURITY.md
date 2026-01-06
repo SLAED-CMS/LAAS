@@ -7,11 +7,19 @@
 ## Security Headers
 - CSP, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy.
 - Config: `config/security.php`.
+- HSTS is configurable and disabled by default; enable for HTTPS deployments.
+- CSP includes `'unsafe-inline'` for styles (documented in production hardening).
 
 ## CSRF
 - Enabled by default.
 - Required for POST/PUT/PATCH/DELETE.
 - Endpoint: `/csrf`.
+
+## Stored XSS (Pages)
+- Page content is sanitized server-side on save.
+- Allowlist: `p`, `h1-h6`, `ul`, `ol`, `li`, `strong`, `em`, `a[href]`, `img[src|alt]`, `br`, `blockquote`.
+- Blocked: `script`, `iframe`, `svg`, `on*` attributes, `javascript:` and `data:` URLs.
+- `{% raw %}` is only used for already sanitized content.
 
 ## Rate limit
 - Groups: `api`, `login`, `media_upload`.
@@ -57,6 +65,33 @@
 ## RBAC
 - Roles/permissions tables with gate on `/admin*`.
 - Permissions include `media.view`, `media.upload`, `media.delete`, `debug.view`.
+
+## RBAC hardening (Users)
+- User management requires `users.manage`.
+- Admin user status/admin/password/delete actions are logged to the audit log.
+- Password changes require at least 8 characters with letters and numbers.
+
+## RBAC hardening (Modules)
+- Modules management requires `admin.modules.manage`.
+- Module enable/disable actions are logged to the audit log.
+
+## RBAC hardening (Settings)
+- Settings management requires `admin.settings.manage`.
+- Settings updates are logged to the audit log.
+
+## SSRF hardening (GitHub Changelog)
+- Only HTTPS to `api.github.com` and `github.com`.
+- Blocks localhost, private, and link-local IPs on resolution.
+- cURL protocol/redirect restrictions to HTTPS only.
+
+## Menu URL validation
+- Allowed: `http://`, `https://`, and relative URLs (`/path`).
+- Blocked: `javascript:`, `data:`, `vbscript:` and protocol-relative URLs.
+- Validation enforced before save in admin menus.
+- Control characters (0x00-0x1F, 0x7F) are rejected to prevent obfuscation.
+
+## Security review (v2.3.17)
+- Final checklist review for C-01..H-02 completed with evidence.
 
 ## Audit Log
 - `audit_logs` with context payloads and IP/user tracking.

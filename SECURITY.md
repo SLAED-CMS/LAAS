@@ -112,11 +112,20 @@ LAAS CMS is built with security as a first-class concern. Current security featu
 - **RBAC** (Role-Based Access Control) for granular permissions
 - **Permission groups** for easier management
 - **Admin diagnostics** for permission introspection
+- **RBAC hardening** (v2.3.12-14):
+  - `users.manage` for user management operations
+  - `admin.modules.manage` for module enable/disable
+  - `admin.settings.manage` for settings updates
+  - All changes audited with context
 
 ### Input Validation & Output Encoding
 
 - **Validation layer** with rules engine (required, email, min, max, etc.)
 - **Template auto-escaping** by default (XSS prevention)
+- **Server-side HTML sanitization** for user content (v2.3.11+)
+  - Allowlist-based tag/attribute filtering
+  - `javascript:`, `data:`, `vbscript:` URL blocking
+  - Script/iframe/SVG removal
 - **Prepared statements** for all SQL queries (SQL injection prevention)
 - **MIME type validation** for file uploads
 - **File size limits** (global and per-MIME type)
@@ -151,6 +160,20 @@ LAAS CMS is built with security as a first-class concern. Current security featu
 - **X-Content-Type-Options** (MIME sniffing prevention)
 - **Referrer-Policy**
 - **Permissions-Policy**
+
+### Injection Prevention
+
+- **SSRF hardening** for GitHub changelog (v2.3.15):
+  - HTTPS-only GitHub API requests
+  - Host allowlist (api.github.com, github.com)
+  - Private/localhost/link-local IP blocking
+  - cURL protocol/redirect restrictions
+- **Menu URL validation** (v2.3.16-18):
+  - Allowed schemes: http/https/relative only
+  - Blocked: javascript:, data:, vbscript:
+  - Control character rejection (0x00-0x1F, 0x7F)
+- **SQL injection prevention** via prepared statements (all queries)
+- **Command injection prevention** (no shell execution of user input)
 
 ### Audit & Monitoring
 

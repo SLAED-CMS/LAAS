@@ -1,6 +1,6 @@
 # Changelog Module
 
-**Current version:** v2.3.10
+**Current version:** v2.3.18
 
 ## Overview
 - Provides a read-only changelog feed for commits
@@ -29,6 +29,12 @@
 - Admin errors are sanitized
 - Repository path is validated and masked in UI
 - No web endpoint executes arbitrary git commands
+- **SSRF Hardening (v2.3.15+)**:
+  - GitHub API enforces HTTPS only
+  - Allowlisted GitHub hosts (api.github.com, raw.githubusercontent.com)
+  - Blocked private/localhost/link-local IPs
+  - cURL protocol restrictions (http/https only)
+  - Redirect following disabled
 
 ## Caching
 - File-based cache in `storage/cache/changelog`
@@ -48,6 +54,12 @@
 - `changelog.cache.clear` (cache clear)
 
 ## Version History
+
+### v2.3.15 - SSRF Hardening
+- **Added:** HTTPS enforcement for GitHub API requests
+- **Added:** GitHub host allowlist validation
+- **Added:** Private/localhost/link-local IP blocking
+- **Added:** cURL protocol and redirect restrictions
 
 ### v2.3.3 - Settings Persistence Fix
 - **Fixed:** Race condition in settings cache during parallel requests
