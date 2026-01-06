@@ -11,13 +11,18 @@ use Laas\Modules\Media\Repository\MediaRepository;
 use Laas\Modules\Media\Service\MediaSignedUrlService;
 use Laas\Modules\Media\Service\MediaThumbnailService;
 use Laas\Modules\Media\Service\StorageService;
+use Laas\View\View;
 use Throwable;
 
 final class MediaThumbController
 {
-    public function __construct(
-        private ?DatabaseManager $db = null
-    ) {
+    private ?View $view;
+    private ?DatabaseManager $db;
+
+    public function __construct(DatabaseManager|View|null $first = null, DatabaseManager|View|null $second = null)
+    {
+        $this->view = $first instanceof View ? $first : ($second instanceof View ? $second : null);
+        $this->db = $first instanceof DatabaseManager ? $first : ($second instanceof DatabaseManager ? $second : null);
     }
 
     public function serve(Request $request, array $params = []): Response

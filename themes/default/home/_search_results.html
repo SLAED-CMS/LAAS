@@ -1,0 +1,64 @@
+{% if search.errors %}
+  <div class="alert alert-danger">
+    {% foreach search.errors as err %}{% err %}{% endforeach %}
+  </div>
+{% endif %}
+
+{% if search.q %}
+  <div class="row g-3">
+    <div class="col-12 col-lg-6">
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <span class="badge text-bg-primary">Pages</span>
+      </div>
+      {% if search.results.pages %}
+        <div class="list-group">
+          {% foreach search.results.pages as result %}
+            <a class="list-group-item list-group-item-action" href="{% result.url %}">
+              <div class="fw-semibold d-flex align-items-center gap-2">
+                {% foreach result.title_segments as seg %}
+                  {% if seg.mark %}<mark>{% seg.text %}</mark>{% else %}{% seg.text %}{% endif %}
+                {% endforeach %}
+                <span class="badge text-bg-light text-dark border">Page</span>
+              </div>
+              <div class="text-muted small">
+                {% foreach result.snippet_segments as seg %}
+                  {% if seg.mark %}<mark>{% seg.text %}</mark>{% else %}{% seg.text %}{% endif %}
+                {% endforeach %}
+              </div>
+            </a>
+          {% endforeach %}
+        </div>
+      {% else %}
+        <div class="alert alert-secondary mb-0">No page results.</div>
+      {% endif %}
+    </div>
+    <div class="col-12 col-lg-6">
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <span class="badge text-bg-info">Media</span>
+      </div>
+      {% if search.results.media %}
+        <div class="list-group">
+          {% foreach search.results.media as result %}
+            <a class="list-group-item list-group-item-action" href="{% result.url %}">
+              <div class="fw-semibold d-flex align-items-center gap-2">
+                {% foreach result.name_segments as seg %}
+                  {% if seg.mark %}<mark>{% seg.text %}</mark>{% else %}{% seg.text %}{% endif %}
+                {% endforeach %}
+                <span class="badge text-bg-light text-dark border">Media</span>
+              </div>
+              <div class="text-muted small">
+                {% foreach result.mime_segments as seg %}
+                  {% if seg.mark %}<mark>{% seg.text %}</mark>{% else %}{% seg.text %}{% endif %}
+                {% endforeach %}
+              </div>
+            </a>
+          {% endforeach %}
+        </div>
+      {% else %}
+        <div class="alert alert-secondary mb-0">No media results.</div>
+      {% endif %}
+    </div>
+  </div>
+{% else %}
+  <div class="text-muted small">Type to search pages and media.</div>
+{% endif %}

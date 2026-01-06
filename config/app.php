@@ -17,6 +17,14 @@ $envBool = static function (string $key, bool $default) use ($env): bool {
     $parsed = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
     return $parsed ?? $default;
 };
+$envList = static function (string $key, array $default) use ($env): array {
+    $value = $env[$key] ?? null;
+    if ($value === null || $value === '') {
+        return $default;
+    }
+    $parts = array_filter(array_map('trim', explode(',', (string) $value)));
+    return $parts !== [] ? array_values($parts) : $default;
+};
 
 return [
     'name' => 'LAAS',
@@ -39,4 +47,6 @@ return [
     'admin_seed_password' => $envString('ADMIN_SEED_PASSWORD', 'change-me'),
     'read_only' => $envBool('APP_READ_ONLY', false),
     'middleware' => [],
+    'home_showcase_enabled' => $envBool('HOME_SHOWCASE_ENABLED', true),
+    'home_showcase_blocks' => $envList('HOME_SHOWCASE_BLOCKS', []),
 ];

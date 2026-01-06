@@ -1,0 +1,90 @@
+{% extends "layout.html" %}
+
+{% block content %}
+{% include "partials/header.html" %}
+
+{% if home_enabled %}
+<style>
+  .home-card-title { position: sticky; top: 0; background: #fff; z-index: 1; padding-top: 0.25rem; }
+  .home-pills .badge { font-weight: 500; }
+  .media-tile { position: relative; }
+  .media-thumb { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; }
+  .media-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.65); color: #fff; opacity: 0; transition: opacity .2s ease; padding: .5rem; }
+  .media-tile:hover .media-overlay { opacity: 1; }
+  .media-badge-private { background: #6c757d; }
+  .media-badge-signed { background: #0d6efd; }
+  .media-badge-public { background: #198754; }
+</style>
+<div id="loading" class="text-center my-3 htmx-indicator" style="display:none;">
+  <div class="spinner-border" role="status"></div>
+</div>
+
+<div class="row g-3">
+  {% if blocks.system %}
+  <div class="col-12 col-lg-6">
+    {% include "home/_system.html" %}
+  </div>
+  {% endif %}
+
+  {% if blocks.auth %}
+  <div class="col-12 col-lg-6">
+    {% include "home/_auth.html" %}
+  </div>
+  {% endif %}
+
+  {% if blocks.perf %}
+    {% if perf.enabled %}
+    <div class="col-12">
+      {% include "home/_perf.html" %}
+    </div>
+    {% endif %}
+  {% endif %}
+
+  {% if blocks.pages %}
+  <div class="col-12">
+    {% include "home/_pages.html" %}
+  </div>
+  {% endif %}
+
+  {% if blocks.changelog %}
+  <div class="col-12">
+    {% include "home/_changelog.html" %}
+  </div>
+  {% endif %}
+
+  {% if blocks.search %}
+  <div class="col-12">
+    {% include "home/_search.html" %}
+  </div>
+  {% endif %}
+
+  {% if blocks.media %}
+  <div class="col-12 col-lg-6">
+    {% include "home/_media.html" %}
+  </div>
+  {% endif %}
+
+  {% if blocks.menus %}
+  <div class="col-12 col-lg-6">
+    {% include "home/_menus.html" %}
+  </div>
+  {% endif %}
+
+  {% if blocks.audit %}
+    {% if audit.allowed %}
+    <div class="col-12">
+      {% include "home/_audit.html" %}
+    </div>
+    {% endif %}
+  {% endif %}
+
+  {% if blocks.features %}
+  <div class="col-12">
+    {% include "home/_features.html" %}
+  </div>
+  {% endif %}
+</div>
+{% else %}
+<div class="alert alert-secondary">Home showcase disabled.</div>
+{% endif %}
+{% endblock %}

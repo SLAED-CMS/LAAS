@@ -1311,6 +1311,24 @@ if (config('app.read_only') && $request->isWriteMethod()) {
 }
 ```
 
+### Home Showcase
+
+**Purpose:** The homepage is a read-only integration showcase that pulls real data from core modules.
+
+**Blocks:**
+- System/ops status (version, env, read-only, storage, cache)
+- Pages (recent + live search)
+- Media (latest + thumbnails)
+- Menus (active state)
+- Auth/RBAC snapshot (roles and permission count)
+- Audit (last entries, permission-gated)
+- Performance panel (debug only)
+
+**Rules:**
+- No write operations
+- Blocks can be disabled via config
+- RBAC-gated blocks are hidden when not allowed
+
 ### Backup & Restore
 
 **CLI commands:**

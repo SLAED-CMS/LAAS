@@ -1,0 +1,37 @@
+<div class="card">
+  <div class="card-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+      <h2 class="h5 mb-0 home-card-title">{% t 'changelog.title' %}</h2>
+      <a class="btn btn-outline-secondary btn-sm" href="/changelog">Open</a>
+    </div>
+    {% if changelog.enabled %}
+      {% if changelog.source_is_git %}
+        <div class="small text-muted mb-2">Source: Local git</div>
+      {% else %}
+        <div class="small text-muted mb-2">Source: GitHub</div>
+      {% endif %}
+
+      {% if changelog.error %}
+        <div class="alert alert-danger mb-0">{% changelog.error %}</div>
+      {% else %}
+        {% if changelog.groups %}
+          {% foreach changelog.groups as group %}
+            <div class="text-uppercase small text-muted fw-semibold mb-2 mt-3">{% group.date %}</div>
+            <div class="list-group mb-3">
+              {% foreach group.items as commit %}
+                <div class="list-group-item">
+                  <div class="fw-semibold">{% commit.title %}</div>
+                  <div class="small text-muted">{% commit.author_name %} - {% commit.committed_at %}</div>
+                </div>
+              {% endforeach %}
+            </div>
+          {% endforeach %}
+        {% else %}
+          <div class="alert alert-secondary mb-0">{% t 'changelog.no_results' %}</div>
+        {% endif %}
+      {% endif %}
+    {% else %}
+      <div class="alert alert-secondary mb-0">Changelog disabled.</div>
+    {% endif %}
+  </div>
+</div>

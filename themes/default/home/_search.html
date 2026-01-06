@@ -1,0 +1,20 @@
+<div class="card">
+  <div class="card-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+      <h2 class="h5 mb-0 home-card-title">Global Search</h2>
+      <div class="input-group" style="max-width: 360px;">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input class="form-control" type="search" name="q" value="{% search.q %}"
+               placeholder="Search pages and media"
+               hx-get="/"
+               hx-trigger="keyup changed delay:300ms"
+               hx-target="#home-search-results"
+               hx-include="[name=q]"
+               hx-indicator="#loading">
+      </div>
+    </div>
+    <div id="home-search-results">
+      {% include "home/_search_results.html" %}
+    </div>
+  </div>
+</div>

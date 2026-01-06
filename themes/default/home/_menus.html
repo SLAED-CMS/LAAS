@@ -1,0 +1,31 @@
+<div class="card h-100">
+  <div class="card-body">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h2 class="h5 mb-0 home-card-title">Menus</h2>
+      {% if menus.cache_badge %}
+      <span class="badge text-bg-secondary">cache</span>
+      {% endif %}
+    </div>
+    {% if menus.menu %}
+      {% if menus.items %}
+        <div class="list-group">
+          {% foreach menus.items as item %}
+            {% if item.active %}
+              <span class="list-group-item list-group-item-action active">
+                <i class="bi bi-dot me-1"></i>{% item.label %}
+              </span>
+            {% else %}
+              <a class="list-group-item list-group-item-action" href="{% item.url %}">
+                <i class="bi bi-dot me-1"></i>{% item.label %}
+              </a>
+            {% endif %}
+          {% endforeach %}
+        </div>
+      {% else %}
+        <div class="alert alert-secondary mb-0">Menu not configured.</div>
+      {% endif %}
+    {% else %}
+      <div class="alert alert-secondary mb-0">Menu not configured.</div>
+    {% endif %}
+  </div>
+</div>

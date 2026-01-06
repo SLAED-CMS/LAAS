@@ -1,4 +1,4 @@
-# LAAS CMS API v1
+# LAAS CMS API
 
 Base path: `/api/v1`
 
@@ -76,3 +76,5 @@ API_CORS_HEADERS=Authorization,Content-Type,X-Requested-With
 - Never log `Authorization` headers.
 - Auth errors are uniform (no token enumeration).
 - `/api/v1/me`, `/api/v1/auth/token`, `/api/v1/auth/revoke` use `Cache-Control: no-store`.
+
+**Last updated:** January 2026

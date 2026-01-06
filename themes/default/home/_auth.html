@@ -1,0 +1,45 @@
+<div class="card h-100">
+  <div class="card-body">
+    <h2 class="h5 mb-3 home-card-title">Auth / RBAC</h2>
+    {% if auth.user %}
+      <div class="mb-2">
+        <div class="text-muted small">User</div>
+        <div class="fw-semibold">{% auth.user.username %}</div>
+      </div>
+      <div class="mb-2">
+        <div class="text-muted small">Roles</div>
+        {% if auth.roles %}
+          {% foreach auth.roles as role %}
+            <span class="badge text-bg-secondary me-1">{% role %}</span>
+          {% endforeach %}
+        {% else %}
+          <span class="text-muted">none</span>
+        {% endif %}
+      </div>
+      <div class="mb-3">
+        <div class="text-muted small">Permissions</div>
+        <span class="badge text-bg-secondary" title="View permissions">{% auth.permissions_count %}</span>
+      </div>
+    {% else %}
+      <div class="alert alert-secondary">Guest session</div>
+    {% endif %}
+
+    <div class="d-flex flex-wrap gap-2">
+      {% if auth.user %}
+        {% if auth.can_admin %}
+          <a class="btn btn-sm btn-outline-primary" href="/admin">Admin</a>
+        {% else %}
+          <button class="btn btn-sm btn-outline-secondary" type="button" disabled title="No permission">Admin</button>
+        {% endif %}
+        {% if auth.can_media %}
+          <a class="btn btn-sm btn-outline-primary" href="/admin/media">Media</a>
+        {% else %}
+          <button class="btn btn-sm btn-outline-secondary" type="button" disabled title="No permission">Media</button>
+        {% endif %}
+      {% else %}
+        <button class="btn btn-sm btn-outline-secondary" type="button" disabled title="Login required">Admin</button>
+        <button class="btn btn-sm btn-outline-secondary" type="button" disabled title="Login required">Media</button>
+      {% endif %}
+    </div>
+  </div>
+</div>

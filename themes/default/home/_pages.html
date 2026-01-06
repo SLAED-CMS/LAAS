@@ -1,0 +1,21 @@
+<div class="card">
+  <div class="card-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+      <h2 class="h5 mb-0 home-card-title">Pages</h2>
+      <div class="input-group" style="max-width: 320px;">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input class="form-control" type="search" name="pages_q" value="{% pages.pages_query %}"
+               placeholder="Search pages"
+               hx-get="/"
+               hx-trigger="keyup changed delay:300ms"
+               hx-target="#home-pages-list"
+               hx-include="[name=pages_q]"
+               hx-indicator="#loading">
+      </div>
+    </div>
+    <div class="text-muted small mb-3">Type to search pages.</div>
+    <div id="home-pages-list">
+      {% include "home/_pages_list.html" %}
+    </div>
+  </div>
+</div>

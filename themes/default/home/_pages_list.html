@@ -1,0 +1,31 @@
+{% if pages_errors %}
+  <div class="alert alert-danger">
+    {% foreach pages_errors as err %}{% err %}{% endforeach %}
+  </div>
+{% endif %}
+
+{% if pages.pages %}
+  <div class="list-group">
+    {% foreach pages.pages as page %}
+      <a class="list-group-item list-group-item-action" href="/{% page.slug %}">
+        <div class="fw-semibold d-flex align-items-center gap-2">
+          {% if page.title_segments %}
+            {% foreach page.title_segments as seg %}
+              {% if seg.mark %}<mark>{% seg.text %}</mark>{% else %}{% seg.text %}{% endif %}
+            {% endforeach %}
+          {% else %}
+            {% page.title %}
+          {% endif %}
+          <span class="badge text-bg-light text-dark border">{% page.slug %}</span>
+        </div>
+        <div class="text-muted small">{% page.excerpt %}</div>
+      </a>
+    {% endforeach %}
+  </div>
+{% else %}
+  {% if pages.pages_query %}
+  <div class="alert alert-secondary mb-0">No pages found.</div>
+  {% else %}
+  <div class="alert alert-secondary mb-0">Type to search pages.</div>
+  {% endif %}
+{% endif %}

@@ -1,0 +1,32 @@
+<div class="card">
+  <div class="card-body">
+    <style>
+      .badge-auth { background: #6f42c1; }
+    </style>
+    <h2 class="h5 mb-3 home-card-title">Audit</h2>
+    {% if audit.entries %}
+      <div class="table-responsive">
+        <table class="table table-sm table-striped align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Action</th>
+              <th>User</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% foreach audit.entries as entry %}
+              <tr>
+                <td><span class="badge {% entry.action_badge %}">{% entry.action %}</span></td>
+                <td>{% entry.username %}</td>
+                <td class="text-muted small" title="{% entry.created_at %}">{% entry.relative %}</td>
+              </tr>
+            {% endforeach %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="alert alert-secondary mb-0">No activity yet.</div>
+    {% endif %}
+  </div>
+</div>

@@ -23,6 +23,11 @@ final class DatabaseManager
         $this->devtoolsConfig = $config;
     }
 
+    public function getDevToolsContext(): ?DevToolsContext
+    {
+        return $this->devtoolsContext;
+    }
+
     public function pdo(): PDO
     {
         if ($this->pdo !== null) {

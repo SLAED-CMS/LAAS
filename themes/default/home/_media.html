@@ -1,0 +1,42 @@
+<div class="card h-100">
+  <div class="card-body">
+    <h2 class="h5 mb-3 home-card-title">Media</h2>
+    {% if media.items %}
+      <div class="row g-2">
+        {% foreach media.items as item %}
+          <div class="col-6 col-md-4">
+            <div class="border rounded p-2 h-100 text-center media-tile">
+              {% if item.is_image %}
+                <img src="{% item.thumb_url %}" class="img-thumbnail mb-2 media-thumb" alt="{% item.name %}">
+              {% else %}
+                <div class="d-flex align-items-center justify-content-center media-thumb bg-light border rounded mb-2">
+                  <i class="bi {% item.icon %} fs-3 text-muted"></i>
+                </div>
+              {% endif %}
+              <div class="small text-truncate">{% item.name %}</div>
+              <div class="small text-muted">{% item.mime %}</div>
+              <div class="small">
+                {% if item.access_public %}
+                <span class="badge media-badge-public">public</span>
+                {% else %}
+                  {% if item.access_signed %}
+                <span class="badge media-badge-signed">signed</span>
+                  {% else %}
+                <span class="badge media-badge-private">private</span>
+                  {% endif %}
+                {% endif %}
+              </div>
+              <div class="media-overlay small text-start rounded">
+                <div class="mb-1"><i class="bi bi-file-earmark me-1"></i>{% item.mime %}</div>
+                <div class="mb-1"><i class="bi bi-box me-1"></i>{% item.size_human %}</div>
+                <div><i class="bi bi-shield-lock me-1"></i>{% item.access %}</div>
+              </div>
+            </div>
+          </div>
+        {% endforeach %}
+      </div>
+    {% else %}
+      <div class="alert alert-secondary mb-0">No media files.</div>
+    {% endif %}
+  </div>
+</div>

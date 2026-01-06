@@ -1,0 +1,15 @@
+<div class="card">
+  <div class="card-body">
+    <h2 class="h5 mb-3 home-card-title">Features</h2>
+    <div class="row g-2">
+      {% foreach features as feature %}
+        <div class="col-6 col-md-3">
+          <div class="border rounded p-2 text-center">
+            <div class="fw-semibold">{% feature.name %}</div>
+            <span class="badge {% feature.badge %}" title="{% feature.hint %}">{% feature.status %}</span>
+          </div>
+        </div>
+      {% endforeach %}
+    </div>
+  </div>
+</div>
