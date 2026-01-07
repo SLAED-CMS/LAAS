@@ -358,6 +358,7 @@
 
     // JS Error Capture (only when DevTools enabled)
     (function () {
+      var root = document.getElementById('devtools-root');
       if (!root) {
         return;
       }
