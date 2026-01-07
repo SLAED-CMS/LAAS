@@ -44,7 +44,10 @@ return [
         'enabled' => true,
         'directives' => [
             'default-src' => ["'self'"],
-            'script-src' => ["'self'", 'https://cdn.jsdelivr.net'],
+            'script-src' => array_merge(
+                ["'self'", 'https://cdn.jsdelivr.net'],
+                $envBool('APP_DEBUG', false) ? ["'unsafe-inline'"] : []
+            ),
             'style-src' => ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
             'font-src' => ["'self'", 'data:', 'https://cdn.jsdelivr.net'],
             'img-src' => ["'self'", 'data:'],

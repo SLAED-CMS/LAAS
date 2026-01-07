@@ -1,5 +1,5 @@
 {% if errors %}
-<div class="small text-muted mb-2">Total: {% errors|count %} errors</div>
+<div class="small text-muted mb-2">Total: {% errors_count %} errors</div>
 <div class="table-responsive">
   <table class="table table-sm table-hover align-middle mb-0">
     <thead class="table-dark">
@@ -18,7 +18,7 @@
           {% err.time_ago %}
         </td>
         <td>
-          {% if err.type === 'error' %}
+          {% if err.is_error %}
           <span class="badge bg-danger">Error</span>
           {% else %}
           <span class="badge bg-warning text-dark">Promise</span>

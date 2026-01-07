@@ -138,11 +138,13 @@ final class DevToolsController
             }
 
             $error['received_at_formatted'] = date('Y-m-d H:i:s', $receivedAt);
+            $error['is_error'] = ($error['type'] ?? '') === 'error';
         }
         unset($error);
 
         return $this->view->render('pages/devtools/js_errors_list.html', [
             'errors' => $errors,
+            'errors_count' => count($errors),
         ], 200, [], [
             'theme' => 'admin',
             'render_partial' => true,
