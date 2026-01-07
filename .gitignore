@@ -8,7 +8,7 @@
 /.osp/
 *.log
 .phpunit.result.cache
-docs/IMPROVEMENTS-*.md
+
 docs/prompts/*
 
 # Apache (nicht benötigt für Nginx)

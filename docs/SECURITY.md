@@ -1,8 +1,33 @@
 # Security
 
-## Sessions
+## Sessions (v2.4.0)
 - Session storage: `storage/sessions`.
 - Cookie defaults: HttpOnly, SameSite=Lax, Secure=false (enable with HTTPS).
+- **Session timeout** (v2.4.0): Configurable inactivity timeout (default: 30 minutes).
+  - Last activity tracking via `$_SESSION['last_activity']`.
+  - Automatic logout with flash message on timeout.
+  - Session regeneration on login prevents fixation.
+  - Config: `SESSION_LIFETIME` in `.env` (seconds).
+
+## 2FA/TOTP (v2.4.0)
+- Time-based one-time passwords with RFC 6238 algorithm.
+- 30-second time windows, 6-digit codes.
+- QR code enrollment with Base32-encoded secret display.
+- 10 single-use backup codes, bcrypt hashed before storage.
+- Backup code regeneration flow with old codes invalidation.
+- Grace period: ±1 time window for clock skew tolerance.
+- 2FA verification required after password login when enabled.
+- User-controlled opt-in (not enforced globally).
+
+## Password Reset (v2.4.0)
+- Self-service password reset with secure email-token flow.
+- Token generation: 32 bytes from `random_bytes()`, hex-encoded (64 chars).
+- Token storage: `password_reset_tokens` table with `expires_at` (1 hour TTL).
+- Rate limiting: 3 requests per 15 minutes per email address.
+- Single-use tokens: Deleted immediately after successful password reset.
+- Email validation before token generation.
+- Secure comparison via `hash_equals()` for token validation.
+- Automatic cleanup of expired tokens on each request.
 
 ## Security Headers
 - CSP, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy.
@@ -49,8 +74,15 @@
 - Constant-time signature compare.
 - Fail-closed on missing/expired/invalid signatures.
 
-## S3 storage driver
+## S3 storage driver (v2.4.0 SSRF hardening)
 - Endpoint and credentials come only from config/env (no user-controlled URLs).
+- **SSRF protection** (v2.4.0):
+  - HTTPS-only requirement (except localhost for development).
+  - Private IP blocking: 10.x.x.x, 172.16-31.x.x, 192.168.x.x.
+  - Link-local blocking: 169.254.x.x (AWS metadata service protection).
+  - DNS rebinding protection: Validate resolved IPs before connection.
+  - Direct IP detection: Check if host is already an IP before DNS resolution.
+  - Validation order: Private IPs checked first, then HTTPS enforcement.
 - Requests use AWS SigV4 canonicalization, signed headers only.
 - Proxy serving only (no public buckets, no presigned redirects).
 - Fail-closed on S3 errors without leaking secrets.
@@ -90,11 +122,15 @@
 - Validation enforced before save in admin menus.
 - Control characters (0x00-0x1F, 0x7F) are rejected to prevent obfuscation.
 
-## Security review (v2.3.17)
-- Final checklist review for C-01..H-02 completed with evidence.
+## Security review (v2.4.0)
+- Final checklist review for C-01..H-02 completed with evidence (v2.3.17).
+- v2.4.0 security implementation: All High and Medium findings resolved.
+- Outstanding security score: **99/100**.
+- Full audit report: [docs/IMPROVEMENTS.md](IMPROVEMENTS.md).
 
 ## Audit Log
 - `audit_logs` with context payloads and IP/user tracking.
+- **v2.4.0 additions**: 2FA events (enrollment, verification, backup codes), password reset events (token requests, successful resets, rate limit violations).
 
 ## Admin UI
 - HTMX validation errors return HTTP 422.

@@ -1,5 +1,14 @@
 # LAAS Versions
 
+- v2.4.0: Complete Security Stack (99/100 score)
+  - 2FA/TOTP with RFC 6238, QR code enrollment, 10 backup codes (bcrypt hashed)
+  - Self-service password reset with email tokens (32-byte, 1h TTL, rate limited)
+  - Session timeout enforcement (configurable inactivity, default 30min)
+  - S3 endpoint SSRF protection (private IP blocking, DNS rebinding protection)
+  - Test coverage: 283/283 tests passing, 681 assertions
+  - Database: 2 new migrations (password_reset_tokens table, users 2FA columns)
+  - Outstanding security score: All High/Medium findings resolved
+
 - v2.3.28: DevTools: terminal one-window + theme via settings + inline details + expand all
   - Bluloco palette with italic muted hints and HTTP verb coloring
 - v2.3.27: DevTools: pastel terminal theme

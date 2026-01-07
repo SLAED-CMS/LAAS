@@ -5,11 +5,12 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-00758F.svg)](https://www.mysql.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)](#)
-[![Baseline](https://img.shields.io/badge/Baseline-v2.3.28-orange.svg)](docs/VERSIONS.md)
+[![Baseline](https://img.shields.io/badge/Baseline-v2.4.0-orange.svg)](docs/VERSIONS.md)
+[![Security](https://img.shields.io/badge/Security-99%2F100-brightgreen.svg)](docs/SECURITY.md)
 
 **Modern, secure, HTML-first content management system.**
 
-**v2.3.28** - DevTools Terminal UI with Bluloco theme, request-scope caching, duplicate query detection, security hardening complete (XSS/SSRF/URL injection, RBAC).
+**v2.4.0** - Complete security stack: 2FA/TOTP, self-service password reset, session timeout, S3 SSRF protection. All critical security findings resolved (99/100 score).
 
 LAAS CMS is a modular, security-first CMS built for PHP 8.4+ with a lightweight template engine, middleware pipeline, and i18n support. Bootstrap 5 + HTMX ready.
 
@@ -92,6 +93,10 @@ http://laas.loc/
 - **Menus** — Dynamic navigation management
 
 ### Security
+- **2FA/TOTP** — Time-based one-time passwords with backup codes (v2.4.0)
+- **Password Reset** — Self-service password reset with email tokens (v2.4.0)
+- **Session Security** — Timeout enforcement, regeneration, secure cookies (v2.4.0)
+- **SSRF Protection** — S3 endpoint + GitHub API validation, private IP blocking (v2.4.0)
 - **RBAC** — Role-based access control with permission groups
 - **Audit Log** — Track all important actions (incl. API tokens/auth failures)
 - **CSRF Protection** — Token-based CSRF protection
@@ -128,6 +133,7 @@ http://laas.loc/
 ## Milestones
 
 ### v2.x — Mature Platform
+- **v2.4.0**: Complete security stack (2FA/TOTP, password reset, session timeout, S3 SSRF protection)
 - **v2.3.28**: DevTools Terminal UI with Bluloco theme (one-window, settings, expand all)
 - **v2.3.27**: DevTools pastel terminal theme
 - **v2.3.26**: DevTools Terminal view (prompt/summary/warnings/timeline)

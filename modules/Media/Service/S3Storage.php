@@ -35,6 +35,10 @@ final class S3Storage implements StorageDriverInterface
         $this->timeout = (int) ($config['timeout_seconds'] ?? 10);
         $this->verifyTls = (bool) ($config['verify_tls'] ?? true);
         $this->client = $client;
+
+        if ($this->endpoint !== '') {
+            $this->validateEndpoint($this->endpoint);
+        }
     }
 
     public function name(): string
@@ -251,5 +255,44 @@ final class S3Storage implements StorageDriverInterface
     private function emptyHash(): string
     {
         return hash('sha256', '');
+    }
+
+    private function validateEndpoint(string $endpoint): void
+    {
+        $parts = parse_url($endpoint);
+        if (!is_array($parts)) {
+            throw new RuntimeException('s3_endpoint_invalid_url');
+        }
+
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        $host = strtolower((string) ($parts['host'] ?? ''));
+
+        if ($host === '') {
+            throw new RuntimeException('s3_endpoint_missing_host');
+        }
+
+        // Block private IPs (DNS rebinding protection) - check this first
+        if ($host !== 'localhost' && $host !== '127.0.0.1') {
+            // Check if host is already an IP address
+            if (filter_var($host, FILTER_VALIDATE_IP) !== false) {
+                $ip = $host;
+            } else {
+                // Resolve hostname to IP
+                $ip = gethostbyname($host);
+            }
+
+            // Check if resolved IP is private
+            if (filter_var($ip, FILTER_VALIDATE_IP) !== false) {
+                $flags = FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE;
+                if (filter_var($ip, FILTER_VALIDATE_IP, $flags) === false) {
+                    throw new RuntimeException('s3_endpoint_resolves_to_private_ip');
+                }
+            }
+        }
+
+        // Only HTTPS allowed (except localhost for dev)
+        if ($scheme !== 'https' && $host !== 'localhost' && $host !== '127.0.0.1') {
+            throw new RuntimeException('s3_endpoint_must_use_https');
+        }
     }
 }

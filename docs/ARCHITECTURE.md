@@ -1076,6 +1076,119 @@ $auth->logout();
 $request->session()->regenerate(true);
 ```
 
+**Session timeout (v2.4.0):**
+```php
+// Configurable inactivity timeout
+if (isset($_SESSION['last_activity'])) {
+    $inactive = time() - $_SESSION['last_activity'];
+    if ($inactive > $sessionLifetime) {
+        // Auto-logout with flash message
+        $auth->logout();
+        $session->flash('error', 'session_timeout');
+        return redirect('/login');
+    }
+}
+$_SESSION['last_activity'] = time();
+```
+
+**Config:**
+```env
+SESSION_LIFETIME=1800  # 30 minutes (default)
+```
+
+**2FA/TOTP (v2.4.0):**
+
+Two-factor authentication flow with RFC 6238 TOTP:
+
+```php
+// Step 1: Password authentication
+$user = $usersRepo->findByEmail($email);
+if (!password_verify($password, $user['password_hash'])) {
+    throw new AuthException('invalid_credentials');
+}
+
+// Step 2: Check if 2FA enabled
+if ($user['totp_enabled']) {
+    // Redirect to 2FA verification page
+    $_SESSION['2fa_pending_user_id'] = $user['id'];
+    return redirect('/auth/2fa');
+}
+
+// Step 3: Complete login after 2FA verification
+$totpService = new TotpService();
+if ($totpService->verifyCode($user['totp_secret'], $code)) {
+    $auth->login($user);
+}
+```
+
+**2FA Enrollment:**
+```php
+// Generate secret
+$secret = $totpService->generateSecret();
+
+// Generate QR code URL
+$qrUrl = $totpService->getQrCodeUrl($secret, $user['email'], 'LAAS CMS');
+
+// Generate backup codes (10 single-use codes)
+$backupCodes = $totpService->generateBackupCodes();
+$hashedCodes = array_map(
+    fn($code) => password_hash($code, PASSWORD_DEFAULT),
+    $backupCodes
+);
+
+// Store in database
+$usersRepo->update($userId, [
+    'totp_secret' => $secret,
+    'totp_enabled' => true,
+    'backup_codes' => json_encode($hashedCodes)
+]);
+```
+
+**Backup Codes:**
+```php
+// Verify backup code
+foreach ($user['backup_codes'] as $hashedCode) {
+    if (password_verify($code, $hashedCode)) {
+        // Mark code as used (remove from array)
+        // Complete login
+        return true;
+    }
+}
+```
+
+**Password Reset (v2.4.0):**
+
+Self-service password reset flow:
+
+```php
+// Step 1: Request reset token
+$token = bin2hex(random_bytes(32)); // 64 characters
+$expiresAt = time() + 3600; // 1 hour
+
+$resetRepo->createToken($user['id'], $token, $expiresAt);
+
+// Send email with reset link
+$mailer->send($user['email'], 'password_reset', [
+    'reset_url' => "https://example.com/password/reset/{$token}"
+]);
+
+// Step 2: Validate token
+$tokenData = $resetRepo->findByToken($token);
+if (!$tokenData || time() > $tokenData['expires_at']) {
+    throw new Exception('token_expired');
+}
+
+// Step 3: Reset password
+$usersRepo->updatePassword($tokenData['user_id'], $newPassword);
+$resetRepo->deleteToken($token); // Single-use
+```
+
+**Rate limiting for password reset:**
+```php
+// 3 requests per 15 minutes per email
+$rateLimiter->check($email, 3, 900);
+```
+
 ### Authorization (RBAC)
 
 **Permission-based:**

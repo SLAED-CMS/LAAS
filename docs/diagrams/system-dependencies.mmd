@@ -1,9 +1,10 @@
 graph TB
-    %% LAAS CMS v2.3.28 - System Dependencies
+    %% LAAS CMS v2.4.0 - System Dependencies
     %% 5 Layers: Bootstrap, Core Services, Security, View, Application Services
-    %% DI Container: Lazy-loaded singletons, ~20 services
+    %% DI Container: Lazy-loaded singletons, ~22 services
     %% External: FastRoute, Dotenv, Monolog, CommonMark, AWS SDK (optional)
-    %% Version: v2.3.28 (2026-01-05)
+    %% Security: 2FA/TOTP, Password Reset, Session Timeout (v2.4.0)
+    %% Version: v2.4.0 (2026-01-07)
 
     subgraph Bootstrap["Bootstrap Layer"]
         Index["public/index.php<br/>Entry Point"]
@@ -20,12 +21,14 @@ graph TB
     end
 
     subgraph Security["Security Layer"]
-        Session["SessionMiddleware<br/>PHP Session"]
+        Session["SessionMiddleware<br/>PHP Session + Timeout (v2.4.0)"]
         CSRF["CSRFMiddleware<br/>Token Validation"]
         RateLimit["RateLimitMiddleware<br/>Request Throttling"]
         SecurityHeaders["SecurityHeadersMiddleware<br/>CSP, HSTS, etc"]
-        Auth["AuthMiddleware<br/>User Authentication"]
+        Auth["AuthMiddleware<br/>User Authentication + 2FA (v2.4.0)"]
         RBAC["RBACMiddleware<br/>Permission Checks"]
+        TotpService["TotpService<br/>RFC 6238 TOTP (v2.4.0)"]
+        PasswordReset["PasswordResetRepository<br/>Token Management (v2.4.0)"]
     end
 
     subgraph View["View Layer"]
@@ -78,6 +81,11 @@ graph TB
 
     Router --> Auth
     Router --> RBAC
+
+    Auth --> TotpService
+    Auth --> PasswordReset
+    TotpService --> DB
+    PasswordReset --> DB
 
     Composer -.-> Kernel
     Composer -.-> DB

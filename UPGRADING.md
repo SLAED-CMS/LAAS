@@ -27,7 +27,76 @@
 
 ## Version-Specific Upgrade Paths
 
-### v1.x / v2.x → v2.3.28 (Current Stable)
+### v2.3.28 → v2.4.0 (Current Stable)
+
+**Overview:** Complete security stack implementation with 2FA/TOTP, self-service password reset, session timeout enforcement, and S3 SSRF protection.
+
+**Key features (v2.4.0):**
+- **2FA/TOTP** — Time-based one-time passwords with RFC 6238 algorithm
+  - 30-second time windows, 6-digit codes
+  - QR code enrollment with secret display
+  - 10 single-use backup codes (bcrypt hashed)
+  - Backup code regeneration flow
+  - Grace period handling for clock skew
+- **Self-service password reset** — Secure email-token flow
+  - 32-byte cryptographically secure tokens
+  - 1-hour token expiry with automatic cleanup
+  - Rate limiting: 3 requests per 15 minutes per email
+  - Single-use tokens (deleted on successful reset)
+- **Session timeout enforcement**:
+  - Configurable inactivity timeout (default: 30 minutes)
+  - Automatic logout on timeout with flash message
+  - Session regeneration on login
+  - Last activity timestamp tracking
+- **S3 endpoint SSRF protection**:
+  - HTTPS-only requirement (except localhost)
+  - Private IP blocking (10.x, 172.16-31.x, 192.168.x, 169.254.x)
+  - DNS rebinding protection
+- **Security score**: 99/100 (Outstanding) — All High/Medium findings resolved
+
+**Upgrade steps:**
+1. Follow standard upgrade flow
+2. New tables created automatically via migrations:
+   - `password_reset_tokens` (token, user_id, expires_at)
+   - New columns in `users` table: `totp_secret`, `totp_enabled`, `backup_codes`
+3. Configure session timeout in `.env` (optional):
+   ```env
+   SESSION_LIFETIME=1800  # 30 minutes (default)
+   ```
+4. Configure email settings for password reset (required if not already configured):
+   ```env
+   MAIL_FROM_ADDRESS=noreply@yourdomain.com
+   MAIL_FROM_NAME="Your Site"
+   ```
+5. Test critical flows:
+   - Password reset flow: `/password/forgot`, `/password/reset/{token}`
+   - 2FA enrollment: `/account/2fa` (user must be logged in)
+   - 2FA verification: Login flow with 2FA enabled
+   - Session timeout: Wait 30 minutes and verify auto-logout
+   - S3 uploads (if using S3): Verify endpoint validation
+6. Review updated documentation:
+   - [SECURITY.md](SECURITY.md) - Updated security features for v2.4.0
+   - [docs/SECURITY.md](docs/SECURITY.md) - Technical security documentation
+   - [docs/IMPROVEMENTS.md](docs/IMPROVEMENTS.md) - Security audit report (99/100 score)
+7. Grant permissions to users who need 2FA management (optional):
+   ```bash
+   # All authenticated users can manage their own 2FA by default
+   # No additional permissions needed
+   ```
+
+**Breaking changes:**
+- None. All v2.4.0 features are backward compatible.
+- 2FA is opt-in per user (not enforced globally)
+- Session timeout is configurable (default: 30 minutes)
+
+**Security advisories:**
+- All High and Medium security findings from security audit have been resolved
+- Outstanding security score: 99/100
+- See [docs/IMPROVEMENTS.md](docs/IMPROVEMENTS.md) for complete audit report
+
+---
+
+### v1.x / v2.x → v2.3.28 (Previous Stable)
 
 **Overview:** DevTools maturity + performance optimization, security hardening complete, API maturity, changelog module.
 

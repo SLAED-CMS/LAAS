@@ -81,7 +81,7 @@ final class SecurityTestHelper
 
     public static function seedRbacTables(PDO $pdo): void
     {
-        $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, email TEXT, password_hash TEXT, status INTEGER, last_login_at TEXT, last_login_ip TEXT, created_at TEXT, updated_at TEXT)');
+        $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, email TEXT, password_hash TEXT, status INTEGER, last_login_at TEXT, last_login_ip TEXT, totp_secret TEXT, totp_enabled INTEGER DEFAULT 0, backup_codes TEXT, created_at TEXT, updated_at TEXT)');
         $pdo->exec('CREATE TABLE roles (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, title TEXT, created_at TEXT, updated_at TEXT)');
         $pdo->exec('CREATE TABLE permissions (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, title TEXT, created_at TEXT, updated_at TEXT)');
         $pdo->exec('CREATE TABLE role_user (user_id INTEGER, role_id INTEGER)');

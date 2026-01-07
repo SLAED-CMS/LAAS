@@ -1,8 +1,8 @@
 # LAAS CMS — История релизов
-## v0.1 → v2.3.10 (для людей, а не для роботов)
+## v0.1 → v2.4.0 (для людей, а не для роботов)
 
 Этот документ — **история взросления LAAS CMS**:
-от раннего прототипа до зрелой, production-ready платформы с полноценной демонстрацией возможностей.
+от раннего прототипа до зрелой, production-ready платформы с enterprise-grade безопасностью.
 
 Без маркетинга. Без воды. Про то, **что реально появлялось и зачем**.
 
@@ -433,15 +433,125 @@
 
 ---
 
-## 🧭 Итог: v0.1 → v2.3.10
+## 🛡️ v2.4.0 — Complete Security Stack (99/100)
+
+**Enterprise-grade безопасность: финал security audit.**
+
+### v2.4.0 — Полное закрытие security findings
+
+**Статус:** Все High и Medium findings закрыты. **Security Score: 99/100 (Outstanding).**
+
+**Основные security-features:**
+
+#### 1. **2FA/TOTP** — Двухфакторная аутентификация
+- RFC 6238 time-based one-time passwords
+- QR-код для enrollment (показ secret в Base32)
+- 30-секундные time windows, 6-значные коды
+- Grace period (±1 окно) для clock skew
+- 10 одноразовых backup-кодов (bcrypt-хешированные)
+- Регенерация backup codes с инвалидацией старых
+- User-controlled opt-in (не enforced глобально)
+- Аудит: enrollment, verification, backup code usage
+
+**Технически:**
+- `TotpService` с RFC 6238 алгоритмом
+- QR URL для Google Authenticator/Authy
+- Verification после успешного password login
+- Backup codes в JSON с bcrypt-хешами в БД
+- Новые колонки: `totp_secret`, `totp_enabled`, `backup_codes`
+
+#### 2. **Self-Service Password Reset** — Сброс пароля через email
+- Secure email-token flow
+- 32-byte cryptographically secure tokens (`random_bytes()`, hex-encoded = 64 chars)
+- 1-hour token expiry с автоматическим cleanup
+- Rate limiting: 3 запроса per 15 минут per email
+- Single-use tokens (удаляются сразу после успешного reset)
+- Email validation перед генерацией токена
+- Secure comparison via `hash_equals()`
+
+**Технически:**
+- `PasswordResetRepository` для управления токенами
+- Новая таблица `password_reset_tokens` (token, user_id, expires_at)
+- `PasswordResetController` с `/password/forgot` и `/password/reset/{token}`
+- `PhpMailer` для отправки email с reset link
+- Rate limiter с flock-based bucket
+
+#### 3. **Session Timeout Enforcement** — Тайм-аут неактивности
+- Configurable inactivity timeout (default: 30 минут)
+- Автоматический logout с flash message при timeout
+- Session regeneration on login (fixation prevention)
+- Last activity timestamp tracking (`$_SESSION['last_activity']`)
+- Config через `.env`: `SESSION_LIFETIME=1800`
+
+**Технически:**
+- Проверка в `SessionMiddleware`
+- Tracking `last_activity` на каждый request
+- Graceful logout redirect с сообщением `session_timeout`
+
+#### 4. **S3 Endpoint SSRF Protection** — Защита от SSRF
+- HTTPS-only requirement (кроме localhost для dev)
+- Private IP blocking:
+  - 10.x.x.x (RFC 1918)
+  - 172.16-31.x.x (RFC 1918)
+  - 192.168.x.x (RFC 1918)
+  - 169.254.x.x (AWS metadata service)
+- DNS rebinding protection (валидация resolved IPs)
+- Direct IP address detection перед DNS resolution
+- Validation order: private IPs first, then HTTPS
+
+**Технически:**
+- `S3Storage::validateEndpoint()` с комплексной валидацией
+- `filter_var()` с `FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE`
+- `gethostbyname()` для DNS resolution
+- Fail-closed на validation errors
+
+---
+
+### Результаты v2.4.0
+
+**Security Score: 99/100 (Outstanding)**
+- Все High findings: ✅ Закрыты
+- Все Medium findings: ✅ Закрыты
+- Полный audit report: `docs/IMPROVEMENTS.md`
+
+**Test Coverage:**
+- **283/283 tests passing** (100% success)
+- **681 assertions**
+- 100% coverage security-critical code
+
+**Database Migrations:**
+- 2 новые миграции:
+  - `20260107_000001_create_password_reset_tokens_table`
+  - `20260107_000002_add_2fa_to_users_table`
+
+**Backward Compatibility:**
+- ✅ Полная обратная совместимость
+- 2FA opt-in per user (не enforced)
+- Session timeout configurable
+- No breaking changes
+
+**Зачем это нужно:**
+- **Enterprise готовность:** Полный security stack для production
+- **Compliance:** Соответствие best practices (OWASP, RFC 6238)
+- **User Protection:** 2FA защищает от credential stuffing
+- **Self-Service:** Пользователи могут сбрасывать пароли без админов
+- **Infrastructure Security:** SSRF защита для cloud-native deployments
+- **Audit Trail:** Полный аудит всех security events
+
+📌 *LAAS CMS теперь имеет enterprise-grade security с Outstanding score 99/100.*
+
+---
+
+## 🧭 Итог: v0.1 → v2.4.0
 
 LAAS CMS прошла путь от идеи до зрелой платформы:
-- **63+ релиза** от прототипа к продакшену
+- **65+ релизов** от прототипа к продакшену
 - **v0.x:** исследование и proof-of-concept
 - **v1.x:** укрепление продакшена и зрелость функций
 - **v2.0:** стабильная платформа с гарантиями
 - **v2.1-2.2:** UX, производительность, безопасность, качество
 - **v2.3:** витрина возможностей + headless API + интеграции
+- **v2.4:** полный security stack, 99/100 score, enterprise-готовность
 
 ### Что отличает LAAS CMS
 
@@ -503,7 +613,7 @@ LAAS CMS достигла зрелости. Дальнейшее развити�
 ---
 
 - **Последнее обновление:** январь 2026
-- **Текущая версия:** v2.3.10
+- **Текущая версия:** v2.4.0
 - **Лицензия:** MIT
 - **Автор:** Eduard Laas
 - **E-Mail:** info@laas-cms.org

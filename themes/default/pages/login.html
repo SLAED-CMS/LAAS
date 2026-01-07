@@ -19,6 +19,9 @@
           {% t 'users.login.password' %}
         </label>
         <input class="form-control" type="password" name="password" autocomplete="current-password">
+        <div class="form-text">
+          <a href="/password-reset/request">{% t 'users.login.forgot_password' %}</a>
+        </div>
       </div>
       <input type="hidden" name="_token" value="{% csrf_token %}">
       <button class="btn btn-primary" type="submit">{% t 'users.login.submit' %}</button>

@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <h1 class="h4 mb-3">{% t 'users.2fa.verify_title' %}</h1>
+    <div id="page-messages">
+      {% include "partials/messages.html" %}
+    </div>
+
+    <p>{% t 'users.2fa.verify_instructions' %}</p>
+
+    <form method="post" action="/2fa/verify">
+      <div class="mb-3">
+        <label class="form-label">
+          {% t 'users.2fa.verification_code' %}
+        </label>
+        <input class="form-control" type="text" name="code" autocomplete="off" required autofocus>
+        <div class="form-text">
+          {% t 'users.2fa.use_backup_code' %}
+        </div>
+      </div>
+      <input type="hidden" name="_token" value="{% csrf_token %}">
+      <button class="btn btn-primary" type="submit">{% t 'users.2fa.verify_submit' %}</button>
+      <a href="/logout" class="btn btn-link">{% t 'users.2fa.cancel_login' %}</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

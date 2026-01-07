@@ -33,6 +33,7 @@ return [
         'samesite' => $envString('SESSION_SAMESITE', 'Lax'),
         'lifetime' => $envInt('SESSION_LIFETIME', 0),
         'domain' => $envString('SESSION_DOMAIN', ''),
+        'timeout' => $envInt('SESSION_TIMEOUT', 7200),
     ],
     'hsts_enabled' => false,
     'hsts_max_age' => 31536000,

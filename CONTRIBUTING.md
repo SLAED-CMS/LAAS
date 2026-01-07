@@ -27,7 +27,7 @@ This guide will help you get started with development, testing, and submitting c
 LAAS CMS is built on these core principles:
 
 - **No frameworks** — Pure PHP 8.4+ with strict types
-- **Security first** — RBAC, CSRF, rate limiting, input validation
+- **Security first** — 2FA/TOTP, password reset, RBAC, CSRF, rate limiting, session timeout, SSRF protection
 - **Predictability** — No magic, clear behavior, honest limitations
 - **Production focus** — Ops-friendly, observable, maintainable
 - **HTML-first** — No build step, progressive enhancement with HTMX
@@ -263,6 +263,38 @@ $stmt->execute([$userId]);
 </form>
 ```
 
+**2FA/TOTP (v2.4.0):**
+```php
+// Generate TOTP secret for enrollment
+$secret = $totpService->generateSecret();
+
+// Verify TOTP code with grace period
+if (!$totpService->verifyCode($user->totp_secret, $code)) {
+    throw new AuthException('Invalid 2FA code');
+}
+
+// Hash backup codes before storage
+$hashedCodes = array_map(
+    fn($code) => password_hash($code, PASSWORD_DEFAULT),
+    $backupCodes
+);
+```
+
+**Password Reset (v2.4.0):**
+```php
+// Generate secure token (32 bytes = 64 hex chars)
+$token = bin2hex(random_bytes(32));
+
+// Store with expiry (1 hour)
+$resetRepo->createToken($userId, $token, time() + 3600);
+
+// Rate limit: 3 requests per 15 minutes per email
+$rateLimiter->check($email, 3, 900);
+
+// Single-use tokens (delete after successful reset)
+$resetRepo->deleteToken($token);
+```
+
 ### File Organization
 
 ```
@@ -421,6 +453,8 @@ type(scope): brief description (max 50 chars)
 
 - **core** — Core framework changes
 - **auth** — Authentication/authorization
+- **2fa** — Two-factor authentication (v2.4.0)
+- **password-reset** — Password reset flow (v2.4.0)
 - **api** — API endpoints and tokens
 - **media** — Media module
 - **pages** — Pages module

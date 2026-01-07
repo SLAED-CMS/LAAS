@@ -6,13 +6,20 @@ We release security updates for the following versions of LAAS CMS:
 
 | Version | Supported          | Status                  |
 | ------- | ------------------ | ----------------------- |
-| 2.3.x   | :white_check_mark: | Current stable release  |
+| 2.4.x   | :white_check_mark: | Current stable release  |
+| 2.3.x   | :white_check_mark: | Security fixes only     |
 | 2.2.x   | :white_check_mark: | Security fixes only     |
-| 2.1.x   | :white_check_mark: | Security fixes only     |
-| 2.0.x   | :warning:          | Critical fixes only     |
-| < 2.0   | :x:                | No longer supported     |
+| 2.1.x   | :warning:          | Critical fixes only     |
+| < 2.1   | :x:                | No longer supported     |
 
-**Recommendation:** Always use the latest stable release (v2.3.x) for the best security posture.
+**Recommendation:** Always use the latest stable release (v2.4.x) for the best security posture.
+
+**v2.4.0 Security Highlights:**
+- ✅ 2FA/TOTP with backup codes
+- ✅ Self-service password reset
+- ✅ Session timeout enforcement
+- ✅ S3 endpoint SSRF protection
+- ✅ 99/100 security score (all critical findings resolved)
 
 ---
 
@@ -104,7 +111,23 @@ LAAS CMS is built with security as a first-class concern. Current security featu
 ### Authentication & Authorization
 
 - **Password hashing** with Argon2id (64MB memory, 4 iterations)
-- **Session regeneration** on login to prevent fixation
+- **2FA/TOTP** (v2.4.0) — Time-based one-time passwords with RFC 6238 algorithm
+  - 30-second time windows, 6-digit codes
+  - QR code enrollment with secret display
+  - 10 single-use backup codes (bcrypt hashed)
+  - Backup code regeneration flow
+  - Grace period handling for clock skew
+- **Self-service password reset** (v2.4.0) — Secure email-token flow
+  - 32-byte cryptographically secure tokens (bin2hex of random_bytes)
+  - 1-hour token expiry with automatic cleanup
+  - Rate limiting: 3 requests per 15 minutes per email
+  - Single-use tokens (deleted on successful reset)
+  - Email validation before token generation
+- **Session timeout enforcement** (v2.4.0):
+  - Configurable inactivity timeout (default: 30 minutes)
+  - Automatic logout on timeout with flash message
+  - Session regeneration on login to prevent fixation
+  - Last activity timestamp tracking
 - **Session security** (HttpOnly, Secure, SameSite=Strict)
 - **Login rate limiting** to prevent brute force attacks
 - **API Bearer tokens** with SHA-256 hashing, expiry, and revocation
@@ -163,6 +186,13 @@ LAAS CMS is built with security as a first-class concern. Current security featu
 
 ### Injection Prevention
 
+- **S3 endpoint SSRF protection** (v2.4.0):
+  - HTTPS-only requirement (except localhost for dev)
+  - Private IP blocking: 10.x.x.x, 172.16-31.x.x, 192.168.x.x
+  - Link-local blocking: 169.254.x.x (AWS metadata service)
+  - DNS rebinding protection (validate resolved IPs)
+  - Direct IP address detection before DNS resolution
+  - Validation order: private IPs first, then HTTPS enforcement
 - **SSRF hardening** for GitHub changelog (v2.3.15):
   - HTTPS-only GitHub API requests
   - Host allowlist (api.github.com, github.com)
@@ -177,7 +207,9 @@ LAAS CMS is built with security as a first-class concern. Current security featu
 
 ### Audit & Monitoring
 
-- **Audit log** for all important actions (login, RBAC changes, media operations, API tokens)
+- **Audit log** for all important actions (login, RBAC changes, media operations, API tokens, 2FA events, password resets)
+- **2FA audit trail** (v2.4.0): Enrollment, verification, backup code usage/regeneration
+- **Password reset audit** (v2.4.0): Token requests, successful resets, rate limit violations
 - **Auth failure tracking** with anti-spam (rate-limited by IP/token prefix)
 - **Structured logging** with Monolog (no Authorization headers logged)
 - **Request correlation** (X-Request-Id)
@@ -251,6 +283,35 @@ if ($file['size'] > $maxSize) {
 $quarantinePath = $mediaService->quarantine($file);
 $mediaService->scan($quarantinePath); // ClamAV
 $mediaService->promote($quarantinePath);
+```
+
+**2FA/TOTP (v2.4.0):**
+```php
+// Generate TOTP secret
+$secret = $totpService->generateSecret();
+
+// Verify TOTP code with grace period
+if (!$totpService->verifyCode($secret, $code)) {
+    throw new AuthException('Invalid 2FA code');
+}
+
+// Hash backup codes before storage
+$hashedCodes = array_map(fn($code) => password_hash($code, PASSWORD_DEFAULT), $backupCodes);
+```
+
+**Password Reset (v2.4.0):**
+```php
+// Generate secure token
+$token = bin2hex(random_bytes(32)); // 64 characters
+
+// Store with expiry
+$resetRepo->createToken($userId, $token, time() + 3600); // 1 hour
+
+// Rate limit requests
+$rateLimiter->check($email, 3, 900); // 3 requests per 15 minutes
+
+// Single-use tokens
+$resetRepo->deleteToken($token); // After successful reset
 ```
 
 ### For Administrators

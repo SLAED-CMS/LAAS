@@ -1,15 +1,15 @@
 graph LR
-    %% LAAS CMS v2.3.28 - Middleware Pipeline
+    %% LAAS CMS v2.4.0 - Middleware Pipeline
     %% 7 middlewares in strict order (Session before Auth, Auth before RBAC)
-    %% Security: CSRF, Rate Limiting, CSP, HSTS, RBAC, API Auth
+    %% Security: CSRF, Rate Limiting, CSP, HSTS, RBAC, API Auth, Session Timeout (v2.4.0)
     %% Performance: Total overhead 5-10ms
-    %% Version: v2.3.28 (2026-01-05)
+    %% Version: v2.4.0 (2026-01-07)
 
     Request["HTTP Request<br/>(from Nginx)"] --> ErrorHandler
 
     subgraph Pipeline["Middleware Pipeline (Ordered)"]
         ErrorHandler["1. ErrorHandlerMiddleware<br/>Catch all exceptions"]
-        Session["2. SessionMiddleware<br/>Start PHP session"]
+        Session["2. SessionMiddleware<br/>Start PHP session + check timeout (v2.4.0)"]
         CSRF["3. CSRFMiddleware<br/>Validate token (POST/PUT/DELETE)"]
         RateLimit["4. RateLimitMiddleware<br/>Check rate limits (login, API)"]
         Security["5. SecurityHeadersMiddleware<br/>CSP, X-Frame-Options, etc"]

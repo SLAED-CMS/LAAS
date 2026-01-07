@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <h1 class="h4 mb-3">{% t 'users.2fa.enable_title' %}</h1>
+    <div id="page-messages">
+      {% include "partials/messages.html" %}
+    </div>
+
+    <p>{% t 'users.2fa.scan_qr_instructions' %}</p>
+
+    <div class="text-center mb-4">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={% qr_code_url | url_encode %}" alt="QR Code" class="img-fluid">
+    </div>
+
+    <div class="alert alert-info mb-3">
+      <strong>{% t 'users.2fa.manual_entry' %}</strong><br>
+      <code>{% secret %}</code>
+    </div>
+
+    <form method="post" action="/2fa/verify-and-enable">
+      <div class="mb-3">
+        <label class="form-label">
+          {% t 'users.2fa.verification_code' %}
+        </label>
+        <input class="form-control" type="text" name="code" autocomplete="off" required minlength="6" maxlength="6" pattern="[0-9]{6}">
+      </div>
+      <input type="hidden" name="_token" value="{% csrf_token %}">
+      <button class="btn btn-primary" type="submit">{% t 'users.2fa.verify_button' %}</button>
+      <a href="/2fa/setup" class="btn btn-link">{% t 'users.2fa.cancel' %}</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

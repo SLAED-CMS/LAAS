@@ -21,6 +21,15 @@ final class UsersRepository
         return $row ?: null;
     }
 
+    public function findByEmail(string $email): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE email = :email LIMIT 1');
+        $stmt->execute(['email' => $email]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
     public function findById(int $id): ?array
     {
         $stmt = $this->pdo->prepare('SELECT * FROM users WHERE id = :id LIMIT 1');
@@ -136,5 +145,43 @@ final class UsersRepository
         $stmt->execute([
             'id' => $id,
         ]);
+    }
+
+    public function setTotpSecret(int $id, ?string $secret): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE users SET totp_secret = :secret, updated_at = NOW() WHERE id = :id');
+        $stmt->execute([
+            'id' => $id,
+            'secret' => $secret,
+        ]);
+    }
+
+    public function setTotpEnabled(int $id, bool $enabled): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE users SET totp_enabled = :enabled, updated_at = NOW() WHERE id = :id');
+        $stmt->execute([
+            'id' => $id,
+            'enabled' => $enabled ? 1 : 0,
+        ]);
+    }
+
+    public function setBackupCodes(int $id, ?string $codes): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE users SET backup_codes = :codes, updated_at = NOW() WHERE id = :id');
+        $stmt->execute([
+            'id' => $id,
+            'codes' => $codes,
+        ]);
+    }
+
+    public function getTotpData(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT totp_secret, totp_enabled, backup_codes FROM users WHERE id = :id LIMIT 1'
+        );
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
     }
 }
