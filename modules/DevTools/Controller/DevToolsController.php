@@ -141,12 +141,10 @@ final class DevToolsController
         }
         unset($error);
 
-        $theme = str_starts_with($request->getPath(), '/admin') ? 'admin' : 'default';
-
-        return $this->view->render('devtools/js_errors_list.html', [
+        return $this->view->render('pages/devtools/js_errors_list.html', [
             'errors' => $errors,
         ], 200, [], [
-            'theme' => $theme,
+            'theme' => 'admin',
             'render_partial' => true,
         ]);
     }
@@ -167,12 +165,10 @@ final class DevToolsController
         $inbox->clear();
 
         // Return empty list HTML for HTMX swap
-        $theme = str_starts_with($request->getPath(), '/admin') ? 'admin' : 'default';
-
-        return $this->view->render('devtools/js_errors_list.html', [
+        return $this->view->render('pages/devtools/js_errors_list.html', [
             'errors' => [],
         ], 200, [], [
-            'theme' => $theme,
+            'theme' => 'admin',
             'render_partial' => true,
         ]);
     }
