@@ -1,9 +1,10 @@
 {% if errors %}
+<div class="small text-muted mb-2">Total: {% errors|count %} errors</div>
 <div class="table-responsive">
-  <table class="table table-sm table-hover align-middle">
-    <thead>
+  <table class="table table-sm table-hover align-middle mb-0">
+    <thead class="table-dark">
       <tr>
-        <th>Time</th>
+        <th class="text-nowrap">Time</th>
         <th>Type</th>
         <th>Message</th>
         <th>Source</th>
@@ -13,26 +14,28 @@
     <tbody>
       {% foreach errors as err %}
       <tr>
-        <td class="text-nowrap text-muted small" title="{% err.received_at %}">
+        <td class="text-nowrap small" style="color: var(--dt-muted, #8a8da8);" title="{% err.received_at_formatted %}">
           {% err.time_ago %}
         </td>
         <td>
           {% if err.type === 'error' %}
           <span class="badge bg-danger">Error</span>
           {% else %}
-          <span class="badge bg-warning">Promise</span>
+          <span class="badge bg-warning text-dark">Promise</span>
           {% endif %}
         </td>
-        <td class="font-monospace small">{% err.message %}</td>
-        <td class="text-muted small">{% err.source %}:{% err.line %}:{% err.column %}</td>
-        <td class="text-muted small text-truncate" style="max-width: 200px;" title="{% err.url %}">{% err.url %}</td>
+        <td class="font-monospace small text-break" style="max-width: 300px;">{% err.message %}</td>
+        <td class="small" style="color: var(--dt-muted, #8a8da8);">
+          {% if err.source %}{% err.source %}:{% err.line %}:{% err.column %}{% else %}-{% endif %}
+        </td>
+        <td class="small text-truncate" style="max-width: 200px; color: var(--dt-muted, #8a8da8);" title="{% err.url %}">{% err.url %}</td>
       </tr>
       {% if err.stack %}
       <tr>
-        <td colspan="5" class="bg-light">
+        <td colspan="5" style="background: var(--dt-bg, #1e1f29); border-top: 1px solid var(--dt-border, rgba(255,255,255,0.08));">
           <details>
-            <summary class="small text-muted" style="cursor: pointer;">Stack trace</summary>
-            <pre class="small mb-0 mt-2"><code>{% err.stack %}</code></pre>
+            <summary class="small" style="cursor: pointer; color: var(--dt-info, #82aaff);">Stack trace</summary>
+            <pre class="small mb-0 mt-2" style="color: var(--dt-muted, #8a8da8);"><code>{% err.stack %}</code></pre>
           </details>
         </td>
       </tr>
@@ -42,7 +45,5 @@
   </table>
 </div>
 {% else %}
-<div class="alert alert-secondary mb-0">
-  No JS errors captured
-</div>
+<div class="small" style="color: var(--dt-muted, #8a8da8);">No JS errors captured</div>
 {% endif %}

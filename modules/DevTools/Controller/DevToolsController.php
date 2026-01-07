@@ -121,6 +121,26 @@ final class DevToolsController
         $inbox = new JsErrorInbox($cache, $userId);
         $errors = $inbox->list(200);
 
+        // Format time_ago for each error
+        $now = time();
+        foreach ($errors as &$error) {
+            $receivedAt = (int) ($error['received_at'] ?? 0);
+            $diff = $now - $receivedAt;
+
+            if ($diff < 60) {
+                $error['time_ago'] = $diff . 's ago';
+            } elseif ($diff < 3600) {
+                $error['time_ago'] = floor($diff / 60) . 'm ago';
+            } elseif ($diff < 86400) {
+                $error['time_ago'] = floor($diff / 3600) . 'h ago';
+            } else {
+                $error['time_ago'] = floor($diff / 86400) . 'd ago';
+            }
+
+            $error['received_at_formatted'] = date('Y-m-d H:i:s', $receivedAt);
+        }
+        unset($error);
+
         $theme = str_starts_with($request->getPath(), '/admin') ? 'admin' : 'default';
 
         return $this->view->render('devtools/js_errors_list.html', [
@@ -146,7 +166,15 @@ final class DevToolsController
         $inbox = new JsErrorInbox($cache, $userId);
         $inbox->clear();
 
-        return new Response('', 204, ['Content-Type' => 'text/plain']);
+        // Return empty list HTML for HTMX swap
+        $theme = str_starts_with($request->getPath(), '/admin') ? 'admin' : 'default';
+
+        return $this->view->render('devtools/js_errors_list.html', [
+            'errors' => [],
+        ], 200, [], [
+            'theme' => $theme,
+            'render_partial' => true,
+        ]);
     }
 
     private function getUserId(Request $request): ?int
