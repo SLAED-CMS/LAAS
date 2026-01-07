@@ -64,6 +64,16 @@
     {% endforeach %}
       <div id="devtools-details" class="collapse devtools-detail terminal-details" data-devtools-collapse="1" data-devtools-id="details">
         <div class="small">
+          <div class="mb-2" id="devtools-js-errors">
+            <span class="info">JS Errors</span>
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <button class="btn btn-sm devtools-btn" type="button" hx-post="/__devtools/js-errors/clear" hx-target="#devtools-js-errors-list" hx-confirm="Clear all JS errors?" hx-swap="innerHTML">Clear</button>
+            </div>
+            <div id="devtools-js-errors-list" hx-get="/__devtools/js-errors/list" hx-trigger="load, every 5s" hx-swap="innerHTML">
+              <div class="muted">Loading...</div>
+            </div>
+          </div>
+
           <div class="mb-2" id="devtools-overview">
             <span class="info">Overview</span>
             <div class="muted">Total: <span class="num">{% devtools.profile.total_duration_ms %}</span> ms</div>
@@ -235,16 +245,6 @@
             <div class="muted">ID: {% devtools.user.id %}</div>
             <div class="muted">Name: {% devtools.user.username %}</div>
             {% if devtools.user.roles %}<div class="muted">Roles: {% foreach devtools.user.roles as r %}{% r %} {% endforeach %}</div>{% endif %}
-          </div>
-
-          <div class="mb-2" id="devtools-js-errors">
-            <span class="info">JS Errors</span>
-            <div class="d-flex align-items-center gap-2 mb-2">
-              <button class="btn btn-sm devtools-btn" type="button" hx-post="/__devtools/js-errors/clear" hx-target="#devtools-js-errors-list" hx-confirm="Clear all JS errors?" hx-swap="innerHTML">Clear</button>
-            </div>
-            <div id="devtools-js-errors-list" hx-get="/__devtools/js-errors/list" hx-trigger="load, every 5s" hx-swap="innerHTML">
-              <div class="muted">Loading...</div>
-            </div>
           </div>
         </div>
       </div>
