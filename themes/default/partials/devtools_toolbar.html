@@ -345,5 +345,97 @@
         });
       }
     })();
+
+    // JS Error Capture (only when DevTools enabled)
+    (function () {
+      if (!root) {
+        return;
+      }
+
+      var queue = [];
+      var lastSent = 0;
+      var maxQueue = 20;
+
+      function sanitizeUrl(url) {
+        try {
+          var parsed = new URL(url);
+          return parsed.protocol + '//' + parsed.host + parsed.pathname;
+        } catch (e) {
+          return url;
+        }
+      }
+
+      function sendError(event) {
+        var now = Date.now();
+        if (now - lastSent < 1000) {
+          if (queue.length < maxQueue) {
+            queue.push(event);
+          }
+          return;
+        }
+
+        lastSent = now;
+
+        fetch('/__devtools/js-errors/collect', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify(event)
+        }).catch(function (err) {
+          // Silent fail
+        });
+
+        if (queue.length > 0) {
+          var nextEvent = queue.shift();
+          setTimeout(function () {
+            sendError(nextEvent);
+          }, 1000);
+        }
+      }
+
+      window.addEventListener('error', function (e) {
+        var event = {
+          type: 'error',
+          message: e.message || 'Unknown error',
+          source: e.filename || '',
+          line: e.lineno || 0,
+          column: e.colno || 0,
+          stack: e.error && e.error.stack ? e.error.stack : '',
+          url: sanitizeUrl(window.location.href),
+          userAgent: navigator.userAgent || '',
+          happened_at: Date.now()
+        };
+        sendError(event);
+      });
+
+      window.addEventListener('unhandledrejection', function (e) {
+        var reason = e.reason;
+        var message = 'Unhandled Promise Rejection';
+        var stack = '';
+
+        if (reason instanceof Error) {
+          message = reason.message || message;
+          stack = reason.stack || '';
+        } else if (typeof reason === 'string') {
+          message = reason;
+        }
+
+        var event = {
+          type: 'unhandledrejection',
+          message: message,
+          source: '',
+          line: 0,
+          column: 0,
+          stack: stack,
+          url: sanitizeUrl(window.location.href),
+          userAgent: navigator.userAgent || '',
+          happened_at: Date.now()
+        };
+        sendError(event);
+      });
+    })();
   </script>
 </div>
