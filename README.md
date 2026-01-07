@@ -544,5 +544,3 @@ MIT License — see [LICENSE](LICENSE).
 **Eduard Laas**
 - Website: https://laas-cms.org
 - Email: info@laas-cms.org
-
-**Last updated:** January 2026

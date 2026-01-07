@@ -649,5 +649,3 @@ php tools/cli.php rbac:grant admin media.upload
 - [Limitations](docs/LIMITATIONS.md) — Known constraints
 
 ---
-
-**Last updated:** January 2026

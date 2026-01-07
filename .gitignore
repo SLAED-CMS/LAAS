@@ -10,6 +10,7 @@
 .phpunit.result.cache
 
 docs/prompts/*
+docs/wiki/*
 
 # Apache (nicht benötigt für Nginx)
 .htaccess

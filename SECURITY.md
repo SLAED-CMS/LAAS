@@ -414,5 +414,3 @@ We recognize security researchers who help us improve LAAS CMS:
 Thank you for helping keep LAAS CMS secure!
 
 ---
-
-**Last updated:** January 2026
