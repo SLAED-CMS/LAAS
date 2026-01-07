@@ -69,7 +69,7 @@
             <div class="d-flex align-items-center gap-2 mb-2">
               <button class="btn btn-sm devtools-btn" type="button" hx-post="/__devtools/js-errors/clear" hx-target="#devtools-js-errors-list" hx-confirm="Clear all JS errors?" hx-swap="innerHTML">Clear</button>
             </div>
-            <div id="devtools-js-errors-list" hx-get="/__devtools/js-errors/list" hx-trigger="load, every 5s" hx-swap="innerHTML">
+            <div id="devtools-js-errors-list" hx-get="/__devtools/js-errors/list" hx-trigger="load, every 15s" hx-swap="innerHTML show:none">
               <div class="muted">Loading...</div>
             </div>
           </div>
