@@ -64,15 +64,47 @@ SQL details blocks:
 - Fields: media id, mime, size, serve mode, masked disk path, storage driver, read time (ms).
 - Thumb fields: generated (yes/no), reason (pixels/decode/unsupported), algo version.
 
+## JS Errors
+
+**Client-side JavaScript error capture and display.**
+
+**Conditions:**
+- `APP_DEBUG=true`
+- `DEVTOOLS_ENABLED=true`
+- User has permission `debug.view`
+
+**Features:**
+- Captures `window.onerror` and `window.onunhandledrejection`
+- Sends errors to server endpoint `/__devtools/js-errors/collect`
+- Server stores errors in cache with TTL 10 minutes (ring buffer max 200 events)
+- Endpoint: `/__devtools/js-errors/list` returns partial HTML for DevTools panel
+- Clear endpoint: `/__devtools/js-errors/clear`
+
+**Security:**
+- Rate limit: max 10 events per 60 seconds per user
+- Payload size limits: message 500 chars, stack 4000 chars, source 300 chars, userAgent 300 chars
+- Sensitive data masking: tokens, secrets, authorization headers, cookies
+- URL sanitization: drops query parameters and fragments
+- Client-side rate guard: max 1 event per second, queue max 20
+
+**UI:**
+- Bootstrap table with columns: Time, Type (Error/Promise), Message, Source (file:line:col), Page URL
+- Expandable stack traces
+- Empty state when no errors
+
+**Limitations:**
+- TTL 10 minutes
+- Max 200 events per user
+- No persistent storage
+
 ## Security notes
 - No absolute paths.
 - No secrets or tokens.
 - Stacktrace shown only in dev and only for duplicates.
 - Request data is masked by default; unredact only for admin in dev/local or when `DEVTOOLS_SHOW_SECRETS=true`.
+- JS Errors: masked sensitive strings, sanitized URLs, rate-limited to prevent spam.
 
 ## Disable
 ```
 DEVTOOLS_ENABLED=false
 ```
-
-**Last updated:** January 2026

@@ -1,5 +1,13 @@
 # LAAS Versions
 
+- v2.4.1: DevTools: JS Errors (client error capture + server inbox + UI panel)
+  - Client-side error capture: `window.onerror` and `window.onunhandledrejection`
+  - Server inbox: cache-based storage (TTL 10 min, ring buffer max 200 events)
+  - Security: rate limit (10 events/60s), masking (tokens/secrets/auth), URL sanitization
+  - UI: Bootstrap table with error type/message/source/stack (HTMX refresh)
+  - Endpoints: `/__devtools/js-errors/collect` (POST), `/__devtools/js-errors/list` (GET), `/__devtools/js-errors/clear` (POST)
+  - Gated: `APP_DEBUG=true` + `DEVTOOLS_ENABLED=true` + permission `debug.view`
+
 - v2.4.0: Complete Security Stack (99/100 score)
   - 2FA/TOTP with RFC 6238, QR code enrollment, 10 backup codes (bcrypt hashed)
   - Self-service password reset with email tokens (32-byte, 1h TTL, rate limited)

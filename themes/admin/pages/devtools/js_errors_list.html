@@ -1,0 +1,48 @@
+{% if errors %}
+<div class="table-responsive">
+  <table class="table table-sm table-hover align-middle">
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Type</th>
+        <th>Message</th>
+        <th>Source</th>
+        <th>Page</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% foreach errors as err %}
+      <tr>
+        <td class="text-nowrap text-muted small" title="{% err.received_at %}">
+          {% err.time_ago %}
+        </td>
+        <td>
+          {% if err.type === 'error' %}
+          <span class="badge bg-danger">Error</span>
+          {% else %}
+          <span class="badge bg-warning">Promise</span>
+          {% endif %}
+        </td>
+        <td class="font-monospace small">{% err.message %}</td>
+        <td class="text-muted small">{% err.source %}:{% err.line %}:{% err.column %}</td>
+        <td class="text-muted small text-truncate" style="max-width: 200px;" title="{% err.url %}">{% err.url %}</td>
+      </tr>
+      {% if err.stack %}
+      <tr>
+        <td colspan="5" class="bg-light">
+          <details>
+            <summary class="small text-muted" style="cursor: pointer;">Stack trace</summary>
+            <pre class="small mb-0 mt-2"><code>{% err.stack %}</code></pre>
+          </details>
+        </td>
+      </tr>
+      {% endif %}
+      {% endforeach %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="alert alert-secondary mb-0">
+  No JS errors captured
+</div>
+{% endif %}
