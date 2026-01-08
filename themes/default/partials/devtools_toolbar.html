@@ -2,6 +2,9 @@
   <style>
     .laas-devtools.devtools-hidden { display: none; }
     .laas-devtools { background: var(--dt-panel-bg, #1b1c25); color: var(--dt-text, #d6d6d6); border-top: 1px solid var(--dt-border, rgba(255,255,255,0.08)); }
+    .devtools-show-btn { position: fixed; bottom: 10px; right: 10px; z-index: 9999; background: #1b1c25; color: #82aaff; border: 1px solid rgba(130, 170, 255, 0.3); padding: 8px 12px; border-radius: 4px; font-size: var(--dt-font-size, 12px); cursor: pointer; font-family: monospace; display: none; }
+    .devtools-show-btn.collapsed { display: block; }
+    .devtools-show-btn:hover { background: #252632; border-color: rgba(130, 170, 255, 0.5); }
     .laas-devtools .devtools-terminal { font-family: var(--dt-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); font-size: var(--dt-font-size, 12px); line-height: var(--dt-line-height, 1.25); background: var(--dt-bg, #1e1f29); color: var(--dt-text, #d6d6d6); border: 1px solid var(--dt-border, rgba(255,255,255,0.08)); border-radius: 8px; padding: var(--dt-padding, 8px); max-height: 50vh; overflow: hidden; }
     .laas-devtools .terminal-body { max-height: calc(50vh - 36px); overflow: auto; }
     .laas-devtools .devtools-terminal pre { white-space: pre-wrap; }
@@ -23,22 +26,29 @@
     .laas-devtools .devtools-terminal a { color: var(--dt-info, #82aaff); text-decoration: none; }
     .laas-devtools .devtools-terminal a:hover { text-decoration: underline; }
   </style>
-  <div class="devtools-terminal" id="devtools-terminal">
+  <div class="devtools-terminal collapse show" id="devtools-terminal">
     <div class="devtools-toolbar">
-      <span class="muted small me-auto">{% t 'devtools.title' %}</span>
-      <button class="btn btn-sm devtools-btn" type="button" data-devtools-action="refresh" title="Refresh">&#x27F3;</button>
+      <span class="me-auto" style="font-family: var(--dt-font-family, monospace); font-size: var(--dt-font-size, 12px);"><span class="info">DevTools</span> <span class="muted">|</span> <span class="info">SQL:</span> <span class="num">{% devtools.profile.terminal.prompt.sql_raw %}/{% devtools.profile.terminal.prompt.sql_unique %}</span> <span class="muted">|</span> <span class="info">Dup:</span> <span class="num">{% devtools.profile.terminal.prompt.sql_dup %}</span> <span class="muted">|</span> <span class="num">{% devtools.profile.terminal.prompt.sql_ms %}ms</span> <span class="info">Site Total Time:</span> <span class="num">{% devtools.profile.terminal.prompt.total_ms %}ms</span> <span class="info">Memory:</span> <span class="num">{% devtools.profile.terminal.prompt.memory_mb %}MB</span> <span class="info">Cache:</span> <span class="num">{% devtools.profile.terminal.prompt.cache_rate %}</span> <span class="info">HTTP</span> <span class="num">{% devtools.profile.terminal.prompt.http_count %} ({% devtools.profile.terminal.prompt.http_max_ms %}ms)</span> <span class="{% devtools.profile.terminal.prompt.method_class %}">{% devtools.profile.terminal.prompt.method %}:</span> <span class="muted">{% devtools.profile.terminal.prompt.path %}</span>{% if devtools.profile.terminal.prompt.post_params %} <span class="muted">POST:</span> <span class="warn">{% devtools.profile.terminal.prompt.post_params|implode:', ' %}</span>{% endif %} <span class="info">Status:</span> <span class="{% devtools.profile.terminal.prompt.status_class %}">{% devtools.profile.terminal.prompt.status %}</span> <span class="muted">Req ID:</span> <span class="muted">{% devtools.profile.terminal.prompt.request_id %}</span></span>
+      <a href="" class="btn btn-sm devtools-btn" title="Refresh">&#x27F3;</a>
       <button class="btn btn-sm devtools-btn" type="button" data-devtools-action="copy" title="Copy">&#x29C9;</button>
       <button class="btn btn-sm devtools-btn" type="button" data-devtools-action="expand" title="Expand all">&#x2912;</button>
+      <button class="btn btn-sm devtools-btn" type="button" data-bs-toggle="collapse" data-bs-target="#devtools-details" aria-controls="devtools-details" title="Toggle Details">&#x2139;</button>
       <button class="btn btn-sm devtools-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#devtools-settings" aria-controls="devtools-settings" title="Settings">&#x2699;</button>
-      <button class="btn btn-sm devtools-btn" type="button" data-devtools-action="hide" title="Hide">&#x2715;</button>
+      <button class="btn btn-sm devtools-btn" type="button" data-bs-toggle="collapse" data-bs-target="#devtools-terminal" title="Hide">&#x2715;</button>
     </div>
     <div class="terminal-body" id="devtools-terminal-body">
-<pre id="devtools-terminal-dump" class="mb-2"><span class="info">laas&gt;</span> <span class="{% devtools.profile.terminal.prompt.method_class %}">{% devtools.profile.terminal.prompt.method %}</span> <span class="muted">{% devtools.profile.terminal.prompt.path %}</span> <span class="{% devtools.profile.terminal.prompt.status_class %}">{% devtools.profile.terminal.prompt.status %}</span> <span class="num">{% devtools.profile.terminal.prompt.total_ms %}ms</span> <span class="muted">mem</span> <span class="num">{% devtools.profile.terminal.prompt.memory_mb %}MB</span> <span class="muted">rid</span> <span class="muted">{% devtools.profile.terminal.prompt.request_id %}</span>
-{% foreach devtools.profile.terminal.summary_segments as seg %}{% if seg.available %}<a class="text-decoration-none" href="{% seg.href %}"><span class="info">{% seg.label %}</span> <span class="num">{% seg.value %}</span></a>{% else %}<span class="info">{% seg.label %}</span> <span class="num">{% seg.value %}</span>{% endif %}{% seg.sep %}{% endforeach %}
-{% if devtools.profile.terminal.warning_tokens %}<span class="warn">WARN</span>{% foreach devtools.profile.terminal.warning_tokens as tok %} <span class="{% tok.class %}">{% tok.text %}</span>{% endforeach %}{% else %}<span class="ok">WARN OK</span>{% endif %}
-{% if devtools.profile.terminal.offenders %}{% foreach devtools.profile.terminal.offenders as off %}<a class="text-decoration-none" data-bs-toggle="collapse" href="#{% off.id %}" role="button" aria-expanded="false" aria-controls="{% off.id %}"><span class="warn">{% off.marker %}</span> <span class="info">{% off.type %}</span> {% if off.is_http %}<span class="{% off.detail_method_class %}">{% off.detail_method %}</span> <span class="muted">{% off.detail_url %}</span>{% else %}<span class="{% if off.is_sqlish %}sql{% else %}muted{% endif %}">{% off.detail_text %}</span>{% endif %} <span class="num">{% off.value %}</span></a>
-{% endforeach %}{% else %}<span class="muted">No offenders</span>
-{% endif %}{% if devtools.profile.terminal.timeline_line %}<span class="muted">{% devtools.profile.terminal.timeline_line %}</span>{% endif %}<a class="text-decoration-none" data-bs-toggle="collapse" href="#devtools-details" role="button" aria-expanded="false" aria-controls="devtools-details"><span class="info">Details</span> <span class="muted">toggle</span></a>
+<pre id="devtools-terminal-dump" class="mb-2">
+{% if devtools.profile.terminal.warning_tokens %}
+
+<span class="warn">&#x26A0; Warnings</span>
+{% foreach devtools.profile.terminal.warning_tokens as tok %}<span class="{% tok.class %}">{% tok.text %}</span>
+{% endforeach %}
+{% else %}<span class="ok">&#x2713; No warnings</span>{% endif %}{% if devtools.profile.terminal.offenders %}
+
+{% foreach devtools.profile.terminal.offenders as off %}<a class="text-decoration-none" data-bs-toggle="collapse" href="#{% off.id %}" role="button" aria-expanded="false" aria-controls="{% off.id %}"><span class="info">&#x1F6C8;</span> <span class="info">{% off.type %}</span> {% if off.is_http %}<span class="{% off.detail_method_class %}">{% off.detail_method %}</span> <span class="muted">{% off.detail_url %}</span>{% else %}<span class="{% if off.is_sqlish %}sql{% else %}muted{% endif %}">{% off.detail_text %}</span>{% endif %} <span class="num">{% off.value %}</span></a>
+{% endforeach %}{% else %}<span class="muted">No offenders</span>{% endif %}
+{% if devtools.profile.terminal.timeline_line %}
+<span class="muted">{% devtools.profile.timeline_line %}</span>{% endif %}
 </pre>
     {% foreach devtools.profile.terminal.offenders as off %}
     <div class="collapse devtools-detail small text-secondary mb-1" id="{% off.id %}">
@@ -66,11 +76,15 @@
         <div class="small">
           <div class="mb-2" id="devtools-js-errors">
             <span class="info">JS Errors</span>
-            <div class="d-flex align-items-center gap-2 mb-2">
-              <button class="btn btn-sm devtools-btn" type="button" hx-post="/__devtools/js-errors/clear" hx-target="#devtools-js-errors-list" hx-confirm="Clear all JS errors?" hx-swap="innerHTML">Clear</button>
-            </div>
-            <div id="devtools-js-errors-list" hx-get="/__devtools/js-errors/list" hx-trigger="load, every 15s" hx-swap="innerHTML show:none">
-              <div class="muted">Loading...</div>
+
+            <div id="devtools-js-errors-content">
+              {% if devtools.js_errors %}
+              <div class="small" style="color: var(--dt-muted, #8a8da8);">
+              {% foreach devtools.js_errors as err %}[{% err.time_ago %}] {% if err.is_error %}ERROR{% else %}PROMISE{% endif %}: {% err.message %}
+              {% endforeach %}</div>
+              {% else %}
+              <div class="small" style="color: var(--dt-muted, #8a8da8);">No JS errors</div>
+              {% endif %}
             </div>
           </div>
 
@@ -295,19 +309,6 @@
       if (!root) {
         return;
       }
-      try {
-        if (localStorage.getItem('devtoolsHidden') === '1') {
-          root.classList.add('devtools-hidden');
-        }
-      } catch (e) {
-      }
-
-      var refreshBtn = root.querySelector('[data-devtools-action="refresh"]');
-      if (refreshBtn) {
-        refreshBtn.addEventListener('click', function () {
-          location.reload();
-        });
-      }
 
       var copyBtn = root.querySelector('[data-devtools-action="copy"]');
       if (copyBtn) {
@@ -317,17 +318,6 @@
             return;
           }
           navigator.clipboard.writeText(dump.textContent || '');
-        });
-      }
-
-      var hideBtn = root.querySelector('[data-devtools-action="hide"]');
-      if (hideBtn) {
-        hideBtn.addEventListener('click', function () {
-          root.classList.toggle('devtools-hidden');
-          try {
-            localStorage.setItem('devtoolsHidden', root.classList.contains('devtools-hidden') ? '1' : '0');
-          } catch (e) {
-          }
         });
       }
 
@@ -387,12 +377,18 @@
 
         lastSent = now;
 
+        var csrfToken = document.querySelector('meta[name="csrf-token"]');
+        var headers = {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        };
+        if (csrfToken) {
+          headers['X-CSRF-Token'] = csrfToken.getAttribute('content');
+        }
+
         fetch('/__devtools/js-errors/collect', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-          },
+          headers: headers,
           credentials: 'same-origin',
           body: JSON.stringify(event)
         }).catch(function (err) {
@@ -450,3 +446,5 @@
     })();
   </script>
 </div>
+
+<button class="devtools-show-btn" type="button" data-bs-toggle="collapse" data-bs-target="#devtools-terminal" aria-expanded="false" aria-controls="devtools-terminal">Show DevTools</button>

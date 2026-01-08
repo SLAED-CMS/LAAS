@@ -1,51 +1,7 @@
-<div>
-  {% if errors %}
-  <div class="small text-muted mb-2">Total: {% errors_count %} errors</div>
-  <div class="table-responsive">
-    <table class="table table-sm table-hover align-middle mb-0">
-      <thead class="table-dark">
-        <tr>
-          <th class="text-nowrap">Time</th>
-          <th>Type</th>
-          <th>Message</th>
-          <th>Source</th>
-          <th>Page</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% foreach errors as err %}
-        <tr>
-          <td class="text-nowrap small" style="color: var(--dt-muted, #8a8da8);" title="{% err.received_at_formatted %}">
-            {% err.time_ago %}
-          </td>
-          <td>
-            {% if err.is_error %}
-            <span class="badge bg-danger">Error</span>
-            {% else %}
-            <span class="badge bg-warning text-dark">Promise</span>
-            {% endif %}
-          </td>
-          <td class="font-monospace small text-break" style="max-width: 300px;">{% err.message %}</td>
-          <td class="small" style="color: var(--dt-muted, #8a8da8);">
-            {% if err.source %}{% err.source %}:{% err.line %}:{% err.column %}{% else %}-{% endif %}
-          </td>
-          <td class="small text-truncate" style="max-width: 200px; color: var(--dt-muted, #8a8da8);" title="{% err.url %}">{% err.url %}</td>
-        </tr>
-        {% if err.stack %}
-        <tr>
-          <td colspan="5" style="background: var(--dt-bg, #1e1f29); border-top: 1px solid var(--dt-border, rgba(255,255,255,0.08));">
-            <details>
-              <summary class="small" style="cursor: pointer; color: var(--dt-info, #82aaff);">Stack trace</summary>
-              <pre class="small mb-0 mt-2" style="color: var(--dt-muted, #8a8da8);"><code>{% err.stack %}</code></pre>
-            </details>
-          </td>
-        </tr>
-        {% endif %}
-        {% endforeach %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <div class="small" style="color: var(--dt-muted, #8a8da8);">No JS errors captured</div>
-  {% endif %}
-</div>
+{% if errors %}
+<div class="small" style="color: var(--dt-muted, #8a8da8);">
+{% foreach errors as err %}[{% err.time_ago %}] {% if err.is_error %}ERROR{% else %}PROMISE{% endif %}: {% err.message %}
+{% endforeach %}</div>
+{% else %}
+<div class="small" style="color: var(--dt-muted, #8a8da8);">No JS errors</div>
+{% endif %}

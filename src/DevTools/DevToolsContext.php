@@ -26,6 +26,7 @@ final class DevToolsContext
     private array $flags = [];
     private array $response = [];
     private array $media = [];
+    private array $jsErrors = [];
 
     public function __construct(array $flags)
     {
@@ -81,6 +82,11 @@ final class DevToolsContext
     public function setUser(array $data): void
     {
         $this->user = $data;
+    }
+
+    public function setJsErrors(array $errors): void
+    {
+        $this->jsErrors = $errors;
     }
 
     public function getUser(): array
@@ -229,6 +235,7 @@ final class DevToolsContext
             'flags' => $this->flags,
             'response' => $this->response,
             'media' => $this->media,
+            'js_errors' => $this->jsErrors,
         ];
     }
 
@@ -531,14 +538,46 @@ final class DevToolsContext
         $path = (string) ($this->request['path'] ?? '');
         $methodUpper = $method !== '' ? strtoupper($method) : '';
         $methodClass = $this->methodClass($methodUpper);
-        $promptLine = TerminalFormatter::formatPromptLine(
-            $methodUpper,
-            $path,
-            $status,
-            $totalMs,
-            $memoryMb,
-            $this->requestId
-        );
+
+        $httpCount = (int) ($external['count'] ?? 0);
+        $httpMaxMs = 0.0;
+        if (!empty($external['top3_slowest_calls'])) {
+            $httpMaxMs = (float) ($external['top3_slowest_calls'][0]['total_ms'] ?? 0);
+        }
+        $cacheRate = $cache['available'] ? sprintf('%.1f%%', (float) ($cache['hit_rate'] ?? 0)) : 'n/a';
+
+        $postParams = [];
+        if ($methodUpper === 'POST' && !empty($this->request['post'])) {
+            foreach ($this->request['post'] as $key => $value) {
+                if (is_string($value) || is_numeric($value)) {
+                    $postParams[] = $key . ' = ' . $value;
+                }
+                if (count($postParams) >= 3) {
+                    break;
+                }
+            }
+        }
+
+        $promptData = [
+            'sql_raw' => $rawCount,
+            'sql_unique' => $uniqueCount,
+            'sql_dup' => $duplicateCount,
+            'sql_ms' => round($sqlTotalMs, 1),
+            'total_ms' => round($totalMs, 2),
+            'memory_mb' => round($memoryMb, 0),
+            'cache_rate' => $cacheRate,
+            'http_count' => $httpCount,
+            'http_max_ms' => round($httpMaxMs, 1),
+            'method' => $methodUpper,
+            'method_class' => $methodClass,
+            'path' => $path,
+            'post_params' => $postParams,
+            'status' => $status,
+            'status_class' => $this->statusClass($status),
+            'request_id' => $this->requestId,
+        ];
+
+        $promptLine = '';
         $statusClass = 'muted';
         if ($status >= 200 && $status < 300) {
             $statusClass = 'ok';
@@ -601,19 +640,19 @@ final class DevToolsContext
             $slowHost = (string) ($external['top3_slowest_calls'][0]['host'] ?? '');
             $slowPath = (string) ($external['top3_slowest_calls'][0]['path'] ?? '');
             $slowLabel = $slowHost !== '' ? $slowHost . $slowPath : $slowPath;
-            $warningTokens[] = sprintf('! slow_http(%s %.1fms)', $slowLabel !== '' ? $slowLabel : 'n/a', $httpMax);
+            $warningTokens[] = sprintf('Slow HTTP request - %s %.1fms', $slowLabel !== '' ? $slowLabel : 'n/a', $httpMax);
         }
         if (in_array('duplicate_sql', $warnings, true) && $duplicateCount > 0) {
-            $warningTokens[] = sprintf('! dup_sql(%d)', $duplicateCount);
+            $warningTokens[] = sprintf('SQL query duplicates - %d', $duplicateCount);
         }
         if (in_array('slow_sql', $warnings, true) && count($topSlow) > 0) {
-            $warningTokens[] = sprintf('! slow_sql(%d)', count($topSlow));
+            $warningTokens[] = sprintf('Slow SQL queries - %d', count($topSlow));
         }
         if ($errors !== []) {
-            $warningTokens[] = sprintf('! errors(%d)', count($errors));
+            $warningTokens[] = sprintf('Errors - %d', count($errors));
         }
         if (in_array('high_total_time', $warnings, true)) {
-            $warningTokens[] = sprintf('! total(%.1fms)', $totalMs);
+            $warningTokens[] = sprintf('High total time - %.1fms', $totalMs);
         }
 
         $warningsLine = TerminalFormatter::formatWarningsLine($warningTokens);
@@ -670,18 +709,12 @@ final class DevToolsContext
             }
         }
 
-        foreach ($topDuplicates as $row) {
+        foreach ($duplicates as $row) {
             $fingerprint = (string) ($row['fingerprint'] ?? '');
             $count = (int) ($row['count'] ?? 0);
-            $sqlPreview = (string) ($row['sql_preview'] ?? '');
-            $full = [];
-            foreach ($duplicates as $dupRow) {
-                if (($dupRow['fingerprint'] ?? '') === $fingerprint) {
-                    $full = $dupRow;
-                    break;
-                }
-            }
-            $avg = (float) ($full['avg_ms'] ?? 0);
+            $sql = (string) ($row['sql'] ?? '');
+            $sqlPreview = $this->previewSql($sql);
+            $avg = (float) ($row['avg_ms'] ?? 0);
             $value = sprintf('x%d %.2fms avg', $count, $avg);
             $line = TerminalFormatter::formatOffenderLine('!', 'SQLD', $sqlPreview, $value);
             $offenders[] = [
@@ -697,10 +730,10 @@ final class DevToolsContext
                 'is_sqlish' => true,
                 'has_details' => true,
                 'detail' => [
-                    'sql' => (string) ($full['sql'] ?? $sqlPreview),
+                    'sql' => $sql,
                     'count' => $count,
                     'avg_ms' => $avg,
-                    'trace' => $full['trace'] ?? [],
+                    'trace' => $row['trace'] ?? [],
                 ],
             ];
         }
@@ -732,7 +765,6 @@ final class DevToolsContext
             ];
         }
 
-        $offenders = array_slice($offenders, 0, 5);
         $i = 1;
         foreach ($offenders as $idx => $offender) {
             $offenders[$idx]['id'] = 'devtools-term-offender-' . $i;
@@ -763,16 +795,7 @@ final class DevToolsContext
         }
 
         return [
-            'prompt' => [
-                'method' => $methodUpper,
-                'method_class' => $methodClass,
-                'path' => $path !== '' ? $path : '/',
-                'status' => $status,
-                'status_class' => $statusClass,
-                'total_ms' => $totalMs,
-                'memory_mb' => round($memoryMb, 2),
-                'request_id' => $this->requestId,
-            ],
+            'prompt' => $promptData,
             'prompt_line' => $promptLine,
             'summary_segments' => $summarySegments,
             'summary_line' => $summaryLine,

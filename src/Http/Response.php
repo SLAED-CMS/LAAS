@@ -24,6 +24,13 @@ final class Response
         ]);
     }
 
+    public static function html(string $body, int $status = 200): self
+    {
+        return new self($body, $status, [
+            'Content-Type' => 'text/html; charset=utf-8',
+        ]);
+    }
+
     public function send(): void
     {
         http_response_code($this->status);

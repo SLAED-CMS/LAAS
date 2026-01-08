@@ -85,7 +85,7 @@ final class DevToolsController
             return Response::json(['error' => 'content-type must be application/json'], 400);
         }
 
-        $body = $request->body();
+        $body = $request->getBody();
         if ($body === '') {
             return Response::json(['error' => 'empty body'], 400);
         }

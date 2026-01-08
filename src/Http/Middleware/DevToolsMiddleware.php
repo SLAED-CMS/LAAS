@@ -78,6 +78,39 @@ final class DevToolsMiddleware implements MiddlewareInterface
             'roles' => $roles,
         ]);
 
+        // Load JS Errors
+        if (is_array($user) && isset($user['id'])) {
+            try {
+                $cache = new \Laas\Support\Cache\FileCache(dirname(__DIR__, 3) . '/storage/cache', 'devtools');
+                $inbox = new \Laas\DevTools\JsErrorInbox($cache, (int) $user['id']);
+                $errors = $inbox->list(200);
+
+                // Format time_ago for each error
+                $now = time();
+                foreach ($errors as &$error) {
+                    $receivedAt = (int) ($error['received_at'] ?? 0);
+                    $diff = $now - $receivedAt;
+
+                    if ($diff < 60) {
+                        $error['time_ago'] = 'just now';
+                    } elseif ($diff < 3600) {
+                        $mins = (int) floor($diff / 60);
+                        $error['time_ago'] = $mins . 'm ago';
+                    } else {
+                        $hours = (int) floor($diff / 3600);
+                        $error['time_ago'] = $hours . 'h ago';
+                    }
+
+                    $error['is_error'] = ($error['type'] ?? '') === 'error';
+                }
+                unset($error);
+
+                $this->context->setJsErrors($errors);
+            } catch (\Throwable) {
+                $this->context->setJsErrors([]);
+            }
+        }
+
         foreach ($this->collectors as $collector) {
             $collector->collect($request, $response, $this->context);
         }
