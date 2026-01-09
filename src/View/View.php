@@ -59,6 +59,7 @@ final class View
     ): Response
     {
         $ctx = array_merge($this->globalContext(), $data);
+        $this->assertNoClassTokens($ctx);
         $renderOptions = [
             'render_partial' => $this->request?->isHtmx() ?? false,
         ];
@@ -204,5 +205,26 @@ final class View
             $this->cachePath,
             $this->debug
         );
+    }
+
+    private function assertNoClassTokens(array $data): void
+    {
+        $stack = [$data];
+
+        while ($stack !== []) {
+            $current = array_pop($stack);
+            if (!is_array($current)) {
+                continue;
+            }
+
+            foreach ($current as $key => $value) {
+                if (is_string($key) && str_ends_with($key, '_class')) {
+                    throw new \RuntimeException('View data contains forbidden key: ' . $key);
+                }
+                if (is_array($value)) {
+                    $stack[] = $value;
+                }
+            }
+        }
     }
 }

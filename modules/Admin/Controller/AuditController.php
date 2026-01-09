@@ -115,8 +115,6 @@ final class AuditController
                 'has_next' => $hasNext,
                 'prev_url' => $prevUrl,
                 'next_url' => $nextUrl,
-                'prev_disabled_class' => $hasPrev ? '' : 'disabled',
-                'next_disabled_class' => $hasNext ? '' : 'disabled',
             ],
         ];
 
@@ -285,8 +283,6 @@ final class AuditController
             'has_next' => false,
             'prev_url' => '#',
             'next_url' => '#',
-            'prev_disabled_class' => 'disabled',
-            'next_disabled_class' => 'disabled',
         ];
     }
 

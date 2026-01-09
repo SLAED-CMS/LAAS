@@ -4,7 +4,15 @@
     <div class="row g-3">
       <div class="col-6 col-lg-3">
         <div class="text-muted small">Queries</div>
-        <span class="badge {% perf.db_count_class %}">{% perf.db_count %}</span>
+        {% if perf.db_count_crit %}
+        <span class="badge text-bg-danger">{% perf.db_count %}</span>
+        {% else %}
+          {% if perf.db_count_warn %}
+        <span class="badge text-bg-warning">{% perf.db_count %}</span>
+          {% else %}
+        <span class="badge text-bg-success">{% perf.db_count %}</span>
+          {% endif %}
+        {% endif %}
       </div>
       <div class="col-12 col-lg-3">
         <div class="text-muted small">DB time (ms)</div>
@@ -22,7 +30,15 @@
       </div>
       <div class="col-6 col-lg-3">
         <div class="text-muted small">Memory peak (MB)</div>
-        <span class="badge {% perf.memory_class %}">{% perf.memory_mb %}</span>
+        {% if perf.memory_crit %}
+        <span class="badge text-bg-danger">{% perf.memory_mb %}</span>
+        {% else %}
+          {% if perf.memory_warn %}
+        <span class="badge text-bg-warning">{% perf.memory_mb %}</span>
+          {% else %}
+        <span class="badge text-bg-success">{% perf.memory_mb %}</span>
+          {% endif %}
+        {% endif %}
       </div>
     </div>
   </div>

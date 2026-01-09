@@ -67,8 +67,6 @@ final class AdminMediaController
                 'prev_page' => 1,
                 'next_page' => 1,
                 'show_pagination' => 0,
-                'prev_class' => 'disabled',
-                'next_class' => 'disabled',
                 'success' => null,
                 'errors' => [$message],
             ], 422, [], [
@@ -101,8 +99,6 @@ final class AdminMediaController
             'prev_page' => $page > 1 ? $page - 1 : 1,
             'next_page' => $page < $totalPages ? $page + 1 : $totalPages,
             'show_pagination' => $showPagination,
-            'prev_class' => $page > 1 ? '' : 'disabled',
-            'next_class' => $page < $totalPages ? '' : 'disabled',
             'success' => null,
             'errors' => [],
         ];
@@ -457,8 +453,6 @@ final class AdminMediaController
                 'prev_page' => 1,
                 'next_page' => 1,
                 'show_pagination' => 0,
-                'prev_class' => 'disabled',
-                'next_class' => 'disabled',
                 'success' => null,
                 'errors' => [$message],
             ], 422, [], [
@@ -493,8 +487,6 @@ final class AdminMediaController
                 'prev_page' => $page > 1 ? $page - 1 : 1,
                 'next_page' => $page < $totalPages ? $page + 1 : $totalPages,
                 'show_pagination' => $showPagination,
-                'prev_class' => $page > 1 ? '' : 'disabled',
-                'next_class' => $page < $totalPages ? '' : 'disabled',
                 'q' => $query,
             ], 200, [], [
                 'theme' => 'admin',
@@ -514,8 +506,6 @@ final class AdminMediaController
             'prev_page' => $page > 1 ? $page - 1 : 1,
             'next_page' => $page < $totalPages ? $page + 1 : $totalPages,
             'show_pagination' => $showPagination,
-            'prev_class' => $page > 1 ? '' : 'disabled',
-            'next_class' => $page < $totalPages ? '' : 'disabled',
         ], 200, [], [
             'theme' => 'admin',
         ]);
@@ -560,8 +550,6 @@ final class AdminMediaController
             'prev_page' => 1,
             'next_page' => 1,
             'show_pagination' => 0,
-            'prev_class' => 'disabled',
-            'next_class' => 'disabled',
         ], 422, [], [
             'theme' => 'admin',
         ]);
@@ -710,7 +698,6 @@ final class AdminMediaController
                 'flash' => $flashId !== null && $id === $flashId,
                 'is_public' => $isPublic,
                 'public_label' => $isPublic ? $this->view->translate('media.public.on') : $this->view->translate('media.public.off'),
-                'public_class' => $isPublic ? 'text-bg-success' : 'text-bg-secondary',
                 'public_mode' => $mode,
                 'public_mode_all' => $mode === 'all',
                 'public_mode_signed' => $mode === 'signed',

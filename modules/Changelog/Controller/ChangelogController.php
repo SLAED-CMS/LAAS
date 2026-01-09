@@ -76,8 +76,6 @@ final class ChangelogController
             'has_next' => $hasMore,
             'prev_page' => $page > 1 ? $page - 1 : 1,
             'next_page' => $hasMore ? $page + 1 : $page,
-            'prev_class' => $page > 1 ? '' : 'disabled',
-            'next_class' => $hasMore ? '' : 'disabled',
             'include_merges' => $includeMerges ? '1' : '0',
             'include_merges_checked' => $includeMerges,
             'query_suffix' => $querySuffix,

@@ -48,6 +48,26 @@
 - Bootstrap/HTMX are local assets, not CDN
 - PHP does not assemble CSS classes or inline JS/CSS
 
+## UI Tokens
+- PHP returns only UI tokens: `state`, `status`, `variant`, `flags`
+- PHP never returns `*_class` or raw CSS classes
+- Mapping from tokens to CSS happens in templates
+
+**Allowed keys (examples):**
+- `status`: `ok | degraded | down`, `active | disabled`, `public | private`
+- `variant`: `primary | secondary | success | warning | danger | info | dark`
+- `state`: `enabled | disabled`, `open | closed`
+- `flags`: booleans like `has_prev`, `is_public`, `revoke_allowed`
+
+**Example:**
+```php
+// bad
+'health_class' => 'text-bg-success'
+
+// good
+'health_ok' => true
+```
+
 ## Sessions
 - Direct `$_SESSION` access is forbidden outside `PhpSession`
 - Use `SessionInterface` via `Request::session()` in controllers/services

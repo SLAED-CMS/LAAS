@@ -354,7 +354,9 @@ final class ApiTokensController
             $revokedAt = (string) ($row['revoked_at'] ?? '');
             $status = $this->status($expiresAt, $revokedAt);
             $statusLabel = $this->statusLabel($status);
-            $statusClass = $this->statusClass($status);
+            $isActive = $status === 'active';
+            $isExpired = $status === 'expired';
+            $isRevoked = $status === 'revoked';
             $items[] = [
                 'id' => (int) ($row['id'] ?? 0),
                 'name' => (string) ($row['name'] ?? ''),
@@ -365,8 +367,10 @@ final class ApiTokensController
                 'created_at' => (string) ($row['created_at'] ?? ''),
                 'status' => $status,
                 'status_label' => $statusLabel,
-                'status_class' => $statusClass,
-                'revoke_disabled' => $status === 'active' ? '' : 'disabled',
+                'is_active' => $isActive,
+                'is_expired' => $isExpired,
+                'is_revoked' => $isRevoked,
+                'revoke_allowed' => $isActive,
             ];
         }
 
@@ -416,12 +420,4 @@ final class ApiTokensController
         });
     }
 
-    private function statusClass(string $status): string
-    {
-        return match ($status) {
-            'revoked' => 'bg-danger',
-            'expired' => 'bg-warning text-dark',
-            default => 'bg-success',
-        };
-    }
 }

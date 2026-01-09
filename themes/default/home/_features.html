@@ -6,7 +6,19 @@
         <div class="col-6 col-md-3">
           <div class="border rounded p-2 text-center">
             <div class="fw-semibold">{% feature.name %}</div>
-            <span class="badge {% feature.badge %}" title="{% feature.hint %}">{% feature.status %}</span>
+            {% if feature.variant_is_success %}
+            <span class="badge text-bg-success" title="{% feature.hint %}">{% feature.status %}</span>
+            {% else %}
+              {% if feature.variant_is_warning %}
+            <span class="badge text-bg-warning" title="{% feature.hint %}">{% feature.status %}</span>
+              {% else %}
+                {% if feature.variant_is_primary %}
+            <span class="badge text-bg-primary" title="{% feature.hint %}">{% feature.status %}</span>
+                {% else %}
+            <span class="badge text-bg-secondary" title="{% feature.hint %}">{% feature.status %}</span>
+                {% endif %}
+              {% endif %}
+            {% endif %}
           </div>
         </div>
       {% endforeach %}

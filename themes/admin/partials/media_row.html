@@ -50,7 +50,11 @@
       </button>
     </div>
     <div class="mt-2 d-flex flex-wrap gap-2 align-items-center">
-      <span class="badge {% item.public_class %}">{% item.public_label %}</span>
+      {% if item.is_public %}
+      <span class="badge text-bg-success">{% item.public_label %}</span>
+      {% else %}
+      <span class="badge text-bg-secondary">{% item.public_label %}</span>
+      {% endif %}
       {% if item.public_mode_all %}
         <button class="btn btn-sm btn-outline-primary"
                 type="button"

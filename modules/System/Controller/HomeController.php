@@ -98,8 +98,7 @@ final class HomeController
             'media_mode' => (string) ($media['public_mode'] ?? 'private'),
             'media_public' => (string) ($media['public_mode'] ?? 'private') === 'public',
             'media_signed' => (string) ($media['public_mode'] ?? 'private') === 'signed',
-            'health' => $health['status'],
-            'health_class' => $health['class'],
+            'health_ok' => $health['ok'],
         ];
     }
 
@@ -412,10 +411,14 @@ final class HomeController
             'duration_ms' => (float) ($data['duration_ms'] ?? 0),
             'memory_mb' => (float) ($data['memory_mb'] ?? 0),
         ];
-        $perf['db_count_class'] = $this->thresholdClass($perf['db_count'], 20, 40);
-        $perf['db_time_class'] = $this->thresholdClass($perf['db_total_ms'], 50, 150);
-        $perf['duration_class'] = $this->thresholdClass($perf['duration_ms'], 150, 400);
-        $perf['memory_class'] = $this->thresholdClass($perf['memory_mb'], 64, 128);
+        $perf['db_count_status'] = $this->thresholdStatus($perf['db_count'], 20, 40);
+        $perf['db_time_status'] = $this->thresholdStatus($perf['db_total_ms'], 50, 150);
+        $perf['duration_status'] = $this->thresholdStatus($perf['duration_ms'], 150, 400);
+        $perf['memory_status'] = $this->thresholdStatus($perf['memory_mb'], 64, 128);
+        $perf['db_count_crit'] = $perf['db_count_status'] === 'crit';
+        $perf['db_count_warn'] = $perf['db_count_status'] === 'warn';
+        $perf['memory_crit'] = $perf['memory_status'] === 'crit';
+        $perf['memory_warn'] = $perf['memory_status'] === 'warn';
         $perf['db_time_pct'] = $this->toPercent($perf['db_total_ms'], 200.0);
         $perf['duration_pct'] = $this->toPercent($perf['duration_ms'], 600.0);
 
@@ -429,17 +432,26 @@ final class HomeController
         $cacheEnabled = (bool) ($cache['enabled'] ?? true);
         $backupReady = is_dir($this->rootPath() . '/storage/backups');
 
-        return [
-            ['name' => 'Pages', 'status' => 'production-ready', 'badge' => 'text-bg-success', 'hint' => 'Pages + search + slugs'],
-            ['name' => 'Media', 'status' => $storage->isMisconfigured() ? 'enabled' : 'production-ready', 'badge' => $storage->isMisconfigured() ? 'text-bg-secondary' : 'text-bg-success', 'hint' => 'Uploads + thumbs + signed URLs'],
-            ['name' => 'Search', 'status' => 'enabled', 'badge' => 'text-bg-primary', 'hint' => 'Pages + media search'],
-            ['name' => 'Changelog', 'status' => 'enabled', 'badge' => 'text-bg-primary', 'hint' => 'GitHub/local git feed'],
-            ['name' => 'RBAC', 'status' => 'production-ready', 'badge' => 'text-bg-success', 'hint' => 'Roles + permissions'],
-            ['name' => 'Audit', 'status' => 'production-ready', 'badge' => 'text-bg-success', 'hint' => 'Action logging + filters'],
-            ['name' => 'Cache', 'status' => $cacheEnabled ? 'configured' : 'disabled', 'badge' => $cacheEnabled ? 'text-bg-warning' : 'text-bg-secondary', 'hint' => 'Settings + menus'],
-            ['name' => 'Backup', 'status' => $backupReady ? 'configured' : 'enabled', 'badge' => $backupReady ? 'text-bg-warning' : 'text-bg-secondary', 'hint' => 'Backup + restore CLI'],
-            ['name' => 'CI', 'status' => 'production-ready', 'badge' => 'text-bg-success', 'hint' => 'Lint + tests + release'],
+        $features = [
+            ['name' => 'Pages', 'status' => 'production-ready', 'variant' => 'success', 'hint' => 'Pages + search + slugs'],
+            ['name' => 'Media', 'status' => $storage->isMisconfigured() ? 'enabled' : 'production-ready', 'variant' => $storage->isMisconfigured() ? 'secondary' : 'success', 'hint' => 'Uploads + thumbs + signed URLs'],
+            ['name' => 'Search', 'status' => 'enabled', 'variant' => 'primary', 'hint' => 'Pages + media search'],
+            ['name' => 'Changelog', 'status' => 'enabled', 'variant' => 'primary', 'hint' => 'GitHub/local git feed'],
+            ['name' => 'RBAC', 'status' => 'production-ready', 'variant' => 'success', 'hint' => 'Roles + permissions'],
+            ['name' => 'Audit', 'status' => 'production-ready', 'variant' => 'success', 'hint' => 'Action logging + filters'],
+            ['name' => 'Cache', 'status' => $cacheEnabled ? 'configured' : 'disabled', 'variant' => $cacheEnabled ? 'warning' : 'secondary', 'hint' => 'Settings + menus'],
+            ['name' => 'Backup', 'status' => $backupReady ? 'configured' : 'enabled', 'variant' => $backupReady ? 'warning' : 'secondary', 'hint' => 'Backup + restore CLI'],
+            ['name' => 'CI', 'status' => 'production-ready', 'variant' => 'success', 'hint' => 'Lint + tests + release'],
         ];
+
+        return array_map(static function (array $feature): array {
+            $variant = (string) ($feature['variant'] ?? 'secondary');
+            return array_merge($feature, [
+                'variant_is_success' => $variant === 'success',
+                'variant_is_warning' => $variant === 'warning',
+                'variant_is_primary' => $variant === 'primary',
+            ]);
+        }, $features);
     }
 
     private function changelogData(): array
@@ -713,8 +725,8 @@ final class HomeController
         }
 
         return [
-            'status' => $ok ? 'OK' : 'DEGRADED',
-            'class' => $ok ? 'text-bg-success' : 'text-bg-warning',
+            'status' => $ok ? 'ok' : 'degraded',
+            'ok' => $ok,
         ];
     }
 
@@ -756,25 +768,13 @@ final class HomeController
         foreach ($rows as $row) {
             $action = (string) ($row['action'] ?? '');
             $entries[] = array_merge($row, [
-                'action_badge' => $this->auditBadgeClass($action),
+                'action_is_primary' => str_starts_with($action, 'media.'),
+                'action_is_warning' => str_starts_with($action, 'settings.'),
+                'action_is_auth' => str_starts_with($action, 'auth.'),
                 'relative' => $this->relativeTime((string) ($row['created_at'] ?? '')),
             ]);
         }
         return $entries;
-    }
-
-    private function auditBadgeClass(string $action): string
-    {
-        if (str_starts_with($action, 'media.')) {
-            return 'text-bg-primary';
-        }
-        if (str_starts_with($action, 'settings.')) {
-            return 'text-bg-warning';
-        }
-        if (str_starts_with($action, 'auth.')) {
-            return 'badge-auth';
-        }
-        return 'text-bg-secondary';
     }
 
     private function relativeTime(string $timestamp): string
@@ -799,15 +799,15 @@ final class HomeController
         return $days . ' d ago';
     }
 
-    private function thresholdClass(float|int $value, float $warn, float $crit): string
+    private function thresholdStatus(float|int $value, float $warn, float $crit): string
     {
         if ($value >= $crit) {
-            return 'text-bg-danger';
+            return 'crit';
         }
         if ($value >= $warn) {
-            return 'text-bg-warning';
+            return 'warn';
         }
-        return 'text-bg-success';
+        return 'ok';
     }
 
     private function toPercent(float $value, float $max): int

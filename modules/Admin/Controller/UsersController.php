@@ -366,7 +366,6 @@ final class UsersController
             'email' => $email,
             'email_segments' => Highlighter::segments($email, $query ?? ''),
             'status' => $status,
-            'status_badge_class' => $status === 1 ? 'bg-success' : 'bg-secondary',
             'is_admin' => $isAdmin,
             'protected' => $protected,
             'last_login_at' => $lastLogin !== '' ? $lastLogin : '-',

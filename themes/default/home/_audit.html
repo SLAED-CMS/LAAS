@@ -14,7 +14,21 @@
           <tbody>
             {% foreach audit.entries as entry %}
               <tr>
-                <td><span class="badge {% entry.action_badge %}">{% entry.action %}</span></td>
+                <td>
+                  {% if entry.action_is_primary %}
+                  <span class="badge text-bg-primary">{% entry.action %}</span>
+                  {% else %}
+                    {% if entry.action_is_warning %}
+                  <span class="badge text-bg-warning">{% entry.action %}</span>
+                    {% else %}
+                      {% if entry.action_is_auth %}
+                  <span class="badge badge-auth">{% entry.action %}</span>
+                      {% else %}
+                  <span class="badge text-bg-secondary">{% entry.action %}</span>
+                      {% endif %}
+                    {% endif %}
+                  {% endif %}
+                </td>
                 <td>{% entry.username %}</td>
                 <td class="text-muted small" title="{% entry.created_at %}">{% entry.relative %}</td>
               </tr>

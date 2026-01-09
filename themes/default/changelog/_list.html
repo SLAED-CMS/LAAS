@@ -30,24 +30,24 @@
 
   <nav>
     <ul class="pagination mb-0">
-      <li class="page-item {% prev_class %}">
+      <li class="page-item {% if has_prev %}{% else %}disabled{% endif %}">
         <a class="page-link"
            href="/changelog?page={% prev_page %}{% query_suffix %}"
            hx-get="/changelog?page={% prev_page %}{% query_suffix %}"
            hx-target="#changelog-list"
            hx-swap="innerHTML"
-           hx-push-url="true">Prev</a>
+           hx-push-url="true" {% if has_prev %}{% else %}tabindex="-1" aria-disabled="true"{% endif %}>Prev</a>
       </li>
       <li class="page-item disabled">
         <span class="page-link">Page {% page %}</span>
       </li>
-      <li class="page-item {% next_class %}">
+      <li class="page-item {% if has_next %}{% else %}disabled{% endif %}">
         <a class="page-link"
            href="/changelog?page={% next_page %}{% query_suffix %}"
            hx-get="/changelog?page={% next_page %}{% query_suffix %}"
            hx-target="#changelog-list"
            hx-swap="innerHTML"
-           hx-push-url="true">Next</a>
+           hx-push-url="true" {% if has_next %}{% else %}tabindex="-1" aria-disabled="true"{% endif %}>Next</a>
       </li>
     </ul>
   </nav>

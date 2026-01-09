@@ -531,7 +531,6 @@ final class AdminPagesController
             'slug_segments' => $slugSegments,
             'status' => $status,
             'is_published' => $isPublished,
-            'status_badge_class' => $isPublished ? 'bg-success' : 'bg-secondary',
             'updated_at' => $updatedAt,
             'updated_at_display' => $updatedAt !== '' ? $updatedAt : '-',
             'can_edit' => $canEdit,

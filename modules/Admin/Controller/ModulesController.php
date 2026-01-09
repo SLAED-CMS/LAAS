@@ -58,7 +58,6 @@ final class ModulesController
 
             $type = (string) ($meta['type'] ?? 'feature');
             $typeLabel = $this->typeLabel($type);
-            $typeBadgeClass = $this->typeBadgeClass($type);
             if ($type !== 'feature' && $enabled === false && !$dbAvailable && !in_array($name, $configEnabled, true)) {
                 $enabled = true;
                 $source = 'INTERNAL';
@@ -70,7 +69,9 @@ final class ModulesController
                 'version' => $meta['version'] ?? null,
                 'type' => $type,
                 'type_label' => $typeLabel,
-                'type_badge_class' => $typeBadgeClass,
+                'type_is_internal' => $type === 'internal',
+                'type_is_admin' => $type === 'admin',
+                'type_is_api' => $type === 'api',
                 'source' => $source,
                 'protected' => $type !== 'feature',
             ];
@@ -132,14 +133,15 @@ final class ModulesController
 
         $row = $current[$name] ?? ['enabled' => !$enabled, 'version' => null];
         $typeLabel = $this->typeLabel($type);
-        $typeBadgeClass = $this->typeBadgeClass($type);
         $module = [
             'name' => $name,
             'enabled' => !$enabled,
             'version' => $discovered[$name]['version'] ?? null,
             'type' => $type,
             'type_label' => $typeLabel,
-            'type_badge_class' => $typeBadgeClass,
+            'type_is_internal' => $type === 'internal',
+            'type_is_admin' => $type === 'admin',
+            'type_is_api' => $type === 'api',
             'source' => 'DB',
             'protected' => $type !== 'feature',
         ];
@@ -316,13 +318,4 @@ final class ModulesController
         };
     }
 
-    private function typeBadgeClass(string $type): string
-    {
-        return match ($type) {
-            'internal' => 'bg-secondary',
-            'admin' => 'bg-dark',
-            'api' => 'bg-info text-dark',
-            default => 'bg-primary',
-        };
-    }
 }

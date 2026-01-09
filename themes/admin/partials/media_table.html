@@ -27,14 +27,14 @@
 {% if show_pagination %}
 <nav>
   <ul class="pagination pagination-sm mb-0">
-    <li class="page-item {% prev_class %}">
-      <a class="page-link" href="/admin/media?page={% prev_page %}&q={% q %}">Prev</a>
+    <li class="page-item {% if has_prev %}{% else %}disabled{% endif %}">
+      <a class="page-link" href="/admin/media?page={% prev_page %}&q={% q %}" {% if has_prev %}{% else %}tabindex="-1" aria-disabled="true"{% endif %}>Prev</a>
     </li>
     <li class="page-item disabled">
       <span class="page-link">{% page %} / {% total_pages %}</span>
     </li>
-    <li class="page-item {% next_class %}">
-      <a class="page-link" href="/admin/media?page={% next_page %}&q={% q %}">Next</a>
+    <li class="page-item {% if has_next %}{% else %}disabled{% endif %}">
+      <a class="page-link" href="/admin/media?page={% next_page %}&q={% q %}" {% if has_next %}{% else %}tabindex="-1" aria-disabled="true"{% endif %}>Next</a>
     </li>
   </ul>
 </nav>

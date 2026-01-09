@@ -844,6 +844,12 @@ public function runMiddleware(array $middleware, Request $request): Response
 {% include "partials/header.html" %}
 ```
 
+### View Responsibilities
+
+- View data contains no CSS classes
+- UI tokens (`state`, `status`, `variant`, `flags`) are mapped to classes in templates
+- Any `*_class` key in view data is treated as invalid
+
 ### Template Compilation
 
 **Templates are compiled to PHP:**
