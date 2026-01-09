@@ -76,7 +76,40 @@ http://laas.loc/
 - Cache-busting uses `?v=` from `ASSETS_VERSION` (or disabled via `ASSETS_CACHE_BUSTING=false`)
 - Bootstrap/HTMX are stored locally in `public/assets`
 
----
+## Frontend separation
+
+- PHP core never emits HTML/CSS/JS
+- Controllers return data only; templates own markup and class mapping
+- No inline `<style>`/`<script>` or `style=""` in templates
+- Bootstrap/HTMX must be replaceable without template changes
+
+## Asset policy
+
+- All CSS/JS entries live in `config/assets.php`
+- `defer`/`async` are configured in assets config
+- Layouts are the only place to load assets
+
+## UI tokens
+
+- Controllers return only `state`, `status`, `variant`, `flags`
+- `*_class` is forbidden in view data
+- Templates map tokens to CSS classes via `if/else`
+
+## Migration notes
+
+### Writing new modules
+- Put HTML only in `themes/*`
+- Register CSS/JS in `config/assets.php`
+- Load assets via `{% asset_css %}` / `{% asset_js %}` in layouts
+- Return UI tokens from controllers and map in templates
+
+### Forbidden
+- Inline `<style>`/`<script>` or `style=""` in templates
+- Building CSS classes in PHP
+- `*_class` keys in view data
+- CDN usage for Bootstrap/HTMX
+
+--- 
 
 ## Tech Stack
 

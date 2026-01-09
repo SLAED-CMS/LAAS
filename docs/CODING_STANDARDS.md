@@ -48,6 +48,17 @@
 - Bootstrap/HTMX are local assets, not CDN
 - PHP does not assemble CSS classes or inline JS/CSS
 
+## Frontend separation
+- PHP core never returns HTML/CSS/JS strings
+- Controllers return data only; templates own markup and mapping
+- Layouts are the only place that load assets
+
+## Asset policy
+- All assets are defined in `config/assets.php`
+- Use `{% asset_css "name" %}` and `{% asset_js "name" %}` only in layouts
+- `defer`/`async` are configured in assets config, not in templates
+- Cache-busting is `?v=` via `ASSETS_VERSION`
+
 ## UI Tokens
 - PHP returns only UI tokens: `state`, `status`, `variant`, `flags`
 - PHP never returns `*_class` or raw CSS classes
@@ -67,6 +78,21 @@
 // good
 'health_ok' => true
 ```
+
+## Migration notes
+
+### Writing new modules
+- Return only data from controllers/services
+- Add UI tokens (`state|status|variant|flags`) and map in templates
+- Put templates under `themes/*` only
+- Register any CSS/JS in `config/assets.php` and load in layouts
+
+### Forbidden
+- `*_class` in view data
+- Inline `<style>`/`<script>` or `style=""` in templates
+- Building CSS classes in PHP
+- Direct HTML in PHP controllers/services
+- CDN usage for Bootstrap/HTMX
 
 ## Sessions
 - Direct `$_SESSION` access is forbidden outside `PhpSession`

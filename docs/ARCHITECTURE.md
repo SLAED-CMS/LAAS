@@ -942,6 +942,26 @@ public function render(string $template, array $data): string
 - No inline `<style>` / `<script>` in templates
 - Libraries live locally in `public/assets`
 
+### Frontend separation
+
+- PHP core never emits HTML/CSS/JS directly
+- Controllers return data only; templates own markup and class mapping
+- No inline CSS/JS or `style=""` attributes in templates
+- Bootstrap/HTMX must be replaceable without template changes
+
+### Asset policy
+
+- All CSS/JS entries live in `config/assets.php`
+- Template usage only via `{% asset_css %}` / `{% asset_js %}` in layouts
+- `defer`/`async` configured in asset config, not in templates
+- Cache-busting uses `?v=` based on `ASSETS_VERSION`
+
+### UI tokens (view responsibilities)
+
+- View data must not include `*_class` keys
+- Controllers provide only `state`, `status`, `variant`, `flags`
+- Templates map tokens to CSS classes via `if/else`
+
 **Configuration (`config/assets.php`):**
 - `ASSETS_BASE_URL` for path prefix
 - `ASSETS_VERSION` for cache busting
