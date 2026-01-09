@@ -70,6 +70,8 @@
 - PHP returns only UI tokens: `state`, `status`, `variant`, `flags`
 - PHP never returns `*_class` or raw CSS classes
 - Mapping from tokens to CSS happens in templates
+- Spec: `docs/UI_TOKENS.md`
+- Backend returns only `state`/tokens/`flags` and no CSS/HTMX/JS attributes
 
 **Allowed keys (examples):**
 - `status`: `ok | degraded | down`, `active | disabled`, `public | private`
@@ -85,6 +87,15 @@
 // good
 'health_ok' => true
 ```
+
+**Do / Don't:**
+- Do: return `status`/`variant`/`flags` and map in templates
+- Do: keep tokens in `snake_case` enums
+- Do: keep all HTML in `themes/*`
+- Don't: return CSS classes from PHP
+- Don't: emit HTMX or JS attributes from PHP
+- Don't: add inline `<script>`/`<style>` or `style=""`
+- Don't: use CDN links in templates
 
 ## Policy CI
 
