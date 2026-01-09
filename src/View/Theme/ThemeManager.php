@@ -8,6 +8,8 @@ use RuntimeException;
 
 final class ThemeManager
 {
+    private array $themeCache = [];
+
     public function __construct(
         private string $themesRoot,
         private string $defaultTheme,
@@ -48,6 +50,61 @@ final class ThemeManager
         return 'admin';
     }
 
+    public function getThemeConfig(?string $theme = null): array
+    {
+        $theme = $theme ?? $this->defaultTheme;
+        if (isset($this->themeCache[$theme])) {
+            return $this->themeCache[$theme];
+        }
+
+        $path = $this->themePath($theme);
+        $manifestPath = $path . '/theme.json';
+        if (!is_file($manifestPath)) {
+            $this->themeCache[$theme] = [];
+            return [];
+        }
+
+        $raw = (string) file_get_contents($manifestPath);
+        $data = json_decode($raw, true);
+        if (!is_array($data)) {
+            throw new RuntimeException('Invalid theme.json: ' . $manifestPath);
+        }
+
+        $layouts = $data['layouts'] ?? null;
+        if (!is_array($layouts)) {
+            throw new RuntimeException('Missing layouts in theme.json: ' . $manifestPath);
+        }
+
+        $baseLayout = (string) ($layouts['base'] ?? '');
+        if ($baseLayout === '') {
+            throw new RuntimeException('Missing base layout in theme.json: ' . $manifestPath);
+        }
+
+        $basePath = $path . '/' . ltrim($baseLayout, '/\\');
+        if (!is_file($basePath)) {
+            throw new RuntimeException('Base layout not found: ' . $basePath);
+        }
+
+        $this->themeCache[$theme] = $data;
+        return $data;
+    }
+
+    public function getLayoutPath(string $key = 'base', ?string $theme = null): string
+    {
+        $config = $this->getThemeConfig($theme);
+        if ($config === []) {
+            return 'layout.html';
+        }
+
+        $layouts = $config['layouts'] ?? [];
+        $layout = $layouts[$key] ?? '';
+        if (!is_string($layout) || $layout === '') {
+            return 'layout.html';
+        }
+
+        return $layout;
+    }
+
     public function basePath(): string
     {
         return rtrim($this->themesRoot, '/\\') . '/' . $this->defaultTheme;
@@ -77,5 +134,10 @@ final class ThemeManager
         }
 
         return is_file($path . '/layout.html') || is_file($path . '/theme.json');
+    }
+
+    private function themePath(string $theme): string
+    {
+        return rtrim($this->themesRoot, '/\\') . '/' . $theme;
     }
 }

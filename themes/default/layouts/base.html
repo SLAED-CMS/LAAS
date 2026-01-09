@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="{% locale %}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{% csrf_token %}">
+  <title>{% site_name %}</title>
+  {% asset_css "bootstrap" %}
+  {% asset_css "bootstrap-icons" %}
+  {% asset_css "app" %}
+  {% if devtools.enabled %}{% asset_css "devtools" %}{% endif %}
+</head>
+<body class="laas-theme-default" hx-headers='{"X-CSRF-Token":"{% csrf_token %}"}'>
+  <main id="app" class="container py-3">
+    {% block content %}{% endblock %}
+  </main>
+  {% asset_js "htmx" %}
+  {% asset_js "bootstrap" %}
+  {% asset_js "app" %}
+  {% if devtools.enabled %}{% asset_js "devtools" %}{% endif %}
+</body>
+</html>

@@ -187,14 +187,18 @@ final class View
             'csrf_token' => $csrfToken,
             '__translator' => $this->translator,
             '__assets' => $this->assetManager,
+            'assets' => $this->assetManager,
             'locale' => $this->locale,
             'is_auth' => $this->authService->check(),
             'auth_user' => $this->authService->user(),
             'site_name' => (string) $this->settingsProvider->get('site_name', $this->appConfig['name'] ?? 'LAAS'),
             'app' => [
                 'name' => $this->appConfig['name'] ?? 'LAAS',
+                'version' => (string) ($this->appConfig['version'] ?? ''),
+                'env' => (string) ($this->appConfig['env'] ?? ''),
                 'debug' => (bool) ($this->appConfig['debug'] ?? false),
             ],
+            'user' => $this->buildUserContext(),
             'request' => [
                 'path' => $this->request?->getPath() ?? '/',
                 'is_htmx' => $this->request?->isHtmx() ?? false,
@@ -239,6 +243,29 @@ final class View
                 }
             }
         }
+    }
+
+    private function buildUserContext(): array
+    {
+        $user = $this->authService->user();
+        if (!is_array($user)) {
+            return [
+                'id' => null,
+                'username' => null,
+                'roles' => [],
+            ];
+        }
+
+        $roles = $user['roles'] ?? [];
+        if (!is_array($roles)) {
+            $roles = [];
+        }
+
+        return [
+            'id' => $user['id'] ?? null,
+            'username' => $user['username'] ?? null,
+            'roles' => $roles,
+        ];
     }
 
     private function resolveDevtoolsEnabled(): bool
