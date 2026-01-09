@@ -1,5 +1,7 @@
 # LAAS Versions
 
+- Planned: 3.0 frontend-agnostic
+
 - v2.4.1: DevTools: JS Errors (client error capture + server inbox + UI panel)
   - Client-side error capture: `window.onerror` and `window.onunhandledrejection`
   - Server inbox: cache-based storage (TTL 10 min, ring buffer max 200 events)

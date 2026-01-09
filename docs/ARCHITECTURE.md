@@ -26,6 +26,7 @@
 18. [Deployment Model](#deployment-model)
 19. [Best Practices](#best-practices)
 20. [Design Patterns](#design-patterns)
+21. [Future: Rendering Adapters](#future-rendering-adapters)
 
 ---
 
@@ -1827,6 +1828,22 @@ abstract class BaseController
 }
 ```
 
+---
+
+## Future: Rendering Adapters
+
+**Goal:** Separate rendering from controller logic to enable frontend-agnostic mode.
+
+Checklist:
+- [ ] HTML adapter: full layout rendering for classic mode
+- [ ] HTMX adapter: partial rendering (content block only)
+- [ ] JSON adapter: unified envelope (`status`, `data`, `error`, `meta`)
+- [ ] Shared view data contract: UI tokens, assets, globals
+- [ ] Backward compatibility with v2.x templates
+
+Notes:
+- Adapters must not change Router/Kernel/Middleware.
+- Controllers return data, adapters choose output format.
 ---
 
 **Last updated:** January 2026
