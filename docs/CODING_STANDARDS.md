@@ -59,6 +59,13 @@
 - `defer`/`async` are configured in assets config, not in templates
 - Cache-busting is `?v=` via `ASSETS_VERSION`
 
+## Theme API v1
+- Each theme must include `themes/<theme>/theme.json`
+- Required fields: `name`, `version`, `author`, `layouts.base`
+- Standard structure: `layouts/`, `pages/`, `partials/`
+- Templates continue to support legacy `layout.html`
+- Use global variables: `app.*`, `user.*`, `csrf_token`, `locale`, `assets`, `t()`
+
 ## UI Tokens
 - PHP returns only UI tokens: `state`, `status`, `variant`, `flags`
 - PHP never returns `*_class` or raw CSS classes

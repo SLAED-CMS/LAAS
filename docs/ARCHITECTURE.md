@@ -929,6 +929,25 @@ public function render(string $template, array $data): string
 }
 ```
 
+### ThemeManager and Theme API v1
+
+**Theme API v1 contract:**
+- `themes/<theme>/theme.json` declares theme metadata and layouts
+- `layouts.base` is required and validated if `theme.json` exists
+- Legacy themes without `theme.json` fall back to `layout.html`
+
+**Standard structure (v1):**
+- `layouts/`
+- `pages/`
+- `partials/`
+
+**Global template variables:**
+- `app.name`, `app.version`, `app.env`
+- `user.id`, `user.username`, `user.roles`
+- `csrf_token`, `locale`
+- `assets` and asset helpers
+- `t()` translator helper
+
 ---
 
 ---
