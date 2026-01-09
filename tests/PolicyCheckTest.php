@@ -12,11 +12,10 @@ final class PolicyCheckTest extends TestCase
         $root = dirname(__DIR__);
         $fixtures = $root . '/tests/fixtures/policy';
 
-        $violations = policy_check_paths([$fixtures]);
+        $analysis = policy_analyze([$fixtures]);
+        $codes = array_map(static fn(array $row): string => $row['code'], $analysis['errors']);
 
-        $rules = array_map(static fn(array $row): string => $row['rule'], $violations);
-
-        $this->assertContains('R1', $rules);
-        $this->assertContains('R2', $rules);
+        $this->assertContains('R1', $codes);
+        $this->assertContains('R2', $codes);
     }
 }

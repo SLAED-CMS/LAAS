@@ -18,22 +18,24 @@ const POLICY_CDN_HOSTS = [
 
 /**
  * @param array<int, string> $paths
- * @return array<int, array{file: string, line: int, rule: string, message: string}>
+ * @return array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>
  */
 function policy_check_paths(array $paths): array
 {
-    $violations = [];
+    $findings = [];
     foreach ($paths as $path) {
         $path = rtrim($path, DIRECTORY_SEPARATOR);
         if ($path === '') {
             continue;
         }
         if (!file_exists($path)) {
-            $violations[] = [
+            $findings[] = [
+                'level' => 'error',
+                'code' => 'R0',
                 'file' => $path,
                 'line' => 1,
-                'rule' => 'R0',
                 'message' => 'Path does not exist',
+                'snippet' => '',
             ];
             continue;
         }
@@ -48,41 +50,38 @@ function policy_check_paths(array $paths): array
                 if (strtolower($file->getExtension()) !== 'html') {
                     continue;
                 }
-                $violations = array_merge($violations, policy_check_file($file->getPathname()));
+                $findings = array_merge($findings, policy_check_file($file->getPathname()));
             }
             continue;
         }
-        $violations = array_merge($violations, policy_check_file($path));
+        $findings = array_merge($findings, policy_check_file($path));
     }
 
-    return $violations;
+    return $findings;
 }
 
 /**
- * @return array<int, array{file: string, line: int, rule: string, message: string}>
+ * @return array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>
  */
 function policy_check_file(string $path): array
 {
     $contents = @file_get_contents($path);
     if ($contents === false) {
         return [[
+            'level' => 'error',
+            'code' => 'R0',
             'file' => $path,
             'line' => 1,
-            'rule' => 'R0',
             'message' => 'Cannot read file',
+            'snippet' => '',
         ]];
     }
 
-    $violations = [];
+    $findings = [];
 
     if (preg_match_all('/<style\\b/i', $contents, $matches, PREG_OFFSET_CAPTURE) > 0) {
         foreach ($matches[0] as $match) {
-            $violations[] = [
-                'file' => $path,
-                'line' => policy_line_from_offset($contents, $match[1]),
-                'rule' => 'R1',
-                'message' => 'Inline <style> is forbidden',
-            ];
+            $findings[] = policy_make_finding('error', 'R1', $path, $match[1], 'Inline <style> is forbidden', $contents);
         }
     }
 
@@ -90,12 +89,7 @@ function policy_check_file(string $path): array
         foreach ($matches[0] as $match) {
             $tag = $match[0];
             if (preg_match('/\\bsrc\\s*=\\s*/i', $tag) !== 1) {
-                $violations[] = [
-                    'file' => $path,
-                    'line' => policy_line_from_offset($contents, $match[1]),
-                    'rule' => 'R1',
-                    'message' => 'Inline <script> is forbidden',
-                ];
+                $findings[] = policy_make_finding('error', 'R1', $path, $match[1], 'Inline <script> is forbidden', $contents);
             }
         }
     }
@@ -104,12 +98,7 @@ function policy_check_file(string $path): array
         foreach ($matches[0] as $idx => $match) {
             $body = $matches[1][$idx][0] ?? '';
             if (trim($body) !== '') {
-                $violations[] = [
-                    'file' => $path,
-                    'line' => policy_line_from_offset($contents, $match[1]),
-                    'rule' => 'R1',
-                    'message' => 'Inline <script> body is forbidden',
-                ];
+                $findings[] = policy_make_finding('error', 'R1', $path, $match[1], 'Inline <script> body is forbidden', $contents);
             }
         }
     }
@@ -119,16 +108,23 @@ function policy_check_file(string $path): array
             continue;
         }
         foreach ($matches[0] as $match) {
-            $violations[] = [
-                'file' => $path,
-                'line' => policy_line_from_offset($contents, $match[1]),
-                'rule' => 'R2',
-                'message' => 'External CDN usage is forbidden',
-            ];
+            $findings[] = policy_make_finding('error', 'R2', $path, $match[1], 'External CDN usage is forbidden', $contents);
         }
     }
 
-    return $violations;
+    if (preg_match_all('/\\bonclick\\s*=\\s*([\'"]).*?\\1/i', $contents, $matches, PREG_OFFSET_CAPTURE) > 0) {
+        foreach ($matches[0] as $match) {
+            $findings[] = policy_make_finding('warning', 'W1', $path, $match[1], 'Inline onclick attribute', $contents);
+        }
+    }
+
+    if (preg_match_all('/\\bstyle\\s*=\\s*([\'"]).*?\\1/i', $contents, $matches, PREG_OFFSET_CAPTURE) > 0) {
+        foreach ($matches[0] as $match) {
+            $findings[] = policy_make_finding('warning', 'W2', $path, $match[1], 'Inline style attribute', $contents);
+        }
+    }
+
+    return $findings;
 }
 
 function policy_line_from_offset(string $contents, int $offset): int
@@ -139,27 +135,92 @@ function policy_line_from_offset(string $contents, int $offset): int
     return substr_count($contents, "\n", 0, $offset) + 1;
 }
 
+function policy_snippet_from_offset(string $contents, int $offset): string
+{
+    $before = $offset > 0 ? substr($contents, 0, $offset) : '';
+    $lineStart = strrpos($before, "\n");
+    $lineStart = $lineStart === false ? 0 : $lineStart + 1;
+    $lineEnd = strpos($contents, "\n", $offset);
+    if ($lineEnd === false) {
+        $lineEnd = strlen($contents);
+    }
+    $line = substr($contents, $lineStart, $lineEnd - $lineStart);
+    $line = trim(preg_replace('/\\s+/', ' ', $line) ?? $line);
+    if (strlen($line) > 120) {
+        $line = substr($line, 0, 117) . '...';
+    }
+    return $line;
+}
+
+function policy_make_finding(
+    string $level,
+    string $code,
+    string $path,
+    int $offset,
+    string $message,
+    string $contents
+): array {
+    return [
+        'level' => $level,
+        'code' => $code,
+        'file' => $path,
+        'line' => policy_line_from_offset($contents, $offset),
+        'message' => $message,
+        'snippet' => policy_snippet_from_offset($contents, $offset),
+    ];
+}
+
+/**
+ * @param array<int, string> $paths
+ * @return array{errors: array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>, warnings: array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>}
+ */
+function policy_analyze(array $paths): array
+{
+    $findings = policy_check_paths($paths);
+    $errors = [];
+    $warnings = [];
+    foreach ($findings as $finding) {
+        if (($finding['level'] ?? '') === 'warning') {
+            $warnings[] = $finding;
+        } else {
+            $errors[] = $finding;
+        }
+    }
+
+    return [
+        'errors' => $errors,
+        'warnings' => $warnings,
+    ];
+}
+
+/**
+ * @param array{errors: array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>, warnings: array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>} $analysis
+ */
+function policy_exit_code(array $analysis): int
+{
+    return count($analysis['errors']) > 0 ? 1 : 0;
+}
+
 /**
  * @param array<int, string> $paths
  */
 function policy_run(array $paths): int
 {
-    $violations = policy_check_paths($paths);
-    $count = count($violations);
-    if ($count === 0) {
-        echo "Policy check OK (0 violations)\n";
-        return 0;
+    $analysis = policy_analyze($paths);
+    foreach ($analysis['errors'] as $error) {
+        $snippet = $error['snippet'] !== '' ? (' | ' . $error['snippet']) : '';
+        echo '[' . $error['code'] . '] ' . $error['file'] . ':' . $error['line'] . ' ' . $error['message'] . $snippet . "\n";
+    }
+    foreach ($analysis['warnings'] as $warning) {
+        $snippet = $warning['snippet'] !== '' ? (' | ' . $warning['snippet']) : '';
+        echo '[' . $warning['code'] . '] ' . $warning['file'] . ':' . $warning['line'] . $snippet . "\n";
     }
 
-    foreach ($violations as $violation) {
-        $file = $violation['file'];
-        $line = $violation['line'];
-        $rule = $violation['rule'];
-        $message = $violation['message'];
-        echo $file . ':' . $line . ' ' . $rule . ' ' . $message . "\n";
-    }
-    echo 'Summary: ' . $count . " violation(s)\n";
-    return 1;
+    $errorsCount = count($analysis['errors']);
+    $warningsCount = count($analysis['warnings']);
+    echo 'Summary: errors=' . $errorsCount . ' warnings=' . $warningsCount . "\n";
+
+    return policy_exit_code($analysis);
 }
 
 if (PHP_SAPI === 'cli' && realpath($argv[0] ?? '') === realpath(__FILE__)) {

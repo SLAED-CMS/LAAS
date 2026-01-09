@@ -107,6 +107,8 @@
   - `cdn.jsdelivr.net`, `unpkg.com`, `cdnjs.cloudflare.com`, `fonts.googleapis.com`, `googleapis`
 - R3: View data must not contain `*_class` keys (guarded in debug)
 - R4: Do not build `hx-*` attributes in PHP (recommendation, not enforced yet)
+- W1: Inline `onclick=` attribute (warning only)
+- W2: Inline `style="..."` attribute (warning only)
 
 **Local run:**
 ```
