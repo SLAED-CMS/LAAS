@@ -4,18 +4,7 @@
 {% include "partials/header.html" %}
 
 {% if home_enabled %}
-<style>
-  .home-card-title { position: sticky; top: 0; background: #fff; z-index: 1; padding-top: 0.25rem; }
-  .home-pills .badge { font-weight: 500; }
-  .media-tile { position: relative; }
-  .media-thumb { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; }
-  .media-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.65); color: #fff; opacity: 0; transition: opacity .2s ease; padding: .5rem; }
-  .media-tile:hover .media-overlay { opacity: 1; }
-  .media-badge-private { background: #6c757d; }
-  .media-badge-signed { background: #0d6efd; }
-  .media-badge-public { background: #198754; }
-</style>
-<div id="loading" class="text-center my-3 htmx-indicator" style="display:none;">
+<div id="loading" class="text-center my-3 htmx-indicator">
   <div class="spinner-border" role="status"></div>
 </div>
 

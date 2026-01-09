@@ -40,6 +40,7 @@ use Laas\DevTools\DevToolsContext;
 use Laas\DevTools\RequestCollector;
 use Laas\DevTools\PerformanceCollector;
 use Laas\DevTools\DbCollector;
+use Laas\View\AssetManager;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
 use Laas\View\Theme\ThemeManager;
@@ -143,12 +144,14 @@ final class Kernel
             $this->rootPath . '/storage/cache/templates',
             (bool) ($appConfig['debug'] ?? false)
         );
+        $assetManager = new AssetManager($this->config['assets'] ?? []);
         $view = new View(
             $themeManager,
             $templateEngine,
             $translator,
             $locale,
             $appConfig,
+            $assetManager,
             $authService,
             $settingsProvider,
             $this->rootPath . '/storage/cache/templates',
@@ -262,6 +265,7 @@ final class Kernel
             'storage' => $configDir . '/storage.php',
             'api' => $configDir . '/api.php',
             'devtools' => $configDir . '/devtools.php',
+            'assets' => $configDir . '/assets.php',
         ];
 
         $config = [];

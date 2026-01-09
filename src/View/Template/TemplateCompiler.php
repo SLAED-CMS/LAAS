@@ -125,6 +125,12 @@ final class TemplateCompiler
             return "<?php echo \$this->escape(\$this->helper('t', {$arg}, \$ctx)); ?>";
         }
 
+        if (preg_match('/^asset_(css|js)\s+[\'"]([^\'"]+)[\'"]$/', $tag, $matches)) {
+            $helper = 'asset_' . $matches[1];
+            $arg = $matches[2];
+            return "<?php echo \$this->helper('{$helper}', '{$arg}', \$ctx); ?>";
+        }
+
         if (preg_match('/^(url|asset|blocks|menu)\s+[\'"]([^\'"]+)[\'"]$/', $tag, $matches)) {
             $helper = $matches[1];
             $arg = $matches[2];

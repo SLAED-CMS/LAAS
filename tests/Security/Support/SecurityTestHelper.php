@@ -12,6 +12,7 @@ use Laas\Settings\SettingsProvider;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
 use Laas\View\Theme\ThemeManager;
+use Laas\View\AssetManager;
 use Laas\View\View;
 use PDO;
 use ReflectionProperty;
@@ -69,6 +70,7 @@ final class SecurityTestHelper
             $translator,
             $locale,
             ['name' => 'LAAS', 'debug' => false],
+            new AssetManager([]),
             new NullAuthService(),
             $settings,
             $root . '/storage/cache/templates',

@@ -69,6 +69,15 @@ http://laas.loc/
 
 ---
 
+## Assets
+
+- All CSS/JS are managed via `config/assets.php`
+- Templates use `{% asset_css "name" %}` and `{% asset_js "name" %}` in layouts only
+- Cache-busting uses `?v=` from `ASSETS_VERSION` (or disabled via `ASSETS_CACHE_BUSTING=false`)
+- Bootstrap/HTMX are stored locally in `public/assets`
+
+---
+
 ## Tech Stack
 
 - **Backend:** PHP 8.4 with strict types

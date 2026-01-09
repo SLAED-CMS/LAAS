@@ -1,34 +1,7 @@
 ﻿<div class="laas-devtools position-fixed bottom-0 start-0 end-0 border-top z-3" id="devtools-root">
-  <style>
-    .laas-devtools.devtools-hidden { display: none; }
-    .laas-devtools { background: var(--dt-panel-bg, #1b1c25); color: var(--dt-text, #d6d6d6); border-top: 1px solid var(--dt-border, rgba(255,255,255,0.08)); }
-    .devtools-show-btn { position: fixed; bottom: 10px; right: 10px; z-index: 9999; background: #1b1c25; color: #82aaff; border: 1px solid rgba(130, 170, 255, 0.3); padding: 8px 12px; border-radius: 4px; font-size: var(--dt-font-size, 12px); cursor: pointer; font-family: monospace; display: none; }
-    .devtools-show-btn.collapsed { display: block; }
-    .devtools-show-btn:hover { background: #252632; border-color: rgba(130, 170, 255, 0.5); }
-    .laas-devtools .devtools-terminal { font-family: var(--dt-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); font-size: var(--dt-font-size, 12px); line-height: var(--dt-line-height, 1.25); background: var(--dt-bg, #1e1f29); color: var(--dt-text, #d6d6d6); border: 1px solid var(--dt-border, rgba(255,255,255,0.08)); border-radius: 8px; padding: var(--dt-padding, 8px); max-height: 50vh; overflow: hidden; }
-    .laas-devtools .terminal-body { max-height: calc(50vh - 36px); overflow: auto; }
-    .laas-devtools .devtools-terminal pre { white-space: pre-wrap; }
-    .laas-devtools .muted { color: var(--dt-muted, #8a8da8); font-style: italic; }
-    .laas-devtools .info { color: var(--dt-info, #82aaff); }
-    .laas-devtools .ok { color: var(--dt-ok, #73c991); }
-    .laas-devtools .warn { color: var(--dt-warn, #ffcb6b); }
-    .laas-devtools .err { color: var(--dt-err, #ff6c6b); }
-    .laas-devtools .sql { color: var(--dt-sql, #c792ea); }
-    .laas-devtools .num { color: var(--dt-num, #89ddff); }
-    .laas-devtools .http-get { color: var(--dt-http-get, #82aaff); }
-    .laas-devtools .http-post { color: var(--dt-http-post, #c3e88d); }
-    .laas-devtools .http-put { color: var(--dt-http-put, #ffcb6b); }
-    .laas-devtools .http-delete { color: var(--dt-http-delete, #ff6c6b); }
-    .laas-devtools .devtools-toolbar { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
-    .laas-devtools .devtools-toolbar .btn { padding: 0.15rem 0.4rem; }
-    .laas-devtools .devtools-btn { border: 1px solid var(--dt-border, rgba(255,255,255,0.12)); background: var(--dt-btn-bg, rgba(255,255,255,0.03)); color: var(--dt-text, #d6d6d6); }
-    .laas-devtools .devtools-btn:hover { background: var(--dt-btn-bg-hover, rgba(255,255,255,0.07)); }
-    .laas-devtools .devtools-terminal a { color: var(--dt-info, #82aaff); text-decoration: none; }
-    .laas-devtools .devtools-terminal a:hover { text-decoration: underline; }
-  </style>
   <div class="devtools-terminal collapse show" id="devtools-terminal">
     <div class="devtools-toolbar">
-      <span class="me-auto" style="font-family: var(--dt-font-family, monospace); font-size: var(--dt-font-size, 12px);"><span class="info">DevTools</span> <span class="muted">|</span> <span class="info">SQL:</span> <span class="num">{% devtools.profile.terminal.prompt.sql_raw %}/{% devtools.profile.terminal.prompt.sql_unique %}</span> <span class="muted">|</span> <span class="info">Dup:</span> <span class="num">{% devtools.profile.terminal.prompt.sql_dup %}</span> <span class="muted">|</span> <span class="num">{% devtools.profile.terminal.prompt.sql_ms %}ms</span> <span class="info">Site Total Time:</span> <span class="num">{% devtools.profile.terminal.prompt.total_ms %}ms</span> <span class="info">Memory:</span> <span class="num">{% devtools.profile.terminal.prompt.memory_mb %}MB</span> <span class="info">Cache:</span> <span class="num">{% devtools.profile.terminal.prompt.cache_rate %}</span> <span class="info">HTTP</span> <span class="num">{% devtools.profile.terminal.prompt.http_count %} ({% devtools.profile.terminal.prompt.http_max_ms %}ms)</span> <span>{% devtools.profile.terminal.prompt.method %}:</span> <span class="muted">{% devtools.profile.terminal.prompt.path %}</span>{% if devtools.profile.terminal.prompt.post_params %} <span class="muted">POST:</span> <span class="warn">{% devtools.profile.terminal.prompt.post_params|implode:', ' %}</span>{% endif %} <span class="info">Status:</span> <span>{% devtools.profile.terminal.prompt.status %}</span> <span class="muted">Req ID:</span> <span class="muted">{% devtools.profile.terminal.prompt.request_id %}</span></span>
+      <span class="me-auto devtools-prompt"><span class="info">DevTools</span> <span class="muted">|</span> <span class="info">SQL:</span> <span class="num">{% devtools.profile.terminal.prompt.sql_raw %}/{% devtools.profile.terminal.prompt.sql_unique %}</span> <span class="muted">|</span> <span class="info">Dup:</span> <span class="num">{% devtools.profile.terminal.prompt.sql_dup %}</span> <span class="muted">|</span> <span class="num">{% devtools.profile.terminal.prompt.sql_ms %}ms</span> <span class="info">Site Total Time:</span> <span class="num">{% devtools.profile.terminal.prompt.total_ms %}ms</span> <span class="info">Memory:</span> <span class="num">{% devtools.profile.terminal.prompt.memory_mb %}MB</span> <span class="info">Cache:</span> <span class="num">{% devtools.profile.terminal.prompt.cache_rate %}</span> <span class="info">HTTP</span> <span class="num">{% devtools.profile.terminal.prompt.http_count %} ({% devtools.profile.terminal.prompt.http_max_ms %}ms)</span> <span>{% devtools.profile.terminal.prompt.method %}:</span> <span class="muted">{% devtools.profile.terminal.prompt.path %}</span>{% if devtools.profile.terminal.prompt.post_params %} <span class="muted">POST:</span> <span class="warn">{% devtools.profile.terminal.prompt.post_params|implode:', ' %}</span>{% endif %} <span class="info">Status:</span> <span>{% devtools.profile.terminal.prompt.status %}</span> <span class="muted">Req ID:</span> <span class="muted">{% devtools.profile.terminal.prompt.request_id %}</span></span>
       <a href="" class="btn btn-sm devtools-btn" title="Refresh">&#x27F3;</a>
       <button class="btn btn-sm devtools-btn" type="button" data-devtools-action="copy" title="Copy">&#x29C9;</button>
       <button class="btn btn-sm devtools-btn" type="button" data-devtools-action="expand" title="Expand all">&#x2912;</button>
@@ -79,11 +52,11 @@
 
             <div id="devtools-js-errors-content">
               {% if devtools.js_errors %}
-              <div class="small" style="color: var(--dt-muted, #8a8da8);">
+              <div class="small devtools-muted">
               {% foreach devtools.js_errors as err %}[{% err.time_ago %}] {% if err.is_error %}ERROR{% else %}PROMISE{% endif %}: {% err.message %}
               {% endforeach %}</div>
               {% else %}
-              <div class="small" style="color: var(--dt-muted, #8a8da8);">No JS errors</div>
+              <div class="small devtools-muted">No JS errors</div>
               {% endif %}
             </div>
           </div>
@@ -303,148 +276,6 @@
     </div>
   </div>
 
-  <script>
-    (function () {
-      var root = document.getElementById('devtools-root');
-      if (!root) {
-        return;
-      }
-
-      var copyBtn = root.querySelector('[data-devtools-action="copy"]');
-      if (copyBtn) {
-        copyBtn.addEventListener('click', function () {
-          var dump = root.querySelector('#devtools-terminal-body');
-          if (!dump || !navigator.clipboard) {
-            return;
-          }
-          navigator.clipboard.writeText(dump.textContent || '');
-        });
-      }
-
-      var expandBtn = root.querySelector('[data-devtools-action="expand"]');
-      if (expandBtn && window.bootstrap && window.bootstrap.Collapse) {
-        expandBtn.addEventListener('click', function () {
-          var targets = root.querySelectorAll('.devtools-detail');
-          if (!targets.length) {
-            return;
-          }
-          var shouldShow = false;
-          targets.forEach(function (el) {
-            if (!el.classList.contains('show')) {
-              shouldShow = true;
-            }
-          });
-          targets.forEach(function (el) {
-            var inst = window.bootstrap.Collapse.getOrCreateInstance(el, { toggle: false });
-            if (shouldShow) {
-              inst.show();
-            } else {
-              inst.hide();
-            }
-          });
-        });
-      }
-    })();
-
-    // JS Error Capture (only when DevTools enabled)
-    (function () {
-      var root = document.getElementById('devtools-root');
-      if (!root) {
-        return;
-      }
-
-      var queue = [];
-      var lastSent = 0;
-      var maxQueue = 20;
-
-      function sanitizeUrl(url) {
-        try {
-          var parsed = new URL(url);
-          return parsed.protocol + '//' + parsed.host + parsed.pathname;
-        } catch (e) {
-          return url;
-        }
-      }
-
-      function sendError(event) {
-        var now = Date.now();
-        if (now - lastSent < 1000) {
-          if (queue.length < maxQueue) {
-            queue.push(event);
-          }
-          return;
-        }
-
-        lastSent = now;
-
-        var csrfToken = document.querySelector('meta[name="csrf-token"]');
-        var headers = {
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest'
-        };
-        if (csrfToken) {
-          headers['X-CSRF-Token'] = csrfToken.getAttribute('content');
-        }
-
-        fetch('/__devtools/js-errors/collect', {
-          method: 'POST',
-          headers: headers,
-          credentials: 'same-origin',
-          body: JSON.stringify(event)
-        }).catch(function (err) {
-          // Silent fail
-        });
-
-        if (queue.length > 0) {
-          var nextEvent = queue.shift();
-          setTimeout(function () {
-            sendError(nextEvent);
-          }, 1000);
-        }
-      }
-
-      window.addEventListener('error', function (e) {
-        var event = {
-          type: 'error',
-          message: e.message || 'Unknown error',
-          source: e.filename || '',
-          line: e.lineno || 0,
-          column: e.colno || 0,
-          stack: e.error && e.error.stack ? e.error.stack : '',
-          url: sanitizeUrl(window.location.href),
-          userAgent: navigator.userAgent || '',
-          happened_at: Date.now()
-        };
-        sendError(event);
-      });
-
-      window.addEventListener('unhandledrejection', function (e) {
-        var reason = e.reason;
-        var message = 'Unhandled Promise Rejection';
-        var stack = '';
-
-        if (reason instanceof Error) {
-          message = reason.message || message;
-          stack = reason.stack || '';
-        } else if (typeof reason === 'string') {
-          message = reason;
-        }
-
-        var event = {
-          type: 'unhandledrejection',
-          message: message,
-          source: '',
-          line: 0,
-          column: 0,
-          stack: stack,
-          url: sanitizeUrl(window.location.href),
-          userAgent: navigator.userAgent || '',
-          happened_at: Date.now()
-        };
-        sendError(event);
-      });
-    })();
-  </script>
 </div>
 
 <button class="devtools-show-btn" type="button" data-bs-toggle="collapse" data-bs-target="#devtools-terminal" aria-expanded="false" aria-controls="devtools-terminal">Show DevTools</button>

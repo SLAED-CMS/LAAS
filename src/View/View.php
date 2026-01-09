@@ -14,6 +14,7 @@ use Laas\Modules\Menu\Repository\MenusRepository;
 use Laas\Modules\Menu\Repository\MenuItemsRepository;
 use Laas\Support\Cache\CacheFactory;
 use Laas\Support\Cache\CacheKey;
+use Laas\View\AssetManager;
 use Laas\View\Template\TemplateEngine;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Theme\ThemeManager;
@@ -28,6 +29,7 @@ final class View
         private Translator $translator,
         private string $locale,
         private array $appConfig,
+        private AssetManager $assetManager,
         private AuthInterface $authService,
         private SettingsProvider $settingsProvider,
         private string $cachePath,
@@ -173,6 +175,7 @@ final class View
         return [
             'csrf_token' => $csrfToken,
             '__translator' => $this->translator,
+            '__assets' => $this->assetManager,
             'locale' => $this->locale,
             'is_auth' => $this->authService->check(),
             'auth_user' => $this->authService->user(),

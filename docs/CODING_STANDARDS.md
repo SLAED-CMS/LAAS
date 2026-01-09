@@ -37,8 +37,16 @@
 - `csrf` (alias to `csrf_token`)
 - `url` (absolute paths only)
 - `asset` (prefix `/assets/`)
+- `asset_css` (link tag from asset config)
+- `asset_js` (script tag from asset config)
 - `t` (translator)
 - `blocks` (stub for future)
+
+## Frontend asset rules
+- No inline `<style>` / `<script>` or `style=""` in templates
+- CSS/JS are loaded only via asset helpers in layout templates
+- Bootstrap/HTMX are local assets, not CDN
+- PHP does not assemble CSS classes or inline JS/CSS
 
 ## Sessions
 - Direct `$_SESSION` access is forbidden outside `PhpSession`

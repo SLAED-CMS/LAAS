@@ -3,7 +3,7 @@
   <td>
     <div class="d-flex align-items-center gap-2">
       {% if item.is_image %}
-        <img src="{% item.url %}" alt="" class="img-thumbnail" style="max-width: 80px;">
+        <img src="{% item.url %}" alt="" class="img-thumbnail media-thumb-sm">
       {% else %}
         <span class="badge text-bg-secondary">{% item.badge %}</span>
       {% endif %}

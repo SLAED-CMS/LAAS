@@ -10,6 +10,7 @@ use Laas\Settings\SettingsProvider;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
 use Laas\View\Theme\ThemeManager;
+use Laas\View\AssetManager;
 use Laas\View\View;
 use PHPUnit\Framework\TestCase;
 
@@ -94,6 +95,7 @@ final class FrontendControllerTest extends TestCase
             $translator,
             'en',
             ['name' => 'LAAS', 'debug' => true],
+            new AssetManager([]),
             new NullAuthService(),
             $settings,
             $this->rootPath . '/storage/cache/templates',

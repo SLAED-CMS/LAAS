@@ -15,16 +15,17 @@
 7. [Routing](#routing)
 8. [Middleware Pipeline](#middleware-pipeline)
 9. [Template Engine](#template-engine)
-10. [Database Layer](#database-layer)
-11. [Security Architecture](#security-architecture)
-12. [Cache Layer](#cache-layer)
-13. [Storage & Media](#storage--media)
-14. [i18n & Localization](#i18n--localization)
-15. [Operational Features](#operational-features)
-16. [Testing Architecture](#testing-architecture)
-17. [Deployment Model](#deployment-model)
-18. [Best Practices](#best-practices)
-19. [Design Patterns](#design-patterns)
+10. [Asset Layer](#asset-layer)
+11. [Database Layer](#database-layer)
+12. [Security Architecture](#security-architecture)
+13. [Cache Layer](#cache-layer)
+14. [Storage & Media](#storage--media)
+15. [i18n & Localization](#i18n--localization)
+16. [Operational Features](#operational-features)
+17. [Testing Architecture](#testing-architecture)
+18. [Deployment Model](#deployment-model)
+19. [Best Practices](#best-practices)
+20. [Design Patterns](#design-patterns)
 
 ---
 
@@ -923,6 +924,35 @@ public function render(string $template, array $data): string
 ```
 
 ---
+
+---
+
+## Asset Layer
+
+**Goal:** Keep frontend assets centralized and replaceable without touching templates.
+
+**Core rules:**
+- Templates call asset helpers, not hardcoded URLs
+- No inline `<style>` / `<script>` in templates
+- Libraries live locally in `public/assets`
+
+**Configuration (`config/assets.php`):**
+- `ASSETS_BASE_URL` for path prefix
+- `ASSETS_VERSION` for cache busting
+- `ASSETS_CACHE_BUSTING` to enable/disable `?v=`
+
+**Usage in templates:**
+```html
+{% asset_css "bootstrap" %}
+{% asset_css "app" %}
+{% asset_js "htmx" %}
+{% asset_js "app" %}
+```
+
+**Runtime:**
+- `AssetManager::buildCss()` / `buildJs()` generate tags
+- `defer` / `async` are controlled by config
+- Cache-busting uses `?v=` for all assets
 
 ## Database Layer
 

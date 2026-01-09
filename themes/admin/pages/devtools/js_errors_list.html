@@ -1,7 +1,7 @@
 {% if errors %}
-<div class="small" style="color: var(--dt-muted, #8a8da8);">
+<div class="small devtools-muted">
 {% foreach errors as err %}[{% err.time_ago %}] {% if err.is_error %}ERROR{% else %}PROMISE{% endif %}: {% err.message %}
 {% endforeach %}</div>
 {% else %}
-<div class="small" style="color: var(--dt-muted, #8a8da8);">No JS errors</div>
+<div class="small devtools-muted">No JS errors</div>
 {% endif %}

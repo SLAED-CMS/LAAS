@@ -1,0 +1,147 @@
+.htmx-indicator { display: none !important; }
+.htmx-request .htmx-indicator { display: inline-block !important; }
+.htmx-request.htmx-indicator { display: block !important; }
+.laas-devtools-panel { max-height: 50vh; overflow: auto; }
+[data-devtools-id].collapse,
+[data-devtools-id].collapsing {
+  transition: none;
+}
+.laas-devtools fieldset { min-height: 64px; }
+.laas-collapse-toggle::after {
+  content: "";
+  margin-left: 0.35rem;
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 6px solid currentColor;
+  transform: rotate(-90deg);
+  transition: none;
+}
+.laas-collapse-toggle[aria-expanded="true"]::after {
+  transform: rotate(0deg);
+}
+
+body.laas-theme-default .laas-devtools.devtools-hidden { display: none; }
+body.laas-theme-default .laas-devtools {
+  background: var(--dt-panel-bg, #1b1c25);
+  color: var(--dt-text, #d6d6d6);
+  border-top: 1px solid var(--dt-border, rgba(255,255,255,0.08));
+}
+body.laas-theme-default .devtools-show-btn {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 9999;
+  background: #1b1c25;
+  color: #82aaff;
+  border: 1px solid rgba(130, 170, 255, 0.3);
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: var(--dt-font-size, 12px);
+  cursor: pointer;
+  font-family: monospace;
+  display: none;
+}
+body.laas-theme-default .devtools-show-btn.collapsed { display: block; }
+body.laas-theme-default .devtools-show-btn:hover {
+  background: #252632;
+  border-color: rgba(130, 170, 255, 0.5);
+}
+body.laas-theme-default .laas-devtools .devtools-terminal {
+  font-family: var(--dt-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: var(--dt-font-size, 12px);
+  line-height: var(--dt-line-height, 1.25);
+  background: var(--dt-bg, #1e1f29);
+  color: var(--dt-text, #d6d6d6);
+  border: 1px solid var(--dt-border, rgba(255,255,255,0.08));
+  border-radius: 8px;
+  padding: var(--dt-padding, 8px);
+  max-height: 50vh;
+  overflow: hidden;
+}
+body.laas-theme-default .laas-devtools .terminal-body { max-height: calc(50vh - 36px); overflow: auto; }
+body.laas-theme-default .laas-devtools .devtools-terminal pre { white-space: pre-wrap; }
+body.laas-theme-default .laas-devtools .muted { color: var(--dt-muted, #8a8da8); font-style: italic; }
+body.laas-theme-default .laas-devtools .info { color: var(--dt-info, #82aaff); }
+body.laas-theme-default .laas-devtools .ok { color: var(--dt-ok, #73c991); }
+body.laas-theme-default .laas-devtools .warn { color: var(--dt-warn, #ffcb6b); }
+body.laas-theme-default .laas-devtools .err { color: var(--dt-err, #ff6c6b); }
+body.laas-theme-default .laas-devtools .sql { color: var(--dt-sql, #c792ea); }
+body.laas-theme-default .laas-devtools .num { color: var(--dt-num, #89ddff); }
+body.laas-theme-default .laas-devtools .http-get { color: var(--dt-http-get, #82aaff); }
+body.laas-theme-default .laas-devtools .http-post { color: var(--dt-http-post, #c3e88d); }
+body.laas-theme-default .laas-devtools .http-put { color: var(--dt-http-put, #ffcb6b); }
+body.laas-theme-default .laas-devtools .http-delete { color: var(--dt-http-delete, #ff6c6b); }
+body.laas-theme-default .laas-devtools .devtools-toolbar { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+body.laas-theme-default .laas-devtools .devtools-toolbar .btn { padding: 0.15rem 0.4rem; }
+body.laas-theme-default .laas-devtools .devtools-btn {
+  border: 1px solid var(--dt-border, rgba(255,255,255,0.12));
+  background: var(--dt-btn-bg, rgba(255,255,255,0.03));
+  color: var(--dt-text, #d6d6d6);
+}
+body.laas-theme-default .laas-devtools .devtools-btn:hover { background: var(--dt-btn-bg-hover, rgba(255,255,255,0.07)); }
+body.laas-theme-default .laas-devtools .devtools-terminal a { color: var(--dt-info, #82aaff); text-decoration: none; }
+body.laas-theme-default .laas-devtools .devtools-terminal a:hover { text-decoration: underline; }
+body.laas-theme-default .laas-devtools .devtools-prompt {
+  font-family: var(--dt-font-family, monospace);
+  font-size: var(--dt-font-size, 12px);
+}
+body.laas-theme-default .laas-devtools .devtools-muted { color: var(--dt-muted, #8a8da8); }
+
+body.laas-theme-admin .laas-devtools.devtools-hidden { display: none; }
+body.laas-theme-admin .laas-devtools {
+  --dt-bg: #282c34;
+  --dt-fg: #abb2bf;
+  --dt-muted: #636d83;
+  --dt-info: #10b1fe;
+  --dt-ok: #3fc56b;
+  --dt-warn: #f9c859;
+  --dt-num: #ff78f8;
+  background: var(--dt-bg);
+  color: var(--dt-fg);
+  font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+  font-size: 16px;
+  line-height: 1.4;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+body.laas-theme-admin .laas-devtools *,
+body.laas-theme-admin .laas-devtools *::before,
+body.laas-theme-admin .laas-devtools *::after {
+  font: inherit !important;
+}
+body.laas-theme-admin .laas-devtools .c-muted { color: var(--dt-muted); }
+body.laas-theme-admin .laas-devtools .c-info { color: var(--dt-info); }
+body.laas-theme-admin .laas-devtools .c-ok { color: var(--dt-ok); }
+body.laas-theme-admin .laas-devtools .c-warn { color: var(--dt-warn); }
+body.laas-theme-admin .laas-devtools .c-num { color: var(--dt-num); }
+body.laas-theme-admin .laas-devtools .devtools-terminal { background: transparent; }
+body.laas-theme-admin .laas-devtools .terminal-body { max-height: 50vh; overflow: auto; }
+body.laas-theme-admin .laas-devtools .devtools-terminal pre { white-space: pre-wrap; margin: 0; }
+
+.home-card-title { position: sticky; top: 0; background: #fff; z-index: 1; padding-top: 0.25rem; }
+.home-pills .badge { font-weight: 500; }
+.media-tile { position: relative; }
+.media-thumb { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; }
+.media-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  color: #fff;
+  opacity: 0;
+  transition: opacity .2s ease;
+  padding: .5rem;
+}
+.media-tile:hover .media-overlay { opacity: 1; }
+.media-badge-private { background: #6c757d; }
+.media-badge-signed { background: #0d6efd; }
+.media-badge-public { background: #198754; }
+.badge-auth { background: #6f42c1; }
+.home-search-group { max-width: 360px; }
+.home-pages-search-group { max-width: 320px; }
+.home-progress { height: 8px; }
+.media-thumb-xs { max-width: 60px; }
+.media-thumb-sm { max-width: 80px; }
+.modal-live { display: block; }
+.devtools-muted { color: #8a8da8; }

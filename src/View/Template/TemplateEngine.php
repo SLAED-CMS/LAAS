@@ -136,6 +136,8 @@ final class TemplateEngine
             'csrf' => (string) ($ctx['csrf_token'] ?? ''),
             'url' => is_string($arg) && str_starts_with($arg, '/') ? $arg : (string) ($arg ?? ''),
             'asset' => '/assets/' . ltrim((string) ($arg ?? ''), '/'),
+            'asset_css' => $this->buildAssetTag('css', $arg, $ctx),
+            'asset_js' => $this->buildAssetTag('js', $arg, $ctx),
             't' => $this->translate($arg, $ctx),
             'menu' => $this->renderMenu($arg, $ctx),
             'blocks' => '',
@@ -174,6 +176,28 @@ final class TemplateEngine
         }
 
         return (string) $resolver($name);
+    }
+
+    private function buildAssetTag(string $type, mixed $arg, array $ctx): string
+    {
+        $name = is_string($arg) ? $arg : '';
+        if ($name === '') {
+            return '';
+        }
+
+        $manager = $ctx['__assets'] ?? null;
+        if (!is_object($manager)) {
+            return '';
+        }
+
+        if ($type === 'css' && method_exists($manager, 'buildCss')) {
+            return (string) $manager->buildCss($name);
+        }
+        if ($type === 'js' && method_exists($manager, 'buildJs')) {
+            return (string) $manager->buildJs($name);
+        }
+
+        return '';
     }
 
     private function compile(string $templatePath): string

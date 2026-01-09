@@ -8,15 +8,15 @@
       </div>
       <div class="col-12 col-lg-3">
         <div class="text-muted small">DB time (ms)</div>
-        <div class="progress" style="height: 8px;">
-          <div class="progress-bar bg-primary" style="width: {% perf.db_time_pct %}%;"></div>
+        <div class="progress home-progress">
+          <div class="progress-bar bg-primary" data-progress-pct="{% perf.db_time_pct %}"></div>
         </div>
         <div class="small mt-1">{% perf.db_total_ms %} ms</div>
       </div>
       <div class="col-12 col-lg-3">
         <div class="text-muted small">Render time (ms)</div>
-        <div class="progress" style="height: 8px;">
-          <div class="progress-bar bg-success" style="width: {% perf.duration_pct %}%;"></div>
+        <div class="progress home-progress">
+          <div class="progress-bar bg-success" data-progress-pct="{% perf.duration_pct %}"></div>
         </div>
         <div class="small mt-1">{% perf.duration_ms %} ms</div>
       </div>
