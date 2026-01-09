@@ -208,15 +208,10 @@ final class DevToolsContext
         $external = $this->buildExternalStats();
         $cache = $this->buildCacheStats();
 
-        $terminalTheme = $this->normalizeTerminalTheme((array) ($this->flags['terminal_theme'] ?? []));
-
         return [
             'request_id' => $this->requestId,
             'duration_ms' => round($this->durationMs, 2),
             'memory_mb' => round($memoryMb, 2),
-            'theme' => [
-                'terminal' => $terminalTheme,
-            ],
             'db' => [
                 'count' => $this->dbCount,
                 'unique' => count($this->dbDuplicates),
@@ -537,8 +532,6 @@ final class DevToolsContext
         $method = (string) ($this->request['method'] ?? '');
         $path = (string) ($this->request['path'] ?? '');
         $methodUpper = $method !== '' ? strtoupper($method) : '';
-        $methodClass = $this->methodClass($methodUpper);
-
         $httpCount = (int) ($external['count'] ?? 0);
         $httpMaxMs = 0.0;
         if (!empty($external['top3_slowest_calls'])) {
@@ -569,24 +562,20 @@ final class DevToolsContext
             'http_count' => $httpCount,
             'http_max_ms' => round($httpMaxMs, 1),
             'method' => $methodUpper,
-            'method_class' => $methodClass,
             'path' => $path,
             'post_params' => $postParams,
             'status' => $status,
-            'status_class' => $this->statusClass($status),
             'request_id' => $this->requestId,
         ];
 
-        $promptLine = '';
-        $statusClass = 'muted';
-        if ($status >= 200 && $status < 300) {
-            $statusClass = 'ok';
-        } elseif ($status >= 300 && $status < 400) {
-            $statusClass = 'warn';
-        } elseif ($status >= 400) {
-            $statusClass = 'err';
-        }
-
+        $promptLine = TerminalFormatter::formatPromptLine(
+            $methodUpper,
+            $path,
+            $status,
+            $totalMs,
+            $memoryMb,
+            $this->requestId
+        );
         $summarySegments = [];
         $sqlText = sprintf('%d/%d d%d %.1fms', $rawCount, $uniqueCount, $duplicateCount, $sqlTotalMs);
         $sqlHref = $duplicateCount > 0 ? '#devtools-sql-duplicates' : '#devtools-sql-grouped';
@@ -656,12 +645,10 @@ final class DevToolsContext
         }
 
         $warningsLine = TerminalFormatter::formatWarningsLine($warningTokens);
-        $warningsClass = $warningTokens === [] ? 'text-success' : 'text-warning';
         $warningTokensDecorated = [];
         foreach ($warningTokens as $token) {
             $warningTokensDecorated[] = [
                 'text' => $token,
-                'class' => 'warn',
             ];
         }
 
@@ -680,8 +667,6 @@ final class DevToolsContext
                 $detailStatus = (int) ($call['status'] ?? 0);
                 $value = sprintf('%.1fms', $total);
                 $detailMethodUpper = $method !== '' ? strtoupper($method) : '';
-                $detailMethodClass = $this->methodClass($detailMethodUpper);
-                $detailStatusClass = $this->statusClass($detailStatus);
                 $line = TerminalFormatter::formatOffenderLine('!', 'HTTP', $detail, $value);
                 $offenders[] = [
                     'id' => '',
@@ -690,9 +675,7 @@ final class DevToolsContext
                     'marker' => '!',
                     'detail_text' => $detail,
                     'detail_method' => $detailMethodUpper,
-                    'detail_method_class' => $detailMethodClass,
                     'detail_url' => $detailUrl,
-                    'detail_status_class' => $detailStatusClass,
                     'value' => $value,
                     'is_http' => true,
                     'is_sqld' => false,
@@ -801,7 +784,6 @@ final class DevToolsContext
             'summary_line' => $summaryLine,
             'warnings_line' => $warningsLine,
             'warning_tokens' => $warningTokensDecorated,
-            'warnings_class' => $warningsClass,
             'offenders' => $offenders,
             'timeline_line' => $timelineLine,
             'dump_text' => implode("\n", $dumpLines),
@@ -997,126 +979,6 @@ final class DevToolsContext
         ];
     }
 
-    private function normalizeTerminalTheme(array $theme): array
-    {
-        $defaults = [
-            'bg' => '#1e1f29',
-            'panel_bg' => '#1b1c25',
-            'text' => '#d6d6d6',
-            'muted' => '#8a8da8',
-            'border' => 'rgba(255,255,255,0.08)',
-            'info' => '#82aaff',
-            'ok' => '#73c991',
-            'warn' => '#ffcb6b',
-            'err' => '#ff6c6b',
-            'num' => '#89ddff',
-            'sql' => '#c792ea',
-            'http_get' => '#82aaff',
-            'http_post' => '#c3e88d',
-            'http_put' => '#ffcb6b',
-            'http_delete' => '#ff6c6b',
-            'font_size' => 16,
-            'line_height' => 1.25,
-            'font_family' => 'Verdana, Tahoma, monospace',
-            'padding' => 8,
-            'btn_bg' => 'rgba(255,255,255,0.03)',
-            'btn_bg_hover' => 'rgba(255,255,255,0.07)',
-        ];
-
-        $merged = array_merge($defaults, $theme);
-        $fontSize = (int) ($merged['font_size'] ?? 12);
-        if ($fontSize <= 0) {
-            $fontSize = 12;
-        }
-        $lineHeight = (float) ($merged['line_height'] ?? 1.25);
-        if ($lineHeight <= 0) {
-            $lineHeight = 1.25;
-        }
-        $padding = (int) ($merged['padding'] ?? 8);
-        if ($padding < 0) {
-            $padding = 8;
-        }
-        $fontFamily = trim((string) ($merged['font_family'] ?? $defaults['font_family']));
-        if ($fontFamily === '') {
-            $fontFamily = $defaults['font_family'];
-        }
-
-        $merged['font_size'] = $fontSize;
-        $merged['line_height'] = $lineHeight;
-        $merged['padding'] = $padding;
-        $merged['font_family'] = $fontFamily;
-        $merged['css_vars'] = $this->buildTerminalCssVars($merged);
-
-        return $merged;
-    }
-
-    private function buildTerminalCssVars(array $theme): string
-    {
-        $vars = [
-            '--dt-bg' => (string) ($theme['bg'] ?? ''),
-            '--dt-panel-bg' => (string) ($theme['panel_bg'] ?? ''),
-            '--dt-text' => (string) ($theme['text'] ?? ''),
-            '--dt-muted' => (string) ($theme['muted'] ?? ''),
-            '--dt-border' => (string) ($theme['border'] ?? ''),
-            '--dt-info' => (string) ($theme['info'] ?? ''),
-            '--dt-ok' => (string) ($theme['ok'] ?? ''),
-            '--dt-warn' => (string) ($theme['warn'] ?? ''),
-            '--dt-err' => (string) ($theme['err'] ?? ''),
-            '--dt-num' => (string) ($theme['num'] ?? ''),
-            '--dt-sql' => (string) ($theme['sql'] ?? ''),
-            '--dt-http-get' => (string) ($theme['http_get'] ?? ''),
-            '--dt-http-post' => (string) ($theme['http_post'] ?? ''),
-            '--dt-http-put' => (string) ($theme['http_put'] ?? ''),
-            '--dt-http-delete' => (string) ($theme['http_delete'] ?? ''),
-            '--dt-font-size' => (string) ((int) ($theme['font_size'] ?? 12)) . 'px',
-            '--dt-line-height' => (string) ((float) ($theme['line_height'] ?? 1.25)),
-            '--dt-font-family' => (string) ($theme['font_family'] ?? ''),
-            '--dt-padding' => (string) ((int) ($theme['padding'] ?? 8)) . 'px',
-            '--dt-btn-bg' => (string) ($theme['btn_bg'] ?? ''),
-            '--dt-btn-bg-hover' => (string) ($theme['btn_bg_hover'] ?? ''),
-        ];
-
-        $out = '';
-        foreach ($vars as $key => $value) {
-            if ($value === '') {
-                continue;
-            }
-            $out .= $key . ':' . $value . ';';
-        }
-
-        return $out;
-    }
-
-    private function methodClass(string $method): string
-    {
-        switch (strtoupper($method)) {
-            case 'GET':
-                return 'http-get';
-            case 'POST':
-                return 'http-post';
-            case 'PUT':
-                return 'http-put';
-            case 'DELETE':
-                return 'http-delete';
-            default:
-                return 'info';
-        }
-    }
-
-    private function statusClass(int $status): string
-    {
-        if ($status >= 200 && $status < 300) {
-            return 'ok';
-        }
-        if ($status >= 300 && $status < 400) {
-            return 'warn';
-        }
-        if ($status >= 400) {
-            return 'err';
-        }
-        return 'muted';
-    }
-
     private function topSlowest(array $grouped, int $limit, float $warnThreshold): array
     {
         $rows = [];
@@ -1209,10 +1071,6 @@ final class DevToolsContext
             ];
         }
         $calls = $this->externalCalls;
-        foreach ($calls as $index => $call) {
-            $calls[$index]['method_class'] = $this->methodClass((string) ($call['method'] ?? ''));
-            $calls[$index]['status_class'] = $this->statusClass((int) ($call['status'] ?? 0));
-        }
         usort($calls, static function (array $a, array $b): int {
             return ($b['total_ms'] ?? 0) <=> ($a['total_ms'] ?? 0);
         });

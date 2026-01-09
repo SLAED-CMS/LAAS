@@ -56,6 +56,6 @@ final class DevToolsTerminalTest extends TestCase
         $ctx->finalize();
 
         $profile = $ctx->toArray()['profile'];
-        $this->assertStringContainsString('slow_http(', $profile['terminal']['warnings_line']);
+        $this->assertStringContainsString('Slow HTTP request - example.com/path', $profile['terminal']['warnings_line']);
     }
 }

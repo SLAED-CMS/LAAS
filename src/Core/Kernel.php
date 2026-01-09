@@ -87,7 +87,6 @@ final class Kernel
             'is_dev' => $env !== 'prod',
             'root_path' => $this->rootPath,
             'budgets' => $devtoolsConfig['budgets'] ?? [],
-            'terminal_theme' => $devtoolsConfig['terminal'] ?? [],
             'show_secrets' => (bool) ($devtoolsConfig['show_secrets'] ?? false),
             'collect_db' => (bool) ($devtoolsConfig['collect_db'] ?? false),
             'collect_request' => (bool) ($devtoolsConfig['collect_request'] ?? false),

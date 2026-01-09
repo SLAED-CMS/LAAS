@@ -1,34 +1,34 @@
-﻿<div class="laas-devtools position-fixed bottom-0 start-0 end-0 border-top z-3" id="devtools-root" style="{% devtools.theme.terminal.css_vars %}">
+﻿<div class="laas-devtools position-fixed bottom-0 start-0 end-0 border-top z-3" id="devtools-root">
   <style>
-    .laas-devtools.devtools-hidden { display: none; }
-    .laas-devtools { background: var(--dt-panel-bg, #1b1c25); color: var(--dt-text, #d6d6d6); border-top: 1px solid var(--dt-border, rgba(255,255,255,0.08)); }
-    .devtools-show-btn { position: fixed; bottom: 10px; right: 10px; z-index: 9999; background: #1b1c25; color: #82aaff; border: 1px solid rgba(130, 170, 255, 0.3); padding: 8px 12px; border-radius: 4px; font-size: var(--dt-font-size, 12px); cursor: pointer; font-family: monospace; display: none; }
-    .devtools-show-btn.collapsed { display: block; }
-    .devtools-show-btn:hover { background: #252632; border-color: rgba(130, 170, 255, 0.5); }
-    .laas-devtools .devtools-terminal { font-family: var(--dt-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); font-size: var(--dt-font-size, 12px); line-height: var(--dt-line-height, 1.25); background: var(--dt-bg, #1e1f29); color: var(--dt-text, #d6d6d6); border: 1px solid var(--dt-border, rgba(255,255,255,0.08)); border-radius: 8px; padding: var(--dt-padding, 8px); max-height: 50vh; overflow: hidden; }
-    .laas-devtools .terminal-body { max-height: calc(50vh - 36px); overflow: auto; }
-    .laas-devtools .devtools-terminal pre { white-space: pre-wrap; }
-    .laas-devtools .muted { color: var(--dt-muted, #8a8da8); font-style: italic; }
-    .laas-devtools .info { color: var(--dt-info, #82aaff); }
-    .laas-devtools .ok { color: var(--dt-ok, #73c991); }
-    .laas-devtools .warn { color: var(--dt-warn, #ffcb6b); }
-    .laas-devtools .err { color: var(--dt-err, #ff6c6b); }
-    .laas-devtools .sql { color: var(--dt-sql, #c792ea); }
-    .laas-devtools .num { color: var(--dt-num, #89ddff); }
-    .laas-devtools .http-get { color: var(--dt-http-get, #82aaff); }
-    .laas-devtools .http-post { color: var(--dt-http-post, #c3e88d); }
-    .laas-devtools .http-put { color: var(--dt-http-put, #ffcb6b); }
-    .laas-devtools .http-delete { color: var(--dt-http-delete, #ff6c6b); }
-    .laas-devtools .devtools-toolbar { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
-    .laas-devtools .devtools-toolbar .btn { padding: 0.15rem 0.4rem; }
-    .laas-devtools .devtools-btn { border: 1px solid var(--dt-border, rgba(255,255,255,0.12)); background: var(--dt-btn-bg, rgba(255,255,255,0.03)); color: var(--dt-text, #d6d6d6); }
-    .laas-devtools .devtools-btn:hover { background: var(--dt-btn-bg-hover, rgba(255,255,255,0.07)); }
-    .laas-devtools .devtools-terminal a { color: var(--dt-info, #82aaff); text-decoration: none; }
-    .laas-devtools .devtools-terminal a:hover { text-decoration: underline; }
-  </style>
-  <div class="devtools-terminal collapse show" id="devtools-terminal">
-    <div class="devtools-toolbar">
-      <span class="me-auto" style="font-family: var(--dt-font-family, monospace); font-size: var(--dt-font-size, 12px);"><span class="info">DevTools</span> <span class="muted">|</span> <span class="info">SQL:</span> <span class="num">{% devtools.profile.terminal.prompt.sql_raw %}/{% devtools.profile.terminal.prompt.sql_unique %}</span> <span class="muted">|</span> <span class="info">Dup:</span> <span class="num">{% devtools.profile.terminal.prompt.sql_dup %}</span> <span class="muted">|</span> <span class="num">{% devtools.profile.terminal.prompt.sql_ms %}ms</span> <span class="info">Site Total Time:</span> <span class="num">{% devtools.profile.terminal.prompt.total_ms %}ms</span> <span class="info">Memory:</span> <span class="num">{% devtools.profile.terminal.prompt.memory_mb %}MB</span> <span class="info">Cache:</span> <span class="num">{% devtools.profile.terminal.prompt.cache_rate %}</span> <span class="info">HTTP</span> <span class="num">{% devtools.profile.terminal.prompt.http_count %} ({% devtools.profile.terminal.prompt.http_max_ms %}ms)</span> <span class="{% devtools.profile.terminal.prompt.method_class %}">{% devtools.profile.terminal.prompt.method %}:</span> <span class="muted">{% devtools.profile.terminal.prompt.path %}</span>{% if devtools.profile.terminal.prompt.post_params %} <span class="muted">POST:</span> <span class="warn">{% devtools.profile.terminal.prompt.post_params|implode:', ' %}</span>{% endif %} <span class="info">Status:</span> <span class="{% devtools.profile.terminal.prompt.status_class %}">{% devtools.profile.terminal.prompt.status %}</span> <span class="muted">Req ID:</span> <span class="muted">{% devtools.profile.terminal.prompt.request_id %}</span></span>
+  .laas-devtools.devtools-hidden { display: none; }
+  .laas-devtools {
+    --dt-bg: #282c34;
+    --dt-fg: #abb2bf;
+    --dt-muted: #636d83;
+    --dt-info: #10b1fe;
+    --dt-ok: #3fc56b;
+    --dt-warn: #f9c859;
+    --dt-num: #ff78f8;
+    background: var(--dt-bg);
+    color: var(--dt-fg);
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    font-size: 16px;
+    line-height: 1.4;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  .laas-devtools .text-muted,
+  .laas-devtools .text-secondary { color: var(--dt-muted) !important; }
+  .laas-devtools .info { color: var(--dt-info); }
+  .laas-devtools :where(.ok) { color: var(--dt-ok); }
+  .laas-devtools :where(.warn) { color: var(--dt-warn); }
+  .laas-devtools .num { color: var(--dt-num); }
+  .laas-devtools .devtools-terminal { background: transparent; }
+  .laas-devtools .terminal-body { max-height: 50vh; overflow: auto; }
+  .laas-devtools .devtools-terminal pre { white-space: pre-wrap; margin: 0; }
+</style>
+  <div class="devtools-terminal collapse show rounded-3 p-2" id="devtools-terminal">
+    <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+      <span class="me-auto"> <span class="info">SQL:</span> <span class="num">{% devtools.profile.terminal.prompt.sql_raw %}/{% devtools.profile.terminal.prompt.sql_unique %}</span> <span class="text-muted">|</span> <span class="info">Dup:</span> <span class="num">{% devtools.profile.terminal.prompt.sql_dup %}</span> <span class="text-muted">|</span> <span class="num">{% devtools.profile.terminal.prompt.sql_ms %}ms</span> <span class="info">Time:</span> <span class="num">{% devtools.profile.terminal.prompt.total_ms %}ms</span> <span class="info">Memory:</span> <span class="num">{% devtools.profile.terminal.prompt.memory_mb %}MB</span> <span class="info">Cache:</span> <span class="num">{% devtools.profile.terminal.prompt.cache_rate %}</span> <span class="info">HTTP</span> <span class="num">{% devtools.profile.terminal.prompt.http_count %} ({% devtools.profile.terminal.prompt.http_max_ms %}ms)</span> <span>{% devtools.profile.terminal.prompt.method %}:</span> <span class="text-muted">{% devtools.profile.terminal.prompt.path %}</span>{% if devtools.profile.terminal.prompt.post_params %} <span class="text-muted">POST:</span> <span class="warn">{% devtools.profile.terminal.prompt.post_params|implode:', ' %}</span>{% endif %} <span class="info">Status:</span> <span>{% devtools.profile.terminal.prompt.status %}</span> <span class="text-muted">Req ID:</span> <span class="text-muted">{% devtools.profile.terminal.prompt.request_id %}</span></span>
       <a href="" class="btn btn-sm devtools-btn" title="Refresh">&#x27F3;</a>
       <button class="btn btn-sm devtools-btn" type="button" data-devtools-action="copy" title="Copy">&#x29C9;</button>
       <button class="btn btn-sm devtools-btn" type="button" data-devtools-action="expand" title="Expand all">&#x2912;</button>
@@ -36,24 +36,24 @@
       <button class="btn btn-sm devtools-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#devtools-settings" aria-controls="devtools-settings" title="Settings">&#x2699;</button>
       <button class="btn btn-sm devtools-btn" type="button" data-bs-toggle="collapse" data-bs-target="#devtools-terminal" title="Hide">&#x2715;</button>
     </div>
-    <div class="terminal-body" id="devtools-terminal-body">
+    <div class="terminal-body overflow-auto" id="devtools-terminal-body">
 <pre id="devtools-terminal-dump" class="mb-2">
 {% if devtools.profile.terminal.warning_tokens %}
 
 <span class="warn">&#x26A0; Warnings</span>
-{% foreach devtools.profile.terminal.warning_tokens as tok %}<span class="{% tok.class %}">{% tok.text %}</span>
+{% foreach devtools.profile.terminal.warning_tokens as tok %}<span>{% tok.text %}</span>
 {% endforeach %}
 {% else %}<span class="ok">&#x2713; No warnings</span>{% endif %}{% if devtools.profile.terminal.offenders %}
 
-{% foreach devtools.profile.terminal.offenders as off %}<a class="text-decoration-none" data-bs-toggle="collapse" href="#{% off.id %}" role="button" aria-expanded="false" aria-controls="{% off.id %}"><span class="info">{% off.type %}</span> {% if off.is_http %}<span class="{% off.detail_method_class %}">{% off.detail_method %}</span> <span class="muted">{% off.detail_url %}</span>{% else %}<span class="{% if off.is_sqlish %}sql{% else %}muted{% endif %}">{% off.detail_text %}</span>{% endif %} <span class="num">{% off.value %}</span></a>
-{% endforeach %}{% else %}<span class="muted">No offenders</span>{% endif %}
+{% foreach devtools.profile.terminal.offenders as off %}<a class="text-decoration-none" data-bs-toggle="collapse" href="#{% off.id %}" role="button" aria-expanded="false" aria-controls="{% off.id %}"><span class="info">{% off.type %}</span> {% if off.is_http %}<span>{% off.detail_method %}</span> <span class="text-muted">{% off.detail_url %}</span>{% else %}<span>{% off.detail_text %}</span>{% endif %} <span class="num">{% off.value %}</span></a>
+{% endforeach %}{% else %}<span class="text-muted">No offenders</span>{% endif %}
 {% if devtools.profile.terminal.timeline_line %}
-<span class="muted">{% devtools.profile.timeline_line %}</span>{% endif %}
+<span class="text-muted">{% devtools.profile.timeline_line %}</span>{% endif %}
 </pre>
     {% foreach devtools.profile.terminal.offenders as off %}
     <div class="collapse devtools-detail small text-secondary mb-1" id="{% off.id %}">
       {% if off.is_http %}
-      <div>HTTP: <span class="{% off.detail_method_class %}">{% off.detail_method %}</span> <span class="muted">{% off.detail_url %}</span> (<span class="{% off.detail_status_class %}">{% off.detail.status %}</span>, <span class="num">{% off.detail.total_ms %}</span> ms)</div>
+      <div>HTTP: <span>{% off.detail_method %}</span> <span class="text-muted">{% off.detail_url %}</span> (<span>{% off.detail.status %}</span>, <span class="num">{% off.detail.total_ms %}</span> ms)</div>
       {% endif %}
       {% if off.is_sqld %}
       <div>SQLD: {% off.detail.count %} calls (avg <span class="num">{% off.detail.avg_ms %}</span> ms)</div>
@@ -79,11 +79,11 @@
 
             <div id="devtools-js-errors-content">
               {% if devtools.js_errors %}
-              <div class="small" style="color: var(--dt-muted, #8a8da8);">
+              <div class="small text-muted">
               {% foreach devtools.js_errors as err %}[{% err.time_ago %}] {% if err.is_error %}ERROR{% else %}PROMISE{% endif %}: {% err.message %}
               {% endforeach %}</div>
               {% else %}
-              <div class="small" style="color: var(--dt-muted, #8a8da8);">No JS errors</div>
+              <div class="small text-muted">No JS errors</div>
               {% endif %}
             </div>
 
@@ -91,101 +91,101 @@
 
           <div class="mb-2" id="devtools-overview">
             <span class="info">Overview</span>
-            <div class="muted">Total: <span class="num">{% devtools.profile.total_duration_ms %}</span> ms</div>
-            <div class="muted">SQL: <span class="num">{% devtools.db.count %}</span> raw / <span class="num">{% devtools.db.unique %}</span> unique / <span class="num">{% devtools.db.duplicate_count %}</span> dup / <span class="num">{% devtools.db.total_ms %}</span> ms</div>
-            {% if devtools.external.available %}<div class="muted">HTTP: <span class="num">{% devtools.external.count %}</span> calls / <span class="num">{% devtools.external.total_ms %}</span> ms</div>{% else %}<div class="muted">HTTP: n/a</div>{% endif %}
-            {% if devtools.cache.available %}<div class="muted">Cache: <span class="num">{% devtools.cache.hit_rate %}</span>% (hits {% devtools.cache.hits %}, misses {% devtools.cache.misses %}, sets {% devtools.cache.sets %})</div>{% else %}<div class="muted">Cache: n/a</div>{% endif %}
+            <div class="text-muted">Total: <span class="num">{% devtools.profile.total_duration_ms %}</span> ms</div>
+            <div class="text-muted">SQL: <span class="num">{% devtools.db.count %}</span> raw / <span class="num">{% devtools.db.unique %}</span> unique / <span class="num">{% devtools.db.duplicate_count %}</span> dup / <span class="num">{% devtools.db.total_ms %}</span> ms</div>
+            {% if devtools.external.available %}<div class="text-muted">HTTP: <span class="num">{% devtools.external.count %}</span> calls / <span class="num">{% devtools.external.total_ms %}</span> ms</div>{% else %}<div class="text-muted">HTTP: n/a</div>{% endif %}
+            {% if devtools.cache.available %}<div class="text-muted">Cache: <span class="num">{% devtools.cache.hit_rate %}</span>% (hits {% devtools.cache.hits %}, misses {% devtools.cache.misses %}, sets {% devtools.cache.sets %})</div>{% else %}<div class="text-muted">Cache: n/a</div>{% endif %}
           </div>
 
           <div class="mb-2" id="devtools-budgets">
             <span class="info">Budgets</span>
-            <div class="muted">Total: {% devtools.profile.budget.total_time.status %} (warn {% devtools.flags.budgets.total_time_warn %}, bad {% devtools.flags.budgets.total_time_bad %})</div>
-            <div class="muted">Slow SQL: {% devtools.profile.budget.slow_sql.status %} (warn {% devtools.flags.budgets.slow_sql_warn %}, bad {% devtools.flags.budgets.slow_sql_bad %})</div>
-            <div class="muted">Slow HTTP: {% devtools.profile.budget.slow_http.status %} (warn {% devtools.flags.budgets.slow_http_warn %}, bad {% devtools.flags.budgets.slow_http_bad %})</div>
-            <div class="muted">Duplicates: {% devtools.profile.budget.duplicates.status %}</div>
+            <div class="text-muted">Total: {% devtools.profile.budget.total_time.status %} (warn {% devtools.flags.budgets.total_time_warn %}, bad {% devtools.flags.budgets.total_time_bad %})</div>
+            <div class="text-muted">Slow SQL: {% devtools.profile.budget.slow_sql.status %} (warn {% devtools.flags.budgets.slow_sql_warn %}, bad {% devtools.flags.budgets.slow_sql_bad %})</div>
+            <div class="text-muted">Slow HTTP: {% devtools.profile.budget.slow_http.status %} (warn {% devtools.flags.budgets.slow_http_warn %}, bad {% devtools.flags.budgets.slow_http_bad %})</div>
+            <div class="text-muted">Duplicates: {% devtools.profile.budget.duplicates.status %}</div>
           </div>
 
           <div class="mb-2" id="devtools-issues">
             <span class="info">Issues</span>
             {% if devtools.profile.issues_compact %}
             {% foreach devtools.profile.issues_compact as issue %}
-            <div class="muted"><a href="{% issue.href %}">{% issue.label %}</a> — {% issue.value %} ({% issue.action_label %})</div>
+            <div class="text-muted"><a href="{% issue.href %}">{% issue.label %}</a> - {% issue.value %} ({% issue.action_label %})</div>
             {% endforeach %}
-            {% else %}<div class="muted">none</div>{% endif %}
+            {% else %}<div class="text-muted">none</div>{% endif %}
           </div>
 
           <div class="mb-2" id="devtools-warnings">
             <span class="info">Warnings</span>
             {% if devtools.profile.warnings %}
             {% foreach devtools.profile.warnings as w %}
-            <div class="muted">{% w %}</div>
+            <div class="text-muted">{% w %}</div>
             {% endforeach %}
-            {% else %}<div class="muted">none</div>{% endif %}
+            {% else %}<div class="text-muted">none</div>{% endif %}
           </div>
 
           <div class="mb-2" id="devtools-errors">
             <span class="info">Errors</span>
             {% if devtools.profile.errors %}
             {% foreach devtools.profile.errors as e %}
-            <div class="muted">{% e.type %}: {% e.message %}</div>
+            <div class="text-muted">{% e.type %}: {% e.message %}</div>
             {% endforeach %}
-            {% else %}<div class="muted">none</div>{% endif %}
+            {% else %}<div class="text-muted">none</div>{% endif %}
           </div>
 
           <div class="mb-2" id="devtools-segments">
             <span class="info">Segments</span>
             {% if devtools.profile.segments %}
             {% foreach devtools.profile.segments as s %}
-            <div class="muted">{% s.name %}: <span class="num">{% s.ms %}</span> ms (<span class="num">{% s.percent %}</span>%)</div>
+            <div class="text-muted">{% s.name %}: <span class="num">{% s.ms %}</span> ms (<span class="num">{% s.percent %}</span>%)</div>
             {% endforeach %}
-            {% else %}<div class="muted">n/a</div>{% endif %}
+            {% else %}<div class="text-muted">n/a</div>{% endif %}
           </div>
 
           <div class="mb-2" id="devtools-request">
             <span class="info">Request</span>
-            <div class="muted">Method: {% devtools.request.method %} / Path: {% devtools.request.path %}</div>
-            {% if devtools.request.route %}<div class="muted">Route: {% devtools.request.route %}</div>{% endif %}
-            {% if devtools.request.controller %}<div class="muted">Controller: {% devtools.request.controller %}::{% devtools.request.action %}</div>{% endif %}
-            <div class="mt-1"><span class="muted">GET</span> <span class="num">{% devtools.request.get_raw %}</span></div>
-            <div class="mt-1"><span class="muted">POST</span> <span class="num">{% devtools.request.post_raw %}</span></div>
+            <div class="text-muted">Method: {% devtools.request.method %} / Path: {% devtools.request.path %}</div>
+            {% if devtools.request.route %}<div class="text-muted">Route: {% devtools.request.route %}</div>{% endif %}
+            {% if devtools.request.controller %}<div class="text-muted">Controller: {% devtools.request.controller %}::{% devtools.request.action %}</div>{% endif %}
+            <div class="mt-1"><span class="text-muted">GET</span> <span class="num">{% devtools.request.get_raw %}</span></div>
+            <div class="mt-1"><span class="text-muted">POST</span> <span class="num">{% devtools.request.post_raw %}</span></div>
             <div class="mt-1">
-              <span class="muted">Cookies</span>
+              <span class="text-muted">Cookies</span>
               {% if devtools.request.cookies %}
               {% foreach devtools.request.cookies as c %}<div>{% c.key %}: {% c.value %}</div>{% endforeach %}
-              {% else %}<div class="muted">n/a</div>{% endif %}
+              {% else %}<div class="text-muted">n/a</div>{% endif %}
             </div>
             <div class="mt-1">
-              <span class="muted">Headers</span>
+              <span class="text-muted">Headers</span>
               {% if devtools.request.headers %}
               {% foreach devtools.request.headers as h %}<div>{% h.key %}: {% h.value %}</div>{% endforeach %}
-              {% else %}<div class="muted">n/a</div>{% endif %}
+              {% else %}<div class="text-muted">n/a</div>{% endif %}
             </div>
           </div>
 
           <div class="mb-2" id="devtools-response">
             <span class="info">Response</span>
-            <div class="muted">Status: <span class="num">{% devtools.response.status %}</span></div>
-            <div class="muted">Content-Type: {% devtools.response.content_type %}</div>
+            <div class="text-muted">Status: <span class="num">{% devtools.response.status %}</span></div>
+            <div class="text-muted">Content-Type: {% devtools.response.content_type %}</div>
           </div>
           {% if devtools.flags.enabled %}{% if devtools.media.id %}
           <div class="mb-2" id="devtools-media">
             <span class="info">Media</span>
-            <div class="muted">Media ID: {% devtools.media.id %}</div>
-            <div class="muted">Mime: {% devtools.media.mime %}</div>
-            <div class="muted">Size: {% devtools.media.size %}</div>
-            <div class="muted">Mode: {% devtools.media.mode %}</div>
-            <div class="muted">Disk: {% devtools.media.disk %}</div>
-            <div class="muted">Storage: {% devtools.media.storage %}</div>
-            <div class="muted">Read time: {% devtools.media.read_time_ms %} ms</div>
-            {% if devtools.media.object_key %}<div class="muted">Object key: {% devtools.media.object_key %}</div>{% endif %}
-            {% if devtools.media.access_mode %}<div class="muted">Access mode: {% devtools.media.access_mode %}</div>{% endif %}
-            {% if devtools.media.signature_valid %}<div class="muted">Signature valid: {% devtools.media.signature_valid %}</div>{% endif %}
-            {% if devtools.media.signature_exp %}<div class="muted">Signature exp: {% devtools.media.signature_exp %}</div>{% endif %}
-            {% if devtools.media.thumb_generated %}<div class="muted">Thumb: {% devtools.media.thumb_generated %}</div>{% endif %}
-            {% if devtools.media.thumb_reason %}<div class="muted">Thumb reason: {% devtools.media.thumb_reason %}</div>{% endif %}
-            {% if devtools.media.thumb_algo %}<div class="muted">Thumb algo: {% devtools.media.thumb_algo %}</div>{% endif %}
-            {% if devtools.media.s3_requests %}<div class="muted">S3 requests: {% devtools.media.s3_requests %}</div>{% endif %}
-            {% if devtools.media.s3_time_ms %}<div class="muted">S3 time: {% devtools.media.s3_time_ms %} ms</div>{% endif %}
+            <div class="text-muted">Media ID: {% devtools.media.id %}</div>
+            <div class="text-muted">Mime: {% devtools.media.mime %}</div>
+            <div class="text-muted">Size: {% devtools.media.size %}</div>
+            <div class="text-muted">Mode: {% devtools.media.mode %}</div>
+            <div class="text-muted">Disk: {% devtools.media.disk %}</div>
+            <div class="text-muted">Storage: {% devtools.media.storage %}</div>
+            <div class="text-muted">Read time: {% devtools.media.read_time_ms %} ms</div>
+            {% if devtools.media.object_key %}<div class="text-muted">Object key: {% devtools.media.object_key %}</div>{% endif %}
+            {% if devtools.media.access_mode %}<div class="text-muted">Access mode: {% devtools.media.access_mode %}</div>{% endif %}
+            {% if devtools.media.signature_valid %}<div class="text-muted">Signature valid: {% devtools.media.signature_valid %}</div>{% endif %}
+            {% if devtools.media.signature_exp %}<div class="text-muted">Signature exp: {% devtools.media.signature_exp %}</div>{% endif %}
+            {% if devtools.media.thumb_generated %}<div class="text-muted">Thumb: {% devtools.media.thumb_generated %}</div>{% endif %}
+            {% if devtools.media.thumb_reason %}<div class="text-muted">Thumb reason: {% devtools.media.thumb_reason %}</div>{% endif %}
+            {% if devtools.media.thumb_algo %}<div class="text-muted">Thumb algo: {% devtools.media.thumb_algo %}</div>{% endif %}
+            {% if devtools.media.s3_requests %}<div class="text-muted">S3 requests: {% devtools.media.s3_requests %}</div>{% endif %}
+            {% if devtools.media.s3_time_ms %}<div class="text-muted">S3 time: {% devtools.media.s3_time_ms %} ms</div>{% endif %}
           </div>
           {% endif %}{% endif %}
 
@@ -198,7 +198,7 @@
               <div><code class="small text-break">{% s.sql %}</code></div>
             </div>
             {% endforeach %}
-            {% else %}<div class="muted">none</div>{% endif %}
+            {% else %}<div class="text-muted">none</div>{% endif %}
           </div>
 
           <div class="mb-2" id="devtools-sql-duplicates">
@@ -217,7 +217,7 @@
               {% endif %}
             </div>
             {% endforeach %}
-            {% else %}<div class="muted">none</div>{% endif %}
+            {% else %}<div class="text-muted">none</div>{% endif %}
           </div>
 
           <div class="mb-2" id="devtools-sql-grouped">
@@ -229,7 +229,7 @@
               <div><code class="small text-break">{% g.sql %}</code></div>
             </div>
             {% endforeach %}
-            {% else %}<div class="muted">none</div>{% endif %}
+            {% else %}<div class="text-muted">none</div>{% endif %}
           </div>
 
           <div class="mb-2" id="devtools-sql-raw">
@@ -241,7 +241,7 @@
               <div><code class="small text-break">{% q.sql %}</code></div>
             </div>
             {% endforeach %}
-            {% else %}<div class="muted">none</div>{% endif %}
+            {% else %}<div class="text-muted">none</div>{% endif %}
           </div>
 
           <div class="mb-2" id="devtools-external">
@@ -249,17 +249,17 @@
             {% if devtools.external.available %}
             {% foreach devtools.external.top3_slowest_calls as call %}
             <div class="mt-1">
-              <span class="{% call.method_class %}">{% call.method %}</span> <span class="muted">{% call.host %}{% call.path %}</span> <span class="num">{% call.total_ms %}</span> ms <span class="{% call.status_class %}">{% call.status %}</span>
+              <span>{% call.method %}</span> <span class="text-muted">{% call.host %}{% call.path %}</span> <span class="num">{% call.total_ms %}</span> ms <span>{% call.status %}</span>
             </div>
             {% endforeach %}
-            {% else %}<div class="muted">n/a</div>{% endif %}
+            {% else %}<div class="text-muted">n/a</div>{% endif %}
           </div>
 
           <div class="mb-2" id="devtools-user">
             <span class="info">User</span>
-            <div class="muted">ID: {% devtools.user.id %}</div>
-            <div class="muted">Name: {% devtools.user.username %}</div>
-            {% if devtools.user.roles %}<div class="muted">Roles: {% foreach devtools.user.roles as r %}{% r %} {% endforeach %}</div>{% endif %}
+            <div class="text-muted">ID: {% devtools.user.id %}</div>
+            <div class="text-muted">Name: {% devtools.user.username %}</div>
+            {% if devtools.user.roles %}<div class="text-muted">Roles: {% foreach devtools.user.roles as r %}{% r %} {% endforeach %}</div>{% endif %}
           </div>
         </div>
       </div>
@@ -448,4 +448,4 @@
   </script>
 </div>
 
-<button class="devtools-show-btn" type="button" data-bs-toggle="collapse" data-bs-target="#devtools-terminal" aria-expanded="false" aria-controls="devtools-terminal">Show DevTools</button>
+<button class="btn btn-sm devtools-show-btn position-fixed bottom-0 end-0 m-2" type="button" data-bs-toggle="collapse" data-bs-target="#devtools-terminal" aria-expanded="false" aria-controls="devtools-terminal">Show DevTools</button>

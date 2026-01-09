@@ -1,4 +1,4 @@
-﻿<div class="laas-devtools position-fixed bottom-0 start-0 end-0 border-top z-3" id="devtools-root" style="{% devtools.theme.terminal.css_vars %}">
+﻿<div class="laas-devtools position-fixed bottom-0 start-0 end-0 border-top z-3" id="devtools-root">
   <style>
     .laas-devtools.devtools-hidden { display: none; }
     .laas-devtools { background: var(--dt-panel-bg, #1b1c25); color: var(--dt-text, #d6d6d6); border-top: 1px solid var(--dt-border, rgba(255,255,255,0.08)); }
@@ -28,7 +28,7 @@
   </style>
   <div class="devtools-terminal collapse show" id="devtools-terminal">
     <div class="devtools-toolbar">
-      <span class="me-auto" style="font-family: var(--dt-font-family, monospace); font-size: var(--dt-font-size, 12px);"><span class="info">DevTools</span> <span class="muted">|</span> <span class="info">SQL:</span> <span class="num">{% devtools.profile.terminal.prompt.sql_raw %}/{% devtools.profile.terminal.prompt.sql_unique %}</span> <span class="muted">|</span> <span class="info">Dup:</span> <span class="num">{% devtools.profile.terminal.prompt.sql_dup %}</span> <span class="muted">|</span> <span class="num">{% devtools.profile.terminal.prompt.sql_ms %}ms</span> <span class="info">Site Total Time:</span> <span class="num">{% devtools.profile.terminal.prompt.total_ms %}ms</span> <span class="info">Memory:</span> <span class="num">{% devtools.profile.terminal.prompt.memory_mb %}MB</span> <span class="info">Cache:</span> <span class="num">{% devtools.profile.terminal.prompt.cache_rate %}</span> <span class="info">HTTP</span> <span class="num">{% devtools.profile.terminal.prompt.http_count %} ({% devtools.profile.terminal.prompt.http_max_ms %}ms)</span> <span class="{% devtools.profile.terminal.prompt.method_class %}">{% devtools.profile.terminal.prompt.method %}:</span> <span class="muted">{% devtools.profile.terminal.prompt.path %}</span>{% if devtools.profile.terminal.prompt.post_params %} <span class="muted">POST:</span> <span class="warn">{% devtools.profile.terminal.prompt.post_params|implode:', ' %}</span>{% endif %} <span class="info">Status:</span> <span class="{% devtools.profile.terminal.prompt.status_class %}">{% devtools.profile.terminal.prompt.status %}</span> <span class="muted">Req ID:</span> <span class="muted">{% devtools.profile.terminal.prompt.request_id %}</span></span>
+      <span class="me-auto" style="font-family: var(--dt-font-family, monospace); font-size: var(--dt-font-size, 12px);"><span class="info">DevTools</span> <span class="muted">|</span> <span class="info">SQL:</span> <span class="num">{% devtools.profile.terminal.prompt.sql_raw %}/{% devtools.profile.terminal.prompt.sql_unique %}</span> <span class="muted">|</span> <span class="info">Dup:</span> <span class="num">{% devtools.profile.terminal.prompt.sql_dup %}</span> <span class="muted">|</span> <span class="num">{% devtools.profile.terminal.prompt.sql_ms %}ms</span> <span class="info">Site Total Time:</span> <span class="num">{% devtools.profile.terminal.prompt.total_ms %}ms</span> <span class="info">Memory:</span> <span class="num">{% devtools.profile.terminal.prompt.memory_mb %}MB</span> <span class="info">Cache:</span> <span class="num">{% devtools.profile.terminal.prompt.cache_rate %}</span> <span class="info">HTTP</span> <span class="num">{% devtools.profile.terminal.prompt.http_count %} ({% devtools.profile.terminal.prompt.http_max_ms %}ms)</span> <span>{% devtools.profile.terminal.prompt.method %}:</span> <span class="muted">{% devtools.profile.terminal.prompt.path %}</span>{% if devtools.profile.terminal.prompt.post_params %} <span class="muted">POST:</span> <span class="warn">{% devtools.profile.terminal.prompt.post_params|implode:', ' %}</span>{% endif %} <span class="info">Status:</span> <span>{% devtools.profile.terminal.prompt.status %}</span> <span class="muted">Req ID:</span> <span class="muted">{% devtools.profile.terminal.prompt.request_id %}</span></span>
       <a href="" class="btn btn-sm devtools-btn" title="Refresh">&#x27F3;</a>
       <button class="btn btn-sm devtools-btn" type="button" data-devtools-action="copy" title="Copy">&#x29C9;</button>
       <button class="btn btn-sm devtools-btn" type="button" data-devtools-action="expand" title="Expand all">&#x2912;</button>
@@ -41,11 +41,11 @@
 {% if devtools.profile.terminal.warning_tokens %}
 
 <span class="warn">&#x26A0; Warnings</span>
-{% foreach devtools.profile.terminal.warning_tokens as tok %}<span class="{% tok.class %}">{% tok.text %}</span>
+{% foreach devtools.profile.terminal.warning_tokens as tok %}<span>{% tok.text %}</span>
 {% endforeach %}
 {% else %}<span class="ok">&#x2713; No warnings</span>{% endif %}{% if devtools.profile.terminal.offenders %}
 
-{% foreach devtools.profile.terminal.offenders as off %}<a class="text-decoration-none" data-bs-toggle="collapse" href="#{% off.id %}" role="button" aria-expanded="false" aria-controls="{% off.id %}"><span class="info">&#x1F6C8;</span> <span class="info">{% off.type %}</span> {% if off.is_http %}<span class="{% off.detail_method_class %}">{% off.detail_method %}</span> <span class="muted">{% off.detail_url %}</span>{% else %}<span class="{% if off.is_sqlish %}sql{% else %}muted{% endif %}">{% off.detail_text %}</span>{% endif %} <span class="num">{% off.value %}</span></a>
+{% foreach devtools.profile.terminal.offenders as off %}<a class="text-decoration-none" data-bs-toggle="collapse" href="#{% off.id %}" role="button" aria-expanded="false" aria-controls="{% off.id %}"><span class="info">&#x1F6C8;</span> <span class="info">{% off.type %}</span> {% if off.is_http %}<span>{% off.detail_method %}</span> <span class="muted">{% off.detail_url %}</span>{% else %}<span>{% off.detail_text %}</span>{% endif %} <span class="num">{% off.value %}</span></a>
 {% endforeach %}{% else %}<span class="muted">No offenders</span>{% endif %}
 {% if devtools.profile.terminal.timeline_line %}
 <span class="muted">{% devtools.profile.timeline_line %}</span>{% endif %}
@@ -53,7 +53,7 @@
     {% foreach devtools.profile.terminal.offenders as off %}
     <div class="collapse devtools-detail small text-secondary mb-1" id="{% off.id %}">
       {% if off.is_http %}
-      <div>HTTP: <span class="{% off.detail_method_class %}">{% off.detail_method %}</span> <span class="muted">{% off.detail_url %}</span> (<span class="{% off.detail_status_class %}">{% off.detail.status %}</span>, <span class="num">{% off.detail.total_ms %}</span> ms)</div>
+      <div>HTTP: <span>{% off.detail_method %}</span> <span class="muted">{% off.detail_url %}</span> (<span>{% off.detail.status %}</span>, <span class="num">{% off.detail.total_ms %}</span> ms)</div>
       {% endif %}
       {% if off.is_sqld %}
       <div>SQLD: {% off.detail.count %} calls (avg <span class="num">{% off.detail.avg_ms %}</span> ms)</div>
@@ -248,7 +248,7 @@
             {% if devtools.external.available %}
             {% foreach devtools.external.top3_slowest_calls as call %}
             <div class="mt-1">
-              <span class="{% call.method_class %}">{% call.method %}</span> <span class="muted">{% call.host %}{% call.path %}</span> <span class="num">{% call.total_ms %}</span> ms <span class="{% call.status_class %}">{% call.status %}</span>
+              <span>{% call.method %}</span> <span class="muted">{% call.host %}{% call.path %}</span> <span class="num">{% call.total_ms %}</span> ms <span>{% call.status %}</span>
             </div>
             {% endforeach %}
             {% else %}<div class="muted">n/a</div>{% endif %}
