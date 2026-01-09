@@ -775,6 +775,11 @@ $commands['config:export'] = function () use ($rootPath, $dbManager, $appConfig,
     return 0;
 };
 
+$commands['policy:check'] = function () use ($rootPath): int {
+    require_once $rootPath . '/tools/policy-check.php';
+    return policy_run([$rootPath . '/themes']);
+};
+
 if ($command === '' || !isset($commands[$command])) {
     echo "Available commands:\n";
     foreach (array_keys($commands) as $name) {

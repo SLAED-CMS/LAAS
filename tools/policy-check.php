@@ -139,17 +139,16 @@ function policy_line_from_offset(string $contents, int $offset): int
     return substr_count($contents, "\n", 0, $offset) + 1;
 }
 
-if (PHP_SAPI === 'cli' && realpath($argv[0] ?? '') === realpath(__FILE__)) {
-    $paths = $argv;
-    array_shift($paths);
-    if ($paths === []) {
-        $paths = [__DIR__ . '/../themes'];
-    }
-
+/**
+ * @param array<int, string> $paths
+ */
+function policy_run(array $paths): int
+{
     $violations = policy_check_paths($paths);
-    if ($violations === []) {
-        echo "Policy check OK\n";
-        exit(0);
+    $count = count($violations);
+    if ($count === 0) {
+        echo "Policy check OK (0 violations)\n";
+        return 0;
     }
 
     foreach ($violations as $violation) {
@@ -159,5 +158,15 @@ if (PHP_SAPI === 'cli' && realpath($argv[0] ?? '') === realpath(__FILE__)) {
         $message = $violation['message'];
         echo $file . ':' . $line . ' ' . $rule . ' ' . $message . "\n";
     }
-    exit(1);
+    echo 'Summary: ' . $count . " violation(s)\n";
+    return 1;
+}
+
+if (PHP_SAPI === 'cli' && realpath($argv[0] ?? '') === realpath(__FILE__)) {
+    $paths = $argv;
+    array_shift($paths);
+    if ($paths === []) {
+        $paths = [__DIR__ . '/../themes'];
+    }
+    exit(policy_run($paths));
 }

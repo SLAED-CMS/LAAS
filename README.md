@@ -379,6 +379,12 @@ vendor/bin/phpunit --group security
 vendor/bin/phpunit --coverage-html coverage/html --coverage-clover coverage/clover.xml
 ```
 
+## Development / CI
+
+- Policy checks: `php tools/policy-check.php`
+- Policy checks via CLI: `php tools/cli.php policy:check`
+- Tests: `vendor/bin/phpunit`
+
 ## CI
 
 - GitHub Actions runs lint, phpunit, coverage, and sqlite smoke checks.
