@@ -27,6 +27,60 @@
 
 ## Version-Specific Upgrade Paths
 
+### v2.4.0 → v2.4.2 (In Development)
+
+**Overview:** Asset Architecture & Frontend Separation - complete decoupling of frontend concerns from PHP core.
+
+**Key features (v2.4.2):**
+- **AssetManager** — Centralized asset management with cache-busting
+  - `buildCss(name)` and `buildJs(name)` methods
+  - Configurable defer/async per asset
+  - Cache-busting with `?v=` query parameter
+  - All assets defined in `config/assets.php`
+- **Template helpers** — New asset helpers for layouts
+  - `{% asset_css "name" %}` for stylesheets
+  - `{% asset_js "name" %}` for scripts
+  - Assets loaded only in layout files
+- **Frontend/backend separation** — Complete separation of concerns
+  - PHP never emits CSS classes (no `*_class` keys in view data)
+  - No inline `<style>` or `<script>` tags in templates
+  - Controllers return only UI tokens (state/status/variant/flags)
+  - Templates map tokens to CSS classes via `if/else`
+- **Theme API v1** — Standardized theme contract
+  - `theme.json` in each theme with metadata and layout mappings
+  - Standardized global template variables (`app.*`, `user.*`, `assets`, `devtools.enabled`)
+  - Theme structure: `layouts/`, `pages/`, `partials/`
+- **CI Policy Checks** — Automated guardrails
+  - No inline scripts/styles in templates
+  - No CDN usage (Bootstrap/HTMX local only)
+  - No `*_class` keys in view data (runtime check in debug mode)
+  - `php tools/policy-check.php` for local validation
+
+**Upgrade steps:**
+1. Follow standard upgrade flow
+2. **No database migrations required** for v2.4.2
+3. Review asset configuration in `config/assets.php`
+4. Templates continue to work without changes (backward compatible)
+5. **Optional:** Migrate to new asset helpers in custom themes
+6. **Optional:** Run policy checks: `php tools/policy-check.php`
+7. Test critical flows:
+   - Asset loading: verify CSS/JS load correctly
+   - DevTools: check toolbar displays properly
+   - Custom themes: verify layout renders correctly
+
+**Breaking changes:**
+- **None for existing code** - all changes are additive
+- New modules MUST follow frontend separation rules
+- Custom themes MAY need updates to use new asset helpers (optional)
+
+**Migration notes for new code:**
+- Use `{% asset_css "name" %}` and `{% asset_js "name" %}` in layouts
+- Register assets in `config/assets.php` instead of hardcoding paths
+- Return UI tokens (`state`, `status`, `variant`) from controllers
+- Map tokens to CSS classes in templates, not in PHP
+
+---
+
 ### v2.3.28 → v2.4.0 (Current Stable)
 
 **Overview:** Complete security stack implementation with 2FA/TOTP, self-service password reset, session timeout enforcement, and S3 SSRF protection.

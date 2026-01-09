@@ -5,12 +5,12 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-00758F.svg)](https://www.mysql.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)](#)
-[![Baseline](https://img.shields.io/badge/Baseline-v2.4.0-orange.svg)](docs/VERSIONS.md)
+[![Baseline](https://img.shields.io/badge/Baseline-v2.4.2-orange.svg)](docs/VERSIONS.md)
 [![Security](https://img.shields.io/badge/Security-99%2F100-brightgreen.svg)](docs/SECURITY.md)
 
 **Modern, secure, HTML-first content management system.**
 
-**v2.4.0** - Complete security stack: 2FA/TOTP, self-service password reset, session timeout, S3 SSRF protection. All critical security findings resolved (99/100 score).
+**v2.4.2 (in development)** - Asset Architecture & Frontend Separation: AssetManager with cache-busting, template helpers ({% asset_css %}, {% asset_js %}), UI Tokens (no *_class from PHP), Theme API v1, CI policy checks. Complete security stack from v2.4.0: 2FA/TOTP, password reset, session timeout, S3 SSRF protection (99/100 score).
 
 LAAS CMS is a modular, security-first CMS built for PHP 8.4+ with a lightweight template engine, middleware pipeline, and i18n support. Bootstrap 5 + HTMX ready.
 

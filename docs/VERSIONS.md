@@ -2,6 +2,17 @@
 
 - Planned: 3.0 frontend-agnostic
 
+- v2.4.2: Asset Architecture & Frontend Separation (in development)
+  - AssetManager with buildCss/buildJs helpers
+  - Template helpers: {% asset_css %} and {% asset_js %}
+  - Cache-busting with ?v= query parameter
+  - Frontend/backend separation: no inline styles/scripts, no CSS classes from PHP
+  - UI Tokens: controllers return state/status/variant, templates map to CSS classes
+  - Policy checks: CI guardrails (no inline scripts, no CDN, no *_class in view data)
+  - Theme API v1: theme.json contract with layouts/assets_profile
+  - Global template variables standardized (app.*, user.*, assets, devtools.enabled)
+  - All assets centralized in config/assets.php
+
 - v2.4.1: DevTools: JS Errors (client error capture + server inbox + UI panel)
   - Client-side error capture: `window.onerror` and `window.onunhandledrejection`
   - Server inbox: cache-based storage (TTL 10 min, ring buffer max 200 events)

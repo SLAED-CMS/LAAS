@@ -1,10 +1,10 @@
 graph TD
-    %% LAAS CMS v2.4.0 - Module Architecture
+    %% LAAS CMS v2.4.2 - Module Architecture
     %% 9 modules: System, API, Admin, Users, Pages, Media, Menu, Changelog, DevTools
     %% Loading: Kernel scans modules/ -> reads config/modules.php -> includes routes.php
     %% Types: Core (required), Content (can disable), Admin (dev-only)
-    %% Security: 2FA/TOTP, Password Reset, Session Timeout (v2.4.0)
-    %% Version: v2.4.0 (2026-01-07)
+    %% Security: 2FA/TOTP, Password Reset, Session Timeout (v2.4.2)
+    %% Version: v2.4.2 (2026-01-10)
 
     subgraph Core["Core Framework"]
         Kernel["Kernel<br/>Bootstrap & DI Container"]
@@ -18,7 +18,7 @@ graph TD
         System["System Module<br/>Health, Backup, Audit"]
         API["API Module<br/>REST API v1 + Bearer Tokens"]
         Admin["Admin Module<br/>Backend UI"]
-        Users["Users Module<br/>Auth, RBAC, 2FA, Password Reset (v2.4.0)"]
+        Users["Users Module<br/>Auth, RBAC, 2FA, Password Reset (v2.4.2)"]
         Pages["Pages Module<br/>CMS Content"]
         Media["Media Module<br/>File Management"]
         Menu["Menu Module<br/>Navigation"]

@@ -14,6 +14,13 @@ We release security updates for the following versions of LAAS CMS:
 
 **Recommendation:** Always use the latest stable release (v2.4.x) for the best security posture.
 
+**v2.4.2 (in development) - Asset Architecture & Frontend Separation:**
+- ✅ AssetManager with cache-busting and template helpers
+- ✅ Frontend/backend separation (no inline scripts/styles, no CSS classes from PHP)
+- ✅ UI Tokens (controllers return state/status/variant)
+- ✅ CI policy checks (guardrails for code quality)
+- ✅ Theme API v1 with standardized contracts
+
 **v2.4.0 Security Highlights:**
 - ✅ 2FA/TOTP with backup codes
 - ✅ Self-service password reset

@@ -1,9 +1,9 @@
 erDiagram
-    %% LAAS CMS v2.4.0 - Database Schema
+    %% LAAS CMS v2.4.2 - Database Schema
     %% 16 tables, 35+ migrations, InnoDB/SQLite
     %% Indexes: slug (0.5-1ms), status, uuid, timestamps, token_hash
     %% Security: Argon2id, 2FA/TOTP, password reset, audit logging, hard deletes, API tokens, XSS/SSRF hardening
-    %% Version: v2.4.0 (2026-01-07)
+    %% Version: v2.4.2 (2026-01-10)
 
     users ||--o{ role_user : "has"
     roles ||--o{ role_user : "assigned to"
@@ -22,9 +22,9 @@ erDiagram
         varchar email UK "Nullable, 190 chars"
         varchar password_hash "255 chars, Argon2id"
         tinyint status "1=active, 0=inactive"
-        varchar totp_secret "Nullable, Base32, v2.4.0"
-        tinyint totp_enabled "0=disabled, 1=enabled, v2.4.0"
-        text backup_codes "JSON, bcrypt hashed, v2.4.0"
+        varchar totp_secret "Nullable, Base32, v2.4.2"
+        tinyint totp_enabled "0=disabled, 1=enabled, v2.4.2"
+        text backup_codes "JSON, bcrypt hashed, v2.4.2"
         datetime created_at
         datetime updated_at
         datetime last_login_at "Nullable"
@@ -147,6 +147,6 @@ erDiagram
         int id PK
         int user_id FK "References users"
         char token UK "64 chars, hex-encoded"
-        datetime expires_at "1 hour TTL, v2.4.0"
-        datetime created_at "v2.4.0"
+        datetime expires_at "1 hour TTL, v2.4.2"
+        datetime created_at "v2.4.2"
     }
