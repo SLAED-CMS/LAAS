@@ -14,9 +14,9 @@ use Laas\View\View;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\InMemorySession;
 
-final class ViewDataGuardTest extends TestCase
+final class ViewPolicyGuardTest extends TestCase
 {
-    public function testViewAllowsClassKeysWhenNotDebug(): void
+    public function testViewRejectsClassKeysWhenDebug(): void
     {
         $root = dirname(__DIR__);
         $db = new DatabaseManager(['driver' => 'sqlite', 'database' => ':memory:']);
@@ -31,7 +31,7 @@ final class ViewDataGuardTest extends TestCase
             $themeManager,
             new TemplateCompiler(),
             $root . '/storage/cache/templates',
-            false
+            true
         );
         $translator = new Translator($root, 'default', 'en');
         $view = new View(
@@ -39,7 +39,7 @@ final class ViewDataGuardTest extends TestCase
             $engine,
             $translator,
             'en',
-            ['name' => 'LAAS', 'debug' => false],
+            ['name' => 'LAAS', 'debug' => true],
             new AssetManager([]),
             new NullAuthService(),
             $settings,
@@ -52,10 +52,11 @@ final class ViewDataGuardTest extends TestCase
         $request = new Request('GET', '/', [], [], [], '', $session);
         $view->setRequest($request);
 
-        $response = $view->render('layout.html', [
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('View data contains forbidden key');
+
+        $view->render('layout.html', [
             'bad_class' => 'text-bg-success',
         ]);
-
-        $this->assertStringContainsString('<!doctype html>', $response->getBody());
     }
 }

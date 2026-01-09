@@ -14,6 +14,8 @@ use Laas\Modules\Menu\Repository\MenusRepository;
 use Laas\Modules\Menu\Repository\MenuItemsRepository;
 use Laas\Support\Cache\CacheFactory;
 use Laas\Support\Cache\CacheKey;
+use Laas\Support\RequestScope;
+use Laas\DevTools\DevToolsContext;
 use Laas\View\AssetManager;
 use Laas\View\Template\TemplateEngine;
 use Laas\View\Template\TemplateCompiler;
@@ -59,7 +61,15 @@ final class View
     ): Response
     {
         $ctx = array_merge($this->globalContext(), $data);
-        $this->assertNoClassTokens($ctx);
+        $devtoolsEnabled = $this->resolveDevtoolsEnabled();
+        if (!isset($ctx['devtools']) || !is_array($ctx['devtools'])) {
+            $ctx['devtools'] = ['enabled' => $devtoolsEnabled];
+        } elseif (!array_key_exists('enabled', $ctx['devtools'])) {
+            $ctx['devtools']['enabled'] = $devtoolsEnabled;
+        }
+        if ($this->debug) {
+            $this->assertNoClassTokens($data);
+        }
         $renderOptions = [
             'render_partial' => $this->request?->isHtmx() ?? false,
         ];
@@ -189,6 +199,9 @@ final class View
                 'path' => $this->request?->getPath() ?? '/',
                 'is_htmx' => $this->request?->isHtmx() ?? false,
             ],
+            'devtools' => [
+                'enabled' => $this->resolveDevtoolsEnabled(),
+            ],
         ];
     }
 
@@ -226,5 +239,14 @@ final class View
                 }
             }
         }
+    }
+
+    private function resolveDevtoolsEnabled(): bool
+    {
+        $context = RequestScope::get('devtools.context');
+        if ($context instanceof DevToolsContext) {
+            return (bool) $context->getFlag('enabled', false);
+        }
+        return false;
     }
 }

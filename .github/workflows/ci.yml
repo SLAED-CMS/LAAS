@@ -23,6 +23,8 @@ jobs:
       - name: PHP lint
         run: |
           find src modules tools database public -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Policy checks
+        run: php tools/policy-check.php
       - name: Debt sweep
         run: |
           if rg -n "TODO|FIXME" src modules tools; then

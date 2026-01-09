@@ -79,6 +79,22 @@
 'health_ok' => true
 ```
 
+## Policy CI
+
+**Rules:**
+- R1: No inline `<script>`/`<style>` in `themes/**/*.html`
+  - Only `<script src="..."></script>` is allowed
+  - `<style>` is always forbidden
+- R2: No CDN/external URLs in templates
+  - `cdn.jsdelivr.net`, `unpkg.com`, `cdnjs.cloudflare.com`, `fonts.googleapis.com`, `googleapis`
+- R3: View data must not contain `*_class` keys (guarded in debug)
+- R4: Do not build `hx-*` attributes in PHP (recommendation, not enforced yet)
+
+**Local run:**
+```
+php tools/policy-check.php
+```
+
 ## Migration notes
 
 ### Writing new modules
