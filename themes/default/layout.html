@@ -8,6 +8,7 @@
   {% asset_css "bootstrap" %}
   {% asset_css "bootstrap-icons" %}
   {% asset_css "app" %}
+  {% if devtools.enabled %}{% asset_css "devtools" %}{% endif %}
 </head>
 <body class="laas-theme-default" hx-headers='{"X-CSRF-Token":"{% csrf_token %}"}'>
   <main id="app" class="container py-3">
@@ -16,5 +17,6 @@
   {% asset_js "htmx" %}
   {% asset_js "bootstrap" %}
   {% asset_js "app" %}
+  {% if devtools.enabled %}{% asset_js "devtools" %}{% endif %}
 </body>
 </html>

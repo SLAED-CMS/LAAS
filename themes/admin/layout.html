@@ -8,6 +8,7 @@
   {% asset_css "bootstrap" %}
   {% asset_css "app" %}
   {% asset_css "admin" %}
+  {% if devtools.enabled %}{% asset_css "devtools" %}{% endif %}
 </head>
 <body class="bg-light laas-theme-admin" hx-headers='{"X-CSRF-Token":"{% csrf_token %}"}'>
   <main class="container-fluid py-3">
@@ -23,5 +24,6 @@
   {% asset_js "bootstrap" %}
   {% asset_js "app" %}
   {% asset_js "admin" %}
+  {% if devtools.enabled %}{% asset_js "devtools" %}{% endif %}
 </body>
 </html>

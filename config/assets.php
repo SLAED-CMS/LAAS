@@ -32,6 +32,9 @@ return [
         'app' => [
             'path' => 'app/app.css',
         ],
+        'devtools' => [
+            'path' => 'app/devtools.css',
+        ],
         'admin' => [
             'path' => 'admin.css',
         ],
@@ -47,6 +50,10 @@ return [
         ],
         'app' => [
             'path' => 'app/app.js',
+            'defer' => true,
+        ],
+        'devtools' => [
+            'path' => 'app/devtools.js',
             'defer' => true,
         ],
         'admin' => [
