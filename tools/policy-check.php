@@ -85,6 +85,78 @@ function policy_normalize_path(string $path): string
 }
 
 /**
+ * @param array<int, string> $paths
+ * @return array<int, string>
+ */
+function policy_theme_roots(array $paths): array
+{
+    $roots = [];
+    foreach ($paths as $path) {
+        $path = rtrim($path, DIRECTORY_SEPARATOR);
+        if ($path === '' || !is_dir($path)) {
+            continue;
+        }
+        if (basename($path) === 'themes') {
+            $roots[] = $path;
+            continue;
+        }
+        $themes = $path . DIRECTORY_SEPARATOR . 'themes';
+        if (is_dir($themes)) {
+            $roots[] = $themes;
+        }
+    }
+
+    $unique = [];
+    $seen = [];
+    foreach ($roots as $root) {
+        $root = policy_normalize_path($root);
+        if (isset($seen[$root])) {
+            continue;
+        }
+        $seen[$root] = true;
+        $unique[] = $root;
+    }
+
+    return $unique;
+}
+
+/**
+ * @param array<int, string> $paths
+ * @return array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>
+ */
+function policy_check_theme_layouts(array $paths): array
+{
+    $findings = [];
+    foreach (policy_theme_roots($paths) as $root) {
+        $items = @scandir($root);
+        if (!is_array($items)) {
+            continue;
+        }
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
+            $themePath = $root . '/' . $item;
+            if (!is_dir($themePath)) {
+                continue;
+            }
+            $basePath = $themePath . '/layouts/base.html';
+            if (!is_file($basePath)) {
+                $findings[] = policy_make_finding(
+                    'warning',
+                    'W6',
+                    $basePath,
+                    0,
+                    'Missing canonical layout layouts/base.html',
+                    ''
+                );
+            }
+        }
+    }
+    return $findings;
+}
+
+/**
  * @return array<int, string>
  */
 function policy_w3_excludes(): array
@@ -410,6 +482,7 @@ function policy_analyze(array $paths): array
 {
     $findings = policy_check_paths($paths);
     $findings = array_merge($findings, policy_check_php_paths($paths));
+    $findings = array_merge($findings, policy_check_theme_layouts($paths));
     $errors = [];
     $warnings = [];
     foreach ($findings as $finding) {
@@ -465,6 +538,7 @@ function policy_run(array $paths): int
     $w3bCount = 0;
     $w4Count = 0;
     $w5Count = 0;
+    $w6Count = 0;
     foreach ($analysis['warnings'] as $warning) {
         $code = (string) ($warning['code'] ?? '');
         if ($code === 'W3a') {
@@ -479,8 +553,11 @@ function policy_run(array $paths): int
         if ($code === 'W5') {
             $w5Count++;
         }
+        if ($code === 'W6') {
+            $w6Count++;
+        }
     }
-    echo 'Summary: errors=' . $errorsCount . ' warnings=' . $warningsCount . ' w3a=' . $w3aCount . ' w3b=' . $w3bCount . ' w4=' . $w4Count . ' w5=' . $w5Count . "\n";
+    echo 'Summary: errors=' . $errorsCount . ' warnings=' . $warningsCount . ' w3a=' . $w3aCount . ' w3b=' . $w3bCount . ' w4=' . $w4Count . ' w5=' . $w5Count . ' w6=' . $w6Count . "\n";
 
     return policy_exit_code($analysis);
 }
