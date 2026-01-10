@@ -37,7 +37,8 @@ final class View
         private AuthInterface $authService,
         private SettingsProvider $settingsProvider,
         private string $cachePath,
-        private ?DatabaseManager $db = null
+        private ?DatabaseManager $db = null,
+        private array $assets = []
     ) {
         $this->defaultTheme = $themeManager->getThemeName();
         $this->themesRoot = $themeManager->getThemesRoot();
@@ -195,7 +196,7 @@ final class View
             'csrf_token' => $csrfToken,
             '__translator' => $this->translator,
             '__assets' => $this->assetManager,
-            'assets' => $this->assetManager,
+            'assets' => $this->assets,
             'locale' => $this->locale,
             'is_auth' => $this->authService->check(),
             'auth_user' => $this->authService->user(),

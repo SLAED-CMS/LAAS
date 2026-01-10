@@ -18,16 +18,43 @@ $envBool = static function (string $key, bool $default) use ($env): bool {
     return $parsed ?? $default;
 };
 
+$assetBase = $envString('ASSET_BASE', $envString('ASSETS_BASE_URL', '/assets'));
+$assetBase = rtrim($assetBase, '/');
+$assetVendorBase = $envString('ASSET_VENDOR_BASE', $assetBase . '/vendor');
+$assetAppBase = $envString('ASSET_APP_BASE', $assetBase . '/app');
+
+$bootstrapVersion = $envString('ASSET_BOOTSTRAP_VERSION', '5.3.3');
+$htmxVersion = $envString('ASSET_HTMX_VERSION', '1.9.12');
+$bootstrapIconsVersion = $envString('ASSET_BOOTSTRAP_ICONS_VERSION', '1.11.3');
+
 return [
-    'base_url' => $envString('ASSETS_BASE_URL', '/assets'),
+    'base_url' => $assetBase,
     'version' => $envString('ASSETS_VERSION', $envString('APP_VERSION', '')),
     'cache_busting' => $envBool('ASSETS_CACHE_BUSTING', true),
+    'asset_base' => $assetBase,
+    'asset_vendor_base' => $assetVendorBase,
+    'asset_app_base' => $assetAppBase,
+    'versions' => [
+        'bootstrap' => $bootstrapVersion,
+        'htmx' => $htmxVersion,
+        'bootstrap_icons' => $bootstrapIconsVersion,
+    ],
+    'bootstrap_css' => $assetVendorBase . '/bootstrap/' . $bootstrapVersion . '/bootstrap.min.css',
+    'bootstrap_js' => $assetVendorBase . '/bootstrap/' . $bootstrapVersion . '/bootstrap.bundle.min.js',
+    'bootstrap_icons_css' => $assetVendorBase . '/bootstrap-icons/' . $bootstrapIconsVersion . '/bootstrap-icons.css',
+    'htmx_js' => $assetVendorBase . '/htmx/' . $htmxVersion . '/htmx.min.js',
+    'app_css' => $assetAppBase . '/app.css',
+    'app_js' => $assetAppBase . '/app.js',
+    'devtools_css' => $assetAppBase . '/devtools.css',
+    'devtools_js' => $assetAppBase . '/devtools.js',
+    'admin_css' => $assetBase . '/admin.css',
+    'admin_js' => $assetBase . '/admin.js',
     'css' => [
         'bootstrap' => [
-            'path' => 'vendor/bootstrap/bootstrap.min.css',
+            'path' => 'vendor/bootstrap/' . $bootstrapVersion . '/bootstrap.min.css',
         ],
         'bootstrap-icons' => [
-            'path' => 'vendor/bootstrap-icons/bootstrap-icons.min.css',
+            'path' => 'vendor/bootstrap-icons/' . $bootstrapIconsVersion . '/bootstrap-icons.css',
         ],
         'app' => [
             'path' => 'app/app.css',
@@ -41,11 +68,11 @@ return [
     ],
     'js' => [
         'htmx' => [
-            'path' => 'vendor/htmx/htmx.min.js',
+            'path' => 'vendor/htmx/' . $htmxVersion . '/htmx.min.js',
             'defer' => true,
         ],
         'bootstrap' => [
-            'path' => 'vendor/bootstrap/bootstrap.bundle.min.js',
+            'path' => 'vendor/bootstrap/' . $bootstrapVersion . '/bootstrap.bundle.min.js',
             'defer' => true,
         ],
         'app' => [

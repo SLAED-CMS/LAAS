@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use Laas\Auth\NullAuthService;
+use Laas\Assets\AssetsManager;
 use Laas\Database\DatabaseManager;
 use Laas\DevTools\DevToolsContext;
 use Laas\Http\Request;
@@ -39,6 +40,7 @@ final class DevToolsAssetsTest extends TestCase
         );
         $translator = new Translator($root, $theme, 'en');
         $assetConfig = require $root . '/config/assets.php';
+        $assets = (new AssetsManager($assetConfig))->all();
         $view = new View(
             $themeManager,
             $engine,
@@ -49,7 +51,8 @@ final class DevToolsAssetsTest extends TestCase
             new NullAuthService(),
             $settings,
             $root . '/storage/cache/templates',
-            $db
+            $db,
+            $assets
         );
 
         $session = new InMemorySession();

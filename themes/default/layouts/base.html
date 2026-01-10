@@ -5,18 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="{% csrf_token %}">
   <title>{% site_name %}</title>
-  {% asset_css "bootstrap" %}
-  {% asset_css "bootstrap-icons" %}
-  {% asset_css "app" %}
-  {% if devtools.enabled %}{% asset_css "devtools" %}{% endif %}
+  <link href="{% assets.bootstrap_css %}" rel="stylesheet">
+  <link href="{% assets.bootstrap_icons_css %}" rel="stylesheet">
+  <link href="{% assets.app_css %}" rel="stylesheet">
+  {% if devtools.enabled %}
+  {% if assets.devtools_css %}<link href="{% assets.devtools_css %}" rel="stylesheet">{% endif %}
+  {% endif %}
 </head>
 <body class="laas-theme-default" hx-headers='{"X-CSRF-Token":"{% csrf_token %}"}'>
   <main id="app" class="container py-3">
     {% block content %}{% endblock %}
   </main>
-  {% asset_js "htmx" %}
-  {% asset_js "bootstrap" %}
-  {% asset_js "app" %}
-  {% if devtools.enabled %}{% asset_js "devtools" %}{% endif %}
+  <script src="{% assets.htmx_js %}" defer></script>
+  <script src="{% assets.bootstrap_js %}" defer></script>
+  <script src="{% assets.app_js %}" defer></script>
+  {% if devtools.enabled %}
+  {% if assets.devtools_js %}<script src="{% assets.devtools_js %}" defer></script>{% endif %}
+  {% endif %}
 </body>
 </html>

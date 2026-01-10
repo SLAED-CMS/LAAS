@@ -40,6 +40,7 @@ use Laas\DevTools\DevToolsContext;
 use Laas\DevTools\RequestCollector;
 use Laas\DevTools\PerformanceCollector;
 use Laas\DevTools\DbCollector;
+use Laas\Assets\AssetsManager;
 use Laas\View\AssetManager;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
@@ -145,6 +146,8 @@ final class Kernel
             (bool) ($appConfig['debug'] ?? false)
         );
         $assetManager = new AssetManager($this->config['assets'] ?? []);
+        $assetsManager = new AssetsManager($this->config['assets'] ?? []);
+        $assets = $assetsManager->all();
         $view = new View(
             $themeManager,
             $templateEngine,
@@ -155,7 +158,8 @@ final class Kernel
             $authService,
             $settingsProvider,
             $this->rootPath . '/storage/cache/templates',
-            $this->database()
+            $this->database(),
+            $assets
         );
         $view->setRequest($request);
 
