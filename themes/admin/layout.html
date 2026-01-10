@@ -9,7 +9,7 @@
   <link href="{% assets.bootstrap_icons_css %}" rel="stylesheet">
   <link href="{% assets.app_css %}" rel="stylesheet">
   <link href="{% assets.admin_css %}" rel="stylesheet">
-  {% if devtools.enabled %}
+  {% if devtools.flags.enabled %}
   {% if assets.devtools_css %}<link href="{% assets.devtools_css %}" rel="stylesheet">{% endif %}
   {% endif %}
 </head>
@@ -27,7 +27,7 @@
   <script src="{% assets.bootstrap_js %}" defer></script>
   <script src="{% assets.app_js %}" defer></script>
   <script src="{% assets.admin_js %}" defer></script>
-  {% if devtools.enabled %}
+  {% if devtools.flags.enabled %}
   {% if assets.devtools_js %}<script src="{% assets.devtools_js %}" defer></script>{% endif %}
   {% endif %}
 </body>

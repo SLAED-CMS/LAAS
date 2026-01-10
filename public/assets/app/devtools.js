@@ -1,4 +1,5 @@
 (function () {
+  var errorsBound = false;
   function initDevtoolsCollapse(root) {
     var scope = root || document;
     if (!window.bootstrap || !window.bootstrap.Collapse) {
@@ -84,14 +85,14 @@
   }
 
   function initDevtoolsErrors() {
-    if (window.__laasDevtoolsErrorsBound) {
+    if (errorsBound) {
       return;
     }
     var root = document.getElementById('devtools-root');
     if (!root) {
       return;
     }
-    window.__laasDevtoolsErrorsBound = true;
+    errorsBound = true;
 
     var queue = [];
     var lastSent = 0;

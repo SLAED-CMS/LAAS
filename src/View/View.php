@@ -192,6 +192,8 @@ final class View
             $csrfToken = (new Csrf($session))->getToken();
         }
 
+        $devtoolsEnabled = $this->resolveDevtoolsEnabled();
+
         return [
             'csrf_token' => $csrfToken,
             '__translator' => $this->translator,
@@ -213,7 +215,10 @@ final class View
                 'is_htmx' => $this->request?->isHtmx() ?? false,
             ],
             'devtools' => [
-                'enabled' => $this->resolveDevtoolsEnabled(),
+                'enabled' => $devtoolsEnabled,
+                'flags' => [
+                    'enabled' => $devtoolsEnabled,
+                ],
             ],
         ];
     }
