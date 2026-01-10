@@ -136,4 +136,9 @@
 - HTMX validation errors return HTTP 422.
 - Unified messages partials and indicators.
 
+## Error IDs
+- Every JSON error response includes `error_id`.
+- Error details are not exposed to clients.
+- `error_id` is logged for correlation and support.
+
 **Last updated:** January 2026

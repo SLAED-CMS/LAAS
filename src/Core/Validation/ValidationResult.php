@@ -35,4 +35,25 @@ final class ValidationResult
 
         return (string) $this->errors[$field][0]['key'];
     }
+
+    /** @return array<string, array<int, string>> */
+    public function toErrorMap(): array
+    {
+        $out = [];
+        foreach ($this->errors as $field => $items) {
+            $keys = [];
+            foreach ($items as $item) {
+                $key = (string) ($item['key'] ?? '');
+                if ($key === '') {
+                    continue;
+                }
+                $keys[] = $key;
+            }
+            if ($keys !== []) {
+                $out[$field] = $keys;
+            }
+        }
+
+        return $out;
+    }
 }

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Laas\Http\Middleware;
 
-use Laas\Api\ApiResponse;
+use Laas\Http\ProblemDetails;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Psr\Log\LoggerInterface;
@@ -23,37 +23,16 @@ final class ErrorHandlerMiddleware implements MiddlewareInterface
         try {
             return $next($request);
         } catch (Throwable $e) {
+            $errorId = $this->generateErrorId();
             $this->logger->error($e->getMessage(), [
                 'exception' => $e,
                 'request_id' => $this->requestId,
+                'error_id' => $errorId,
             ]);
 
-            if (str_starts_with($request->getPath(), '/api/')) {
-                $details = [
-                    'request_id' => $this->requestId,
-                ];
-
-                if ($this->debug) {
-                    $details['message'] = $e->getMessage();
-                    $details['trace'] = $e->getTraceAsString();
-                }
-
-                return ApiResponse::error('internal_error', 'Internal Server Error', $details, 500)
-                    ->withHeader('X-Request-Id', $this->requestId);
-            }
-
             if ($request->expectsJson()) {
-                $payload = [
-                    'error' => 'internal_error',
-                    'request_id' => $this->requestId,
-                ];
-
-                if ($this->debug) {
-                    $payload['message'] = $e->getMessage();
-                    $payload['trace'] = $e->getTraceAsString();
-                }
-
-                return Response::json($payload, 500)
+                $problem = ProblemDetails::internalError($request, $errorId);
+                return Response::json($problem->toArray(), 500)
                     ->withHeader('X-Request-Id', $this->requestId);
             }
 
@@ -66,5 +45,10 @@ final class ErrorHandlerMiddleware implements MiddlewareInterface
                 'Content-Type' => 'text/plain; charset=utf-8',
             ]))->withHeader('X-Request-Id', $this->requestId);
         }
+    }
+
+    private function generateErrorId(): string
+    {
+        return 'ERR-' . strtoupper(bin2hex(random_bytes(6)));
     }
 }

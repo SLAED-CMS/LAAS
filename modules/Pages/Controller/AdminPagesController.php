@@ -9,6 +9,7 @@ use Laas\Core\Validation\Validator;
 use Laas\Core\Validation\ValidationResult;
 use Laas\Http\Request;
 use Laas\Http\Response;
+use Laas\Http\ProblemDetails;
 use Laas\Modules\Pages\Repository\PagesRepository;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Security\HtmlSanitizer;
@@ -451,6 +452,25 @@ final class AdminPagesController
             ]);
         }
 
+        if ($request->wantsJson()) {
+            $errorId = $this->generateErrorId();
+            if ($errors instanceof ValidationResult) {
+                $problem = ProblemDetails::validationFailed($request, $errors, $errorId);
+            } else {
+                $result = new ValidationResult();
+                foreach ($errors as $error) {
+                    $field = (string) ($error['field'] ?? 'form');
+                    $key = (string) ($error['key'] ?? '');
+                    if ($key !== '') {
+                        $result->addError($field, $key, $error['params'] ?? []);
+                    }
+                }
+                $problem = ProblemDetails::validationFailed($request, $result, $errorId);
+            }
+
+            return Response::json($problem->toArray(), 422);
+        }
+
         $isEdit = !empty($page['id']);
         $status = (string) ($page['status'] ?? 'draft');
         return $this->view->render('pages/page_form.html', [
@@ -535,6 +555,11 @@ final class AdminPagesController
             'updated_at_display' => $updatedAt !== '' ? $updatedAt : '-',
             'can_edit' => $canEdit,
         ];
+    }
+
+    private function generateErrorId(): string
+    {
+        return 'ERR-' . strtoupper(bin2hex(random_bytes(6)));
     }
 }
 

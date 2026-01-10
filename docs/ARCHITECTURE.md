@@ -937,6 +937,21 @@ public function render(string $template, array $data): string
 }
 ```
 
+### Errors: HTML vs HTMX vs JSON
+
+**HTML:**
+- Plain text error response for unhandled exceptions
+- Debug mode may include message/trace
+
+**HTMX:**
+- Validation errors return 422 + partial errors template
+- No full layout rendering for partial responses
+
+**JSON:**
+- Unhandled exceptions return ProblemDetails
+- Validation errors return 422 + ProblemDetails.errors
+- No stacktrace in JSON responses
+
 ### ThemeManager and Theme API v1
 
 **Theme API v1 contract:**
