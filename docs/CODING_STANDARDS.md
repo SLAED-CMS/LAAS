@@ -97,6 +97,12 @@
 - Don't: add inline `<script>`/`<style>` or `style=""`
 - Don't: use CDN links in templates
 
+## ViewModels
+- ViewModels implement `ViewModelInterface` and `toArray()`
+- Controllers may return ViewModel instances to `View::render()`
+- ViewModel data must be serializable to arrays only
+- Use ViewModels to stabilize contracts, not to render HTML
+
 ## Policy CI
 
 **Rules:**

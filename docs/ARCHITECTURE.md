@@ -851,6 +851,13 @@ public function runMiddleware(array $middleware, Request $request): Response
 - UI tokens (`state`, `status`, `variant`, `flags`) are mapped to classes in templates
 - Any `*_class` key in view data is treated as invalid
 
+### ViewModels
+
+- ViewModels implement `ViewModelInterface::toArray()`
+- Controllers may return ViewModel instances instead of raw arrays
+- View normalizes nested ViewModels recursively before rendering
+- ViewModels stabilize data contracts without DI container
+
 ### Template Compilation
 
 **Templates are compiled to PHP:**

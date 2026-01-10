@@ -17,6 +17,7 @@ use Laas\Support\Cache\CacheKey;
 use Laas\Support\RequestScope;
 use Laas\DevTools\DevToolsContext;
 use Laas\View\AssetManager;
+use Laas\View\ViewModelInterface;
 use Laas\View\Template\TemplateEngine;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Theme\ThemeManager;
@@ -54,12 +55,13 @@ final class View
 
     public function render(
         string $template,
-        array $data = [],
+        array|ViewModelInterface $data = [],
         int $status = 200,
         array $headers = [],
         array $options = []
     ): Response
     {
+        $data = $this->normalizeViewModels($data);
         $ctx = array_merge($this->globalContext(), $data);
         $devtoolsEnabled = $this->resolveDevtoolsEnabled();
         if (!isset($ctx['devtools']) || !is_array($ctx['devtools'])) {
@@ -158,7 +160,7 @@ final class View
         return new Response($html, $status, $headers);
     }
 
-    public function renderPartial(string $template, array $data = [], array $options = []): string
+    public function renderPartial(string $template, array|ViewModelInterface $data = [], array $options = []): string
     {
         $options = array_merge(['render_partial' => true], $options);
         $response = $this->render($template, $data, 200, [], $options);
@@ -266,6 +268,28 @@ final class View
             'username' => $user['username'] ?? null,
             'roles' => $roles,
         ];
+    }
+
+    private function normalizeViewModels(array|ViewModelInterface $data): array
+    {
+        if ($data instanceof ViewModelInterface) {
+            return $data->toArray();
+        }
+
+        $out = [];
+        foreach ($data as $key => $value) {
+        if ($value instanceof ViewModelInterface) {
+            $out[$key] = $value->toArray();
+            continue;
+        }
+            if (is_array($value)) {
+                $out[$key] = $this->normalizeViewModels($value);
+                continue;
+            }
+            $out[$key] = $value;
+        }
+
+        return $out;
     }
 
     private function resolveDevtoolsEnabled(): bool

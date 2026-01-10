@@ -7,6 +7,7 @@ use Laas\Database\DatabaseManager;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Pages\Repository\PagesRepository;
+use Laas\Modules\Pages\ViewModel\PagePublicViewModel;
 use Laas\Support\Search\Highlighter;
 use Laas\Support\Search\SearchNormalizer;
 use Laas\Support\Search\SearchQuery;
@@ -49,11 +50,8 @@ final class PagesController
             return $this->notFound();
         }
 
-        return $this->view->render('pages/page.html', [
-            'page' => $page,
-            'title' => (string) ($page['title'] ?? ''),
-            'content' => (string) ($page['content'] ?? ''),
-        ]);
+        $vm = PagePublicViewModel::fromArray($page);
+        return $this->view->render('pages/page.html', $vm);
     }
 
     public function search(Request $request): Response
