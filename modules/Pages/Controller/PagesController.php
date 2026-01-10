@@ -12,6 +12,8 @@ use Laas\Support\Search\Highlighter;
 use Laas\Support\Search\SearchNormalizer;
 use Laas\Support\Search\SearchQuery;
 use Laas\View\View;
+use Laas\View\Render\HtmlRenderAdapter;
+use Laas\View\Render\JsonRenderAdapter;
 use Throwable;
 
 final class PagesController
@@ -51,7 +53,12 @@ final class PagesController
         }
 
         $vm = PagePublicViewModel::fromArray($page);
-        return $this->view->render('pages/page.html', $vm);
+        if ($request->wantsJson()) {
+            $adapter = new JsonRenderAdapter();
+            return $adapter->render('pages/page.html', $vm);
+        }
+
+        return (new HtmlRenderAdapter($this->view))->render('pages/page.html', $vm);
     }
 
     public function search(Request $request): Response

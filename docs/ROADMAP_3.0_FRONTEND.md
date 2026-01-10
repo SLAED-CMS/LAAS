@@ -89,3 +89,4 @@ Checklist:
 - [ ] Ассет-слой единый, без inline/CND
 - [ ] Контракт JSON стабилен и покрыт тестами
 - [ ] Classic и Headless режимы поддерживаются параллельно
+Implemented in v2.8.0: RenderAdapter v1

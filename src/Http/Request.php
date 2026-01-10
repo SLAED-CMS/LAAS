@@ -119,6 +119,11 @@ final class Request
 
     public function wantsJson(): bool
     {
+        $format = $this->query['format'] ?? null;
+        if (is_string($format) && strtolower($format) === 'json') {
+            return true;
+        }
+
         $accept = $this->getHeader('accept') ?? '';
         if (stripos($accept, 'application/json') !== false) {
             return true;

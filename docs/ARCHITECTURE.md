@@ -952,6 +952,13 @@ public function render(string $template, array $data): string
 - Validation errors return 422 + ProblemDetails.errors
 - No stacktrace in JSON responses
 
+### RenderAdapter v1
+
+- Render adapters select output format without changing controllers
+- HTML adapter uses View/TemplateEngine
+- JSON adapter returns DTOs and tokens as JSON
+- Content negotiation uses `Accept: application/json` or `?format=json`
+
 ### ThemeManager and Theme API v1
 
 **Theme API v1 contract:**
