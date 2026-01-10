@@ -69,8 +69,13 @@ final class View
         } elseif (!array_key_exists('enabled', $ctx['devtools'])) {
             $ctx['devtools']['enabled'] = $devtoolsEnabled;
         }
-        if ($this->debug) {
-            $this->assertNoClassTokens($data);
+        $classKeys = $this->findClassTokenKeys($data);
+        if ($classKeys !== []) {
+            $message = 'View data contains forbidden key: ' . $classKeys[0];
+            error_log('[ui-tokens] ' . $message);
+            if ($this->debug) {
+                throw new \RuntimeException($message);
+            }
         }
         $renderOptions = [
             'render_partial' => $this->request?->isHtmx() ?? false,
@@ -226,9 +231,10 @@ final class View
         );
     }
 
-    private function assertNoClassTokens(array $data): void
+    private function findClassTokenKeys(array $data): array
     {
         $stack = [$data];
+        $found = [];
 
         while ($stack !== []) {
             $current = array_pop($stack);
@@ -238,13 +244,14 @@ final class View
 
             foreach ($current as $key => $value) {
                 if (is_string($key) && str_ends_with($key, '_class')) {
-                    throw new \RuntimeException('View data contains forbidden key: ' . $key);
+                    $found[] = $key;
                 }
                 if (is_array($value)) {
                     $stack[] = $value;
                 }
             }
         }
+        return $found;
     }
 
     private function buildUserContext(): array

@@ -127,3 +127,49 @@ After: flag
 ```php
 'row' => ['flash' => $flash]
 ```
+
+## First Migration
+
+### Pages status (admin)
+
+Backend (tokens):
+
+```php
+'ui' => [
+    'status' => $isPublished ? 'active' : 'inactive',
+    'severity' => $isPublished ? 'low' : 'medium',
+    'visibility' => $isPublished ? 'visible' : 'hidden',
+]
+```
+
+Template (mapping):
+
+```html
+{% if page.ui.status == 'active' %}
+  <span class="badge text-bg-success">Published</span>
+{% else %}
+  <span class="badge text-bg-secondary">Draft</span>
+{% endif %}
+```
+
+### Users status (admin)
+
+Backend (tokens):
+
+```php
+'ui' => [
+    'status' => $enabled ? 'active' : 'inactive',
+    'severity' => $enabled ? 'low' : 'high',
+    'visibility' => $enabled ? 'visible' : 'hidden',
+]
+```
+
+Template (mapping):
+
+```html
+{% if user.ui.status == 'active' %}
+  <span class="badge text-bg-success">Active</span>
+{% else %}
+  <span class="badge text-bg-secondary">Disabled</span>
+{% endif %}
+```

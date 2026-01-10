@@ -96,6 +96,13 @@ final class TemplateCompiler
             return "<?php endforeach; if ({$has}) { \$ctx['{$name}'] = {$prev}; } else { unset(\$ctx['{$name}']); } ?>";
         }
 
+        if (preg_match('/^if\s+([A-Za-z0-9_.]+)\s*(==|!=)\s*([\'"])([^\'"]+)\\3$/', $tag, $matches)) {
+            $key = $matches[1];
+            $op = $matches[2];
+            $value = $matches[4];
+            return "<?php if ((string) \$this->value(\$ctx, '{$key}') {$op} '{$value}'): ?>";
+        }
+
         if (preg_match('/^if\s+([A-Za-z0-9_.]+)$/', $tag, $matches)) {
             $key = $matches[1];
             return "<?php if (\$this->truthy(\$this->value(\$ctx, '{$key}'))): ?>";

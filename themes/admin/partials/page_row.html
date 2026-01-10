@@ -21,10 +21,14 @@
       <input type="hidden" name="_token" value="{% csrf_token %}">
       <input type="hidden" name="id" value="{% page.id %}">
       <button class="btn btn-outline-secondary btn-sm" type="submit" {% if page.can_edit %}{% else %}disabled{% endif %}>
-        {% if page.is_published %}
+        {% if page.ui.status == 'active' %}
         <span class="badge text-bg-success">{% t 'admin.pages.status.published' %}</span>
         {% else %}
-        <span class="badge text-bg-secondary">{% t 'admin.pages.status.draft' %}</span>
+          {% if page.is_published %}
+          <span class="badge text-bg-success">{% t 'admin.pages.status.published' %}</span>
+          {% else %}
+          <span class="badge text-bg-secondary">{% t 'admin.pages.status.draft' %}</span>
+          {% endif %}
         {% endif %}
       </button>
     </form>

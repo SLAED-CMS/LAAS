@@ -15,10 +15,14 @@
     {% endif %}
   </td>
   <td>
-    {% if user.status %}
+    {% if user.ui.status == 'active' %}
     <span class="badge text-bg-success">{% t 'admin.users.active' %}</span>
     {% else %}
-    <span class="badge text-bg-secondary">{% t 'admin.users.disabled' %}</span>
+      {% if user.status %}
+      <span class="badge text-bg-success">{% t 'admin.users.active' %}</span>
+      {% else %}
+      <span class="badge text-bg-secondary">{% t 'admin.users.disabled' %}</span>
+      {% endif %}
     {% endif %}
   </td>
   <td>
