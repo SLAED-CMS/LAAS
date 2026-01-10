@@ -16,12 +16,15 @@ const POLICY_CDN_HOSTS = [
     'googleapis',
 ];
 
-const POLICY_W3_PATTERNS = [
+const POLICY_W3A_PATTERNS = [
     '/[\'"][A-Za-z0-9_]*_class[\'"]\\s*=>/',
-    '/[\'"]class_[A-Za-z0-9_]+[\'"]\\s*=>/',
     '/\\[[\'"][A-Za-z0-9_]*_class[\'"]\\]\\s*=/',
     '/\\bstatus_class\\b\\s*=>/i',
     '/\\bbadge_class\\b\\s*=>/i',
+];
+
+const POLICY_W3B_PATTERNS = [
+    '/[\'"]class_[A-Za-z0-9_]+[\'"]\\s*=>/i',
 ];
 
 /**
@@ -68,6 +71,126 @@ function policy_check_paths(array $paths): array
     return $findings;
 }
 
+function policy_root_path(): string
+{
+    $root = realpath(__DIR__ . '/../');
+    return $root !== false ? $root : dirname(__DIR__, 1);
+}
+
+function policy_normalize_path(string $path): string
+{
+    $real = realpath($path);
+    $path = $real !== false ? $real : $path;
+    return str_replace('\\', '/', $path);
+}
+
+/**
+ * @return array<int, string>
+ */
+function policy_w3_excludes(): array
+{
+    $root = policy_root_path();
+    $excludes = [
+        $root . '/vendor',
+        $root . '/storage',
+        $root . '/public/assets',
+        $root . '/docs',
+        $root . '/themes',
+        $root . '/tests/fixtures',
+    ];
+
+    $configPath = $root . '/config/policy.php';
+    if (is_file($configPath)) {
+        $config = require $configPath;
+        if (is_array($config)) {
+            $extra = $config['w3_exclude'] ?? [];
+            if (is_array($extra)) {
+                $excludes = array_merge($excludes, $extra);
+            }
+        }
+    }
+
+    $env = $_ENV['POLICY_W3_EXCLUDE'] ?? '';
+    if (is_string($env) && trim($env) !== '') {
+        $parts = array_filter(array_map('trim', explode(',', $env)));
+        foreach ($parts as $part) {
+            if ($part === '') {
+                continue;
+            }
+            if (!str_starts_with($part, '/') && !preg_match('/^[A-Za-z]:[\\/]/', $part)) {
+                $part = $root . '/' . $part;
+            }
+            $excludes[] = $part;
+        }
+    }
+
+    return array_map('policy_normalize_path', $excludes);
+}
+
+function policy_w3_is_excluded(string $path): bool
+{
+    $path = policy_normalize_path($path);
+    foreach (policy_w3_excludes() as $exclude) {
+        $exclude = rtrim($exclude, '/');
+        if ($exclude === '') {
+            continue;
+        }
+        if ($path === $exclude || str_starts_with($path, $exclude . '/')) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function policy_strip_comments_and_heredoc(string $contents): string
+{
+    $tokens = token_get_all($contents);
+    $out = '';
+    $inHeredoc = false;
+    foreach ($tokens as $token) {
+        if (is_array($token)) {
+            $id = $token[0];
+            $text = $token[1];
+            if ($id === T_START_HEREDOC) {
+                $inHeredoc = true;
+                continue;
+            }
+            if ($id === T_END_HEREDOC) {
+                $inHeredoc = false;
+                continue;
+            }
+            if ($inHeredoc) {
+                continue;
+            }
+            if ($id === T_COMMENT || $id === T_DOC_COMMENT) {
+                continue;
+            }
+            $out .= $text;
+            continue;
+        }
+        if ($inHeredoc) {
+            continue;
+        }
+        $out .= $token;
+    }
+    return $out;
+}
+
+function policy_env_bool(string $key, bool $default): bool
+{
+    $value = $_ENV[$key] ?? null;
+    if ($value === null || $value === '') {
+        return $default;
+    }
+    $parsed = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    return $parsed ?? $default;
+}
+
+function policy_strict(): bool
+{
+    return policy_env_bool('POLICY_STRICT', false);
+}
+
 /**
  * @param array<int, string> $paths
  * @return array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>
@@ -94,11 +217,18 @@ function policy_check_php_paths(array $paths): array
                 if (strtolower($file->getExtension()) !== 'php') {
                     continue;
                 }
-                $findings = array_merge($findings, policy_check_php_file($file->getPathname()));
+                $filePath = $file->getPathname();
+                if (policy_w3_is_excluded($filePath)) {
+                    continue;
+                }
+                $findings = array_merge($findings, policy_check_php_file($filePath));
             }
             continue;
         }
         if (strtolower(pathinfo($path, PATHINFO_EXTENSION)) === 'php') {
+            if (policy_w3_is_excluded($path)) {
+                continue;
+            }
             $findings = array_merge($findings, policy_check_php_file($path));
         }
     }
@@ -117,12 +247,23 @@ function policy_check_php_file(string $path): array
     }
 
     $findings = [];
-    foreach (POLICY_W3_PATTERNS as $pattern) {
-        if (preg_match_all($pattern, $contents, $matches, PREG_OFFSET_CAPTURE) <= 0) {
+    $scanned = policy_strip_comments_and_heredoc($contents);
+
+    foreach (POLICY_W3A_PATTERNS as $pattern) {
+        if (preg_match_all($pattern, $scanned, $matches, PREG_OFFSET_CAPTURE) <= 0) {
             continue;
         }
         foreach ($matches[0] as $match) {
-            $findings[] = policy_make_finding('warning', 'W3', $path, $match[1], 'Presentation leak in PHP data', $contents);
+            $findings[] = policy_make_finding('warning', 'W3a', $path, $match[1], 'Presentation leak in PHP data (explicit class key)', $contents);
+        }
+    }
+
+    foreach (POLICY_W3B_PATTERNS as $pattern) {
+        if (preg_match_all($pattern, $scanned, $matches, PREG_OFFSET_CAPTURE) <= 0) {
+            continue;
+        }
+        foreach ($matches[0] as $match) {
+            $findings[] = policy_make_finding('warning', 'W3b', $path, $match[1], 'Presentation leak in PHP data (suspicious key)', $contents);
         }
     }
 
@@ -268,7 +409,17 @@ function policy_analyze(array $paths): array
  */
 function policy_exit_code(array $analysis): int
 {
-    return count($analysis['errors']) > 0 ? 1 : 0;
+    if (count($analysis['errors']) > 0) {
+        return 1;
+    }
+    if (policy_strict()) {
+        foreach ($analysis['warnings'] as $warning) {
+            if (($warning['code'] ?? '') === 'W3a') {
+                return 1;
+            }
+        }
+    }
+    return 0;
 }
 
 /**
@@ -288,13 +439,18 @@ function policy_run(array $paths): int
 
     $errorsCount = count($analysis['errors']);
     $warningsCount = count($analysis['warnings']);
-    $w3Count = 0;
+    $w3aCount = 0;
+    $w3bCount = 0;
     foreach ($analysis['warnings'] as $warning) {
-        if (($warning['code'] ?? '') === 'W3') {
-            $w3Count++;
+        $code = (string) ($warning['code'] ?? '');
+        if ($code === 'W3a') {
+            $w3aCount++;
+        }
+        if ($code === 'W3b') {
+            $w3bCount++;
         }
     }
-    echo 'Summary: errors=' . $errorsCount . ' warnings=' . $warningsCount . ' w3=' . $w3Count . "\n";
+    echo 'Summary: errors=' . $errorsCount . ' warnings=' . $warningsCount . ' w3a=' . $w3aCount . ' w3b=' . $w3bCount . "\n";
 
     return policy_exit_code($analysis);
 }
