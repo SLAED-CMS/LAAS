@@ -101,6 +101,12 @@ http://laas.loc/
 - Public Pages default to JSON unless `?format=html` is set
 - API redirects return JSON: `{ "redirect_to": "/path" }`
 
+## Frontend-agnostic modes
+
+- JSON by default: `HEADLESS_MODE=true`
+- Force JSON: `Accept: application/json`
+- Force HTML: `?format=html`
+
 ## Migration notes
 
 ### Writing new modules

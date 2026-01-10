@@ -1,6 +1,10 @@
 # LAAS Versions
 
-- Planned: 3.0 frontend-agnostic
+- v3.0.0: Frontend-agnostic implemented
+  - RenderAdapter v1 (HTML/JSON)
+  - Content negotiation via Accept / ?format
+  - Headless mode toggle (JSON by default)
+  - Problem Details for JSON errors
 
 - v2.4.2: Asset Architecture & Frontend Separation (in development)
   - AssetManager with buildCss/buildJs helpers
