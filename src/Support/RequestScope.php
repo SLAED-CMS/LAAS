@@ -16,6 +16,11 @@ final class RequestScope
         self::$request = $request;
     }
 
+    public static function getRequest(): ?Request
+    {
+        return self::$request;
+    }
+
     public static function reset(): void
     {
         self::$keys = [];

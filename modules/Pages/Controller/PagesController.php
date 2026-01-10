@@ -53,7 +53,9 @@ final class PagesController
         }
 
         $vm = PagePublicViewModel::fromArray($page);
-        if ($request->wantsJson()) {
+        $format = strtolower((string) ($request->query('format') ?? ''));
+        $forceHtml = $format === 'html';
+        if (!$forceHtml && ($request->wantsJson() || $request->isHeadless())) {
             $adapter = new JsonRenderAdapter();
             return $adapter->render('pages/page.html', $vm);
         }

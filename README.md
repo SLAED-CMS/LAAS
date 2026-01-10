@@ -95,6 +95,12 @@ http://laas.loc/
 - `*_class` is forbidden in view data
 - Templates map tokens to CSS classes via `if/else`
 
+## Headless mode
+
+- Enable with `HEADLESS_MODE=true` in `.env`
+- Public Pages default to JSON unless `?format=html` is set
+- API redirects return JSON: `{ "redirect_to": "/path" }`
+
 ## Migration notes
 
 ### Writing new modules

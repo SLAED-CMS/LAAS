@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Laas\Http;
 
+use Laas\Support\RequestScope;
+
 final class Response
 {
     public function __construct(
@@ -33,6 +35,21 @@ final class Response
 
     public function send(): void
     {
+        $request = RequestScope::getRequest();
+        $location = $this->getHeader('Location');
+        if ($request !== null && $request->isHeadless() && $request->wantsJson() && $location !== null) {
+            if ($this->status >= 300 && $this->status < 400) {
+                $body = json_encode(['redirect_to' => $location], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                if ($body === false) {
+                    $body = '{}';
+                }
+                http_response_code(200);
+                header('Content-Type: application/json; charset=utf-8', true);
+                echo $body;
+                return;
+            }
+        }
+
         http_response_code($this->status);
         foreach ($this->headers as $name => $value) {
             $replace = strtolower($name) !== 'set-cookie';

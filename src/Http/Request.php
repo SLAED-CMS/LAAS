@@ -147,6 +147,16 @@ final class Request
         return strtolower((string) ($this->getHeader('hx-request') ?? '')) === 'true';
     }
 
+    public function isHeadless(): bool
+    {
+        $value = $_ENV['HEADLESS_MODE'] ?? null;
+        if ($value === null || $value === '') {
+            return false;
+        }
+        $parsed = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        return $parsed ?? false;
+    }
+
     public function getBody(): string
     {
         return $this->body;

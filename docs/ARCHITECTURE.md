@@ -959,6 +959,12 @@ public function render(string $template, array $data): string
 - JSON adapter returns DTOs and tokens as JSON
 - Content negotiation uses `Accept: application/json` or `?format=json`
 
+### Headless mode rules
+
+- `HEADLESS_MODE=true` switches public Pages to JSON by default
+- Use `?format=html` to force HTML on public Pages
+- API requests with redirects return JSON `{ "redirect_to": "/path" }`
+
 ### ThemeManager and Theme API v1
 
 **Theme API v1 contract:**
