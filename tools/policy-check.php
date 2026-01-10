@@ -334,6 +334,12 @@ function policy_check_file(string $path): array
         }
     }
 
+    if (preg_match_all('/https:\\/\\/cdn\\./i', $contents, $matches, PREG_OFFSET_CAPTURE) > 0) {
+        foreach ($matches[0] as $match) {
+            $findings[] = policy_make_finding('warning', 'W4', $path, $match[1], 'CDN link in template', $contents);
+        }
+    }
+
     return $findings;
 }
 
@@ -441,6 +447,7 @@ function policy_run(array $paths): int
     $warningsCount = count($analysis['warnings']);
     $w3aCount = 0;
     $w3bCount = 0;
+    $w4Count = 0;
     foreach ($analysis['warnings'] as $warning) {
         $code = (string) ($warning['code'] ?? '');
         if ($code === 'W3a') {
@@ -449,8 +456,11 @@ function policy_run(array $paths): int
         if ($code === 'W3b') {
             $w3bCount++;
         }
+        if ($code === 'W4') {
+            $w4Count++;
+        }
     }
-    echo 'Summary: errors=' . $errorsCount . ' warnings=' . $warningsCount . ' w3a=' . $w3aCount . ' w3b=' . $w3bCount . "\n";
+    echo 'Summary: errors=' . $errorsCount . ' warnings=' . $warningsCount . ' w3a=' . $w3aCount . ' w3b=' . $w3bCount . ' w4=' . $w4Count . "\n";
 
     return policy_exit_code($analysis);
 }
