@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "author": "LAAS CMS",
   "layouts": {
-    "base": "layouts/admin.html",
+    "base": "layouts/base.html",
     "admin": "layouts/admin.html"
   },
   "assets_profile": "admin"

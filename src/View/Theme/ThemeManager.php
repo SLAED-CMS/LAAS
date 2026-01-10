@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Laas\View\Theme;
 
+use Laas\DevTools\DevToolsContext;
+use Laas\Support\RequestScope;
 use Laas\Settings\SettingsProvider;
 use RuntimeException;
 
@@ -91,18 +93,42 @@ final class ThemeManager
 
     public function getLayoutPath(string $key = 'base', ?string $theme = null): string
     {
+        $theme = $theme ?? $this->defaultTheme;
+        $themePath = $this->themePath($theme);
         $config = $this->getThemeConfig($theme);
-        if ($config === []) {
-            return 'layout.html';
+
+        $candidates = [];
+        if ($key === 'base') {
+            $candidates[] = 'layouts/base.html';
+        }
+        if ($config !== []) {
+            $layouts = $config['layouts'] ?? [];
+            $layout = $layouts[$key] ?? '';
+            if (is_string($layout) && $layout !== '') {
+                $candidates[] = $layout;
+            }
+        }
+        $candidates[] = 'layout.html';
+        if ($theme === $this->getAdminTheme()) {
+            $candidates[] = 'admin.html';
+        }
+        $candidates[] = 'layouts/layout.html';
+
+        $usedFallback = false;
+        foreach ($this->uniqueCandidates($candidates) as $candidate) {
+            $path = $themePath . '/' . ltrim($candidate, '/\\');
+            if (is_file($path)) {
+                if ($key === 'base' && $candidate !== 'layouts/base.html') {
+                    $usedFallback = true;
+                }
+                if ($usedFallback) {
+                    $this->warnDeprecatedLayout($theme, $candidate);
+                }
+                return $candidate;
+            }
         }
 
-        $layouts = $config['layouts'] ?? [];
-        $layout = $layouts[$key] ?? '';
-        if (!is_string($layout) || $layout === '') {
-            return 'layout.html';
-        }
-
-        return $layout;
+        return 'layout.html';
     }
 
     public function basePath(): string
@@ -133,11 +159,44 @@ final class ThemeManager
             return false;
         }
 
-        return is_file($path . '/layout.html') || is_file($path . '/theme.json');
+        return is_file($path . '/layouts/base.html') || is_file($path . '/layout.html') || is_file($path . '/theme.json');
     }
 
     private function themePath(string $theme): string
     {
         return rtrim($this->themesRoot, '/\\') . '/' . $theme;
+    }
+
+    /**
+     * @param array<int, string> $candidates
+     * @return array<int, string>
+     */
+    private function uniqueCandidates(array $candidates): array
+    {
+        $out = [];
+        $seen = [];
+        foreach ($candidates as $candidate) {
+            $candidate = (string) $candidate;
+            if ($candidate === '') {
+                continue;
+            }
+            if (isset($seen[$candidate])) {
+                continue;
+            }
+            $seen[$candidate] = true;
+            $out[] = $candidate;
+        }
+        return $out;
+    }
+
+    private function warnDeprecatedLayout(string $theme, string $layout): void
+    {
+        $message = 'Theme layout fallback used for ' . $theme . ': ' . $layout;
+        error_log('[theme] ' . $message);
+
+        $context = RequestScope::get('devtools.context');
+        if ($context instanceof DevToolsContext && (bool) $context->getFlag('debug', false)) {
+            $context->addWarning('theme_layout_deprecated', $message);
+        }
     }
 }
