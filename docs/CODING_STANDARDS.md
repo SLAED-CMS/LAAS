@@ -65,6 +65,10 @@
 - Standard structure: `layouts/`, `pages/`, `partials/`
 - Templates continue to support legacy `layout.html`
 - Use global variables: `app.*`, `user.*`, `csrf_token`, `locale`, `assets`, `t()`
+- Spec: `docs/THEME_API.md`
+
+## Theme rules
+- Theme is the only place where CSS/HTMX/JS attributes exist
 
 ## UI Tokens
 - PHP returns only UI tokens: `state`, `status`, `variant`, `flags`
@@ -72,6 +76,10 @@
 - Mapping from tokens to CSS happens in templates
 - Spec: `docs/UI_TOKENS.md`
 - Backend returns only `state`/tokens/`flags` and no CSS/HTMX/JS attributes
+
+## UI tokens vs presentation
+- Tokens define state, not styling
+- Templates map tokens to classes and attributes
 
 **Allowed keys (examples):**
 - `status`: `ok | degraded | down`, `active | disabled`, `public | private`
@@ -115,6 +123,7 @@
 - R4: Do not build `hx-*` attributes in PHP (recommendation, not enforced yet)
 - W1: Inline `onclick=` attribute (warning only)
 - W2: Inline `style="..."` attribute (warning only)
+- W3: Presentation leaks in PHP (warning only)
 
 **Local run:**
 ```

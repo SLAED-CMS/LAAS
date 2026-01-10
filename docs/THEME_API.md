@@ -1,71 +1,75 @@
 # Theme API v1
 
-## Overview
+## Purpose / Goals
 
-Theme API v1 standardizes theme metadata, layout mapping, and global template variables.
-It is backward-compatible with existing themes that only provide `layout.html`.
+- Зафиксировать контракт между backend и темами.
+- Обеспечить предсказуемость глобальных переменных и шаблонов.
+- Разделить UI (темы) и данные (backend).
+- Сохранить совместимость с legacy темами.
 
-## theme.json
+## Theme Structure
 
-Location: `themes/<theme>/theme.json`
+Обязательные файлы и каталоги:
+- `themes/<theme>/theme.json`
+- `themes/<theme>/layouts/base.html`
+- `themes/<theme>/layouts/*`
+- `themes/<theme>/pages/*`
+- `themes/<theme>/partials/*`
 
-Required fields:
-- `name`
-- `version`
-- `author`
-- `layouts.base` (path to base layout within the theme)
+Допускается legacy:
+- `themes/<theme>/layout.html` (fallback)
 
-Optional fields:
-- `layouts.admin`
-- `assets_profile` (`default` or `admin`)
+## Provided variables (globals)
 
-Example:
-```json
-{
-  "name": "default",
-  "version": "1.0.0",
-  "author": "LAAS CMS",
-  "layouts": {
-    "base": "layouts/base.html",
-    "admin": "layouts/admin.html"
-  },
-  "assets_profile": "default"
-}
-```
-
-## Theme structure (v1)
-
-Standard structure:
-- `layouts/`
-- `pages/`
-- `partials/`
-
-Module overrides are allowed but not required.
-Legacy themes without `theme.json` continue to work.
-
-## Layout mapping
-
-`layouts.base` is required and validated at runtime when `theme.json` exists.
-If `theme.json` is missing, the system falls back to `layout.html`.
-
-## Global template variables
-
-Guaranteed globals:
-- `app.name`
-- `app.version`
-- `app.env`
-- `user.id`
-- `user.username`
-- `user.roles`
+Гарантированные переменные:
+- `app.name`, `app.version`, `app.env`, `app.debug`
+- `user.id`, `user.username`, `user.roles`
 - `csrf_token`
+- `assets` и asset helpers
 - `locale`
-- `t()` (translator helper)
-- `assets` (asset manager instance)
+- `t()` (i18n)
 
-`flash` is available when provided by controller data.
+## UI Tokens contract
 
-## Compatibility
+Токены, которые уже используются:
+- `status`
+- `variant`
+- `severity`
+- `enabled`
+- `visibility`
+- `size`
 
-- No changes required for existing templates.
-- `layout.html` remains valid.
-- Theme API v1 adds metadata for future theme tooling.
+Правила расширения:
+- Новые токены добавляются без изменения существующих.
+- Значения токенов — enum, не менять смысл без миграции.
+- Маппинг в классы — только в шаблонах.
+
+## Slots & blocks
+
+Обязательный слот:
+- `content`
+
+Опциональные слоты:
+- `header`
+- `footer`
+- `sidebar`
+
+## HTMX rules
+
+- `hx-*` атрибуты могут быть только в templates.
+- Partial rendering: для HTMX запросов возвращается только контент блока.
+- Layout не рендерится для HTMX partial.
+
+## Forbidden
+
+- `*_class` из PHP
+- inline style
+- inline JS
+- CDN in templates
+
+## Migration notes
+
+- Добавить `theme.json` и указать `layouts.base`.
+- Перенести layout в `layouts/base.html`.
+- Вынести общие фрагменты в `partials/*`.
+- Убедиться, что все классы и `hx-*` живут только в templates.
