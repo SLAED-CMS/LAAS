@@ -3,9 +3,11 @@ declare(strict_types=1);
 
 use Laas\Auth\NullAuthService;
 use Laas\Database\DatabaseManager;
+use Laas\DevTools\DevToolsContext;
 use Laas\Http\Request;
 use Laas\I18n\Translator;
 use Laas\Settings\SettingsProvider;
+use Laas\Support\RequestScope;
 use Laas\View\AssetManager;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
@@ -14,9 +16,9 @@ use Laas\View\View;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\InMemorySession;
 
-final class ViewPolicyGuardTest extends TestCase
+final class UiTokensEnforcementTest extends TestCase
 {
-    public function testViewRejectsClassKeysWhenDebug(): void
+    public function testClassKeyProducesWarningInDevTools(): void
     {
         $root = dirname(__DIR__);
         $db = new DatabaseManager(['driver' => 'sqlite', 'database' => ':memory:']);
@@ -30,7 +32,7 @@ final class ViewPolicyGuardTest extends TestCase
         $engine = new TemplateEngine(
             $themeManager,
             new TemplateCompiler(),
-            $root . '/storage/cache/templates',
+            $root . '/storage/cache/templates-tests',
             true
         );
         $translator = new Translator($root, 'default', 'en');
@@ -43,7 +45,7 @@ final class ViewPolicyGuardTest extends TestCase
             new AssetManager([]),
             new NullAuthService(),
             $settings,
-            $root . '/storage/cache/templates',
+            $root . '/storage/cache/templates-tests',
             $db
         );
 
@@ -52,10 +54,15 @@ final class ViewPolicyGuardTest extends TestCase
         $request = new Request('GET', '/', [], [], [], '', $session);
         $view->setRequest($request);
 
-        $view->render('layout.html', [
-            'bad_class' => 'text-bg-success',
+        $context = new DevToolsContext(['enabled' => true, 'request_id' => 'test']);
+        RequestScope::set('devtools.context', $context);
+
+        $response = $view->render('layout.html', [
+            'foo_class' => 'text-bg-success',
         ]);
 
-        $this->assertTrue(true);
+        $this->assertStringContainsString('<!doctype html>', $response->getBody());
+        $warnings = $context->getWarnings();
+        $this->assertNotEmpty($warnings);
     }
 }

@@ -27,6 +27,7 @@ final class DevToolsContext
     private array $response = [];
     private array $media = [];
     private array $jsErrors = [];
+    private array $customWarnings = [];
 
     public function __construct(array $flags)
     {
@@ -111,6 +112,22 @@ final class DevToolsContext
     public function setMedia(array $data): void
     {
         $this->media = $data;
+    }
+
+    public function addWarning(string $code, string $message): void
+    {
+        if (!($this->flags['enabled'] ?? false)) {
+            return;
+        }
+        $this->customWarnings[] = [
+            'code' => $code,
+            'message' => $message,
+        ];
+    }
+
+    public function getWarnings(): array
+    {
+        return $this->customWarnings;
     }
 
     public function addExternalCall(string $method, string $url, int $status, float $durationMs): void
@@ -325,6 +342,14 @@ final class DevToolsContext
         if ($duplicateCount > 0) {
             $warnings[] = 'duplicate_sql';
         }
+        if ($this->customWarnings !== []) {
+            foreach ($this->customWarnings as $custom) {
+                $code = (string) ($custom['code'] ?? '');
+                if ($code !== '' && !in_array($code, $warnings, true)) {
+                    $warnings[] = $code;
+                }
+            }
+        }
 
         $errors = [];
         $status = (int) ($this->response['status'] ?? 0);
@@ -492,6 +517,7 @@ final class DevToolsContext
             'external' => $external,
             'cache' => $cache,
             'warnings' => $warnings,
+            'custom_warnings' => $this->customWarnings,
             'errors' => $errors,
             'errors_count' => count($errors),
             'issues' => $issues,

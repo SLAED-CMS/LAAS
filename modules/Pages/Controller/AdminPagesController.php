@@ -17,6 +17,7 @@ use Laas\Support\AuditLogger;
 use Laas\Support\Search\Highlighter;
 use Laas\Support\Search\SearchNormalizer;
 use Laas\Support\Search\SearchQuery;
+use Laas\Ui\UiTokenMapper;
 use Laas\View\View;
 use Throwable;
 
@@ -537,9 +538,9 @@ final class AdminPagesController
         $status = (string) ($page['status'] ?? 'draft');
         $isPublished = $status === 'published';
         $updatedAt = (string) ($page['updated_at'] ?? '');
-        $uiStatus = $isPublished ? 'active' : 'inactive';
-        $uiVisibility = $isPublished ? 'visible' : 'hidden';
-        $uiSeverity = $isPublished ? 'low' : 'medium';
+        $ui = UiTokenMapper::mapPageRow([
+            'status' => $status,
+        ]);
 
         $title = (string) ($page['title'] ?? '');
         $slug = (string) ($page['slug'] ?? '');
@@ -557,11 +558,7 @@ final class AdminPagesController
             'updated_at' => $updatedAt,
             'updated_at_display' => $updatedAt !== '' ? $updatedAt : '-',
             'can_edit' => $canEdit,
-            'ui' => [
-                'status' => $uiStatus,
-                'severity' => $uiSeverity,
-                'visibility' => $uiVisibility,
-            ],
+            'ui' => $ui,
         ];
     }
 

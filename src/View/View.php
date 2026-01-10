@@ -74,7 +74,7 @@ final class View
             $message = 'View data contains forbidden key: ' . $classKeys[0];
             error_log('[ui-tokens] ' . $message);
             if ($this->debug) {
-                throw new \RuntimeException($message);
+                $this->recordUiWarning($message);
             }
         }
         $renderOptions = [
@@ -243,7 +243,7 @@ final class View
             }
 
             foreach ($current as $key => $value) {
-                if (is_string($key) && str_ends_with($key, '_class')) {
+                if (is_string($key) && (str_ends_with($key, '_class') || str_contains($key, 'class_'))) {
                     $found[] = $key;
                 }
                 if (is_array($value)) {
@@ -252,6 +252,14 @@ final class View
             }
         }
         return $found;
+    }
+
+    private function recordUiWarning(string $message): void
+    {
+        $context = RequestScope::get('devtools.context');
+        if ($context instanceof DevToolsContext) {
+            $context->addWarning('ui_tokens_class', $message);
+        }
     }
 
     private function buildUserContext(): array

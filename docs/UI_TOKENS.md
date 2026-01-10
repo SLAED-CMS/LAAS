@@ -57,6 +57,12 @@
 - Values are enums in `snake_case`
 - No CSS classes in values
 
+## Token Stability Rules
+
+- Token keys are stable once introduced.
+- Token values are enums; do not change semantics without migration notes.
+- Add new tokens instead of repurposing existing ones.
+
 ## Examples
 
 ### Backend returns tokens
@@ -89,6 +95,11 @@ return $view->render('pages/status.html', [
 - inline style in templates
 - inline JS in templates
 - CDN usage in templates
+
+## Enforcement
+
+- `*_class` is forbidden in PHP view data.
+- Enforcement emits a warning (log + DevTools in debug).
 
 ## Migration guide
 

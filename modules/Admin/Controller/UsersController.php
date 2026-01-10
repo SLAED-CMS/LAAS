@@ -12,6 +12,7 @@ use Laas\Support\AuditLogger;
 use Laas\Support\Search\Highlighter;
 use Laas\Support\Search\SearchNormalizer;
 use Laas\Support\Search\SearchQuery;
+use Laas\Ui\UiTokenMapper;
 use Laas\View\View;
 use Throwable;
 
@@ -354,14 +355,13 @@ final class UsersController
     {
         $id = (int) ($user['id'] ?? 0);
         $status = (int) ($user['status'] ?? 0);
-        $enabled = $status === 1;
         $protected = $currentUserId !== null && $id === $currentUserId;
         $lastLogin = (string) ($user['last_login_at'] ?? '');
         $username = (string) ($user['username'] ?? '');
         $email = (string) ($user['email'] ?? '');
-        $uiStatus = $enabled ? 'active' : 'inactive';
-        $uiVisibility = $enabled ? 'visible' : 'hidden';
-        $uiSeverity = $enabled ? 'low' : 'high';
+        $ui = UiTokenMapper::mapUserRow([
+            'status' => $status,
+        ]);
 
         return [
             'id' => $id,
@@ -373,11 +373,7 @@ final class UsersController
             'is_admin' => $isAdmin,
             'protected' => $protected,
             'last_login_at' => $lastLogin !== '' ? $lastLogin : '-',
-            'ui' => [
-                'status' => $uiStatus,
-                'severity' => $uiSeverity,
-                'visibility' => $uiVisibility,
-            ],
+            'ui' => $ui,
         ];
     }
 
