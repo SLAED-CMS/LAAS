@@ -21,6 +21,7 @@ use Laas\View\ViewModelInterface;
 use Laas\View\Template\TemplateEngine;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Theme\ThemeManager;
+use Laas\Ui\PresentationLeakDetector;
 
 final class View
 {
@@ -42,11 +43,15 @@ final class View
         $this->themesRoot = $themeManager->getThemesRoot();
         $this->cachePath = $cachePath;
         $this->debug = (bool) ($appConfig['debug'] ?? false);
+        $this->enforceUiTokens = (bool) ($appConfig['enforce_ui_tokens'] ?? false);
+        $this->env = (string) ($appConfig['env'] ?? '');
     }
 
     private string $defaultTheme;
     private string $themesRoot;
     private bool $debug;
+    private bool $enforceUiTokens;
+    private string $env;
 
     public function setRequest(Request $request): void
     {
@@ -69,13 +74,9 @@ final class View
         } elseif (!array_key_exists('enabled', $ctx['devtools'])) {
             $ctx['devtools']['enabled'] = $devtoolsEnabled;
         }
-        $classKeys = $this->findClassTokenKeys($data);
-        if ($classKeys !== []) {
-            $message = 'View data contains forbidden key: ' . $classKeys[0];
-            error_log('[ui-tokens] ' . $message);
-            if ($this->debug) {
-                $this->recordUiWarning($message);
-            }
+        $warnings = PresentationLeakDetector::detectArray($data);
+        if ($warnings !== []) {
+            $this->handlePresentationWarnings($warnings);
         }
         $renderOptions = [
             'render_partial' => $this->request?->isHtmx() ?? false,
@@ -231,35 +232,36 @@ final class View
         );
     }
 
-    private function findClassTokenKeys(array $data): array
-    {
-        $stack = [$data];
-        $found = [];
-
-        while ($stack !== []) {
-            $current = array_pop($stack);
-            if (!is_array($current)) {
-                continue;
-            }
-
-            foreach ($current as $key => $value) {
-                if (is_string($key) && (str_ends_with($key, '_class') || str_contains($key, 'class_'))) {
-                    $found[] = $key;
-                }
-                if (is_array($value)) {
-                    $stack[] = $value;
-                }
-            }
-        }
-        return $found;
-    }
-
-    private function recordUiWarning(string $message): void
+    /**
+     * @param array<int, array{key: string, path: string, code: string}> $warnings
+     */
+    private function handlePresentationWarnings(array $warnings): void
     {
         $context = RequestScope::get('devtools.context');
-        if ($context instanceof DevToolsContext) {
-            $context->addWarning('ui_tokens_class', $message);
+        foreach ($warnings as $warning) {
+            $path = (string) ($warning['path'] ?? '');
+            $code = (string) ($warning['code'] ?? 'presentation_leak');
+            $message = 'Presentation key in view data: ' . $path;
+            error_log('[ui-tokens] ' . $message);
+            if ($this->debug && $context instanceof DevToolsContext) {
+                $context->addWarning($code, $message);
+            }
         }
+
+        if ($this->shouldThrowOnPresentationLeak()) {
+            throw new \DomainException('Presentation keys detected in view data');
+        }
+    }
+
+    private function shouldThrowOnPresentationLeak(): bool
+    {
+        if (!$this->enforceUiTokens) {
+            return false;
+        }
+        if (!$this->debug) {
+            return false;
+        }
+        return strtolower($this->env) !== 'prod';
     }
 
     private function buildUserContext(): array

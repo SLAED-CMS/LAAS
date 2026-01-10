@@ -216,6 +216,12 @@ final class TemplateEngine
         if (!$needsCompile && $this->debug) {
             $needsCompile = filemtime($templatePath) > filemtime($cacheFile);
         }
+        if (!$needsCompile && !$this->debug) {
+            $cached = @file_get_contents($cacheFile);
+            if (is_string($cached) && str_contains($cached, '{%')) {
+                $needsCompile = true;
+            }
+        }
 
         if ($needsCompile) {
             $source = (string) file_get_contents($templatePath);

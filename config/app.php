@@ -46,6 +46,7 @@ return [
     'admin_seed_enabled' => $envBool('ADMIN_SEED_ENABLED', true),
     'admin_seed_password' => $envString('ADMIN_SEED_PASSWORD', 'change-me'),
     'read_only' => $envBool('APP_READ_ONLY', false),
+    'enforce_ui_tokens' => $envBool('APP_ENFORCE_UI_TOKENS', false),
     'headless_mode' => $envBool('HEADLESS_MODE', false),
     'middleware' => [],
     'home_showcase_enabled' => $envBool('HOME_SHOWCASE_ENABLED', true),

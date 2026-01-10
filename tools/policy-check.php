@@ -16,6 +16,14 @@ const POLICY_CDN_HOSTS = [
     'googleapis',
 ];
 
+const POLICY_W3_PATTERNS = [
+    '/[\'"][A-Za-z0-9_]*_class[\'"]\\s*=>/',
+    '/[\'"]class_[A-Za-z0-9_]+[\'"]\\s*=>/',
+    '/\\[[\'"][A-Za-z0-9_]*_class[\'"]\\]\\s*=/',
+    '/\\bstatus_class\\b\\s*=>/i',
+    '/\\bbadge_class\\b\\s*=>/i',
+];
+
 /**
  * @param array<int, string> $paths
  * @return array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>
@@ -55,6 +63,67 @@ function policy_check_paths(array $paths): array
             continue;
         }
         $findings = array_merge($findings, policy_check_file($path));
+    }
+
+    return $findings;
+}
+
+/**
+ * @param array<int, string> $paths
+ * @return array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>
+ */
+function policy_check_php_paths(array $paths): array
+{
+    $findings = [];
+    foreach ($paths as $path) {
+        $path = rtrim($path, DIRECTORY_SEPARATOR);
+        if ($path === '') {
+            continue;
+        }
+        if (!file_exists($path)) {
+            continue;
+        }
+        if (is_dir($path)) {
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS)
+            );
+            foreach ($iterator as $file) {
+                if (!$file->isFile()) {
+                    continue;
+                }
+                if (strtolower($file->getExtension()) !== 'php') {
+                    continue;
+                }
+                $findings = array_merge($findings, policy_check_php_file($file->getPathname()));
+            }
+            continue;
+        }
+        if (strtolower(pathinfo($path, PATHINFO_EXTENSION)) === 'php') {
+            $findings = array_merge($findings, policy_check_php_file($path));
+        }
+    }
+
+    return $findings;
+}
+
+/**
+ * @return array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>
+ */
+function policy_check_php_file(string $path): array
+{
+    $contents = @file_get_contents($path);
+    if ($contents === false) {
+        return [];
+    }
+
+    $findings = [];
+    foreach (POLICY_W3_PATTERNS as $pattern) {
+        if (preg_match_all($pattern, $contents, $matches, PREG_OFFSET_CAPTURE) <= 0) {
+            continue;
+        }
+        foreach ($matches[0] as $match) {
+            $findings[] = policy_make_finding('warning', 'W3', $path, $match[1], 'Presentation leak in PHP data', $contents);
+        }
     }
 
     return $findings;
@@ -177,6 +246,7 @@ function policy_make_finding(
 function policy_analyze(array $paths): array
 {
     $findings = policy_check_paths($paths);
+    $findings = array_merge($findings, policy_check_php_paths($paths));
     $errors = [];
     $warnings = [];
     foreach ($findings as $finding) {
@@ -218,7 +288,13 @@ function policy_run(array $paths): int
 
     $errorsCount = count($analysis['errors']);
     $warningsCount = count($analysis['warnings']);
-    echo 'Summary: errors=' . $errorsCount . ' warnings=' . $warningsCount . "\n";
+    $w3Count = 0;
+    foreach ($analysis['warnings'] as $warning) {
+        if (($warning['code'] ?? '') === 'W3') {
+            $w3Count++;
+        }
+    }
+    echo 'Summary: errors=' . $errorsCount . ' warnings=' . $warningsCount . ' w3=' . $w3Count . "\n";
 
     return policy_exit_code($analysis);
 }
@@ -227,7 +303,11 @@ if (PHP_SAPI === 'cli' && realpath($argv[0] ?? '') === realpath(__FILE__)) {
     $paths = $argv;
     array_shift($paths);
     if ($paths === []) {
-        $paths = [__DIR__ . '/../themes'];
+        $paths = [
+            __DIR__ . '/../themes',
+            __DIR__ . '/../src',
+            __DIR__ . '/../modules',
+        ];
     }
     exit(policy_run($paths));
 }
