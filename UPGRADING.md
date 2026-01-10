@@ -27,7 +27,53 @@
 
 ## Version-Specific Upgrade Paths
 
-### v2.4.0 → v2.4.2 (In Development)
+### v2.4.2 → v3.0.0 (Current Stable)
+
+**Overview:** Frontend-agnostic mode with RenderAdapter v1, content negotiation, and headless mode support.
+
+**Key features (v3.0.0):**
+- **RenderAdapter v1** — Unified rendering layer for HTML and JSON
+  - Automatic content-type detection via `Accept` header
+  - Query parameter override: `?format=html` or `?format=json`
+  - Problem Details (RFC 7807) for JSON error responses
+- **Headless mode** — JSON by default for public pages
+  - Enable via `HEADLESS_MODE=true` in `.env`
+  - Public pages return JSON unless `?format=html` is specified
+  - API redirects return JSON: `{ "redirect_to": "/path" }`
+- **Content negotiation** — Smart format selection
+  - `Accept: application/json` forces JSON response
+  - `Accept: text/html` forces HTML response
+  - Query parameter `?format=` overrides header
+- **Backward compatible** — All existing HTML endpoints work unchanged
+
+**Upgrade steps:**
+1. Follow standard upgrade flow
+2. **No database migrations required** for v3.0.0
+3. **Optional:** Enable headless mode in `.env`:
+   ```env
+   HEADLESS_MODE=true
+   ```
+4. Test critical flows:
+   - HTML mode (default): verify all pages render correctly
+   - JSON mode: test `Accept: application/json` header
+   - Headless mode: test with `HEADLESS_MODE=true`
+   - Format override: test `?format=html` and `?format=json`
+5. **For API consumers:** Review Problem Details format for JSON errors
+
+**Breaking changes:**
+- **None for existing HTML sites** - all changes are additive and opt-in
+- **Headless mode** changes default behavior (JSON by default) - disable if unwanted
+- **API clients** may receive Problem Details format for errors (structured JSON)
+
+**Migration notes:**
+- Headless mode is **opt-in** via `HEADLESS_MODE=true`
+- Without headless mode, behavior is 100% backward compatible
+- Custom controllers can use RenderAdapter for dual HTML/JSON support
+- Problem Details provides structured error responses for JSON consumers
+
+---
+
+### v2.4.0 → v2.4.2
 
 **Overview:** Asset Architecture & Frontend Separation - complete decoupling of frontend concerns from PHP core.
 

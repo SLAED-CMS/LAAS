@@ -5,12 +5,12 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-00758F.svg)](https://www.mysql.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)](#)
-[![Baseline](https://img.shields.io/badge/Baseline-v2.4.2-orange.svg)](docs/VERSIONS.md)
+[![Baseline](https://img.shields.io/badge/Baseline-v3.0.0-orange.svg)](docs/VERSIONS.md)
 [![Security](https://img.shields.io/badge/Security-99%2F100-brightgreen.svg)](docs/SECURITY.md)
 
 **Modern, secure, HTML-first content management system.**
 
-**v2.4.2 (in development)** - Asset Architecture & Frontend Separation: AssetManager with cache-busting, template helpers ({% asset_css %}, {% asset_js %}), UI Tokens (no *_class from PHP), Theme API v1, CI policy checks. Complete security stack from v2.4.0: 2FA/TOTP, password reset, session timeout, S3 SSRF protection (99/100 score).
+**v3.0.0** - Frontend-agnostic: RenderAdapter v1 (HTML/JSON), content negotiation via Accept/?format, headless mode (JSON by default), Problem Details for JSON errors. Asset Architecture from v2.4.2: AssetManager, UI Tokens (no *_class from PHP), Theme API v1, CI policy checks. Complete security stack from v2.4.0: 2FA/TOTP, password reset, session timeout, S3 SSRF protection (99/100 score).
 
 LAAS CMS is a modular, security-first CMS built for PHP 8.4+ with a lightweight template engine, middleware pipeline, and i18n support. Bootstrap 5 + HTMX ready.
 
@@ -186,7 +186,12 @@ http://laas.loc/
 
 ## Milestones
 
+### v3.x — Frontend-agnostic Platform
+- **v3.0.0**: Frontend-agnostic (RenderAdapter v1, content negotiation, headless mode, Problem Details)
+
 ### v2.x — Mature Platform
+- **v2.4.2**: Asset Architecture & Frontend Separation (AssetManager, UI Tokens, Theme API v1, CI policy checks)
+- **v2.4.1**: DevTools: JS Errors (client capture, server inbox, rate limiting, masking)
 - **v2.4.0**: Complete security stack (2FA/TOTP, password reset, session timeout, S3 SSRF protection)
 - **v2.3.28**: DevTools Terminal UI with Bluloco theme (one-window, settings, expand all)
 - **v2.3.27**: DevTools pastel terminal theme

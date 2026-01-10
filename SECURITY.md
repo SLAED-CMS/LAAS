@@ -6,15 +6,22 @@ We release security updates for the following versions of LAAS CMS:
 
 | Version | Supported          | Status                  |
 | ------- | ------------------ | ----------------------- |
-| 2.4.x   | :white_check_mark: | Current stable release  |
+| 3.0.x   | :white_check_mark: | Current stable release  |
+| 2.4.x   | :white_check_mark: | Security fixes only     |
 | 2.3.x   | :white_check_mark: | Security fixes only     |
-| 2.2.x   | :white_check_mark: | Security fixes only     |
-| 2.1.x   | :warning:          | Critical fixes only     |
-| < 2.1   | :x:                | No longer supported     |
+| 2.2.x   | :warning:          | Critical fixes only     |
+| < 2.2   | :x:                | No longer supported     |
 
-**Recommendation:** Always use the latest stable release (v2.4.x) for the best security posture.
+**Recommendation:** Always use the latest stable release (v3.0.x) for the best security posture.
 
-**v2.4.2 (in development) - Asset Architecture & Frontend Separation:**
+**v3.0.0 - Frontend-agnostic:**
+- ✅ RenderAdapter v1 (HTML/JSON)
+- ✅ Content negotiation via Accept header and ?format parameter
+- ✅ Headless mode (JSON by default)
+- ✅ Problem Details (RFC 7807) for JSON errors
+- ✅ Secure content-type handling
+
+**v2.4.2 - Asset Architecture & Frontend Separation:**
 - ✅ AssetManager with cache-busting and template helpers
 - ✅ Frontend/backend separation (no inline scripts/styles, no CSS classes from PHP)
 - ✅ UI Tokens (controllers return state/status/variant)
