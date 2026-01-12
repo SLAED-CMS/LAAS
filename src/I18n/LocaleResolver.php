@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Laas\I18n;
 
 use Laas\Http\Request;
+use Laas\Support\RequestScope;
 use Laas\Settings\SettingsProvider;
 
 final class LocaleResolver
@@ -39,13 +40,20 @@ final class LocaleResolver
         return ['locale' => $default, 'set_cookie' => false];
     }
 
-    public function cookieHeader(string $locale): string
+    public function cookieHeader(string $locale, ?Request $request = null): string
     {
+        $request ??= RequestScope::getRequest();
+        $secure = $request?->isHttps() ?? false;
+
         $parts = [
             self::COOKIE_NAME . '=' . rawurlencode($locale),
             'Path=/',
             'SameSite=Lax',
+            'HttpOnly',
         ];
+        if ($secure) {
+            $parts[] = 'Secure';
+        }
 
         return implode('; ', $parts);
     }

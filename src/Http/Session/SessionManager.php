@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Laas\Http\Session;
 
+use Laas\Http\Request;
 use RuntimeException;
 
 final class SessionManager
@@ -13,7 +14,7 @@ final class SessionManager
     ) {
     }
 
-    public function start(): void
+    public function start(?Request $request = null): void
     {
         if (session_status() === PHP_SESSION_ACTIVE) {
             return;
@@ -31,11 +32,16 @@ final class SessionManager
         $name = $cookie['name'] ?? 'LAASID';
 
         session_name($name);
+        $secure = (bool) ($cookie['secure'] ?? false);
+        if ($request !== null && $request->isHttps()) {
+            $secure = true;
+        }
+
         session_set_cookie_params([
             'lifetime' => $cookie['lifetime'] ?? 0,
             'path' => '/',
             'domain' => $cookie['domain'] ?? '',
-            'secure' => (bool) ($cookie['secure'] ?? false),
+            'secure' => $secure,
             'httponly' => (bool) ($cookie['httponly'] ?? true),
             'samesite' => $cookie['samesite'] ?? 'Lax',
         ]);

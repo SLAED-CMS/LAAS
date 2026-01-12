@@ -24,6 +24,33 @@ $envInt = static function (string $key, int $default) use ($env): int {
     }
     return is_numeric($value) ? (int) $value : $default;
 };
+$envList = static function (string $key, array $default) use ($env): array {
+    $value = $env[$key] ?? null;
+    if ($value === null || $value === '') {
+        return $default;
+    }
+    $parts = array_filter(array_map('trim', explode(',', (string) $value)));
+    return $parts !== [] ? array_values($parts) : $default;
+};
+
+$allowCdn = $envBool('CSP_ALLOW_CDN', false);
+$cdnSources = $allowCdn ? ['https://cdn.jsdelivr.net'] : [];
+$scriptExtra = $envList('CSP_SCRIPT_SRC_EXTRA', []);
+$styleExtra = $envList('CSP_STYLE_SRC_EXTRA', []);
+$connectExtra = $envList('CSP_CONNECT_SRC_EXTRA', []);
+$unique = static function (array $values): array {
+    $out = [];
+    $seen = [];
+    foreach ($values as $value) {
+        $value = trim((string) $value);
+        if ($value === '' || isset($seen[$value])) {
+            continue;
+        }
+        $seen[$value] = true;
+        $out[] = $value;
+    }
+    return $out;
+};
 
 return [
     'session' => [
@@ -42,16 +69,23 @@ return [
     'frame_options' => 'DENY',
     'csp' => [
         'enabled' => true,
+        'allow_cdn' => $allowCdn,
         'directives' => [
             'default-src' => ["'self'"],
-            'script-src' => array_merge(
-                ["'self'", 'https://cdn.jsdelivr.net'],
-                $envBool('APP_DEBUG', false) ? ["'unsafe-inline'"] : []
-            ),
-            'style-src' => ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
-            'font-src' => ["'self'", 'data:', 'https://cdn.jsdelivr.net'],
+            'script-src' => $unique(array_merge(
+                ["'self'"],
+                $cdnSources,
+                $envBool('APP_DEBUG', false) ? ["'unsafe-inline'"] : [],
+                $scriptExtra
+            )),
+            'style-src' => $unique(array_merge(
+                ["'self'", "'unsafe-inline'"],
+                $cdnSources,
+                $styleExtra
+            )),
+            'font-src' => $unique(array_merge(["'self'", 'data:'], $cdnSources)),
             'img-src' => ["'self'", 'data:'],
-            'connect-src' => ["'self'", 'https://cdn.jsdelivr.net'],
+            'connect-src' => $unique(array_merge(["'self'"], $cdnSources, $connectExtra)),
             'frame-ancestors' => ["'none'"],
         ],
     ],
@@ -72,4 +106,9 @@ return [
         ],
     ],
     'trusted_proxies' => [],
+    'trust_proxy' => [
+        'enabled' => $envBool('TRUST_PROXY_ENABLED', false),
+        'ips' => $envList('TRUST_PROXY_IPS', []),
+        'headers' => $envList('TRUST_PROXY_HEADERS', ['x-forwarded-for', 'x-forwarded-proto']),
+    ],
 ];

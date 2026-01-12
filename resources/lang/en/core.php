@@ -32,6 +32,8 @@ return [
     'system.health.ok' => 'OK',
     'system.not_acceptable' => 'Not acceptable.',
     'system.headless_html_disabled' => 'HTML is disabled in headless mode.',
+    'system.trust_proxy_enabled' => 'Trusted proxy is enabled.',
+    'system.trust_proxy_disabled' => 'Trusted proxy is disabled.',
     'release.check.ok' => 'Release check OK',
     'release.check.failed' => 'Release check failed',
     'release.devtools.disabled_in_prod' => 'DevTools must be disabled in prod',

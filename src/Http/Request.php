@@ -136,7 +136,12 @@ final class Request
 
     public function ip(): string
     {
-        return (string) ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
+        return TrustProxy::resolveClientIp($_SERVER, $this->headers);
+    }
+
+    public function isHttps(): bool
+    {
+        return TrustProxy::resolveHttps($_SERVER, $this->headers);
     }
 
     public function isHtmx(): bool

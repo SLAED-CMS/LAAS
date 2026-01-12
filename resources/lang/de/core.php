@@ -27,4 +27,6 @@ return [
     'system.health.ok' => 'OK',
     'system.not_acceptable' => 'Nicht akzeptabel.',
     'system.headless_html_disabled' => 'HTML ist im Headless-Modus deaktiviert.',
+    'system.trust_proxy_enabled' => 'Vertrauenswürdiger Proxy ist aktiviert.',
+    'system.trust_proxy_disabled' => 'Vertrauenswürdiger Proxy ist deaktiviert.',
 ];

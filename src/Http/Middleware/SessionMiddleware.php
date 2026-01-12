@@ -26,7 +26,7 @@ final class SessionMiddleware implements MiddlewareInterface
 
     public function process(Request $request, callable $next): Response
     {
-        $this->sessionManager->start();
+        $this->sessionManager->start($request);
         $session = new PhpSession();
         $session->start();
         $request->setSession($session);
