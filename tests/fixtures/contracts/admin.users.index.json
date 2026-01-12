@@ -1,0 +1,24 @@
+{
+    "data": {
+        "items": [
+            {
+                "id": "__ID__",
+                "username": "admin",
+                "roles": [
+                    "admin"
+                ],
+                "active": true,
+                "created_at": "__TIME__"
+            }
+        ],
+        "pagination": {
+            "limit": 50,
+            "offset": 0,
+            "total": 1
+        }
+    },
+    "meta": {
+        "format": "json",
+        "route": "admin.users.index"
+    }
+}

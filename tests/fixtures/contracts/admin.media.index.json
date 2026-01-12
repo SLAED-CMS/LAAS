@@ -1,0 +1,24 @@
+{
+    "data": {
+        "items": [
+            {
+                "id": "__ID__",
+                "name": "photo.jpg",
+                "mime": "image/jpeg",
+                "size": 12345,
+                "hash": "abc123",
+                "disk": "local",
+                "created_at": "__TIME__"
+            }
+        ],
+        "counts": {
+            "total": 1,
+            "page": 1,
+            "total_pages": 1
+        }
+    },
+    "meta": {
+        "format": "json",
+        "route": "admin.media.index"
+    }
+}

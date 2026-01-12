@@ -21,6 +21,7 @@ use Laas\Support\OpsChecker;
 use Laas\Support\ReleaseChecker;
 use Laas\I18n\Translator;
 use Laas\Http\Contract\ContractRegistry;
+use Laas\Http\Contract\ContractFixtureNormalizer;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
 use Laas\View\Template\TemplateWarmupService;
@@ -785,6 +786,118 @@ $commands['contracts:dump'] = function (): int {
     return 0;
 };
 
+$commands['contracts:fixtures:dump'] = function () use ($rootPath, $args): int {
+    $dir = $rootPath . '/tests/fixtures/contracts';
+    if (!is_dir($dir)) {
+        mkdir($dir, 0775, true);
+    }
+
+    $force = hasFlag($args, 'force');
+    $fixtures = collectContractFixtures(ContractRegistry::all());
+    if ($fixtures === []) {
+        echo "No contract fixtures defined.\n";
+        return 1;
+    }
+
+    foreach ($fixtures as $fixture) {
+        $file = $dir . '/' . $fixture['fixture'] . '.json';
+        if (is_file($file) && !$force) {
+            echo "Exists: {$file}\n";
+            return 1;
+        }
+    }
+
+    foreach ($fixtures as $fixture) {
+        $file = $dir . '/' . $fixture['fixture'] . '.json';
+        $payload = ContractFixtureNormalizer::normalize($fixture['payload']);
+        $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($json === false) {
+            echo "Failed to encode: {$fixture['fixture']}\n";
+            return 1;
+        }
+        file_put_contents($file, $json . "\n");
+        echo "Wrote: {$file}\n";
+    }
+
+    return 0;
+};
+
+$commands['contracts:fixtures:check'] = function () use ($rootPath): int {
+    $dir = $rootPath . '/tests/fixtures/contracts';
+    if (!is_dir($dir)) {
+        echo "Fixtures directory not found.\n";
+        return 1;
+    }
+
+    $files = glob($dir . '/*.json') ?: [];
+    if ($files === []) {
+        echo "No fixtures found.\n";
+        return 1;
+    }
+
+    $contracts = ContractRegistry::all();
+    $names = [];
+    $specByName = [];
+    foreach ($contracts as $spec) {
+        $name = is_string($spec['name'] ?? null) ? $spec['name'] : '';
+        if ($name !== '') {
+            $names[] = $name;
+            $specByName[$name] = $spec;
+        }
+    }
+
+    $errors = 0;
+    foreach ($files as $file) {
+        $raw = (string) file_get_contents($file);
+        $payload = json_decode($raw, true);
+        if (!is_array($payload)) {
+            echo "Invalid JSON: {$file}\n";
+            $errors++;
+            continue;
+        }
+
+        $fixtureName = basename($file, '.json');
+        $contractName = findContractNameForFixture($fixtureName, $names);
+        if ($contractName === null) {
+            echo "Unknown fixture contract: {$fixtureName}\n";
+            $errors++;
+            continue;
+        }
+
+        if (!array_key_exists('data', $payload) && !array_key_exists('error', $payload)) {
+            echo "Missing data/error: {$fixtureName}\n";
+            $errors++;
+        }
+
+        $meta = $payload['meta'] ?? null;
+        if (!is_array($meta)) {
+            echo "Missing meta: {$fixtureName}\n";
+            $errors++;
+            continue;
+        }
+
+        if (($meta['format'] ?? null) !== 'json') {
+            echo "Invalid meta.format: {$fixtureName}\n";
+            $errors++;
+        }
+
+        $route = $meta['route'] ?? null;
+        $specRoute = $specByName[$contractName]['route'] ?? null;
+        $routeOk = $route === $contractName || (is_string($specRoute) && $route === $specRoute);
+        if (!$routeOk) {
+            echo "Invalid meta.route: {$fixtureName}\n";
+            $errors++;
+        }
+    }
+
+    if ($errors > 0) {
+        return 1;
+    }
+
+    echo "OK\n";
+    return 0;
+};
+
 $commands['policy:check'] = function () use ($rootPath): int {
     require_once $rootPath . '/tools/policy-check.php';
     return policy_run([
@@ -822,6 +935,75 @@ function getOption(array $args, string $name): ?string
 function hasFlag(array $args, string $name): bool
 {
     return in_array('--' . $name, $args, true);
+}
+
+/** @return array<int, array{contract: string, fixture: string, payload: array}> */
+function collectContractFixtures(array $contracts): array
+{
+    $fixtures = [];
+    foreach ($contracts as $spec) {
+        $name = is_string($spec['name'] ?? null) ? $spec['name'] : '';
+        if ($name === '') {
+            continue;
+        }
+
+        $exampleOk = buildFixtureFromExample($name, $spec['example_ok'] ?? null, $name);
+        if ($exampleOk !== null) {
+            $fixtures[] = $exampleOk;
+        }
+
+        $exampleError = buildFixtureFromExample($name, $spec['example_error'] ?? null, $name . '.error');
+        if ($exampleError !== null) {
+            $fixtures[] = $exampleError;
+        }
+    }
+
+    return $fixtures;
+}
+
+/** @return array{contract: string, fixture: string, payload: array}|null */
+function buildFixtureFromExample(string $contractName, mixed $example, string $defaultFixture): ?array
+{
+    if (!is_array($example)) {
+        return null;
+    }
+
+    $payload = $example['payload'] ?? null;
+    if (!is_array($payload)) {
+        $payload = $example;
+    }
+    if (!is_array($payload)) {
+        return null;
+    }
+
+    $fixture = $example['fixture'] ?? $defaultFixture;
+    if (!is_string($fixture) || $fixture === '') {
+        $fixture = $defaultFixture;
+    }
+
+    return [
+        'contract' => $contractName,
+        'fixture' => $fixture,
+        'payload' => $payload,
+    ];
+}
+
+/** @param array<int, string> $names */
+function findContractNameForFixture(string $fixtureName, array $names): ?string
+{
+    $match = null;
+    $maxLen = -1;
+    foreach ($names as $name) {
+        if ($fixtureName === $name || str_starts_with($fixtureName, $name . '.')) {
+            $len = strlen($name);
+            if ($len > $maxLen) {
+                $maxLen = $len;
+                $match = $name;
+            }
+        }
+    }
+
+    return $match;
 }
 
 /** @return array<string, array{path: string, version: string|null}> */

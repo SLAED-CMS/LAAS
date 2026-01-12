@@ -1,0 +1,12 @@
+{
+    "error": "validation_failed",
+    "meta": {
+        "format": "json",
+        "route": "admin.settings.save"
+    },
+    "fields": {
+        "site_name": [
+            "invalid"
+        ]
+    }
+}

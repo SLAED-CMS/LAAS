@@ -1,0 +1,21 @@
+{
+    "data": {
+        "items": [
+            {
+                "name": "System",
+                "enabled": true,
+                "version": "1.0.0",
+                "type": "core",
+                "protected": true
+            }
+        ],
+        "counts": {
+            "total": 1,
+            "enabled": 1
+        }
+    },
+    "meta": {
+        "format": "json",
+        "route": "admin.modules.index"
+    }
+}

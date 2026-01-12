@@ -1,0 +1,14 @@
+{
+    "data": {
+        "id": "__ID__",
+        "mime": "image/jpeg",
+        "size": 12345,
+        "hash": "abc123",
+        "mode": "inline",
+        "signed_url": null
+    },
+    "meta": {
+        "format": "json",
+        "route": "media.show"
+    }
+}

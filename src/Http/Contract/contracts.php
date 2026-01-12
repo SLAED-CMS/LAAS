@@ -31,6 +31,24 @@ ContractRegistry::register('pages.show', [
             ],
         ],
     ],
+    'example_ok' => [
+        'fixture' => 'pages.show',
+        'payload' => [
+            'data' => [
+                'page' => [
+                    'id' => 1,
+                    'slug' => 'hello',
+                    'title' => 'Hello',
+                    'content' => 'Body',
+                    'updated_at' => '2026-01-01 00:00:00',
+                ],
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'pages.show',
+            ],
+        ],
+    ],
 ]);
 
 ContractRegistry::register('admin.modules.index', [
@@ -61,6 +79,30 @@ ContractRegistry::register('admin.modules.index', [
         ],
         '403' => [
             'error' => 'forbidden',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.modules.index',
+            ],
+        ],
+    ],
+    'example_ok' => [
+        'fixture' => 'admin.modules.index',
+        'payload' => [
+            'data' => [
+                'items' => [
+                    [
+                        'name' => 'System',
+                        'enabled' => true,
+                        'version' => '1.0.0',
+                        'type' => 'core',
+                        'protected' => true,
+                    ],
+                ],
+                'counts' => [
+                    'total' => 1,
+                    'enabled' => 1,
+                ],
+            ],
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.modules.index',
@@ -155,6 +197,19 @@ ContractRegistry::register('admin.settings.save', [
             ],
         ],
     ],
+    'example_error' => [
+        'fixture' => 'admin.settings.save.validation_failed',
+        'payload' => [
+            'error' => 'validation_failed',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.settings.save',
+            ],
+            'fields' => [
+                'site_name' => ['invalid'],
+            ],
+        ],
+    ],
 ]);
 
 ContractRegistry::register('admin.users.index', [
@@ -186,6 +241,31 @@ ContractRegistry::register('admin.users.index', [
         ],
         '403' => [
             'error' => 'forbidden',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.users.index',
+            ],
+        ],
+    ],
+    'example_ok' => [
+        'fixture' => 'admin.users.index',
+        'payload' => [
+            'data' => [
+                'items' => [
+                    [
+                        'id' => 1,
+                        'username' => 'admin',
+                        'roles' => ['admin'],
+                        'active' => true,
+                        'created_at' => '2026-01-01 00:00:00',
+                    ],
+                ],
+                'pagination' => [
+                    'limit' => 50,
+                    'offset' => 0,
+                    'total' => 1,
+                ],
+            ],
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.users.index',
@@ -258,6 +338,33 @@ ContractRegistry::register('admin.media.index', [
         ],
         '403' => [
             'error' => 'forbidden',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.media.index',
+            ],
+        ],
+    ],
+    'example_ok' => [
+        'fixture' => 'admin.media.index',
+        'payload' => [
+            'data' => [
+                'items' => [
+                    [
+                        'id' => 10,
+                        'name' => 'photo.jpg',
+                        'mime' => 'image/jpeg',
+                        'size' => 12345,
+                        'hash' => 'abc123',
+                        'disk' => 'local',
+                        'created_at' => '2026-01-01 00:00:00',
+                    ],
+                ],
+                'counts' => [
+                    'total' => 1,
+                    'page' => 1,
+                    'total_pages' => 1,
+                ],
+            ],
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.media.index',
@@ -344,6 +451,23 @@ ContractRegistry::register('media.show', [
         ],
         '403' => [
             'error' => 'forbidden',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'media.show',
+            ],
+        ],
+    ],
+    'example_ok' => [
+        'fixture' => 'media.show',
+        'payload' => [
+            'data' => [
+                'id' => 10,
+                'mime' => 'image/jpeg',
+                'size' => 12345,
+                'hash' => 'abc123',
+                'mode' => 'inline',
+                'signed_url' => null,
+            ],
             'meta' => [
                 'format' => 'json',
                 'route' => 'media.show',

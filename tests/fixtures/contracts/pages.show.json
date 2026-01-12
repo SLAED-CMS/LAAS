@@ -1,0 +1,15 @@
+{
+    "data": {
+        "page": {
+            "id": "__ID__",
+            "slug": "hello",
+            "title": "Hello",
+            "content": "Body",
+            "updated_at": "__TIME__"
+        }
+    },
+    "meta": {
+        "format": "json",
+        "route": "pages.show"
+    }
+}
