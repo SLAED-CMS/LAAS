@@ -20,6 +20,7 @@ use Laas\Support\LoggerFactory;
 use Laas\Support\OpsChecker;
 use Laas\Support\ReleaseChecker;
 use Laas\I18n\Translator;
+use Laas\Http\Contract\ContractRegistry;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
 use Laas\View\Template\TemplateWarmupService;
@@ -772,6 +773,12 @@ $commands['config:export'] = function () use ($rootPath, $dbManager, $appConfig,
 
     echo $json;
     fwrite(STDERR, $translator->trans('config.export.ok') . "\n");
+    return 0;
+};
+
+$commands['contracts:dump'] = function (): int {
+    $contracts = ContractRegistry::all();
+    echo json_encode(['contracts' => $contracts], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n";
     return 0;
 };
 

@@ -27,6 +27,8 @@ final class AdminModulesToggleJsonTest extends TestCase
         $this->assertSame('application/json; charset=utf-8', $response->getHeader('Content-Type'));
         $payload = json_decode($response->getBody(), true);
         $this->assertSame('protected_module', $payload['error'] ?? null);
+        $this->assertSame('json', $payload['meta']['format'] ?? null);
+        $this->assertSame('admin.modules.toggle', $payload['meta']['route'] ?? null);
     }
 
     private function createBaseSchema(): \PDO

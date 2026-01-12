@@ -6,8 +6,8 @@ namespace Laas\Modules\Admin\Controller;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Database\Repositories\SettingsRepository;
+use Laas\Http\Contract\ContractResponse;
 use Laas\Http\Request;
-use Laas\Http\Presenter\JsonPresenter;
 use Laas\Http\Response;
 use Laas\Support\AuditLogger;
 use Laas\View\View;
@@ -24,7 +24,7 @@ final class SettingsController
     public function index(Request $request): Response
     {
         if (!$this->canManage($request)) {
-            return $this->forbidden($request);
+            return $this->forbidden($request, 'admin.settings.index');
         }
 
         $appConfig = $this->loadAppConfig();
@@ -70,7 +70,7 @@ final class SettingsController
         }
 
         if ($request->wantsJson()) {
-            return (new JsonPresenter())->present([
+            return ContractResponse::ok([
                 'items' => $this->jsonItems($settings, $sources),
             ], [
                 'route' => 'admin.settings.index',
@@ -102,7 +102,7 @@ final class SettingsController
     public function save(Request $request): Response
     {
         if (!$this->canManage($request)) {
-            return $this->forbidden($request);
+            return $this->forbidden($request, 'admin.settings.save');
         }
 
         $appConfig = $this->loadAppConfig();
@@ -158,11 +158,12 @@ final class SettingsController
         );
 
         if ($request->wantsJson()) {
-            return (new JsonPresenter())->present([
+            return ContractResponse::ok([
                 'saved' => true,
                 'updated' => $this->jsonUpdated($siteName, $defaultLocale, $theme, $apiTokenIssueMode),
             ], [
                 'status' => 'ok',
+                'route' => 'admin.settings.save',
             ]);
         }
 
@@ -194,15 +195,18 @@ final class SettingsController
     ): Response {
         if ($request->wantsJson()) {
             if ($status === 422) {
-                return Response::json([
-                    'error' => 'validation_failed',
-                    'fields' => $this->jsonValidationFields($errors),
-                ], 422);
+                return ContractResponse::error('validation_failed', [
+                    'route' => 'admin.settings.save',
+                ], 422, $this->jsonValidationFields($errors));
             }
             if ($status === 503) {
-                return Response::json(['error' => 'service_unavailable'], 503);
+                return ContractResponse::error('service_unavailable', [
+                    'route' => 'admin.settings.save',
+                ], 503);
             }
-            return Response::json(['error' => 'invalid_request'], $status);
+            return ContractResponse::error('invalid_request', [
+                'route' => 'admin.settings.save',
+            ], $status);
         }
 
         $sources = [
@@ -462,10 +466,10 @@ final class SettingsController
         }
     }
 
-    private function forbidden(Request $request): Response
+    private function forbidden(Request $request, string $route): Response
     {
         if ($request->isHtmx() || $request->wantsJson()) {
-            return Response::json(['error' => 'forbidden'], 403);
+            return ContractResponse::error('forbidden', ['route' => $route], 403);
         }
 
         return $this->view->render('pages/403.html', [], 403, [], [

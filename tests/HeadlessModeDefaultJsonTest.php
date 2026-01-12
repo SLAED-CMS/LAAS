@@ -79,6 +79,8 @@ final class HeadlessModeDefaultJsonTest extends TestCase
             $this->assertSame('application/json; charset=utf-8', $response->getHeader('Content-Type'));
 
             $data = json_decode($response->getBody(), true);
+            $this->assertSame('json', $data['meta']['format'] ?? null);
+            $this->assertSame('pages.show', $data['meta']['route'] ?? null);
             $payload = is_array($data['data'] ?? null) ? $data['data'] : [];
             $this->assertSame('Hello', $payload['page']['title'] ?? null);
         } finally {

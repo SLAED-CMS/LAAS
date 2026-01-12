@@ -32,6 +32,8 @@ final class AdminSettingsValidationJsonTest extends TestCase
         $this->assertSame('validation_failed', $payload['error'] ?? null);
         $this->assertArrayHasKey('fields', $payload);
         $this->assertArrayHasKey('site_name', $payload['fields']);
+        $this->assertSame('json', $payload['meta']['format'] ?? null);
+        $this->assertSame('admin.settings.save', $payload['meta']['route'] ?? null);
     }
 
     private function createBaseSchema(): \PDO

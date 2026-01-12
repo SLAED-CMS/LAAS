@@ -25,6 +25,7 @@ final class AdminSettingsJsonTest extends TestCase
         $this->assertSame('application/json; charset=utf-8', $response->getHeader('Content-Type'));
         $payload = json_decode($response->getBody(), true);
         $this->assertSame('json', $payload['meta']['format'] ?? null);
+        $this->assertSame('admin.settings.index', $payload['meta']['route'] ?? null);
         $this->assertIsArray($payload['data']['items'] ?? null);
         $items = $payload['data']['items'] ?? [];
         $this->assertNotEmpty($items);

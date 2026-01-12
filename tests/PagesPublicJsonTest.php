@@ -76,9 +76,11 @@ final class PagesPublicJsonTest extends TestCase
         $data = json_decode($response->getBody(), true);
         $this->assertArrayHasKey('data', $data);
         $this->assertArrayHasKey('meta', $data);
+        $this->assertSame('json', $data['meta']['format'] ?? null);
+        $this->assertSame('pages.show', $data['meta']['route'] ?? null);
         $payload = is_array($data['data'] ?? null) ? $data['data'] : [];
         $this->assertSame('Hello', $payload['page']['title'] ?? null);
-        $this->assertSame('Body', $payload['page']['content_raw'] ?? null);
+        $this->assertSame('Body', $payload['page']['content'] ?? null);
         $this->assertSame('hello', $payload['page']['slug'] ?? null);
     }
 }

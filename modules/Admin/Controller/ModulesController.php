@@ -6,8 +6,8 @@ namespace Laas\Modules\Admin\Controller;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\ModulesRepository;
 use Laas\Database\Repositories\RbacRepository;
+use Laas\Http\Contract\ContractResponse;
 use Laas\Http\Request;
-use Laas\Http\Presenter\JsonPresenter;
 use Laas\Http\Response;
 use Laas\Support\AuditLogger;
 use Laas\View\View;
@@ -24,7 +24,7 @@ final class ModulesController
     public function index(Request $request): Response
     {
         if (!$this->canManage($request)) {
-            return $this->forbidden($request);
+            return $this->forbidden($request, 'admin.modules.index');
         }
 
         $modules = [];
@@ -89,7 +89,7 @@ final class ModulesController
                 }
             }
 
-            return (new JsonPresenter())->present([
+            return ContractResponse::ok([
                 'items' => $items,
                 'counts' => [
                     'total' => count($items),
@@ -110,22 +110,22 @@ final class ModulesController
     public function toggle(Request $request): Response
     {
         if (!$this->canManage($request)) {
-            return $this->forbidden($request);
+            return $this->forbidden($request, 'admin.modules.toggle');
         }
 
         $name = $request->post('name') ?? '';
         if ($name === '') {
-            return $this->errorResponse($request, 'invalid_request', 400);
+            return $this->errorResponse($request, 'invalid_request', 400, 'admin.modules.toggle');
         }
 
         $discovered = $this->discoverModules();
         $type = $discovered[$name]['type'] ?? 'feature';
         if ($type !== 'feature') {
-            return $this->errorResponse($request, 'protected_module', 400);
+            return $this->errorResponse($request, 'protected_module', 400, 'admin.modules.toggle');
         }
 
         if ($this->db === null || !$this->db->healthCheck()) {
-            return $this->errorResponse($request, 'db_unavailable', 503);
+            return $this->errorResponse($request, 'db_unavailable', 503, 'admin.modules.toggle');
         }
 
         $repo = new ModulesRepository($this->db->pdo());
@@ -169,12 +169,13 @@ final class ModulesController
         ];
 
         if ($request->wantsJson()) {
-            return (new JsonPresenter())->present([
+            return ContractResponse::ok([
                 'name' => $name,
                 'enabled' => !$enabled,
                 'protected' => $protected,
             ], [
                 'status' => 'ok',
+                'route' => 'admin.modules.toggle',
             ]);
         }
 
@@ -277,10 +278,10 @@ final class ModulesController
         return $names;
     }
 
-    private function errorResponse(Request $request, string $code, int $status): Response
+    private function errorResponse(Request $request, string $code, int $status, string $route): Response
     {
         if ($request->isHtmx() || $request->wantsJson()) {
-            return Response::json(['error' => $code], $status);
+            return ContractResponse::error($code, ['route' => $route], $status);
         }
 
         return new Response('Error', $status, [
@@ -329,10 +330,10 @@ final class ModulesController
         }
     }
 
-    private function forbidden(Request $request): Response
+    private function forbidden(Request $request, string $route): Response
     {
         if ($request->isHtmx() || $request->wantsJson()) {
-            return Response::json(['error' => 'forbidden'], 403);
+            return ContractResponse::error('forbidden', ['route' => $route], 403);
         }
 
         return $this->view->render('pages/403.html', [], 403, [], [

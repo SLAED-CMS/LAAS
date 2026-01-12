@@ -4,9 +4,9 @@ declare(strict_types=1);
 namespace Laas\Modules\Pages\Controller;
 
 use Laas\Database\DatabaseManager;
+use Laas\Http\Contract\ContractResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\Http\Responder;
 use Laas\Modules\Pages\Repository\PagesRepository;
 use Laas\Modules\Pages\ViewModel\PagePublicViewModel;
 use Laas\Support\Search\Highlighter;
@@ -38,22 +38,29 @@ final class PagesController
     {
         $slug = $params['slug'] ?? '';
         if (!is_string($slug) || $slug === '' || in_array($slug, self::RESERVED, true)) {
-            return $this->notFound();
+            return $this->notFound($request);
         }
 
         $repo = $this->getRepository();
         if ($repo === null) {
-            return $this->notFound();
+            return $this->notFound($request);
         }
 
         $page = $repo->findPublishedBySlug($slug);
         if ($page === null) {
-            return $this->notFound();
+            return $this->notFound($request);
         }
 
-        $data = PagePublicViewModel::fromArray($page)->toArray();
-        $responder = new Responder($this->view);
-        return $responder->respond($request, 'pages/page.html', $data, $data);
+        $vm = PagePublicViewModel::fromArray($page);
+        if ($this->shouldJson($request)) {
+            return ContractResponse::ok([
+                'page' => $this->jsonPage($page),
+            ], [
+                'route' => 'pages.show',
+            ]);
+        }
+
+        return $this->view->render('pages/page.html', $vm);
     }
 
     public function search(Request $request): Response
@@ -111,10 +118,48 @@ final class PagesController
         }
     }
 
-    private function notFound(): Response
+    private function notFound(Request $request): Response
     {
+        if ($this->shouldJson($request)) {
+            return ContractResponse::error('not_found', [
+                'route' => 'pages.show',
+            ], 404);
+        }
+
         return new Response('Not Found', 404, [
             'Content-Type' => 'text/plain; charset=utf-8',
         ]);
+    }
+
+    private function shouldJson(Request $request): bool
+    {
+        if ($request->wantsJson()) {
+            return true;
+        }
+        if (!$request->isHeadless()) {
+            return false;
+        }
+
+        $format = strtolower((string) ($request->query('format') ?? ''));
+        return $format !== 'html';
+    }
+
+    /** @param array<string, mixed> $page */
+    private function jsonPage(array $page): array
+    {
+        $id = $page['id'] ?? null;
+        if (is_string($id) && ctype_digit($id)) {
+            $id = (int) $id;
+        } elseif (!is_int($id)) {
+            $id = null;
+        }
+
+        return [
+            'id' => $id,
+            'slug' => (string) ($page['slug'] ?? ''),
+            'title' => (string) ($page['title'] ?? ''),
+            'content' => (string) ($page['content'] ?? ''),
+            'updated_at' => (string) ($page['updated_at'] ?? ''),
+        ];
     }
 }
