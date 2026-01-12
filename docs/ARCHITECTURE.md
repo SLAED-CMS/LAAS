@@ -1885,6 +1885,13 @@ $responder = new Responder($this->view);
 return $responder->respond($request, 'pages/page.html', $data, $data);
 ```
 
+**Rule precedence:**
+1) `?format=json` => JSON
+2) `?format=html` => HTML
+3) `Accept: application/json` => JSON
+4) default => HTML
+`HX-Request` only toggles partial rendering; it does not imply JSON.
+
 **Notes:**
 - `Accept: application/json` or `?format=json` returns JSON.
 - `?format=html` forces HTML even in headless mode.

@@ -9,6 +9,7 @@ final class JsonPresenter implements PresenterInterface
 {
     public function present(array $data, array $meta = []): Response
     {
+        $meta['format'] = 'json';
         return Response::json([
             'data' => $data,
             'meta' => $meta,

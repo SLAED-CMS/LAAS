@@ -8,11 +8,14 @@ final class FormatResolver
     public function resolve(Request $req): string
     {
         $format = $req->query('format');
-        if (is_string($format) && strtolower($format) === 'html') {
-            return 'html';
-        }
-        if (is_string($format) && strtolower($format) === 'json') {
-            return 'json';
+        if (is_string($format)) {
+            $format = strtolower($format);
+            if ($format === 'json') {
+                return 'json';
+            }
+            if ($format === 'html') {
+                return 'html';
+            }
         }
 
         $accept = $req->getHeader('accept') ?? '';

@@ -30,17 +30,13 @@ final class ResponderTest extends TestCase
         $view->setRequest($request);
 
         $responder = new Responder($view);
-        $data = [
-            'page' => [
-                'title' => 'Hello',
-                'content' => 'Body',
-                'slug' => 'hello',
-            ],
-        ];
+        $data = $this->sampleData();
 
         $response = $responder->respond($request, 'pages/page.html', $data, $data);
 
         $this->assertSame('application/json; charset=utf-8', $response->getHeader('Content-Type'));
+        $payload = json_decode($response->getBody(), true);
+        $this->assertSame('json', $payload['meta']['format'] ?? null);
     }
 
     public function testRespondsWithHtmlContentType(): void
@@ -50,17 +46,67 @@ final class ResponderTest extends TestCase
         $view->setRequest($request);
 
         $responder = new Responder($view);
-        $data = [
+        $data = $this->sampleData();
+
+        $response = $responder->respond($request, 'pages/page.html', $data, $data);
+
+        $this->assertSame('text/html; charset=utf-8', $response->getHeader('Content-Type'));
+    }
+
+    public function testJsonPreferredOverHtmx(): void
+    {
+        $view = $this->createView();
+        $request = new Request('GET', '/page', [], [], [
+            'accept' => 'application/json',
+            'hx-request' => 'true',
+        ], '');
+        $view->setRequest($request);
+
+        $responder = new Responder($view);
+        $data = $this->sampleData();
+
+        $response = $responder->respond($request, 'pages/page.html', $data, $data);
+
+        $this->assertSame('application/json; charset=utf-8', $response->getHeader('Content-Type'));
+    }
+
+    public function testWildcardAcceptDefaultsToHtml(): void
+    {
+        $view = $this->createView();
+        $request = new Request('GET', '/page', [], [], ['accept' => '*/*'], '');
+        $view->setRequest($request);
+
+        $responder = new Responder($view);
+        $data = $this->sampleData();
+
+        $response = $responder->respond($request, 'pages/page.html', $data, $data);
+
+        $this->assertSame('text/html; charset=utf-8', $response->getHeader('Content-Type'));
+    }
+
+    public function testHtmlAcceptsPreferHtml(): void
+    {
+        $view = $this->createView();
+        $request = new Request('GET', '/page', [], [], ['accept' => 'text/html,application/xhtml+xml'], '');
+        $view->setRequest($request);
+
+        $responder = new Responder($view);
+        $data = $this->sampleData();
+
+        $response = $responder->respond($request, 'pages/page.html', $data, $data);
+
+        $this->assertSame('text/html; charset=utf-8', $response->getHeader('Content-Type'));
+    }
+
+    private function sampleData(): array
+    {
+        return [
             'page' => [
                 'title' => 'Hello',
                 'content' => 'Body',
                 'slug' => 'hello',
             ],
         ];
-
-        $response = $responder->respond($request, 'pages/page.html', $data, $data);
-
-        $this->assertSame('text/html; charset=utf-8', $response->getHeader('Content-Type'));
     }
 
     private function createView(): View

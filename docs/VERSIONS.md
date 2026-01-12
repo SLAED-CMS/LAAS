@@ -6,6 +6,11 @@
   - Headless mode toggle (JSON by default)
   - Problem Details for JSON errors
 
+- v2.8.1: Stabilize negotiation + reproducible CI
+  - Explicit format precedence for ?format and Accept
+  - Responder JSON envelope locks meta.format
+  - Tests cover HTMX + Accept and wildcard/html Accepts
+
 - v2.8.0: Frontend-agnostic foundation
   - FormatResolver + Request helpers for HTML/JSON negotiation
   - Presenter layer (HtmlPresenter/JsonPresenter) + Responder facade
