@@ -6,6 +6,7 @@ namespace Laas\Modules\Admin\Controller;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Database\Repositories\UsersRepository;
+use Laas\Http\Contract\ContractResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Support\AuditLogger;
@@ -29,18 +30,29 @@ final class UsersController
     public function index(Request $request): Response
     {
         if (!$this->canManage($request)) {
+            if ($request->wantsJson()) {
+                return $this->contractForbidden('admin.users.index');
+            }
             return $this->forbidden($request);
         }
 
         $repo = $this->getUsersRepository();
         $rbac = $this->getRbacRepository();
         if ($repo === null || $rbac === null) {
+            if ($request->wantsJson()) {
+                return $this->contractServiceUnavailable('admin.users.index');
+            }
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
         $query = SearchNormalizer::normalize((string) ($request->query('q') ?? ''));
         if (SearchNormalizer::isTooShort($query)) {
             $message = $this->view->translate('search.too_short');
+            if ($request->wantsJson()) {
+                return $this->contractValidationError('admin.users.index', [
+                    'q' => ['too_short'],
+                ]);
+            }
             if ($request->isHtmx()) {
                 $response = $this->view->render('partials/messages.html', [
                     'errors' => [$message],
@@ -61,8 +73,12 @@ final class UsersController
         }
 
         $currentUserId = $this->currentUserId($request);
+        $limit = 100;
+        $offset = 0;
         if ($query !== '') {
             $search = new SearchQuery($query, 50, 1, 'users');
+            $limit = $search->limit;
+            $offset = $search->offset;
             $users = $repo->search($search->q, $search->limit, $search->offset);
         } else {
             $users = $repo->list(100, 0);
@@ -77,6 +93,7 @@ final class UsersController
         }
 
         $rolesMap = $rbac->getRolesForUsers($userIds);
+        $contractItems = [];
         foreach ($users as $user) {
             $userId = (int) ($user['id'] ?? 0);
             if ($userId <= 0) {
@@ -86,6 +103,7 @@ final class UsersController
             $roles = $rolesMap[$userId] ?? [];
             $isAdmin = in_array('admin', $roles, true);
             $rows[] = $this->mapUserRow($user, $isAdmin, $currentUserId, $query);
+            $contractItems[] = $this->mapUserContract($user, $roles);
         }
 
         $viewData = [
@@ -93,6 +111,20 @@ final class UsersController
             'q' => $query,
             'errors' => [],
         ];
+
+        if ($request->wantsJson()) {
+            $total = $query !== '' ? $repo->countSearch($query) : $repo->countAll();
+            return ContractResponse::ok([
+                'items' => $contractItems,
+                'pagination' => [
+                    'limit' => $limit,
+                    'offset' => $offset,
+                    'total' => $total,
+                ],
+            ], [
+                'route' => 'admin.users.index',
+            ]);
+        }
 
         if ($request->isHtmx()) {
             return $this->view->render('partials/users_table.html', $viewData, 200, [], [
@@ -109,27 +141,48 @@ final class UsersController
     public function toggleStatus(Request $request): Response
     {
         if (!$this->canManage($request)) {
+            if ($request->wantsJson()) {
+                return $this->contractForbidden('admin.users.toggle');
+            }
             return $this->forbidden($request);
         }
 
         $userId = $this->readUserId($request);
         if ($userId === null) {
+            if ($request->wantsJson()) {
+                return $this->contractValidationError('admin.users.toggle', [
+                    'user_id' => ['invalid'],
+                ]);
+            }
             return $this->errorResponse($request, 'invalid_request', 400);
         }
 
         $repo = $this->getUsersRepository();
         $rbac = $this->getRbacRepository();
         if ($repo === null || $rbac === null) {
+            if ($request->wantsJson()) {
+                return $this->contractServiceUnavailable('admin.users.toggle');
+            }
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
         $currentUserId = $this->currentUserId($request);
         if ($currentUserId !== null && $userId === $currentUserId) {
+            if ($request->wantsJson()) {
+                return $this->contractValidationError('admin.users.toggle', [
+                    'user_id' => ['self_protected'],
+                ]);
+            }
             return $this->errorResponse($request, 'self_protected', 400);
         }
 
         $user = $repo->findById($userId);
         if ($user === null) {
+            if ($request->wantsJson()) {
+                return $this->contractValidationError('admin.users.toggle', [
+                    'user_id' => ['not_found'],
+                ]);
+            }
             return $this->errorResponse($request, 'not_found', 404);
         }
 
@@ -155,6 +208,16 @@ final class UsersController
         $isAdmin = $rbac->userHasRole($userId, 'admin');
         $row = $this->mapUserRow($user, $isAdmin, $currentUserId);
         $row['status'] = $nextStatus;
+
+        if ($request->wantsJson()) {
+            return ContractResponse::ok([
+                'id' => $userId,
+                'active' => $nextStatus === 1,
+            ], [
+                'route' => 'admin.users.toggle',
+                'status' => 'ok',
+            ]);
+        }
 
         return $this->renderRow($request, $row);
     }
@@ -377,6 +440,28 @@ final class UsersController
         ];
     }
 
+    private function mapUserContract(array $user, array $roles): array
+    {
+        $id = (int) ($user['id'] ?? 0);
+        $username = (string) ($user['username'] ?? '');
+        $createdAt = (string) ($user['created_at'] ?? '');
+        $status = (int) ($user['status'] ?? 0);
+        $normalizedRoles = [];
+        foreach ($roles as $role) {
+            if ($role !== '') {
+                $normalizedRoles[] = (string) $role;
+            }
+        }
+
+        return [
+            'id' => $id,
+            'username' => $username,
+            'roles' => $normalizedRoles,
+            'active' => $status === 1,
+            'created_at' => $createdAt,
+        ];
+    }
+
     private function readUserId(Request $request): ?int
     {
         $raw = $request->post('user_id');
@@ -521,5 +606,26 @@ final class UsersController
         return new Response('Error', $status, [
             'Content-Type' => 'text/plain; charset=utf-8',
         ]);
+    }
+
+    private function contractValidationError(string $route, array $fields = []): Response
+    {
+        return ContractResponse::error('validation_failed', [
+            'route' => $route,
+        ], 422, $fields);
+    }
+
+    private function contractForbidden(string $route): Response
+    {
+        return ContractResponse::error('forbidden', [
+            'route' => $route,
+        ], 403);
+    }
+
+    private function contractServiceUnavailable(string $route): Response
+    {
+        return ContractResponse::error('service_unavailable', [
+            'route' => $route,
+        ], 503);
     }
 }

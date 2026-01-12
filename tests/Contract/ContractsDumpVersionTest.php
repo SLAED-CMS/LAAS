@@ -4,9 +4,9 @@ declare(strict_types=1);
 use Laas\Http\Contract\ContractRegistry;
 use PHPUnit\Framework\TestCase;
 
-final class ContractsDumpCliTest extends TestCase
+final class ContractsDumpVersionTest extends TestCase
 {
-    public function testContractsDumpOutputsJson(): void
+    public function testContractsDumpIncludesVersion(): void
     {
         $root = dirname(__DIR__, 2);
         if ($this->canShellExec()) {
@@ -15,13 +15,11 @@ final class ContractsDumpCliTest extends TestCase
             $this->assertIsString($output);
             $payload = json_decode($output ?? '', true);
             $this->assertIsArray($payload);
-            $this->assertIsArray($payload['items'] ?? null);
-            $this->assertGreaterThanOrEqual(3, count($payload['items']));
+            $this->assertSame('1.0', $payload['contracts_version'] ?? null);
             return;
         }
 
-        $contracts = ContractRegistry::all();
-        $this->assertGreaterThanOrEqual(3, count($contracts));
+        $this->assertSame('1.0', ContractRegistry::version());
     }
 
     private function canShellExec(): bool

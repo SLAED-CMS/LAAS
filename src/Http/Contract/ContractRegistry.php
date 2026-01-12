@@ -5,6 +5,8 @@ namespace Laas\Http\Contract;
 
 final class ContractRegistry
 {
+    public const VERSION = '1.0';
+
     private static array $contracts = [];
     private static bool $bootstrapped = false;
 
@@ -14,7 +16,15 @@ final class ContractRegistry
         if (!array_key_exists('name', $spec)) {
             $spec['name'] = $name;
         }
+        if (!array_key_exists('version', $spec)) {
+            $spec['version'] = self::VERSION;
+        }
         self::$contracts[$name] = $spec;
+    }
+
+    public static function version(): string
+    {
+        return self::VERSION;
     }
 
     /** @return array<int, array<string, mixed>> */

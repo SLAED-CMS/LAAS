@@ -5,6 +5,7 @@ namespace Laas\Modules\Media\Controller;
 
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
+use Laas\Http\Contract\ContractResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Media\Repository\MediaRepository;
@@ -26,16 +27,25 @@ final class MediaServeController
     {
         $id = isset($params['id']) ? (int) $params['id'] : 0;
         if ($id <= 0) {
+            if ($request->wantsJson()) {
+                return $this->contractNotFound();
+            }
             return $this->notFound();
         }
 
         $repo = $this->repository();
         if ($repo === null) {
+            if ($request->wantsJson()) {
+                return $this->contractNotFound();
+            }
             return $this->notFound();
         }
 
         $row = $repo->findById($id);
         if ($row === null) {
+            if ($request->wantsJson()) {
+                return $this->contractNotFound();
+            }
             return $this->notFound();
         }
 
@@ -65,6 +75,9 @@ final class MediaServeController
         }
 
         if ($accessMode === 'private' && !$this->canView($request)) {
+            if ($request->wantsJson()) {
+                return $this->contractForbidden();
+            }
             return new Response('Forbidden', 403, [
                 'Content-Type' => 'text/plain; charset=utf-8',
             ]);
@@ -72,10 +85,16 @@ final class MediaServeController
 
         $storage = new StorageService($this->rootPath());
         if ($storage->isMisconfigured()) {
+            if ($request->wantsJson()) {
+                return $this->contractStorageError();
+            }
             return $this->storageError();
         }
         $diskPath = (string) ($row['disk_path'] ?? '');
         if (!$storage->exists($diskPath)) {
+            if ($request->wantsJson()) {
+                return $this->contractNotFound();
+            }
             return $this->notFound();
         }
 
@@ -83,6 +102,20 @@ final class MediaServeController
         $size = (int) ($row['size_bytes'] ?? $storage->size($diskPath));
         $name = $this->safeDownloadName((string) ($row['original_name'] ?? 'file'), $mime);
         $disposition = $purpose === 'download' ? 'attachment' : $this->contentDisposition($mime);
+        if ($request->wantsJson()) {
+            $hash = (string) ($row['sha256'] ?? '');
+            $signedUrl = $this->resolveSignedUrl($row, $config, $purpose, $accessMode);
+            return ContractResponse::ok([
+                'id' => $id,
+                'mime' => $mime,
+                'size' => $size,
+                'hash' => $hash !== '' ? $hash : null,
+                'mode' => $disposition,
+                'signed_url' => $signedUrl,
+            ], [
+                'route' => 'media.show',
+            ]);
+        }
 
         $readStart = microtime(true);
         $stream = $storage->getStream($diskPath);
@@ -278,5 +311,50 @@ final class MediaServeController
         return new Response('Error', 500, [
             'Content-Type' => 'text/plain; charset=utf-8',
         ]);
+    }
+
+    private function resolveSignedUrl(array $row, array $config, string $purpose, string $accessMode): ?string
+    {
+        $path = $this->publicUrl($row, $purpose);
+        if ($path === '') {
+            return null;
+        }
+
+        if ($accessMode === 'public') {
+            return $path;
+        }
+
+        if ($accessMode === 'signed') {
+            $signer = new MediaSignedUrlService($config);
+            if (!$signer->isEnabled()) {
+                return null;
+            }
+            $exp = time() + $signer->ttl();
+            $url = $signer->buildSignedUrl($path, $row, $purpose, $exp);
+            return $url !== null && $url !== '' ? $url : null;
+        }
+
+        return null;
+    }
+
+    private function contractNotFound(): Response
+    {
+        return ContractResponse::error('not_found', [
+            'route' => 'media.show',
+        ], 404);
+    }
+
+    private function contractForbidden(): Response
+    {
+        return ContractResponse::error('forbidden', [
+            'route' => 'media.show',
+        ], 403);
+    }
+
+    private function contractStorageError(): Response
+    {
+        return ContractResponse::error('storage_error', [
+            'route' => 'media.show',
+        ], 500);
     }
 }

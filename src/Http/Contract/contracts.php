@@ -156,3 +156,198 @@ ContractRegistry::register('admin.settings.save', [
         ],
     ],
 ]);
+
+ContractRegistry::register('admin.users.index', [
+    'route' => '/admin/users',
+    'methods' => ['GET'],
+    'rbac' => 'users.manage',
+    'responses' => [
+        '200' => [
+            'data' => [
+                'items' => [
+                    [
+                        'id' => 'int',
+                        'username' => 'string',
+                        'roles' => ['string'],
+                        'active' => 'bool',
+                        'created_at' => 'string',
+                    ],
+                ],
+                'pagination' => [
+                    'limit' => 'int',
+                    'offset' => 'int',
+                    'total' => 'int',
+                ],
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.users.index',
+            ],
+        ],
+        '403' => [
+            'error' => 'forbidden',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.users.index',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('admin.users.toggle', [
+    'route' => '/admin/users/status',
+    'methods' => ['POST'],
+    'rbac' => 'users.manage',
+    'responses' => [
+        '200' => [
+            'data' => [
+                'id' => 'int',
+                'active' => 'bool',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.users.toggle',
+            ],
+        ],
+        '422' => [
+            'error' => 'validation_failed',
+            'fields' => 'object',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.users.toggle',
+            ],
+        ],
+        '403' => [
+            'error' => 'forbidden',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.users.toggle',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('admin.media.index', [
+    'route' => '/admin/media',
+    'methods' => ['GET'],
+    'rbac' => 'media.view',
+    'responses' => [
+        '200' => [
+            'data' => [
+                'items' => [
+                    [
+                        'id' => 'int',
+                        'name' => 'string',
+                        'mime' => 'string',
+                        'size' => 'int',
+                        'hash' => 'string|null',
+                        'disk' => 'string',
+                        'created_at' => 'string',
+                    ],
+                ],
+                'counts' => [
+                    'total' => 'int',
+                    'page' => 'int',
+                    'total_pages' => 'int',
+                ],
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.media.index',
+            ],
+        ],
+        '403' => [
+            'error' => 'forbidden',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.media.index',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('admin.media.upload', [
+    'route' => '/admin/media/upload',
+    'methods' => ['POST'],
+    'rbac' => 'media.upload',
+    'responses' => [
+        '201' => [
+            'data' => [
+                'id' => 'int',
+                'mime' => 'string',
+                'size' => 'int',
+                'hash' => 'string',
+                'deduped' => 'bool',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.media.upload',
+            ],
+        ],
+        '400' => [
+            'error' => 'invalid_mime',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.media.upload',
+            ],
+        ],
+        '413' => [
+            'error' => 'file_too_large',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.media.upload',
+            ],
+        ],
+        '422' => [
+            'error' => 'validation_failed',
+            'fields' => 'object',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.media.upload',
+            ],
+        ],
+        '403' => [
+            'error' => 'forbidden',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.media.upload',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('media.show', [
+    'route' => '/media/{id}',
+    'methods' => ['GET'],
+    'rbac' => 'media.view',
+    'responses' => [
+        '200' => [
+            'data' => [
+                'id' => 'int',
+                'mime' => 'string',
+                'size' => 'int',
+                'hash' => 'string|null',
+                'mode' => 'inline|attachment',
+                'signed_url' => 'string|null',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'media.show',
+            ],
+        ],
+        '404' => [
+            'error' => 'not_found',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'media.show',
+            ],
+        ],
+        '403' => [
+            'error' => 'forbidden',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'media.show',
+            ],
+        ],
+    ],
+]);

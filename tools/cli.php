@@ -777,8 +777,11 @@ $commands['config:export'] = function () use ($rootPath, $dbManager, $appConfig,
 };
 
 $commands['contracts:dump'] = function (): int {
-    $contracts = ContractRegistry::all();
-    echo json_encode(['contracts' => $contracts], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n";
+    $payload = [
+        'contracts_version' => ContractRegistry::version(),
+        'items' => ContractRegistry::all(),
+    ];
+    echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n";
     return 0;
 };
 

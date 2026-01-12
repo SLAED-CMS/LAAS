@@ -63,12 +63,20 @@ final class StorageService
         }
 
         $tmp = (string) ($file['tmp_name'] ?? '');
-        if ($tmp === '' || !is_uploaded_file($tmp)) {
+        $isUpload = $tmp !== '' && is_uploaded_file($tmp);
+        if (!$isUpload && (!$this->allowLocalUpload() || !is_file($tmp))) {
             throw new RuntimeException('Invalid uploaded file');
         }
 
-        if (!move_uploaded_file($tmp, $absolutePath)) {
-            throw new RuntimeException('Failed to move uploaded file');
+        if ($isUpload) {
+            if (!move_uploaded_file($tmp, $absolutePath)) {
+                throw new RuntimeException('Failed to move uploaded file');
+            }
+        } else {
+            if (!copy($tmp, $absolutePath)) {
+                throw new RuntimeException('Failed to move uploaded file');
+            }
+            @unlink($tmp);
         }
 
         return [
@@ -284,5 +292,10 @@ final class StorageService
             && ($config['bucket'] ?? '') !== ''
             && ($config['access_key'] ?? '') !== ''
             && ($config['secret_key'] ?? '') !== '';
+    }
+
+    private function allowLocalUpload(): bool
+    {
+        return strtolower((string) getenv('APP_ENV')) === 'test';
     }
 }

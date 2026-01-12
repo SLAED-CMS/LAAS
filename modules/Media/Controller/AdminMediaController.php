@@ -6,6 +6,7 @@ namespace Laas\Modules\Media\Controller;
 use Laas\Api\ApiCacheInvalidator;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
+use Laas\Http\Contract\ContractResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Media\Repository\MediaRepository;
@@ -33,11 +34,17 @@ final class AdminMediaController
     public function index(Request $request, array $params = []): Response
     {
         if (!$this->canView($request)) {
+            if ($request->wantsJson()) {
+                return $this->contractForbidden('admin.media.index');
+            }
             return $this->forbidden();
         }
 
         $repo = $this->repository();
         if ($repo === null) {
+            if ($request->wantsJson()) {
+                return $this->contractServiceUnavailable('admin.media.index');
+            }
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
@@ -47,6 +54,11 @@ final class AdminMediaController
 
         if (SearchNormalizer::isTooShort($query)) {
             $message = $this->view->translate('search.too_short');
+            if ($request->wantsJson()) {
+                return $this->contractValidationError('admin.media.index', [
+                    'q' => ['too_short'],
+                ]);
+            }
             if ($request->isHtmx()) {
                 $response = $this->view->render('partials/messages.html', [
                     'errors' => [$message],
@@ -81,11 +93,14 @@ final class AdminMediaController
         }
         $offset = ($page - 1) * $perPage;
 
+        $rows = [];
         if ($query !== '') {
             $search = new SearchQuery($query, $perPage, $page, 'media');
-            $items = $this->mapRows($repo->search($search->q, $search->limit, $search->offset), $this->mediaConfig(), null, $search->q);
+            $rows = $repo->search($search->q, $search->limit, $search->offset);
+            $items = $this->mapRows($rows, $this->mediaConfig(), null, $search->q);
         } else {
-            $items = $this->mapRows($repo->list($perPage, $offset), $this->mediaConfig(), null, $query);
+            $rows = $repo->list($perPage, $offset);
+            $items = $this->mapRows($rows, $this->mediaConfig(), null, $query);
         }
         $showPagination = $totalPages > 1 ? 1 : 0;
 
@@ -103,6 +118,20 @@ final class AdminMediaController
             'errors' => [],
         ];
 
+        if ($request->wantsJson()) {
+            $disk = $this->storage()->driverName();
+            return ContractResponse::ok([
+                'items' => $this->mapContractItems($rows, $disk),
+                'counts' => [
+                    'total' => $total,
+                    'page' => $page,
+                    'total_pages' => $totalPages,
+                ],
+            ], [
+                'route' => 'admin.media.index',
+            ]);
+        }
+
         if ($request->isHtmx()) {
             return $this->view->render('partials/media_table.html', $viewData, 200, [], [
                 'theme' => 'admin',
@@ -118,11 +147,17 @@ final class AdminMediaController
     public function upload(Request $request, array $params = []): Response
     {
         if (!$this->canUpload($request)) {
+            if ($request->wantsJson()) {
+                return $this->contractForbidden('admin.media.upload');
+            }
             return $this->errorResponse($request, 'forbidden', 403);
         }
 
         $repo = $this->repository();
         if ($repo === null) {
+            if ($request->wantsJson()) {
+                return $this->contractServiceUnavailable('admin.media.upload');
+            }
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
@@ -185,6 +220,7 @@ final class AdminMediaController
         $row = $mediaId > 0 ? $repo->findById($mediaId) : null;
         $mime = (string) ($row['mime_type'] ?? '');
         $size = (int) ($row['size_bytes'] ?? 0);
+        $hash = (string) ($row['sha256'] ?? '');
         $successKey = $existing ? 'admin.media.success_deduped' : 'admin.media.success_uploaded';
 
         (new AuditLogger($this->db, $request->session()))->log(
@@ -202,6 +238,19 @@ final class AdminMediaController
         );
 
         (new ApiCacheInvalidator())->bumpMedia();
+
+        if ($request->wantsJson()) {
+            return ContractResponse::ok([
+                'id' => $mediaId,
+                'mime' => $mime,
+                'size' => $size,
+                'hash' => $hash,
+                'deduped' => $existing,
+            ], [
+                'route' => 'admin.media.upload',
+                'status' => 'ok',
+            ], 201);
+        }
 
         $success = $this->view->translate($successKey);
         return $this->tableResponse($request, $repo, $success, [], $mediaId > 0 ? $mediaId : null);
@@ -513,6 +562,10 @@ final class AdminMediaController
 
     private function validationError(Request $request, array $keys): Response
     {
+        if ($request->wantsJson()) {
+            return $this->uploadContractErrorFromKeys($keys);
+        }
+
         $errors = [];
         foreach ($keys as $key) {
             if (is_array($key)) {
@@ -762,9 +815,8 @@ final class AdminMediaController
         }
 
         if ($request->wantsJson()) {
-            return Response::json([
-                'error' => 'rate_limited',
-                'message' => $message,
+            return ContractResponse::error('rate_limited', [
+                'route' => 'admin.media.upload',
             ], 429);
         }
 
@@ -846,9 +898,9 @@ final class AdminMediaController
         }
 
         if ($request->wantsJson()) {
-            return Response::json([
-                'error' => $status === 413 ? 'payload_too_large' : 'bad_request',
-                'message' => $message,
+            $code = $status === 413 ? 'file_too_large' : 'invalid_mime';
+            return ContractResponse::error($code, [
+                'route' => 'admin.media.upload',
             ], $status);
         }
 
@@ -959,9 +1011,8 @@ final class AdminMediaController
         }
 
         if ($request->wantsJson()) {
-            return Response::json([
-                'error' => 'signed_url',
-                'message' => $message,
+            return ContractResponse::error('signed_url', [
+                'route' => 'admin.media.signed',
             ], $status);
         }
 
@@ -987,6 +1038,75 @@ final class AdminMediaController
             'Content-Type' => 'text/plain; charset=utf-8',
         ]);
     }
-}
 
+    private function uploadContractErrorFromKeys(array $keys): Response
+    {
+        $invalidMimeKeys = [
+            'admin.media.error_invalid_type',
+            'admin.media.error_svg_forbidden',
+        ];
+        $tooLargeKeys = [
+            'media.upload_too_large',
+            'media.upload_mime_too_large',
+        ];
+        $error = 'validation_failed';
+        $status = 422;
+        foreach ($keys as $key) {
+            $value = is_array($key) ? (string) ($key['key'] ?? '') : (string) $key;
+            if (in_array($value, $tooLargeKeys, true)) {
+                $error = 'file_too_large';
+                $status = 413;
+                break;
+            }
+            if (in_array($value, $invalidMimeKeys, true)) {
+                $error = 'invalid_mime';
+                $status = 400;
+            }
+        }
+
+        return ContractResponse::error($error, [
+            'route' => 'admin.media.upload',
+        ], $status, $error === 'validation_failed' ? ['file' => ['invalid']] : []);
+    }
+
+    private function contractValidationError(string $route, array $fields = []): Response
+    {
+        return ContractResponse::error('validation_failed', [
+            'route' => $route,
+        ], 422, $fields);
+    }
+
+    private function contractForbidden(string $route): Response
+    {
+        return ContractResponse::error('forbidden', [
+            'route' => $route,
+        ], 403);
+    }
+
+    private function contractServiceUnavailable(string $route): Response
+    {
+        return ContractResponse::error('service_unavailable', [
+            'route' => $route,
+        ], 503);
+    }
+
+    private function mapContractItems(array $rows, string $disk): array
+    {
+        $items = [];
+        foreach ($rows as $row) {
+            $hash = (string) ($row['sha256'] ?? '');
+            $items[] = [
+                'id' => (int) ($row['id'] ?? 0),
+                'name' => (string) ($row['original_name'] ?? ''),
+                'mime' => (string) ($row['mime_type'] ?? ''),
+                'size' => (int) ($row['size_bytes'] ?? 0),
+                'hash' => $hash !== '' ? $hash : null,
+                'disk' => $disk,
+                'created_at' => (string) ($row['created_at'] ?? ''),
+            ];
+        }
+
+        return $items;
+    }
+}
 
