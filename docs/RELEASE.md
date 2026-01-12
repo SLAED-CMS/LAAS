@@ -542,16 +542,254 @@
 
 ---
 
-## 🧭 Итог: v0.1 → v2.4.0
+## 🎭 v3.0.0 — Frontend-agnostic Platform (Stable)
+
+**Архитектурная трансформация: от HTML-first к API-first + HTML.**
+
+### v3.0.0 — Headless CMS с HTML/JSON content negotiation
+
+**Статус:** Стабильный релиз. **Обратная совместимость:** Полная.
+
+**Суть изменений:**
+LAAS CMS превращается из "HTML-first CMS" в **frontend-agnostic platform**. Один бэкенд — множество фронтендов.
+
+#### Основные нововведения
+
+**1. RenderAdapter v1 — Content Negotiation**
+- Unified content negotiation layer
+- Выбор формата через `Accept` header или `?format=` параметр
+- HTML (default) vs JSON (headless mode)
+- Автоматическое переключение без изменений в контроллерах
+
+**Технически:**
+- `RenderAdapter` интерфейс + `HtmlRenderAdapter` + `JsonRenderAdapter`
+- Content-Type sniffing protection
+- MIME type validation
+- Accept header parsing (text/html vs application/json)
+
+**2. Headless Mode** — JSON-first для API-приложений
+- Enable via `APP_HEADLESS=true` в `.env`
+- Default response: JSON envelope
+- HTML только когда `Accept: text/html` AND route allowlisted
+- Force JSON: `Accept: application/json` или `?format=json`
+
+**Зачем:**
+- SPA-приложения (React, Vue, Svelte)
+- Мобильные приложения (iOS, Android)
+- Десктоп-приложения (Electron, Tauri)
+- CLI-клиенты и автоматизация
+- Микросервисная архитектура
+
+**3. Problem Details (RFC 7807)** — Структурированные ошибки
+- JSON-представление ошибок по стандарту RFC 7807
+- Поля: `type`, `title`, `status`, `detail`, `instance`
+- Консистентные коды ошибок
+- Machine-readable + human-readable
+
+**Пример:**
+```json
+{
+  "type": "validation_failed",
+  "title": "Validation Failed",
+  "status": 422,
+  "detail": "The username field is required.",
+  "instance": "/api/v1/users"
+}
+```
+
+**4. ViewModels** — Нормализация данных презентационного слоя
+- Separation of concerns: бизнес-логика vs презентация
+- Data transformation для шаблонов
+- Type-safe data contracts
+- Reusable presentation logic
+
+**Технически:**
+- `ViewModel` интерфейс: `toArray(): array`
+- Используется в контроллерах перед рендерингом
+- Encapsulation presentation logic
+- Тестируемые data transformations
+
+**5. Contract Envelope + Registry** — Гарантированные контракты
+- Contract registry для всех public endpoints
+- JSON envelope для единого формата ответов
+- Fixtures guard (golden files) для защиты от breaking changes
+- CLI для проверки контрактов: `contracts:fixtures:check`
+
+**Поддерживаемые контракты v3.0.0:**
+
+| contract_name | route | method | responses |
+| --- | --- | --- | --- |
+| pages.show | /{slug} | GET | 200 ok, 404 not_found |
+| admin.modules.index | /admin/modules | GET | 200 ok, 403 forbidden |
+| admin.modules.toggle | /admin/modules/toggle | POST | 200 ok, 400 protected_module |
+| admin.settings.index | /admin/settings | GET | 200 ok, 403 forbidden |
+| admin.settings.save | /admin/settings | POST | 200 ok, 422 validation_failed |
+| admin.users.index | /admin/users | GET | 200 ok, 403 forbidden |
+| admin.users.toggle | /admin/users/status | POST | 200 ok, 422 validation_failed, 403 forbidden |
+| admin.media.index | /admin/media | GET | 200 ok, 403 forbidden |
+| admin.media.upload | /admin/media/upload | POST | 201 ok, 400 invalid_mime, 413 file_too_large, 422 validation_failed, 403 forbidden |
+| media.show | /media/{id} | GET | 200 ok, 404 not_found, 403 forbidden |
+
+**6. Policy Checks** — CI guardrails для качества кода
+- Автоматическая проверка frontend/backend separation
+- CLI команда: `php tools/cli.php policy:check`
+- CI интеграция (GitHub Actions)
+- Защита от регрессии архитектурных принципов
+
+**Проверки:**
+- No inline styles (`<style>` tags)
+- No inline scripts (`<script>` tags)
+- No CDN links (только локальные ассеты)
+- No `*_class` keys from PHP (UI Tokens вместо CSS-классов)
+
+**7. Preflight CLI** — Проверка готовности к релизу
+- `php tools/cli.php preflight --no-db`
+- Проверка конфигурации, прав, миграций
+- Environment hints (рекомендации по настройке)
+- Release readiness validation
+
+---
+
+### Upgrade Steps (v2.4.0 → v3.0.0)
+
+```bash
+git pull
+composer install --no-dev
+php tools/cli.php preflight --no-tests
+php tools/cli.php migrate:up  # если требуется
+php tools/cli.php cache:clear
+```
+
+**Breaking Changes:** None (полная обратная совместимость)
+
+---
+
+### Зачем v3.0.0
+
+**До v3.0.0:**
+- HTML-first CMS (только веб-интерфейс)
+- API как "дополнительная функция" (v2.3.x)
+- Жёсткая связь контроллеров с HTML-шаблонами
+
+**После v3.0.0:**
+- Frontend-agnostic platform (HTML, JSON, любой фронтенд)
+- API и HTML — равноправные граждане
+- Контроллеры возвращают ViewModels, адаптер решает формат
+- Headless mode из коробки
+- RFC-compliant error handling
+- Contract-based гарантии
+
+**Применение:**
+- **Traditional web:** HTML templates + HTMX (как раньше)
+- **SPA:** React/Vue frontend + JSON API
+- **Mobile:** iOS/Android apps + JSON API
+- **Hybrid:** Web UI для админов + JSON API для мобильных
+- **Microservices:** LAAS CMS как headless content service
+
+📌 *LAAS CMS теперь — не просто CMS, а content platform для любого типа фронтенда.*
+
+---
+
+## 🔄 v3.1.x — Session Abstraction & Redis Support
+
+**Optional Redis sessions с graceful fallback.**
+
+### v3.1.0 — SessionInterface abstraction
+
+**Подготовка к альтернативным сессионным бэкендам:**
+- `SessionInterface` — контракт для всех session backends
+- `NativeSession` — продакшен-реализация (PHP's native sessions)
+- Удалено прямое использование `$_SESSION` во всём коде
+- Request DI: `$request->session()`
+
+**Зачем:**
+- Готовность к Redis/Memcached
+- Тестируемость (in-memory session для юнит-тестов)
+- Изоляция зависимостей
+
+### v3.1.1 — Optional Redis sessions
+
+**Первая альтернатива native PHP sessions:**
+- Enable via `SESSION_DRIVER=redis` в `.env`
+- Config: `REDIS_URL`, `REDIS_TIMEOUT`, `REDIS_PREFIX`
+- **Safe fallback:** Если Redis недоступен → автоматический переход на native PHP sessions (с WARN-логом)
+- **No extensions required:** Минимальная RESP implementation (никаких phpredis/predis)
+
+**Технически:**
+- `RedisSession` реализация `SessionInterface`
+- Socket-based connection (fsockopen)
+- RESP protocol для команд: SET, GET, DEL, EXPIRE
+- Graceful degradation при ошибках Redis
+
+### v3.1.2 — Session hardening
+
+**Укрепление Redis sessions для продакшена:**
+- **Ops checks:** Встроенная диагностика Redis-подключения
+- **Smoke command:** `php tools/cli.php session:smoke` — тест сессионных операций
+- **Fallback diagnostics:** Health endpoint показывает статус Redis (OK/WARN/CRITICAL)
+- **URL sanitization:** Защита от URL injection в Redis config
+
+**Health monitoring:**
+```bash
+curl http://localhost/health
+# {"status": "ok", "checks": {"redis": "ok"}}
+# или
+# {"status": "warn", "checks": {"redis": "fallback"}}
+```
+
+---
+
+### Redis Sessions — Детали
+
+**Конфигурация (.env):**
+```env
+SESSION_DRIVER=redis
+REDIS_URL=tcp://127.0.0.1:6379
+REDIS_TIMEOUT=2
+REDIS_PREFIX=laas_session:
+```
+
+**Команды CLI:**
+```bash
+# Тест Redis connection + session operations
+php tools/cli.php session:smoke
+
+# Health check (включая Redis)
+php tools/cli.php ops:check
+```
+
+**Fallback поведение:**
+- Redis недоступен → WARN log + переключение на NativeSession
+- Ошибка во время операции → graceful degradation
+- Health endpoint показывает статус: "ok" / "fallback"
+
+**Применение:**
+- **Session sharing:** Несколько web-серверов за балансировщиком
+- **Session persistence:** Перезапуск PHP-FPM не убивает сессии
+- **Performance:** Faster session I/O (vs filesystem locks)
+- **Scalability:** Horizontal scaling с централизованными сессиями
+
+**Ограничения:**
+- Требуется Redis server (отдельный процесс)
+- Network latency для Redis-операций
+- Single point of failure (если Redis down → fallback на native)
+
+📌 *Опциональный Redis — прогресс для масштабируемости, без breaking changes.*
+
+---
+
+## 🧭 Итог: v0.1 → v3.1.2
 
 LAAS CMS прошла путь от идеи до зрелой платформы:
-- **65+ релизов** от прототипа к продакшену
+- **75+ релизов** от прототипа к продакшену
 - **v0.x:** исследование и proof-of-concept
 - **v1.x:** укрепление продакшена и зрелость функций
 - **v2.0:** стабильная платформа с гарантиями
 - **v2.1-2.2:** UX, производительность, безопасность, качество
 - **v2.3:** витрина возможностей + headless API + интеграции
 - **v2.4:** полный security stack, 99/100 score, enterprise-готовность
+- **v3.0:** frontend-agnostic platform, headless mode, ViewModels, contracts
+- **v3.1:** session abstraction, optional Redis sessions, scalability
 
 ### Что отличает LAAS CMS
 
@@ -602,18 +840,21 @@ LAAS CMS прошла путь от идеи до зрелой платформ�
 
 ### Что дальше
 
-LAAS CMS достигла зрелости. Дальнейшее развитие:
+LAAS CMS достигла зрелости и продолжает развиваться:
+- Frontend-agnostic архитектура (v3.0+)
+- Optional Redis sessions для масштабируемости (v3.1+)
 - Улучшение UX существующих функций
 - Расширение тестирования безопасности
 - Оптимизация производительности
 - Модули сообщества (на основе контрактных тестов)
+- Поддержка альтернативных фронтендов (SPA, mobile, desktop)
 
 **Это CMS, которую не страшно поддерживать годами.**
 
 ---
 
 - **Последнее обновление:** январь 2026
-- **Текущая версия:** v2.4.0
+- **Текущая версия:** v3.1.2
 - **Лицензия:** MIT
 - **Автор:** Eduard Laas
 - **E-Mail:** info@laas-cms.org

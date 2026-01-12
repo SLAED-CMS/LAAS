@@ -13,7 +13,6 @@
 **Latest Release v3.1.2**
 - Versions: `docs/VERSIONS.md`
 - Contracts: `docs/CONTRACTS.md`
-- v3.0.0 Release Notes: `docs/RELEASES/v3.0.0.md`
 
 **Modern, secure, HTML-first content management system.**
 
