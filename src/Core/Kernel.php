@@ -30,7 +30,7 @@ use Laas\Modules\ModuleManager;
 use Laas\Routing\Router;
 use Laas\Security\RateLimiter;
 use Laas\Security\SecurityHeaders;
-use Laas\Session\NativeSession;
+use Laas\Session\SessionFactory;
 use Laas\Session\SessionInterface;
 use Laas\Settings\SettingsProvider;
 use Laas\Support\LoggerFactory;
@@ -137,7 +137,8 @@ final class Kernel
             });
         }
 
-        $session = new NativeSession();
+        $sessionFactory = new SessionFactory($securityConfig['session'] ?? [], $logger);
+        $session = $sessionFactory->create();
         $authService = $this->createAuthService($logger, $session);
         $authorization = $this->createAuthorizationService();
 

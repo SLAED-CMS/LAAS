@@ -24,6 +24,13 @@ $envInt = static function (string $key, int $default) use ($env): int {
     }
     return is_numeric($value) ? (int) $value : $default;
 };
+$envFloat = static function (string $key, float $default) use ($env): float {
+    $value = $env[$key] ?? null;
+    if ($value === null || $value === '') {
+        return $default;
+    }
+    return is_numeric($value) ? (float) $value : $default;
+};
 $envList = static function (string $key, array $default) use ($env): array {
     $value = $env[$key] ?? null;
     if ($value === null || $value === '') {
@@ -54,6 +61,7 @@ $unique = static function (array $values): array {
 
 return [
     'session' => [
+        'driver' => $envString('SESSION_DRIVER', 'native'),
         'name' => $envString('SESSION_NAME', 'LAASID'),
         'secure' => $envBool('SESSION_SECURE', false),
         'httponly' => $envBool('SESSION_HTTPONLY', true),
@@ -61,6 +69,11 @@ return [
         'lifetime' => $envInt('SESSION_LIFETIME', 0),
         'domain' => $envString('SESSION_DOMAIN', ''),
         'timeout' => $envInt('SESSION_TIMEOUT', 7200),
+        'redis' => [
+            'url' => $envString('REDIS_URL', 'redis://127.0.0.1:6379/0'),
+            'timeout' => $envFloat('REDIS_TIMEOUT', 1.5),
+            'prefix' => $envString('REDIS_PREFIX', 'laas:sess:'),
+        ],
     ],
     'hsts_enabled' => false,
     'hsts_max_age' => 31536000,
