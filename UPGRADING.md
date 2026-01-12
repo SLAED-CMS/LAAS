@@ -69,6 +69,19 @@
 - Headless mode is **opt-in** via `APP_HEADLESS=true`
 - Without headless mode, behavior is 100% backward compatible
 - Custom controllers can use RenderAdapter for dual HTML/JSON support
+
+## v3.0.x upgrade rules (semver + contracts_version)
+
+- v3.0.x is a patch line: no breaking changes to contracts or public behavior
+- Additive changes are allowed: new optional fields, new endpoints, new error codes
+- Breaking changes require:
+  - bump `contracts_version`
+  - update fixtures via `php tools/cli.php contracts:fixtures:dump --force`
+  - note the change in this file
+
+**Examples**
+- Non-breaking: add `meta.request_id` or a new optional field inside `data`
+- Breaking: remove/rename a field, change field type, change required envelope keys
 - Problem Details provides structured error responses for JSON consumers
 
 ---

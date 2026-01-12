@@ -1,5 +1,10 @@
 # LAAS Versions
 
+- v3.0.5: Release candidate preflight + policies
+  - Preflight CLI for readiness checks
+  - Upgrade rules for semver + contracts_version
+  - RC documentation
+
 - v3.0.4: Contract fixtures + compatibility guard
   - Golden fixtures for core contract endpoints
   - Fixture check CLI and guard test

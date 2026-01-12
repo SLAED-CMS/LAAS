@@ -408,6 +408,17 @@ vendor/bin/phpunit --coverage-html coverage/html --coverage-clover coverage/clov
 - Before commit: `php tools/cli.php policy:check && vendor/bin/phpunit`
 - Contract fixtures: `php tools/cli.php contracts:fixtures:dump --force`
 
+## Preflight before deploy
+
+```
+php tools/cli.php preflight
+```
+
+Flags:
+- `--no-tests`
+- `--no-db`
+- `--strict`
+
 ## CI
 
 - GitHub Actions runs lint, phpunit, coverage, and sqlite smoke checks.
