@@ -29,7 +29,8 @@
 21. [Frontend-agnostic foundation (v2.8)](#frontend-agnostic-foundation-v28)
 22. [Headless contracts (v2.9)](#headless-contracts-v29)
 23. [v3.0 Contracts foundation](#v30-contracts-foundation)
-24. [Future: Rendering Adapters](#future-rendering-adapters)
+24. [Contracts coverage (v3.0.2)](#contracts-coverage-v302)
+25. [Future: Rendering Adapters](#future-rendering-adapters)
 
 ---
 
@@ -1932,6 +1933,19 @@ return $responder->respond($request, 'pages/page.html', $data, $data);
 - `meta.format` is always `json`
 - `meta.route` is stable and required for contract endpoints
 - `meta.request_id` is included when available
+
+---
+
+## Contracts coverage (v3.0.2)
+
+**Expanded contract endpoints:**
+- Admin Users: `/admin/users`, `/admin/users/status`
+- Admin Media: `/admin/media`, `/admin/media/upload`
+- Media metadata: `/media/{id}`
+
+**Registry versioning:**
+- `contracts_version` included in `contracts:dump`
+- Breaking changes require version bump
 
 ---
 

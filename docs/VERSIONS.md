@@ -6,6 +6,11 @@
   - Headless mode toggle (JSON by default)
   - Problem Details for JSON errors
 
+- v3.0.2: Contract coverage + policy gate
+  - Users + Media contracts (admin + public media metadata)
+  - contracts_version in contracts:dump
+  - policy check added to dev workflow
+
 - v3.0.1: Contracts foundation
   - ContractResponse envelope + ContractRegistry
   - CLI contracts:dump and contracts docs

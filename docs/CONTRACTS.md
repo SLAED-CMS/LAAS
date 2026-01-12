@@ -44,6 +44,13 @@ This document defines the JSON response envelope and the internal contract regis
 - `route` is a stable internal route name
 - `request_id` is included when available
 
+## Versioning
+
+- `contracts:dump` outputs `{ "contracts_version": "...", "items": [...] }`
+- `contracts_version` is included in `contracts:dump`
+- breaking change => bump `contracts_version`
+- additive fields are allowed without bump
+
 ## Examples
 
 **Pages show (OK)**

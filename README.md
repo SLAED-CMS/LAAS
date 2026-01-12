@@ -401,6 +401,7 @@ vendor/bin/phpunit --coverage-html coverage/html --coverage-clover coverage/clov
 - Policy checks: `php tools/policy-check.php`
 - Policy checks via CLI: `php tools/cli.php policy:check`
 - Tests: `vendor/bin/phpunit`
+- Before commit: `php tools/cli.php policy:check && vendor/bin/phpunit`
 
 ## CI
 

@@ -787,7 +787,11 @@ $commands['contracts:dump'] = function (): int {
 
 $commands['policy:check'] = function () use ($rootPath): int {
     require_once $rootPath . '/tools/policy-check.php';
-    return policy_run([$rootPath . '/themes']);
+    return policy_run([
+        $rootPath . '/themes',
+        $rootPath . '/src',
+        $rootPath . '/modules',
+    ]);
 };
 
 if ($command === '' || !isset($commands[$command])) {
