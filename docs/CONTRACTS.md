@@ -80,6 +80,14 @@ This document defines the JSON response envelope and the internal contract regis
 }
 ```
 
+## Fixtures & Breaking Changes
+
+- Golden fixtures live in `tests/fixtures/contracts/*.json`
+- Update fixtures only via CLI and review the diff:
+  - `php tools/cli.php contracts:fixtures:dump --force`
+- Validate fixtures with: `php tools/cli.php contracts:fixtures:check`
+- Guard test compares registry examples to fixtures and fails on breaking changes
+
 **Admin settings save (validation error)**
 ```json
 {

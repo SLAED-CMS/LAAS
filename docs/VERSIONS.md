@@ -1,5 +1,9 @@
 # LAAS Versions
 
+- v3.0.4: Contract fixtures + compatibility guard
+  - Golden fixtures for core contract endpoints
+  - Fixture check CLI and guard test
+
 - v3.0.3: Official headless mode
   - APP_HEADLESS + HTML allowlist/override
   - Default JSON envelope with 406 not_acceptable for blocked HTML
