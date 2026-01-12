@@ -9,7 +9,8 @@ final class InMemorySession implements SessionInterface
 {
     private bool $started = false;
     private array $data = [];
-    public int $regenerateCalls = 0;
+    public int $regenerateIdCalls = 0;
+    public ?bool $lastRegenerateDeleteOld = null;
 
     public function start(): void
     {
@@ -48,7 +49,7 @@ final class InMemorySession implements SessionInterface
         return array_key_exists($key, $this->data);
     }
 
-    public function remove(string $key): void
+    public function delete(string $key): void
     {
         if (!$this->started) {
             return;
@@ -75,13 +76,13 @@ final class InMemorySession implements SessionInterface
         $this->data = [];
     }
 
-    public function regenerate(bool $deleteOldSession = true): bool
+    public function regenerateId(bool $deleteOld = true): void
     {
         if (!$this->started) {
-            return false;
+            return;
         }
 
-        $this->regenerateCalls++;
-        return true;
+        $this->regenerateIdCalls++;
+        $this->lastRegenerateDeleteOld = $deleteOld;
     }
 }

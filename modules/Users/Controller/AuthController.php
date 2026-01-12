@@ -162,8 +162,8 @@ final class AuthController
 
         $user = $this->users->findById($pendingUserId);
         if ($user === null || (int) ($user['status'] ?? 0) !== 1) {
-            $session->remove('_2fa_pending_user_id');
-            $session->remove('_2fa_pending_ip');
+            $session->delete('_2fa_pending_user_id');
+            $session->delete('_2fa_pending_ip');
             return new Response('', 302, ['Location' => '/login']);
         }
 
@@ -195,10 +195,10 @@ final class AuthController
             ], 422);
         }
 
-        $session->remove('_2fa_pending_user_id');
-        $session->remove('_2fa_pending_ip');
+        $session->delete('_2fa_pending_user_id');
+        $session->delete('_2fa_pending_ip');
 
-        $session->regenerate(true);
+        $session->regenerateId(true);
         $session->set('user_id', $pendingUserId);
         $this->users->updateLoginMeta($pendingUserId, $pendingIp);
 

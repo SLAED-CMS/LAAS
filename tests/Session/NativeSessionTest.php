@@ -1,11 +1,20 @@
 <?php
 declare(strict_types=1);
 
-use Laas\Session\PhpSession;
+use Laas\Session\NativeSession;
 use PHPUnit\Framework\TestCase;
 
-final class PhpSessionTest extends TestCase
+final class NativeSessionTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_unset();
+            session_destroy();
+        }
+        session_id('native_test_' . bin2hex(random_bytes(8)));
+    }
+
     protected function tearDown(): void
     {
         if (session_status() === PHP_SESSION_ACTIVE) {
@@ -14,9 +23,9 @@ final class PhpSessionTest extends TestCase
         }
     }
 
-    public function testSetGetHasRemoveClear(): void
+    public function testSetGetHasDeleteAllClear(): void
     {
-        $session = new PhpSession();
+        $session = new NativeSession();
         $session->start();
         $session->clear();
 
@@ -27,7 +36,7 @@ final class PhpSessionTest extends TestCase
         $this->assertTrue($session->has('foo'));
         $this->assertSame('bar', $session->get('foo'));
 
-        $session->remove('foo');
+        $session->delete('foo');
         $this->assertFalse($session->has('foo'));
 
         $session->set('a', 1);
@@ -36,13 +45,5 @@ final class PhpSessionTest extends TestCase
 
         $session->clear();
         $this->assertSame([], $session->all());
-    }
-
-    public function testRegenerateReturnsBool(): void
-    {
-        $session = new PhpSession();
-        $session->start();
-
-        $this->assertTrue($session->regenerate(true));
     }
 }

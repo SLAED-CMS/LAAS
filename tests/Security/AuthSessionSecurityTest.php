@@ -86,7 +86,7 @@ final class AuthSessionSecurityTest extends TestCase
         $auth = new AuthService(new UsersRepository($pdo), $session);
         $this->assertTrue($auth->attempt('admin', 'secret', '127.0.0.1'));
 
-        $this->assertSame(1, $session->regenerateCalls);
+        $this->assertSame(1, $session->regenerateIdCalls);
         $this->assertSame(1, $session->get('user_id'));
     }
 

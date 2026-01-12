@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace Laas\Http\Session;
 
 use Laas\Http\Request;
+use Laas\Session\NativeSession;
+use Laas\Session\SessionInterface;
 use RuntimeException;
 
 final class SessionManager
@@ -14,10 +16,12 @@ final class SessionManager
     ) {
     }
 
-    public function start(?Request $request = null): void
+    public function start(?Request $request = null, ?SessionInterface $session = null): SessionInterface
     {
         if (session_status() === PHP_SESSION_ACTIVE) {
-            return;
+            $session ??= new NativeSession();
+            $session->start();
+            return $session;
         }
 
         $savePath = $this->rootPath . '/storage/sessions';
@@ -46,6 +50,8 @@ final class SessionManager
             'samesite' => $cookie['samesite'] ?? 'Lax',
         ]);
 
-        session_start();
+        $session ??= new NativeSession();
+        $session->start();
+        return $session;
     }
 }

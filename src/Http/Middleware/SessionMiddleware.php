@@ -6,7 +6,7 @@ namespace Laas\Http\Middleware;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Http\Session\SessionManager;
-use Laas\Session\PhpSession;
+use Laas\Session\SessionInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
@@ -14,21 +14,22 @@ final class SessionMiddleware implements MiddlewareInterface
 {
     private int $timeout;
     private LoggerInterface $logger;
+    private ?SessionInterface $session;
 
     public function __construct(
         private SessionManager $sessionManager,
         ?array $config = null,
-        ?LoggerInterface $logger = null
+        ?LoggerInterface $logger = null,
+        ?SessionInterface $session = null
     ) {
         $this->timeout = (int) ($config['timeout'] ?? 7200);
         $this->logger = $logger ?? new NullLogger();
+        $this->session = $session;
     }
 
     public function process(Request $request, callable $next): Response
     {
-        $this->sessionManager->start($request);
-        $session = new PhpSession();
-        $session->start();
+        $session = $this->sessionManager->start($request, $this->session);
         $request->setSession($session);
 
         // Session timeout check
@@ -43,7 +44,7 @@ final class SessionMiddleware implements MiddlewareInterface
                 ]);
 
                 $session->clear();
-                $session->regenerate(true);
+                $session->regenerateId(true);
             }
 
             // Update last activity timestamp

@@ -31,9 +31,10 @@ final class AuthService implements AuthInterface
             return false;
         }
 
-        $regenerated = $this->session->regenerate(true);
-        if ($regenerated === false && $this->logger !== null) {
-            $this->logger->warning('Session ID regeneration failed', [
+        if ($this->session->isStarted()) {
+            $this->session->regenerateId(true);
+        } elseif ($this->logger !== null) {
+            $this->logger->warning('Session ID regeneration skipped', [
                 'username' => $username,
                 'ip' => $ip,
             ]);
@@ -47,7 +48,7 @@ final class AuthService implements AuthInterface
 
     public function logout(): void
     {
-        $this->session->remove('user_id');
+        $this->session->delete('user_id');
     }
 
     public function user(): ?array

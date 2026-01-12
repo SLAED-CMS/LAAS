@@ -71,7 +71,7 @@ final class TwoFactorController
         $email = (string) ($user['email'] ?? $user['username']);
         $qrCodeUrl = $this->totp->getQRCodeUrl($secret, $email);
 
-        $session = $request->getSession();
+        $session = $request->session();
         $session->set('_totp_setup_secret', $secret);
 
         return $this->view->render('pages/2fa_enable.html', [
@@ -88,7 +88,7 @@ final class TwoFactorController
         }
 
         $code = trim((string) ($request->post('code') ?? ''));
-        $session = $request->getSession();
+        $session = $request->session();
         $setupSecret = (string) $session->get('_totp_setup_secret', '');
 
         $validator = new Validator();
@@ -131,7 +131,7 @@ final class TwoFactorController
         $this->users->setBackupCodes($userId, json_encode($backupCodes));
         $this->users->setTotpEnabled($userId, true);
 
-        $session->remove('_totp_setup_secret');
+        $session->delete('_totp_setup_secret');
 
         $this->logger->info('2FA enabled for user', [
             'user_id' => $userId,

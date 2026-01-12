@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Laas\Http;
 
-use Laas\Session\PhpSession;
+use Laas\Session\NativeSession;
 use Laas\Session\SessionInterface;
 
 final class Request
@@ -166,7 +166,7 @@ final class Request
 
     public function session(): SessionInterface
     {
-        return $this->session ?? new PhpSession();
+        return $this->session ?? new NativeSession();
     }
 
     public function setAttribute(string $key, mixed $value): void
