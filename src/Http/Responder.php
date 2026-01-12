@@ -52,7 +52,7 @@ final class Responder
             return [$data, []];
         }
 
-        if (array_key_exists('data', $json) || array_key_exists('meta', $json)) {
+        if (array_key_exists('data', $json)) {
             $payload = is_array($json['data'] ?? null) ? $json['data'] : [];
             $meta = is_array($json['meta'] ?? null) ? $json['meta'] : [];
             return [$payload, $meta];
