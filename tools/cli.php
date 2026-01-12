@@ -19,6 +19,7 @@ use Laas\Support\ConfigExporter;
 use Laas\Support\LoggerFactory;
 use Laas\Support\OpsChecker;
 use Laas\Support\ReleaseChecker;
+use Laas\Support\PreflightRunner;
 use Laas\I18n\Translator;
 use Laas\Http\Contract\ContractRegistry;
 use Laas\Http\Contract\ContractFixtureNormalizer;
@@ -896,6 +897,67 @@ $commands['contracts:fixtures:check'] = function () use ($rootPath): int {
 
     echo "OK\n";
     return 0;
+};
+
+$commands['preflight'] = function () use (&$commands, $args, $rootPath): int {
+    $noTests = hasFlag($args, 'no-tests');
+    $noDb = hasFlag($args, 'no-db');
+    $strict = hasFlag($args, 'strict');
+
+    $runner = new PreflightRunner();
+    $steps = [
+        [
+            'label' => 'policy:check',
+            'enabled' => true,
+            'run' => static function () use (&$commands, $strict): int {
+                $prev = $_ENV['POLICY_STRICT'] ?? null;
+                if ($strict) {
+                    $_ENV['POLICY_STRICT'] = 'true';
+                }
+                $code = $commands['policy:check']();
+                if ($prev === null) {
+                    unset($_ENV['POLICY_STRICT']);
+                } else {
+                    $_ENV['POLICY_STRICT'] = $prev;
+                }
+                return $code;
+            },
+        ],
+        [
+            'label' => 'contracts:fixtures:check',
+            'enabled' => true,
+            'run' => static function () use (&$commands): int {
+                return $commands['contracts:fixtures:check']();
+            },
+        ],
+        [
+            'label' => 'phpunit',
+            'enabled' => !$noTests,
+            'run' => static function () use ($rootPath): int {
+                $cmd = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($rootPath . '/vendor/bin/phpunit');
+                passthru($cmd, $code);
+                return (int) $code;
+            },
+        ],
+        [
+            'label' => 'theme:validate',
+            'enabled' => isset($commands['theme:validate']),
+            'run' => static function () use (&$commands): int {
+                return $commands['theme:validate']();
+            },
+        ],
+        [
+            'label' => 'db:check',
+            'enabled' => !$noDb,
+            'run' => static function () use (&$commands): int {
+                return $commands['db:check']();
+            },
+        ],
+    ];
+
+    $result = $runner->run($steps);
+    $runner->printReport($result['results']);
+    return $result['code'];
 };
 
 $commands['policy:check'] = function () use ($rootPath): int {
