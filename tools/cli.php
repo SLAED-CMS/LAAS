@@ -899,6 +899,108 @@ $commands['contracts:fixtures:check'] = function () use ($rootPath): int {
     return 0;
 };
 
+$commands['doctor'] = function () use (&$commands, $rootPath, $appConfig, $storageConfig): int {
+    $runner = new PreflightRunner();
+    $dbConfigured = dbEnvConfigured();
+    $steps = [
+        [
+            'label' => 'policy:check',
+            'enabled' => true,
+            'run' => static function () use (&$commands): int {
+                return $commands['policy:check']();
+            },
+        ],
+        [
+            'label' => 'contracts:fixtures:check',
+            'enabled' => true,
+            'run' => static function () use (&$commands): int {
+                return $commands['contracts:fixtures:check']();
+            },
+        ],
+        [
+            'label' => 'phpunit',
+            'enabled' => false,
+            'run' => static function (): int {
+                return 0;
+            },
+        ],
+        [
+            'label' => 'theme:validate',
+            'enabled' => isset($commands['theme:validate']),
+            'run' => static function () use (&$commands): int {
+                return $commands['theme:validate']();
+            },
+        ],
+        [
+            'label' => 'db:check',
+            'enabled' => $dbConfigured,
+            'run' => static function () use (&$commands): int {
+                return $commands['db:check']();
+            },
+        ],
+    ];
+
+    $result = $runner->run($steps);
+    $runner->printReport($result['results']);
+
+    $warnings = 0;
+    echo "Environment hints:\n";
+    echo '- PHP: ' . PHP_VERSION . "\n";
+
+    $extensions = ['pdo_mysql', 'mbstring', 'openssl', 'json', 'fileinfo'];
+    $appEnv = (string) ($appConfig['env'] ?? '');
+    $isProd = strtolower($appEnv) === 'prod';
+    $extStatus = [];
+    foreach ($extensions as $ext) {
+        $loaded = extension_loaded($ext);
+        $extStatus[] = $ext . '=' . ($loaded ? 'yes' : 'no');
+        if ($isProd && !$loaded && ($ext !== 'pdo_mysql' || $dbConfigured)) {
+            $warnings++;
+        }
+    }
+    echo '- Extensions: ' . implode(', ', $extStatus) . "\n";
+
+    $storageDisk = (string) ($storageConfig['default'] ?? $storageConfig['default_raw'] ?? '');
+    if ($storageDisk === '') {
+        $storageDisk = envValue('STORAGE_DISK');
+    }
+    echo '- STORAGE_DISK: ' . $storageDisk . "\n";
+
+    $storageChecks = [
+        'storage' => $rootPath . '/storage',
+        'storage/cache' => $rootPath . '/storage/cache',
+        'storage/logs' => $rootPath . '/storage/logs',
+    ];
+    $storageStatus = [];
+    foreach ($storageChecks as $label => $path) {
+        $ok = is_dir($path) && is_writable($path);
+        $storageStatus[] = $label . '=' . ($ok ? 'yes' : 'no');
+        if (!$ok) {
+            $warnings++;
+        }
+    }
+    echo '- Storage writable: ' . implode(', ', $storageStatus) . "\n";
+
+    $appDebug = (bool) ($appConfig['debug'] ?? false);
+    $appHeadless = (bool) ($appConfig['headless_mode'] ?? false);
+    echo '- APP_ENV=' . $appEnv . ' APP_DEBUG=' . ($appDebug ? 'true' : 'false')
+        . ' APP_HEADLESS=' . ($appHeadless ? 'true' : 'false') . "\n";
+
+    $trustProxy = envBool('TRUST_PROXY_ENABLED', false);
+    $cspAllowCdn = envBool('CSP_ALLOW_CDN', false);
+    echo '- TRUST_PROXY_ENABLED=' . ($trustProxy ? 'true' : 'false')
+        . ' CSP_ALLOW_CDN=' . ($cspAllowCdn ? 'true' : 'false') . "\n";
+
+    if ($result['code'] !== 0) {
+        return 1;
+    }
+    if ($warnings > 0) {
+        return 2;
+    }
+
+    return 0;
+};
+
 $commands['preflight'] = function () use (&$commands, $args, $rootPath): int {
     $noTests = hasFlag($args, 'no-tests');
     $noDb = hasFlag($args, 'no-db');
@@ -997,6 +1099,42 @@ function getOption(array $args, string $name): ?string
 function hasFlag(array $args, string $name): bool
 {
     return in_array('--' . $name, $args, true);
+}
+
+function envValue(string $key): string
+{
+    $value = $_ENV[$key] ?? '';
+    if ($value === '' && function_exists('getenv')) {
+        $envValue = getenv($key);
+        if ($envValue !== false) {
+            $value = (string) $envValue;
+        }
+    }
+
+    return (string) $value;
+}
+
+function envBool(string $key, bool $default = false): bool
+{
+    $value = envValue($key);
+    if ($value === '') {
+        return $default;
+    }
+
+    $parsed = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    return $parsed ?? $default;
+}
+
+function dbEnvConfigured(): bool
+{
+    $keys = ['DB_DRIVER', 'DB_HOST', 'DB_DATABASE', 'DB_NAME', 'DB_USERNAME', 'DB_USER', 'DB_PASSWORD', 'DB_PORT'];
+    foreach ($keys as $key) {
+        if (trim(envValue($key)) !== '') {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /** @return array<int, array{contract: string, fixture: string, payload: array}> */
