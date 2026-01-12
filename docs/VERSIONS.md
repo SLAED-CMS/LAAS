@@ -6,6 +6,11 @@
   - Headless mode toggle (JSON by default)
   - Problem Details for JSON errors
 
+- v3.0.1: Contracts foundation
+  - ContractResponse envelope + ContractRegistry
+  - CLI contracts:dump and contracts docs
+  - Endpoints aligned to contract envelope
+
 - v2.9.0: Headless contracts for admin
   - JSON contracts for /admin/modules and /admin/settings
   - Toggle and validation errors standardized for JSON

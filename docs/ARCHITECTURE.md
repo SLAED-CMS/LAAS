@@ -28,7 +28,8 @@
 20. [Design Patterns](#design-patterns)
 21. [Frontend-agnostic foundation (v2.8)](#frontend-agnostic-foundation-v28)
 22. [Headless contracts (v2.9)](#headless-contracts-v29)
-23. [Future: Rendering Adapters](#future-rendering-adapters)
+23. [v3.0 Contracts foundation](#v30-contracts-foundation)
+24. [Future: Rendering Adapters](#future-rendering-adapters)
 
 ---
 
@@ -1914,6 +1915,23 @@ return $responder->respond($request, 'pages/page.html', $data, $data);
 **Negotiation:**
 - Same routes, same controllers, same HTMX/UI behavior
 - JSON selected via `?format=json` or `Accept: application/json`
+
+---
+
+## v3.0 Contracts foundation
+
+**Standard envelope:**
+- OK: `{ "data": {...}, "meta": { "format": "json", "route": "..." } }`
+- ERROR: `{ "error": "...", "meta": { "format": "json", "route": "..." }, "fields": {...} }`
+
+**Contract registry:**
+- Lightweight internal registry (not OpenAPI)
+- CLI export: `php tools/cli.php contracts:dump`
+
+**Rules:**
+- `meta.format` is always `json`
+- `meta.route` is stable and required for contract endpoints
+- `meta.request_id` is included when available
 
 ---
 
