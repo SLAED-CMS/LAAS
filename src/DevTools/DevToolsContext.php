@@ -28,6 +28,7 @@ final class DevToolsContext
     private array $media = [];
     private array $jsErrors = [];
     private array $customWarnings = [];
+    private bool $storeSql = true;
 
     public function __construct(array $flags)
     {
@@ -36,6 +37,16 @@ final class DevToolsContext
         $this->startedAt = microtime(true);
         $this->flags = $flags;
         $enabled = (bool) ($flags['enabled'] ?? false);
+        $storeSql = $flags['store_sql'] ?? null;
+        if ($storeSql === null) {
+            if (array_key_exists('is_dev', $flags)) {
+                $storeSql = (bool) $flags['is_dev'];
+            } else {
+                $env = strtolower((string) ($flags['env'] ?? ''));
+                $storeSql = $env !== 'prod';
+            }
+        }
+        $this->storeSql = (bool) $storeSql;
         $this->externalAvailable = $enabled;
         $this->cacheAvailable = $enabled;
         $this->request = [
@@ -73,6 +84,32 @@ final class DevToolsContext
     public function getStartedAt(): float
     {
         return $this->startedAt;
+    }
+
+    public function getDurationMs(): float
+    {
+        return $this->durationMs;
+    }
+
+    public function getDbCount(): int
+    {
+        return $this->dbCount;
+    }
+
+    public function getDbTotalMs(): float
+    {
+        return $this->dbTotalMs;
+    }
+
+    public function getDbDuplicateCount(): int
+    {
+        $count = 0;
+        foreach ($this->dbDuplicates as $row) {
+            if ((int) ($row['count'] ?? 0) > 1) {
+                $count++;
+            }
+        }
+        return $count;
     }
 
     public function setRequest(array $data): void
@@ -177,19 +214,23 @@ final class DevToolsContext
     {
         $this->trackDuplicate($sql, $paramsCount, $durationMs);
 
-        if ($this->dbCount >= 50) {
+        $this->dbCount++;
+        $this->dbTotalMs += $durationMs;
+        if (!$this->storeSql) {
             return;
         }
 
-        $index = $this->dbCount + 1;
+        if (count($this->dbQueries) >= 50) {
+            return;
+        }
+
+        $index = count($this->dbQueries) + 1;
         $this->dbQueries[] = [
             'index' => $index,
             'sql' => $this->normalizeSql($sql),
             'params' => $paramsCount,
             'duration_ms' => $durationMs,
         ];
-        $this->dbCount++;
-        $this->dbTotalMs += $durationMs;
     }
 
     public function finalize(): void
@@ -225,6 +266,13 @@ final class DevToolsContext
         $external = $this->buildExternalStats();
         $cache = $this->buildCacheStats();
 
+        if (!$this->storeSql) {
+            $grouped = $this->stripSqlDetails($grouped);
+            $duplicates = $this->stripSqlDetails($duplicates);
+            $topSlow = [];
+            $this->dbQueries = [];
+        }
+
         return [
             'request_id' => $this->requestId,
             'duration_ms' => round($this->durationMs, 2),
@@ -259,11 +307,12 @@ final class DevToolsContext
     private function trackDuplicate(string $sql, int $paramsCount, float $durationMs): void
     {
         $fingerprint = $this->fingerprint($sql, $paramsCount);
-        if (!isset($this->dbDuplicates[$fingerprint])) {
-            $this->dbDuplicates[$fingerprint] = [
-                'fingerprint' => $fingerprint,
+        $key = $this->storeSql ? $fingerprint : sha1($fingerprint);
+        if (!isset($this->dbDuplicates[$key])) {
+            $this->dbDuplicates[$key] = [
+                'fingerprint' => $key,
                 'hash' => sha1($fingerprint),
-                'sql' => $this->normalizeFingerprintSql($sql),
+                'sql' => $this->storeSql ? $this->normalizeFingerprintSql($sql) : '',
                 'params' => $paramsCount,
                 'count' => 0,
                 'total_ms' => 0.0,
@@ -273,21 +322,21 @@ final class DevToolsContext
             ];
         }
 
-        $entry = $this->dbDuplicates[$fingerprint];
+        $entry = $this->dbDuplicates[$key];
         $entry['count']++;
         $entry['total_ms'] += $durationMs;
         $entry['avg_ms'] = $entry['count'] > 0 ? round($entry['total_ms'] / $entry['count'], 2) : 0.0;
 
-        if (count($entry['samples']) < 3) {
+        if ($this->storeSql && count($entry['samples']) < 3) {
             $entry['samples'][] = $this->normalizeSql($sql);
         }
 
         $isDev = (bool) ($this->flags['is_dev'] ?? (strtolower((string) ($this->flags['env'] ?? '')) !== 'prod'));
-        if ($isDev && $entry['count'] === 2 && $entry['trace'] === []) {
+        if ($this->storeSql && $isDev && $entry['count'] === 2 && $entry['trace'] === []) {
             $entry['trace'] = $this->buildTrace();
         }
 
-        $this->dbDuplicates[$fingerprint] = $entry;
+        $this->dbDuplicates[$key] = $entry;
     }
 
     private function fingerprint(string $sql, int $paramsCount): string
@@ -299,6 +348,26 @@ final class DevToolsContext
     private function normalizeFingerprintSql(string $sql): string
     {
         return preg_replace('/\s+/', ' ', trim($sql)) ?? trim($sql);
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $rows
+     * @return array<int, array<string, mixed>>
+     */
+    private function stripSqlDetails(array $rows): array
+    {
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = [
+                'fingerprint' => (string) ($row['fingerprint'] ?? ''),
+                'hash' => (string) ($row['hash'] ?? ''),
+                'params' => (int) ($row['params'] ?? 0),
+                'count' => (int) ($row['count'] ?? 0),
+                'total_ms' => (float) ($row['total_ms'] ?? 0),
+                'avg_ms' => (float) ($row['avg_ms'] ?? 0),
+            ];
+        }
+        return $out;
     }
 
     private function buildProfile(int $duplicateCount, array $grouped, array $duplicates, float $memoryMb): array
@@ -651,6 +720,12 @@ final class DevToolsContext
         $warningTokens = [];
         $slowHttpWarn = (float) ($budgets['slow_http_warn'] ?? 200);
         $slowSqlWarn = (float) ($budgets['slow_sql_warn'] ?? 50);
+        $perfMessages = [];
+        foreach ($this->customWarnings as $custom) {
+            if (($custom['code'] ?? '') === 'perf_budget') {
+                $perfMessages[] = (string) ($custom['message'] ?? '');
+            }
+        }
         if (in_array('slow_external_http', $warnings, true) && $external['available'] && $httpMax >= $slowHttpWarn) {
             $slowHost = (string) ($external['top3_slowest_calls'][0]['host'] ?? '');
             $slowPath = (string) ($external['top3_slowest_calls'][0]['path'] ?? '');
@@ -668,6 +743,17 @@ final class DevToolsContext
         }
         if (in_array('high_total_time', $warnings, true)) {
             $warningTokens[] = sprintf('High total time - %.1fms', $totalMs);
+        }
+        if (in_array('perf_budget', $warnings, true)) {
+            if ($perfMessages !== []) {
+                foreach ($perfMessages as $message) {
+                    if ($message !== '') {
+                        $warningTokens[] = $message;
+                    }
+                }
+            } else {
+                $warningTokens[] = 'Performance budget exceeded';
+            }
         }
 
         $warningsLine = TerminalFormatter::formatWarningsLine($warningTokens);

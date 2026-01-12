@@ -41,6 +41,8 @@ use Laas\DevTools\DevToolsContext;
 use Laas\DevTools\RequestCollector;
 use Laas\DevTools\PerformanceCollector;
 use Laas\DevTools\DbCollector;
+use Laas\Theme\ThemeValidator;
+use Laas\Perf\PerfBudgetEnforcer;
 use Laas\Assets\AssetsManager;
 use Laas\View\AssetManager;
 use Laas\View\Template\TemplateCompiler;
@@ -71,16 +73,23 @@ final class Kernel
         $appConfig = $this->config['app'] ?? [];
         $securityConfig = $this->config['security'] ?? [];
         $devtoolsConfig = array_merge($this->config['devtools'] ?? [], $appConfig['devtools'] ?? []);
+        $perfConfig = $this->config['perf'] ?? [];
         $env = strtolower((string) ($appConfig['env'] ?? ''));
         $devtoolsEnabled = (bool) ($appConfig['debug'] ?? false) && (bool) ($devtoolsConfig['enabled'] ?? false);
+        $perfEnabled = (bool) ($perfConfig['enabled'] ?? false);
+        $collectDb = (bool) ($devtoolsConfig['collect_db'] ?? false);
+        if ($perfEnabled) {
+            $collectDb = true;
+        }
         if ($env === 'prod') {
             $devtoolsEnabled = false;
             $devtoolsConfig['enabled'] = false;
-            $devtoolsConfig['collect_db'] = false;
             $devtoolsConfig['collect_request'] = false;
             $devtoolsConfig['collect_logs'] = false;
         }
+        $devtoolsConfig['collect_db'] = $collectDb;
         $devtoolsConfig['enabled'] = $devtoolsEnabled;
+        $storeSql = (bool) (($appConfig['db_profile']['store_sql'] ?? false));
 
         $requestId = bin2hex(random_bytes(16));
         $devtoolsContext = new DevToolsContext([
@@ -94,6 +103,7 @@ final class Kernel
             'collect_db' => (bool) ($devtoolsConfig['collect_db'] ?? false),
             'collect_request' => (bool) ($devtoolsConfig['collect_request'] ?? false),
             'collect_logs' => (bool) ($devtoolsConfig['collect_logs'] ?? false),
+            'store_sql' => $storeSql,
             'request_id' => $requestId,
         ]);
         RequestScope::set('devtools.context', $devtoolsContext);
@@ -135,6 +145,22 @@ final class Kernel
                 }
                 return $record;
             });
+        }
+
+        $themeValidator = new ThemeValidator($this->rootPath . '/themes');
+        $themeValidation = $themeValidator->validateTheme($publicTheme);
+        if ($themeValidation->hasViolations()) {
+            foreach ($themeValidation->getViolations() as $violation) {
+                $logger->warning('Theme validation warning', [
+                    'theme' => $publicTheme,
+                    'code' => $violation['code'] ?? '',
+                    'file' => $violation['file'] ?? '',
+                    'message' => $violation['message'] ?? '',
+                ]);
+                if ((bool) ($appConfig['debug'] ?? false)) {
+                    $devtoolsContext->addWarning('theme_validation', (string) ($violation['message'] ?? 'Theme validation warning'));
+                }
+            }
         }
 
         $sessionFactory = new SessionFactory($securityConfig['session'] ?? [], $logger, $this->rootPath);
@@ -214,6 +240,24 @@ final class Kernel
             return $router->dispatch($request);
         });
 
+        if ($perfEnabled) {
+            $enforcer = new PerfBudgetEnforcer($perfConfig);
+            $result = $enforcer->evaluate($devtoolsContext);
+            if ($result->hasViolations()) {
+                foreach ($result->getViolations() as $violation) {
+                    $logger->warning('Performance budget warning', [
+                        'metric' => $violation['metric'] ?? '',
+                        'value' => $violation['value'] ?? null,
+                        'threshold' => $violation['threshold'] ?? null,
+                        'level' => $violation['level'] ?? '',
+                    ]);
+                }
+            }
+            if ($result->isHard() && (bool) ($perfConfig['hard_fail'] ?? false)) {
+                return $enforcer->buildOverBudgetResponse($request);
+            }
+        }
+
         if (!empty($resolution['set_cookie'])) {
             $response = $response->withHeader('Set-Cookie', $localeResolver->cookieHeader($locale));
         }
@@ -272,6 +316,8 @@ final class Kernel
             'storage' => $configDir . '/storage.php',
             'api' => $configDir . '/api.php',
             'devtools' => $configDir . '/devtools.php',
+            'perf' => $configDir . '/perf.php',
+            'cache' => $configDir . '/cache.php',
             'assets' => $configDir . '/assets.php',
         ];
 

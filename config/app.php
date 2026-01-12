@@ -64,6 +64,9 @@ return [
         'collect_request' => $envBool('DEVTOOLS_COLLECT_REQUEST', true),
         'collect_logs' => $envBool('DEVTOOLS_COLLECT_LOGS', false),
     ],
+    'db_profile' => [
+        'store_sql' => $envBool('DB_PROFILE_STORE_SQL', strtolower($envString('APP_ENV', 'dev')) !== 'prod'),
+    ],
     'default_locale' => 'en',
     'locales' => ['en', 'de', 'ru', 'fr', 'es', 'pt', 'uk', 'pl', 'zh', 'hi', 'ar', 'bn', 'ur', 'sw', 'id'],
     'rtl_locales' => ['ar', 'ur'],

@@ -62,8 +62,7 @@ final class DatabaseManager
         $options[PDO::ATTR_EMULATE_PREPARES] = false;
 
         $collectDb = (bool) ($this->devtoolsConfig['collect_db'] ?? false);
-        $devtoolsEnabled = (bool) ($this->devtoolsConfig['enabled'] ?? false);
-        if ($devtoolsEnabled && $collectDb && class_exists(ProxyPDO::class)) {
+        if ($collectDb && class_exists(ProxyPDO::class)) {
             $this->pdo = new ProxyPDO(
                 $dsn,
                 (string) ($this->config['username'] ?? ''),

@@ -19,6 +19,9 @@ use Laas\Support\ConfigExporter;
 use Laas\Support\LoggerFactory;
 use Laas\Support\OpsChecker;
 use Laas\Support\ReleaseChecker;
+use Laas\Settings\SettingsProvider;
+use Laas\Theme\ThemeValidator;
+use Laas\Support\Cache\CachePruner;
 use Laas\Support\PreflightRunner;
 use Laas\Ops\Checks\SessionCheck;
 use Laas\Session\SessionFactory;
@@ -100,6 +103,27 @@ $commands['templates:clear'] = function () use ($rootPath): int {
 
 $commands['cache:clear'] = function () use (&$commands): int {
     return $commands['templates:clear']();
+};
+
+$commands['cache:prune'] = function () use ($rootPath, $appConfig): int {
+    $cacheConfig = is_file($rootPath . '/config/cache.php') ? require $rootPath . '/config/cache.php' : [];
+    $ttlDays = (int) ($cacheConfig['ttl_days'] ?? 7);
+    $pruner = new CachePruner($rootPath . '/storage/cache');
+    $result = $pruner->prune($ttlDays);
+
+    $translator = new Translator(
+        $rootPath,
+        (string) ($appConfig['theme'] ?? 'default'),
+        (string) ($appConfig['default_locale'] ?? 'en')
+    );
+
+    if ((int) ($result['deleted'] ?? 0) > 0) {
+        echo $translator->trans('system.cache_pruned', ['count' => (int) ($result['deleted'] ?? 0)]) . "\n";
+    } else {
+        echo $translator->trans('system.cache_prune_none') . "\n";
+    }
+
+    return 0;
 };
 
 $commands['templates:warmup'] = function () use ($rootPath, $appConfig): int {
@@ -1127,6 +1151,51 @@ $commands['policy:check'] = function () use ($rootPath): int {
         $rootPath . '/src',
         $rootPath . '/modules',
     ]);
+};
+
+$commands['theme:validate'] = function () use ($rootPath, $appConfig, $dbManager, $args): int {
+    $validator = new ThemeValidator($rootPath . '/themes');
+    $themes = [];
+
+    $themeArgs = array_filter($args, static fn($arg) => !str_starts_with($arg, '--'));
+    if ($themeArgs !== []) {
+        $themes = $themeArgs;
+    } else {
+        $settings = new SettingsProvider(
+            $dbManager,
+            [
+                'site_name' => $appConfig['name'] ?? 'LAAS',
+                'default_locale' => $appConfig['default_locale'] ?? 'en',
+                'theme' => $appConfig['theme'] ?? 'default',
+            ],
+            ['site_name', 'default_locale', 'theme']
+        );
+        $active = (string) $settings->get('theme', $appConfig['theme'] ?? 'default');
+        $themes = array_values(array_unique([$active, 'default', 'admin']));
+    }
+
+    $exit = 0;
+    foreach ($themes as $theme) {
+        $theme = (string) $theme;
+        if ($theme === '') {
+            continue;
+        }
+        $result = $validator->validateTheme($theme);
+        if (!$result->hasViolations()) {
+            echo 'Theme ' . $theme . ": OK\n";
+            continue;
+        }
+        $exit = 2;
+        echo 'Theme ' . $theme . ": VIOLATIONS\n";
+        foreach ($result->getViolations() as $violation) {
+            $code = (string) ($violation['code'] ?? '');
+            $file = (string) ($violation['file'] ?? '');
+            $message = (string) ($violation['message'] ?? '');
+            echo '- [' . $code . '] ' . $file . ' ' . $message . "\n";
+        }
+    }
+
+    return $exit;
 };
 
 if ($command === '' || !isset($commands[$command])) {
