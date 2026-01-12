@@ -4,18 +4,25 @@ declare(strict_types=1);
 namespace Laas\Session;
 
 use Laas\Session\Redis\RedisClient;
+use Laas\Session\Redis\RedisSessionFailover;
+use Laas\Support\UrlSanitizer;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 final class SessionFactory
 {
     private LoggerInterface $logger;
+    private string $rootPath;
+    private RedisSessionFailover $failover;
 
     public function __construct(
         private array $sessionConfig,
-        ?LoggerInterface $logger = null
+        ?LoggerInterface $logger = null,
+        ?string $rootPath = null
     ) {
         $this->logger = $logger ?? new NullLogger();
+        $this->rootPath = $rootPath ?? dirname(__DIR__, 2);
+        $this->failover = new RedisSessionFailover($this->rootPath);
     }
 
     public function create(): SessionInterface
@@ -31,37 +38,26 @@ final class SessionFactory
         $prefix = (string) ($redisConfig['prefix'] ?? 'laas:sess:');
 
         try {
+            if ($this->failover->hasRecentFailure()) {
+                $this->logger->warning('Redis session driver recently failed, falling back to native.', [
+                    'redis' => UrlSanitizer::sanitizeRedisUrl($url),
+                ]);
+                return new NativeSession();
+            }
+
             $client = RedisClient::fromUrl($url, $timeout);
             $client->connect();
             $client->ping();
-            $handler = new RedisSessionHandler($client, $prefix, $this->logger);
+            $this->failover->clearFailure();
+            $handler = new RedisSessionHandler($client, $prefix, $this->logger, $this->failover);
             return new RedisSession($handler);
         } catch (\Throwable $e) {
             $this->logger->warning('Redis session driver unavailable, falling back to native.', [
                 'reason' => $e->getMessage(),
-                'redis' => $this->redactRedisUrl($url),
+                'redis' => UrlSanitizer::sanitizeRedisUrl($url),
             ]);
+            $this->failover->markFailure();
             return new NativeSession();
         }
-    }
-
-    private function redactRedisUrl(string $url): string
-    {
-        if ($url === '') {
-            return '';
-        }
-
-        $parts = parse_url($url);
-        if ($parts === false) {
-            return 'redis://***';
-        }
-
-        $scheme = $parts['scheme'] ?? 'redis';
-        $host = $parts['host'] ?? '';
-        $port = isset($parts['port']) ? ':' . $parts['port'] : '';
-        $path = $parts['path'] ?? '';
-        $auth = isset($parts['user']) ? ($parts['user'] . ':***@') : '';
-
-        return $scheme . '://' . $auth . $host . $port . $path;
     }
 }

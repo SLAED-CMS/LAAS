@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Laas\Session;
 
 use Laas\Session\Redis\RedisClient;
+use Laas\Session\Redis\RedisSessionFailover;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use SessionHandlerInterface;
@@ -15,7 +16,8 @@ final class RedisSessionHandler implements SessionHandlerInterface
     public function __construct(
         private RedisClient $client,
         private string $prefix = 'laas:sess:',
-        ?LoggerInterface $logger = null
+        ?LoggerInterface $logger = null,
+        private ?RedisSessionFailover $failover = null
     ) {
         $this->logger = $logger ?? new NullLogger();
     }
@@ -30,6 +32,7 @@ final class RedisSessionHandler implements SessionHandlerInterface
             $this->logger->warning('Redis session handler open failed.', [
                 'reason' => $e->getMessage(),
             ]);
+            $this->failover?->markFailure();
             return false;
         }
     }
@@ -60,11 +63,16 @@ final class RedisSessionHandler implements SessionHandlerInterface
             if ($ttl <= 0) {
                 $ttl = 3600;
             }
-            return $this->client->setex($this->key($id), $ttl, $data);
+            $ok = $this->client->setex($this->key($id), $ttl, $data);
+            if (!$ok) {
+                $this->failover?->markFailure();
+            }
+            return $ok;
         } catch (\Throwable $e) {
             $this->logger->warning('Redis session write failed.', [
                 'reason' => $e->getMessage(),
             ]);
+            $this->failover?->markFailure();
             return false;
         }
     }

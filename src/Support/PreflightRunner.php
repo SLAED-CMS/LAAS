@@ -13,6 +13,7 @@ final class PreflightRunner
     {
         $results = [];
         $ok = true;
+        $warnings = false;
 
         foreach ($steps as $step) {
             $label = (string) ($step['label'] ?? 'step');
@@ -32,13 +33,18 @@ final class PreflightRunner
                 $results[] = ['label' => $label, 'status' => 'OK'];
                 continue;
             }
+            if ($code === 2) {
+                $results[] = ['label' => $label, 'status' => 'WARN'];
+                $warnings = true;
+                continue;
+            }
 
             $results[] = ['label' => $label, 'status' => 'FAIL'];
             $ok = false;
         }
 
         return [
-            'code' => $ok ? 0 : 1,
+            'code' => $ok ? ($warnings ? 2 : 0) : 1,
             'results' => $results,
         ];
     }

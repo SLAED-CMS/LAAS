@@ -137,7 +137,7 @@ final class Kernel
             });
         }
 
-        $sessionFactory = new SessionFactory($securityConfig['session'] ?? [], $logger);
+        $sessionFactory = new SessionFactory($securityConfig['session'] ?? [], $logger, $this->rootPath);
         $session = $sessionFactory->create();
         $authService = $this->createAuthService($logger, $session);
         $authorization = $this->createAuthorizationService();

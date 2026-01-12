@@ -19,8 +19,8 @@ final class AdminMediaUploadJsonTest extends TestCase
         $request = $this->makeRequest('POST', '/admin/media/upload');
         $controller = $this->createController($pdo, $request);
 
-        $tmp = $this->createTempJpeg();
-        $this->setUploadFile('photo.jpg', $tmp);
+        $tmp = $this->createTempPng();
+        $this->setUploadFile('photo.png', $tmp);
 
         try {
             $response = $controller->upload($request);
@@ -34,7 +34,7 @@ final class AdminMediaUploadJsonTest extends TestCase
         $this->assertSame('json', $payload['meta']['format'] ?? null);
         $this->assertSame('admin.media.upload', $payload['meta']['route'] ?? null);
         $this->assertTrue($payload['data']['id'] > 0);
-        $this->assertSame('image/jpeg', $payload['data']['mime'] ?? null);
+        $this->assertSame('image/png', $payload['data']['mime'] ?? null);
     }
 
     public function testUploadInvalidMimeReturnsError(): void
@@ -101,15 +101,18 @@ final class AdminMediaUploadJsonTest extends TestCase
         return SecurityTestHelper::createView($db, $request, 'admin');
     }
 
-    private function createTempJpeg(): string
+    private function createTempPng(): string
     {
         $tmp = tempnam(sys_get_temp_dir(), 'laas_img_');
         if ($tmp === false) {
             $this->fail('Failed to create temp file');
         }
 
-        $jpeg = "\xFF\xD8\xFF\xE0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00\xFF\xD9";
-        file_put_contents($tmp, $jpeg);
+        $data = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO8r/0sAAAAASUVORK5CYII=', true);
+        if ($data === false) {
+            $this->fail('Failed to decode PNG data');
+        }
+        file_put_contents($tmp, $data);
         return $tmp;
     }
 

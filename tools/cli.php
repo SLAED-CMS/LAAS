@@ -20,6 +20,8 @@ use Laas\Support\LoggerFactory;
 use Laas\Support\OpsChecker;
 use Laas\Support\ReleaseChecker;
 use Laas\Support\PreflightRunner;
+use Laas\Ops\Checks\SessionCheck;
+use Laas\Session\SessionFactory;
 use Laas\I18n\Translator;
 use Laas\Http\Contract\ContractRegistry;
 use Laas\Http\Contract\ContractFixtureNormalizer;
@@ -40,6 +42,7 @@ $command = $argv[1] ?? '';
 $args = array_slice($argv, 2);
 
 $appConfig = require $rootPath . '/config/app.php';
+$securityConfig = require $rootPath . '/config/security.php';
 $dbConfig = require $rootPath . '/config/database.php';
 $modulesConfig = require $rootPath . '/config/modules.php';
 $storageConfig = is_file($rootPath . '/config/storage.php') ? require $rootPath . '/config/storage.php' : [];
@@ -899,9 +902,45 @@ $commands['contracts:fixtures:check'] = function () use ($rootPath): int {
     return 0;
 };
 
-$commands['doctor'] = function () use (&$commands, $rootPath, $appConfig, $storageConfig): int {
+$commands['session:smoke'] = function () use ($rootPath, $securityConfig, $logger): int {
+    $sessionCheck = new SessionCheck($securityConfig['session'] ?? []);
+    $checkResult = $sessionCheck->run();
+
+    $savePath = $rootPath . '/storage/sessions';
+    if (!is_dir($savePath)) {
+        mkdir($savePath, 0775, true);
+    }
+    ini_set('session.save_path', $savePath);
+
+    $factory = new SessionFactory($securityConfig['session'] ?? [], $logger, $rootPath);
+    $session = $factory->create();
+    $session->start();
+
+    echo $checkResult['message'] . "\n";
+
+    if (!$session->isStarted()) {
+        echo "session smoke: FAIL\n";
+        return 1;
+    }
+
+    $session->set('_smoke', 'ok');
+    $value = $session->get('_smoke', null);
+    $session->regenerateId(true);
+    $session->clear();
+
+    if ($value !== 'ok') {
+        echo "session smoke: FAIL\n";
+        return 1;
+    }
+
+    echo "session smoke: OK\n";
+    return $checkResult['code'] === 2 ? 2 : 0;
+};
+
+$commands['doctor'] = function () use (&$commands, $rootPath, $appConfig, $storageConfig, $securityConfig): int {
     $runner = new PreflightRunner();
     $dbConfigured = dbEnvConfigured();
+    $sessionCheck = new SessionCheck($securityConfig['session'] ?? []);
     $steps = [
         [
             'label' => 'policy:check',
@@ -915,6 +954,15 @@ $commands['doctor'] = function () use (&$commands, $rootPath, $appConfig, $stora
             'enabled' => true,
             'run' => static function () use (&$commands): int {
                 return $commands['contracts:fixtures:check']();
+            },
+        ],
+        [
+            'label' => 'session',
+            'enabled' => true,
+            'run' => static function () use ($sessionCheck): int {
+                $result = $sessionCheck->run();
+                echo $result['message'] . "\n";
+                return $result['code'];
             },
         ],
         [
@@ -991,22 +1039,23 @@ $commands['doctor'] = function () use (&$commands, $rootPath, $appConfig, $stora
     echo '- TRUST_PROXY_ENABLED=' . ($trustProxy ? 'true' : 'false')
         . ' CSP_ALLOW_CDN=' . ($cspAllowCdn ? 'true' : 'false') . "\n";
 
-    if ($result['code'] !== 0) {
+    if ($result['code'] === 1) {
         return 1;
     }
-    if ($warnings > 0) {
+    if ($warnings > 0 || $result['code'] === 2) {
         return 2;
     }
 
     return 0;
 };
 
-$commands['preflight'] = function () use (&$commands, $args, $rootPath): int {
+$commands['preflight'] = function () use (&$commands, $args, $rootPath, $securityConfig): int {
     $noTests = hasFlag($args, 'no-tests');
     $noDb = hasFlag($args, 'no-db');
     $strict = hasFlag($args, 'strict');
 
     $runner = new PreflightRunner();
+    $sessionCheck = new SessionCheck($securityConfig['session'] ?? []);
     $steps = [
         [
             'label' => 'policy:check',
@@ -1030,6 +1079,15 @@ $commands['preflight'] = function () use (&$commands, $args, $rootPath): int {
             'enabled' => true,
             'run' => static function () use (&$commands): int {
                 return $commands['contracts:fixtures:check']();
+            },
+        ],
+        [
+            'label' => 'session',
+            'enabled' => true,
+            'run' => static function () use ($sessionCheck): int {
+                $result = $sessionCheck->run();
+                echo $result['message'] . "\n";
+                return $result['code'];
             },
         ],
         [

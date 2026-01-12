@@ -7,6 +7,7 @@ use RuntimeException;
 
 final class RedisClient
 {
+    private const MAX_PAYLOAD_BYTES = 2097152;
     private $stream = null;
     private bool $connected = false;
 
@@ -130,6 +131,19 @@ final class RedisClient
 
     public static function buildCommand(array $args): string
     {
+        $total = 0;
+        foreach ($args as $arg) {
+            $arg = (string) $arg;
+            $len = strlen($arg);
+            if ($len > self::MAX_PAYLOAD_BYTES) {
+                throw new RuntimeException('Redis payload too large.');
+            }
+            $total += $len;
+            if ($total > self::MAX_PAYLOAD_BYTES) {
+                throw new RuntimeException('Redis payload too large.');
+            }
+        }
+
         $out = '*' . count($args) . "\r\n";
         foreach ($args as $arg) {
             $arg = (string) $arg;
@@ -153,13 +167,26 @@ final class RedisClient
 
     private function command(array $args): mixed
     {
+        $attempts = 0;
+        do {
+            try {
+                return $this->executeCommand($args);
+            } catch (\Throwable $e) {
+                $attempts++;
+                $this->disconnect();
+                if ($attempts > 1) {
+                    throw $e;
+                }
+            }
+        } while (true);
+    }
+
+    private function executeCommand(array $args): mixed
+    {
         $this->connect();
 
         $payload = self::buildCommand($args);
-        $written = fwrite($this->stream, $payload);
-        if ($written === false) {
-            throw new RuntimeException('Redis write failed.');
-        }
+        $this->writeAll($payload);
 
         return self::readResponseFromStream($this->stream);
     }
@@ -188,6 +215,9 @@ final class RedisClient
                 }
                 if ($length < 0) {
                     throw new RuntimeException('Invalid bulk length.');
+                }
+                if ($length > self::MAX_PAYLOAD_BYTES) {
+                    throw new RuntimeException('Redis bulk payload too large.');
                 }
                 $data = self::readBytes($stream, $length);
                 self::readBytes($stream, 2);
@@ -237,6 +267,27 @@ final class RedisClient
         self::assertStreamHealthy($stream);
 
         return $data;
+    }
+
+    private function writeAll(string $payload): void
+    {
+        $length = strlen($payload);
+        if ($length > self::MAX_PAYLOAD_BYTES) {
+            throw new RuntimeException('Redis payload too large.');
+        }
+
+        $offset = 0;
+        while ($offset < $length) {
+            $chunk = substr($payload, $offset);
+            $written = fwrite($this->stream, $chunk);
+            if ($written === false || $written === 0) {
+                self::assertStreamHealthy($this->stream);
+                throw new RuntimeException('Redis write failed.');
+            }
+            $offset += $written;
+        }
+
+        self::assertStreamHealthy($this->stream);
     }
 
     private static function assertStreamHealthy($stream): void
