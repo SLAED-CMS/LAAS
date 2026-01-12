@@ -27,6 +27,14 @@
 
 ## Version-Specific Upgrade Paths
 
+### Upgrade to v3.0.0
+
+1. `git pull`
+2. `composer install --no-dev`
+3. `php tools/cli.php preflight --no-tests`
+4. `php tools/cli.php migrate:up` (if required)
+
+
 ### v2.4.2 → v3.0.0 (Current Stable)
 
 **Overview:** Frontend-agnostic mode with RenderAdapter v1, content negotiation, and headless mode support.

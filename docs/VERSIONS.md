@@ -14,11 +14,11 @@
   - Default JSON envelope with 406 not_acceptable for blocked HTML
   - Headless mode docs and examples
 
-- v3.0.0: Frontend-agnostic implemented
-  - RenderAdapter v1 (HTML/JSON)
-  - Content negotiation via Accept / ?format
-  - Headless mode toggle (JSON by default)
-  - Problem Details for JSON errors
+- v3.0.0: Stable platform release
+  - Headless mode with HTML allowlist + override
+  - Contract envelope + registry + fixtures guard
+  - Policy checks + preflight CLI
+  - Frontend-agnostic JSON/HTML negotiation
 
 - v3.0.2: Contract coverage + policy gate
   - Users + Media contracts (admin + public media metadata)

@@ -8,6 +8,13 @@
 [![Baseline](https://img.shields.io/badge/Baseline-v3.0.0-orange.svg)](docs/VERSIONS.md)
 [![Security](https://img.shields.io/badge/Security-99%2F100-brightgreen.svg)](docs/SECURITY.md)
 
+**Stable v3.0.0**
+
+**Release v3.0.0**
+- Notes: `docs/RELEASES/v3.0.0.md`
+- Versions: `docs/VERSIONS.md`
+- Contracts: `docs/CONTRACTS.md`
+
 **Modern, secure, HTML-first content management system.**
 
 **v3.0.0** - Frontend-agnostic: RenderAdapter v1 (HTML/JSON), content negotiation via Accept/?format, headless mode (JSON by default), Problem Details for JSON errors. Asset Architecture from v2.4.2: AssetManager, UI Tokens (no *_class from PHP), Theme API v1, CI policy checks. Complete security stack from v2.4.0: 2FA/TOTP, password reset, session timeout, S3 SSRF protection (99/100 score).
