@@ -208,7 +208,17 @@ http://laas.loc/
 ## Milestones
 
 ### v3.x — Frontend-agnostic Platform
-- **v3.0.0**: Frontend-agnostic (RenderAdapter v1, content negotiation, headless mode, Problem Details)
+- **v3.1.2**: Redis sessions hardening (ops checks, smoke command, fallback diagnostics)
+- **v3.1.1**: Optional Redis sessions (SESSION_DRIVER=redis with safe fallback, no extensions required)
+- **v3.1.0**: Session abstraction (SessionInterface + NativeSession, no direct $_SESSION usage)
+- **v3.0.8**: CLI doctor command (preflight + environment hints, diagnostics without secrets)
+- **v3.0.7**: Post-release hardening (trust proxy config, secure cookies auto-on-HTTPS, CSP overrides)
+- **v3.0.5**: Release candidate preflight + policies (readiness checks, semver + contracts_version rules)
+- **v3.0.4**: Contract fixtures + compatibility guard (golden fixtures for core endpoints)
+- **v3.0.3**: Official headless mode (APP_HEADLESS + HTML allowlist/override, default JSON envelope)
+- **v3.0.2**: Contract coverage + policy gate (Users + Media contracts, contracts_version in dump)
+- **v3.0.1**: Contracts foundation (JSON envelope structure, public pages + media contracts)
+- **v3.0.0**: Frontend-agnostic platform (RenderAdapter v1, content negotiation, headless mode, Problem Details, ViewModels, policy checks)
 
 ### v2.x — Mature Platform
 - **v2.4.2**: Asset Architecture & Frontend Separation (AssetManager, UI Tokens, Theme API v1, CI policy checks)
