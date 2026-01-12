@@ -13,11 +13,18 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    env:
+      APP_ENV: test
+      DB_DRIVER: sqlite
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+      DB_NAME: ':memory:'
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
+          extensions: pdo, pdo_sqlite, mbstring, json
       - run: composer install --no-interaction --prefer-dist
       - run: composer validate --no-check-publish
       - name: PHP lint
@@ -48,6 +55,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
+          extensions: pdo, pdo_sqlite, mbstring, json
       - run: composer install --no-interaction --prefer-dist
       - name: Preflight
         run: php tools/cli.php preflight --no-db
@@ -74,6 +82,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
+          extensions: pdo, pdo_sqlite, mbstring, json
       - run: composer install --no-interaction --prefer-dist
       - run: vendor/bin/phpunit --group security
 
@@ -90,6 +99,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
+          extensions: pdo, pdo_sqlite, mbstring, json
       - run: composer install --no-interaction --prefer-dist
       - run: vendor/bin/phpunit --group api --log-junit junit-api.xml
       - uses: actions/upload-artifact@v4
@@ -112,6 +122,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
+          extensions: pdo, pdo_sqlite, mbstring, json
           coverage: pcov
       - run: composer install --no-interaction --prefer-dist
       - run: vendor/bin/phpunit --coverage-clover coverage/clover.xml --coverage-html coverage/html
@@ -179,6 +190,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
+          extensions: pdo, pdo_sqlite, mbstring, json
       - run: composer install --no-interaction --prefer-dist
       - run: |
           mkdir -p storage/logs storage/sessions storage/cache storage/backups storage/tmp storage/uploads
@@ -200,6 +212,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
+          extensions: pdo, pdo_sqlite, mbstring, json
       - run: composer install --no-interaction --prefer-dist
       - name: Create storage directories
         run: |
