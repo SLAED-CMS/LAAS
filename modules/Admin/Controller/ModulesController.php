@@ -7,6 +7,7 @@ use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\ModulesRepository;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Http\Request;
+use Laas\Http\Presenter\JsonPresenter;
 use Laas\Http\Response;
 use Laas\Support\AuditLogger;
 use Laas\View\View;
@@ -79,6 +80,26 @@ final class ModulesController
 
         usort($modules, static fn(array $a, array $b): int => strcmp($a['name'], $b['name']));
 
+        if ($request->wantsJson()) {
+            $items = $this->jsonItems($modules);
+            $enabledCount = 0;
+            foreach ($items as $item) {
+                if (!empty($item['enabled'])) {
+                    $enabledCount++;
+                }
+            }
+
+            return (new JsonPresenter())->present([
+                'items' => $items,
+                'counts' => [
+                    'total' => count($items),
+                    'enabled' => $enabledCount,
+                ],
+            ], [
+                'route' => 'admin.modules.index',
+            ]);
+        }
+
         return $this->view->render('pages/modules.html', [
             'modules' => $modules,
         ], 200, [], [
@@ -100,7 +121,7 @@ final class ModulesController
         $discovered = $this->discoverModules();
         $type = $discovered[$name]['type'] ?? 'feature';
         if ($type !== 'feature') {
-            return $this->errorResponse($request, 'not_toggleable', 400);
+            return $this->errorResponse($request, 'protected_module', 400);
         }
 
         if ($this->db === null || !$this->db->healthCheck()) {
@@ -133,6 +154,7 @@ final class ModulesController
 
         $row = $current[$name] ?? ['enabled' => !$enabled, 'version' => null];
         $typeLabel = $this->typeLabel($type);
+        $protected = $type !== 'feature';
         $module = [
             'name' => $name,
             'enabled' => !$enabled,
@@ -143,8 +165,18 @@ final class ModulesController
             'type_is_admin' => $type === 'admin',
             'type_is_api' => $type === 'api',
             'source' => 'DB',
-            'protected' => $type !== 'feature',
+            'protected' => $protected,
         ];
+
+        if ($request->wantsJson()) {
+            return (new JsonPresenter())->present([
+                'name' => $name,
+                'enabled' => !$enabled,
+                'protected' => $protected,
+            ], [
+                'status' => 'ok',
+            ]);
+        }
 
         if ($request->isHtmx()) {
             return $this->view->render('partials/module_row.html', [
@@ -318,4 +350,30 @@ final class ModulesController
         };
     }
 
+    /** @return array<int, array{name: string, enabled: bool, version: string|null, type: string, protected: bool}> */
+    private function jsonItems(array $modules): array
+    {
+        $items = [];
+        foreach ($modules as $module) {
+            $type = (string) ($module['type'] ?? 'feature');
+            $items[] = [
+                'name' => (string) ($module['name'] ?? ''),
+                'enabled' => (bool) ($module['enabled'] ?? false),
+                'version' => is_string($module['version'] ?? null) ? $module['version'] : null,
+                'type' => $this->jsonType($type),
+                'protected' => (bool) ($module['protected'] ?? $type !== 'feature'),
+            ];
+        }
+
+        return $items;
+    }
+
+    private function jsonType(string $type): string
+    {
+        return match ($type) {
+            'internal' => 'internal',
+            'admin', 'api' => 'core',
+            default => 'module',
+        };
+    }
 }

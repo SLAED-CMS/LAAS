@@ -7,6 +7,7 @@ use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Database\Repositories\SettingsRepository;
 use Laas\Http\Request;
+use Laas\Http\Presenter\JsonPresenter;
 use Laas\Http\Response;
 use Laas\Support\AuditLogger;
 use Laas\View\View;
@@ -68,6 +69,14 @@ final class SettingsController
             $settings['api_token_issue_mode'] = $defaults['api_token_issue_mode'];
         }
 
+        if ($request->wantsJson()) {
+            return (new JsonPresenter())->present([
+                'items' => $this->jsonItems($settings, $sources),
+            ], [
+                'route' => 'admin.settings.index',
+            ]);
+        }
+
         $saved = $request->query('saved') === '1';
         $error = $request->query('error') === '1';
         $successMessage = $saved ? $this->view->translate('admin.settings.saved') : null;
@@ -123,11 +132,11 @@ final class SettingsController
 
         $repo = $this->getRepository();
         if ($repo === null) {
-            return $this->saveErrorResponse($request, $siteName, $defaultLocale, $theme, $apiTokenIssueMode, $locales, $themes, $tokenIssueModes, 503);
+            return $this->saveErrorResponse($request, $siteName, $defaultLocale, $theme, $apiTokenIssueMode, $locales, $themes, $tokenIssueModes, 503, $errors);
         }
 
         if ($errors !== []) {
-            return $this->saveErrorResponse($request, $siteName, $defaultLocale, $theme, $apiTokenIssueMode, $locales, $themes, $tokenIssueModes, 422);
+            return $this->saveErrorResponse($request, $siteName, $defaultLocale, $theme, $apiTokenIssueMode, $locales, $themes, $tokenIssueModes, 422, $errors);
         }
 
         $repo->set('site_name', $siteName, 'string');
@@ -147,6 +156,15 @@ final class SettingsController
             $this->currentUserId($request),
             $request->ip()
         );
+
+        if ($request->wantsJson()) {
+            return (new JsonPresenter())->present([
+                'saved' => true,
+                'updated' => $this->jsonUpdated($siteName, $defaultLocale, $theme, $apiTokenIssueMode),
+            ], [
+                'status' => 'ok',
+            ]);
+        }
 
         if ($request->isHtmx()) {
             return $this->renderFormPartial($siteName, $defaultLocale, $theme, $apiTokenIssueMode, $locales, $themes, $tokenIssueModes, true, false, 200, [
@@ -171,8 +189,22 @@ final class SettingsController
         array $locales,
         array $themes,
         array $tokenIssueModes,
-        int $status
+        int $status,
+        array $errors
     ): Response {
+        if ($request->wantsJson()) {
+            if ($status === 422) {
+                return Response::json([
+                    'error' => 'validation_failed',
+                    'fields' => $this->jsonValidationFields($errors),
+                ], 422);
+            }
+            if ($status === 503) {
+                return Response::json(['error' => 'service_unavailable'], 503);
+            }
+            return Response::json(['error' => 'invalid_request'], $status);
+        }
+
         $sources = [
             'site_name' => 'DB',
             'default_locale' => 'DB',
@@ -346,6 +378,47 @@ final class SettingsController
             'admin' => $this->view->translate('admin.settings.api_token_issue_mode.admin'),
             'admin_or_password' => $this->view->translate('admin.settings.api_token_issue_mode.admin_or_password'),
         ];
+    }
+
+    /** @return array<int, array{key: string, value: string, source: string, type: string}> */
+    private function jsonItems(array $settings, array $sources): array
+    {
+        $keys = ['site_name', 'default_locale', 'theme', 'api_token_issue_mode'];
+        $items = [];
+        foreach ($keys as $key) {
+            $items[] = [
+                'key' => $key,
+                'value' => (string) ($settings[$key] ?? ''),
+                'source' => (string) ($sources[$key] ?? 'CONFIG'),
+                'type' => 'string',
+            ];
+        }
+
+        return $items;
+    }
+
+    /** @return array<int, array{key: string, value: string}> */
+    private function jsonUpdated(string $siteName, string $defaultLocale, string $theme, string $apiTokenIssueMode): array
+    {
+        return [
+            ['key' => 'site_name', 'value' => $siteName],
+            ['key' => 'default_locale', 'value' => $defaultLocale],
+            ['key' => 'theme', 'value' => $theme],
+            ['key' => 'api_token_issue_mode', 'value' => $apiTokenIssueMode],
+        ];
+    }
+
+    private function jsonValidationFields(array $errors): array
+    {
+        $fields = [];
+        foreach ($errors as $field) {
+            if (!is_string($field) || $field === '') {
+                continue;
+            }
+            $fields[$field] = ['invalid'];
+        }
+
+        return $fields;
     }
 
     private function currentUserId(Request $request): ?int
