@@ -1,5 +1,10 @@
 # LAAS Versions
 
+- v3.0.7: Post-release hardening
+  - Trust proxy config for IP/HTTPS resolution
+  - Secure cookies auto on HTTPS
+  - CSP tightened with CSP_* overrides
+
 - v3.0.5: Release candidate preflight + policies
   - Preflight CLI for readiness checks
   - Upgrade rules for semver + contracts_version

@@ -27,6 +27,16 @@
 
 ## Version-Specific Upgrade Paths
 
+### v3.0.7 config additions
+
+- `TRUST_PROXY_ENABLED` (default: false)
+- `TRUST_PROXY_IPS` (CSV of trusted proxy IPs/CIDR)
+- `TRUST_PROXY_HEADERS` (default: x-forwarded-for,x-forwarded-proto)
+- `CSP_ALLOW_CDN` (default: false)
+- `CSP_SCRIPT_SRC_EXTRA` (CSV, optional)
+- `CSP_STYLE_SRC_EXTRA` (CSV, optional)
+- `CSP_CONNECT_SRC_EXTRA` (CSV, optional)
+
 ### Upgrade to v3.0.0
 
 1. `git pull`

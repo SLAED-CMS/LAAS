@@ -73,6 +73,9 @@ http://laas.loc/
 - API env knobs:
   - `API_CORS_ENABLED`, `API_CORS_ORIGINS`, `API_CORS_METHODS`, `API_CORS_HEADERS`, `API_CORS_MAX_AGE`
   - `API_RATE_LIMIT_PER_MINUTE`, `API_RATE_LIMIT_BURST`
+- Security env knobs:
+  - `TRUST_PROXY_ENABLED`, `TRUST_PROXY_IPS`, `TRUST_PROXY_HEADERS`
+  - Secure cookies auto-enable on HTTPS
 
 ---
 
