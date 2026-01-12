@@ -27,7 +27,8 @@
 19. [Best Practices](#best-practices)
 20. [Design Patterns](#design-patterns)
 21. [Frontend-agnostic foundation (v2.8)](#frontend-agnostic-foundation-v28)
-22. [Future: Rendering Adapters](#future-rendering-adapters)
+22. [Headless contracts (v2.9)](#headless-contracts-v29)
+23. [Future: Rendering Adapters](#future-rendering-adapters)
 
 ---
 
@@ -1895,6 +1896,24 @@ return $responder->respond($request, 'pages/page.html', $data, $data);
 **Notes:**
 - `Accept: application/json` or `?format=json` returns JSON.
 - `?format=html` forces HTML even in headless mode.
+
+---
+
+## Headless contracts (v2.9)
+
+**Admin endpoints:**
+- `GET /admin/modules` -> `{ data: { items, counts }, meta: { format, route } }`
+- `POST /admin/modules/toggle` -> `{ data: { name, enabled, protected }, meta: { format, status } }`
+- `GET /admin/settings` -> `{ data: { items }, meta: { format } }`
+- `POST /admin/settings` -> `{ data: { saved, updated }, meta: { format, status } }`
+
+**Error contracts:**
+- Protected module toggle: `400` + `{ "error": "protected_module" }`
+- Settings validation: `422` + `{ "error": "validation_failed", "fields": { ... } }`
+
+**Negotiation:**
+- Same routes, same controllers, same HTMX/UI behavior
+- JSON selected via `?format=json` or `Accept: application/json`
 
 ---
 

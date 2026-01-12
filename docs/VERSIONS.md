@@ -6,6 +6,11 @@
   - Headless mode toggle (JSON by default)
   - Problem Details for JSON errors
 
+- v2.9.0: Headless contracts for admin
+  - JSON contracts for /admin/modules and /admin/settings
+  - Toggle and validation errors standardized for JSON
+  - Tests for admin JSON responses
+
 - v2.8.1: Stabilize negotiation + reproducible CI
   - Explicit format precedence for ?format and Accept
   - Responder JSON envelope locks meta.format
