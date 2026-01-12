@@ -6,6 +6,12 @@
   - Headless mode toggle (JSON by default)
   - Problem Details for JSON errors
 
+- v2.8.0: Frontend-agnostic foundation
+  - FormatResolver + Request helpers for HTML/JSON negotiation
+  - Presenter layer (HtmlPresenter/JsonPresenter) + Responder facade
+  - Unified JSON envelope with data/meta and status from meta
+  - Public Pages endpoint responds to Accept: application/json
+
 - v2.4.2: Asset Architecture & Frontend Separation (in development)
   - AssetManager with buildCss/buildJs helpers
   - Template helpers: {% asset_css %} and {% asset_js %}

@@ -26,7 +26,8 @@
 18. [Deployment Model](#deployment-model)
 19. [Best Practices](#best-practices)
 20. [Design Patterns](#design-patterns)
-21. [Future: Rendering Adapters](#future-rendering-adapters)
+21. [Frontend-agnostic foundation (v2.8)](#frontend-agnostic-foundation-v28)
+22. [Future: Rendering Adapters](#future-rendering-adapters)
 
 ---
 
@@ -1859,9 +1860,34 @@ abstract class BaseController
         return $response;
     }
 
-    abstract protected function handle(): Response;
+abstract protected function handle(): Response;
 }
 ```
+
+---
+
+## Frontend-agnostic foundation (v2.8)
+
+**Goal:** One controller, one data source; response format is negotiated automatically.
+
+**Core pieces:**
+- `FormatResolver` resolves `html|json` based on `?format=json` or `Accept: application/json`.
+- `Request::wantsJson()` uses the resolver; `Request::acceptsJson()` checks the header only.
+- `PresenterInterface` standardizes `present(array $data, array $meta = []): Response`.
+- `HtmlPresenter` renders templates via `View` (HTMX partials still work).
+- `JsonPresenter` returns `{ "data": ..., "meta": ... }` with status from `meta.status` or `meta.code`.
+- `Responder` facade picks the presenter and keeps JSON payloads free of sensitive data.
+
+**Controller usage:**
+```php
+$data = $viewModel->toArray();
+$responder = new Responder($this->view);
+return $responder->respond($request, 'pages/page.html', $data, $data);
+```
+
+**Notes:**
+- `Accept: application/json` or `?format=json` returns JSON.
+- `?format=html` forces HTML even in headless mode.
 
 ---
 
