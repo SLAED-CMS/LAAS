@@ -36,10 +36,10 @@
   - Automatic content-type detection via `Accept` header
   - Query parameter override: `?format=html` or `?format=json`
   - Problem Details (RFC 7807) for JSON error responses
-- **Headless mode** — JSON by default for public pages
-  - Enable via `HEADLESS_MODE=true` in `.env`
-  - Public pages return JSON unless `?format=html` is specified
-  - API redirects return JSON: `{ "redirect_to": "/path" }`
+  - **Headless mode** — JSON by default for public pages
+    - Enable via `APP_HEADLESS=true` in `.env`
+    - Public pages return JSON unless `Accept: text/html` is allowlisted or overridden
+    - API redirects return JSON: `{ "redirect_to": "/path" }`
 - **Content negotiation** — Smart format selection
   - `Accept: application/json` forces JSON response
   - `Accept: text/html` forces HTML response
@@ -51,13 +51,13 @@
 2. **No database migrations required** for v3.0.0
 3. **Optional:** Enable headless mode in `.env`:
    ```env
-   HEADLESS_MODE=true
+   APP_HEADLESS=true
    ```
 4. Test critical flows:
    - HTML mode (default): verify all pages render correctly
    - JSON mode: test `Accept: application/json` header
-   - Headless mode: test with `HEADLESS_MODE=true`
-   - Format override: test `?format=html` and `?format=json`
+   - Headless mode: test with `APP_HEADLESS=true`
+   - Format override: test `Accept: text/html` (allowlist) and `?format=json`
 5. **For API consumers:** Review Problem Details format for JSON errors
 
 **Breaking changes:**
@@ -66,7 +66,7 @@
 - **API clients** may receive Problem Details format for errors (structured JSON)
 
 **Migration notes:**
-- Headless mode is **opt-in** via `HEADLESS_MODE=true`
+- Headless mode is **opt-in** via `APP_HEADLESS=true`
 - Without headless mode, behavior is 100% backward compatible
 - Custom controllers can use RenderAdapter for dual HTML/JSON support
 - Problem Details provides structured error responses for JSON consumers

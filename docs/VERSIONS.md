@@ -1,5 +1,10 @@
 # LAAS Versions
 
+- v3.0.3: Official headless mode
+  - APP_HEADLESS + HTML allowlist/override
+  - Default JSON envelope with 406 not_acceptable for blocked HTML
+  - Headless mode docs and examples
+
 - v3.0.0: Frontend-agnostic implemented
   - RenderAdapter v1 (HTML/JSON)
   - Content negotiation via Accept / ?format

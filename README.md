@@ -97,15 +97,19 @@ http://laas.loc/
 
 ## Headless mode
 
-- Enable with `HEADLESS_MODE=true` in `.env`
-- Public Pages default to JSON unless `?format=html` is set
+- Enable with `APP_HEADLESS=true` in `.env`
+- HTML only when requested via `Accept: text/html` and allowed by `APP_HEADLESS_HTML_ALLOWLIST`
+- Default response is JSON envelope for non-HTML requests
 - API redirects return JSON: `{ "redirect_to": "/path" }`
+- Examples:
+  - `APP_HEADLESS=true` + `GET /` => JSON
+  - `Accept: text/html` + `GET /login` => HTML (if allowlist includes `/login`)
 
 ## Frontend-agnostic modes
 
-- JSON by default: `HEADLESS_MODE=true`
-- Force JSON: `Accept: application/json`
-- Force HTML: `?format=html`
+- JSON by default: `APP_HEADLESS=true`
+- Force JSON: `Accept: application/json` or `?format=json`
+- Force HTML: `Accept: text/html` (allowlist) or `_html=1` for admin in non-prod
 
 ## Migration notes
 

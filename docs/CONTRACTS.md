@@ -34,6 +34,7 @@ This document defines the JSON response envelope and the internal contract regis
 - 401: unauthorized
 - 403: forbidden
 - 404: not found
+- 406: not acceptable (HTML blocked in headless mode)
 - 422: validation failed
 - 429: rate limited
 - 500: server error
@@ -43,6 +44,13 @@ This document defines the JSON response envelope and the internal contract regis
 - `format` is always `json`
 - `route` is a stable internal route name
 - `request_id` is included when available
+
+## Headless mode
+
+- When `APP_HEADLESS=true`, JSON envelope is the default response format
+- HTML is only served on explicit `Accept: text/html` and allowlisted routes
+- Blocked HTML requests return `406` with `error: "not_acceptable"`
+- Standard error keys: `not_acceptable`, `headless_html_disabled`
 
 ## Versioning
 

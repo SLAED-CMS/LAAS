@@ -963,11 +963,12 @@ public function render(string $template, array $data): string
 - JSON adapter returns DTOs and tokens as JSON
 - Content negotiation uses `Accept: application/json` or `?format=json`
 
-### Headless mode rules
+### Headless mode: правила и приоритеты
 
-- `HEADLESS_MODE=true` switches public Pages to JSON by default
-- Use `?format=html` to force HTML on public Pages
-- API requests with redirects return JSON `{ "redirect_to": "/path" }`
+- `APP_HEADLESS=true` включает режим headless (JSON по умолчанию)
+- HTML доступен только при `Accept: text/html` и разрешённом пути (allowlist) или override
+- Если HTML запрошен, но запрещён, возвращается `406 not_acceptable` в JSON envelope
+- Редиректы в headless возвращают JSON `{ "redirect_to": "/path" }`
 
 ### ThemeManager and Theme API v1
 
@@ -1897,7 +1898,8 @@ return $responder->respond($request, 'pages/page.html', $data, $data);
 
 **Notes:**
 - `Accept: application/json` or `?format=json` returns JSON.
-- `?format=html` forces HTML even in headless mode.
+- Headless mode overrides defaults: HTML requires explicit `Accept: text/html` and allowlist/override.
+- `?format=html` is treated as an explicit HTML request and still respects headless allowlist.
 
 ---
 
