@@ -28,10 +28,13 @@ LAAS CMS is built on these core principles:
 
 - **No frameworks** — Pure PHP 8.4+ with strict types
 - **Security first** — 2FA/TOTP, password reset, RBAC, CSRF, rate limiting, session timeout, SSRF protection
+- **Frontend-agnostic** — RenderAdapter v1 (HTML/JSON), content negotiation, headless mode
+- **Frontend/backend separation** — AssetManager, UI Tokens (no *_class from PHP), ViewModels
 - **Predictability** — No magic, clear behavior, honest limitations
 - **Production focus** — Ops-friendly, observable, maintainable
 - **HTML-first** — No build step, progressive enhancement with HTMX
 - **Simplicity** — Minimal abstractions, straightforward architecture
+- **Policy enforcement** — CI guardrails (policy checks) for code quality
 
 Please keep these principles in mind when contributing.
 
@@ -347,11 +350,19 @@ vendor/bin/phpunit
 vendor/bin/phpunit --testsuite unit
 vendor/bin/phpunit --testsuite contracts
 
+# Run policy checks (CI guardrails)
+php tools/policy-check.php
+# or via CLI
+php tools/cli.php policy:check
+
 # Run with coverage (requires Xdebug)
 vendor/bin/phpunit --coverage-html coverage/
 
 # Run specific test file
 vendor/bin/phpunit tests/Unit/YourTest.php
+
+# Before commit (recommended)
+php tools/cli.php policy:check && vendor/bin/phpunit
 ```
 
 ### Writing Tests

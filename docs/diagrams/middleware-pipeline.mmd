@@ -1,9 +1,9 @@
 graph LR
     %% LAAS CMS v3.0.0 - Middleware Pipeline
     %% 7 middlewares in strict order (Session before Auth, Auth before RBAC)
-    %% Security: CSRF, Rate Limiting, CSP, HSTS, RBAC, API Auth, Session Timeout (v3.0.0)
+    %% Security: CSRF, Rate Limiting, CSP, HSTS, RBAC, API Auth, Session Timeout, SSRF Protection
     %% Performance: Total overhead 5-10ms
-    %% Version: v3.0.0 (2026-01-11)
+    %% Version: v3.0.0 (2026-01-12)
 
     Request["HTTP Request<br/>(from Nginx)"] --> ErrorHandler
 

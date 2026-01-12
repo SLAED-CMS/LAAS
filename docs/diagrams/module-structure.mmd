@@ -3,8 +3,9 @@ graph TD
     %% 9 modules: System, API, Admin, Users, Pages, Media, Menu, Changelog, DevTools
     %% Loading: Kernel scans modules/ -> reads config/modules.php -> includes routes.php
     %% Types: Core (required), Content (can disable), Admin (dev-only)
-    %% Security: 2FA/TOTP, Password Reset, Session Timeout (v3.0.0)
-    %% Version: v3.0.0 (2026-01-11)
+    %% Security: 2FA/TOTP, Password Reset, Session Timeout, SSRF Protection
+    %% Frontend: AssetManager, UI Tokens, ViewModels, Theme API v1
+    %% Version: v3.0.0 (2026-01-12)
 
     subgraph Core["Core Framework"]
         Kernel["Kernel<br/>Bootstrap & DI Container"]

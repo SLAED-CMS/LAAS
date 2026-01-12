@@ -3,7 +3,7 @@ erDiagram
     %% 16 tables, 35+ migrations, InnoDB/SQLite
     %% Indexes: slug (0.5-1ms), status, uuid, timestamps, token_hash
     %% Security: Argon2id, 2FA/TOTP, password reset, audit logging, hard deletes, API tokens, XSS/SSRF hardening
-    %% Version: v3.0.0 (2026-01-11)
+    %% Version: v3.0.0 (2026-01-12)
 
     users ||--o{ role_user : "has"
     roles ||--o{ role_user : "assigned to"

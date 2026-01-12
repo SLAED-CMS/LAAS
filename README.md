@@ -17,7 +17,7 @@
 
 **Modern, secure, HTML-first content management system.**
 
-**v3.0.0** - Frontend-agnostic: RenderAdapter v1 (HTML/JSON), content negotiation via Accept/?format, headless mode (JSON by default), Problem Details for JSON errors. Asset Architecture from v2.4.2: AssetManager, UI Tokens (no *_class from PHP), Theme API v1, CI policy checks. Complete security stack from v2.4.0: 2FA/TOTP, password reset, session timeout, S3 SSRF protection (99/100 score).
+**v3.0.0** - Frontend-agnostic platform: RenderAdapter v1 (HTML/JSON), content negotiation (Accept header, ?format parameter), headless mode (JSON by default), Problem Details (RFC 7807) for structured JSON errors. Asset Architecture: AssetManager with cache-busting, UI Tokens (state/status/variant mapping), Theme API v1, ViewModels, policy checks (CI guardrails). Complete security stack: 2FA/TOTP, password reset with email tokens, session timeout enforcement, S3 SSRF protection (99/100 security score).
 
 LAAS CMS is a modular, security-first CMS built for PHP 8.4+ with a lightweight template engine, middleware pipeline, and i18n support. Bootstrap 5 + HTMX ready.
 
@@ -423,11 +423,22 @@ vendor/bin/phpunit --coverage-html coverage/html --coverage-clover coverage/clov
 
 ## Development / CI
 
-- Policy checks: `php tools/policy-check.php`
-- Policy checks via CLI: `php tools/cli.php policy:check`
-- Tests: `vendor/bin/phpunit`
+**Policy Checks (CI Guardrails):**
+- Run policy checks: `php tools/policy-check.php`
+- Via CLI: `php tools/cli.php policy:check`
+- Checks for:
+  - No inline `<style>` or `<script>` in templates
+  - No CDN usage (Bootstrap/HTMX must be local)
+  - No `*_class` keys in view data (enforced in debug mode)
+  - Proper layout structure (base.html required)
+
+**Testing:**
+- Run all tests: `vendor/bin/phpunit`
+- Run contract tests: `vendor/bin/phpunit --testsuite contracts`
 - Before commit: `php tools/cli.php policy:check && vendor/bin/phpunit`
-- Contract fixtures: `php tools/cli.php contracts:fixtures:dump --force`
+
+**Contract Fixtures:**
+- Dump fixtures: `php tools/cli.php contracts:fixtures:dump --force`
 
 ## Preflight before deploy
 

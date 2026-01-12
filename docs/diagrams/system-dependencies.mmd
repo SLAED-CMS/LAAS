@@ -1,10 +1,11 @@
 graph TB
     %% LAAS CMS v3.0.0 - System Dependencies
-    %% 5 Layers: Bootstrap, Core Services, Security, View, Application Services
-    %% DI Container: Lazy-loaded singletons, ~22 services
+    %% 6 Layers: Bootstrap, Core Services, Security, View/Assets, Application Services, Presentation
+    %% DI Container: Lazy-loaded singletons, ~28 services
     %% External: FastRoute, Dotenv, Monolog, CommonMark, AWS SDK (optional)
-    %% Security: 2FA/TOTP, Password Reset, Session Timeout (v3.0.0)
-    %% Version: v3.0.0 (2026-01-11)
+    %% Security: 2FA/TOTP, Password Reset, Session Timeout, SSRF Protection
+    %% Frontend: AssetManager, RenderAdapter, UI Tokens, ViewModels, Theme API v1
+    %% Version: v3.0.0 (2026-01-12)
 
     subgraph Bootstrap["Bootstrap Layer"]
         Index["public/index.php<br/>Entry Point"]
@@ -31,10 +32,19 @@ graph TB
         PasswordReset["PasswordResetRepository<br/>Token Management (v3.0.0)"]
     end
 
-    subgraph View["View Layer"]
-        ViewEngine["View Service<br/>Template Rendering"]
+    subgraph View["View & Assets Layer"]
+        ViewEngine["View Service<br/>RenderAdapter v1 (HTML/JSON)"]
         TemplateEngine["TemplateEngine<br/>Compiler & Cache"]
-        ThemeManager["ThemeManager<br/>Theme Resolution"]
+        ThemeManager["ThemeManager<br/>Theme API v1"]
+        AssetManager["AssetManager<br/>CSS/JS Management"]
+        AssetsManager["AssetsManager<br/>Cache-busting & Helpers"]
+    end
+
+    subgraph Presentation["Presentation Layer"]
+        UiTokenMapper["UiTokenMapper<br/>State/Status Mapping"]
+        PresentationLeakDetector["PresentationLeakDetector<br/>Policy Enforcement"]
+        ViewModels["ViewModels<br/>Data Normalization"]
+        ProblemDetails["ProblemDetails<br/>RFC 7807 JSON Errors"]
     end
 
     subgraph Services["Application Services"]
@@ -66,7 +76,16 @@ graph TB
     Container --> ViewEngine
     ViewEngine --> TemplateEngine
     ViewEngine --> ThemeManager
+    ViewEngine --> AssetManager
+    ViewEngine --> ProblemDetails
     TemplateEngine --> Cache
+    ThemeManager --> Cache
+    AssetManager --> AssetsManager
+    AssetsManager --> Cache
+
+    ViewEngine --> UiTokenMapper
+    ViewEngine --> PresentationLeakDetector
+    ViewEngine --> ViewModels
 
     Container --> Backup
     Container --> Health
@@ -105,6 +124,13 @@ graph TB
     style ViewEngine fill:#4ecdc4
     style TemplateEngine fill:#ffe66d
     style ThemeManager fill:#95e1d3
+    style AssetManager fill:#a8e6cf
+    style AssetsManager fill:#c7ceea
+
+    style UiTokenMapper fill:#ffd3b6
+    style PresentationLeakDetector fill:#ffaaa5
+    style ViewModels fill:#95e1d3
+    style ProblemDetails fill:#ff9ff3
 
     style Backup fill:#c7ceea
     style Health fill:#ffd3b6

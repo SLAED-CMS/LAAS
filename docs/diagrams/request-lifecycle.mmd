@@ -1,9 +1,10 @@
 sequenceDiagram
     %% LAAS CMS v3.0.0 - HTTP Request Lifecycle
-    %% Flow: Bootstrap -> Middleware -> Routing -> Business Logic -> View -> Response
+    %% Flow: Bootstrap -> Middleware -> Routing -> Business Logic -> RenderAdapter -> Response
     %% Performance: Cold 80-120ms, Warm 15-25ms (cache hit 99%)
-    %% Security: Session timeout, 2FA/TOTP, password reset (v3.0.0)
-    %% Version: v3.0.0 (2026-01-11)
+    %% Security: Session timeout, 2FA/TOTP, password reset, SSRF protection
+    %% Frontend: Content negotiation (Accept header, ?format), AssetManager, UI Tokens
+    %% Version: v3.0.0 (2026-01-12)
 
     participant Browser
     participant Nginx
@@ -17,10 +18,12 @@ sequenceDiagram
     participant Repo as Repository
     participant DB as MariaDB/MySQL
     participant View
+    participant RenderAdapter
     participant Engine as TemplateEngine
     participant Theme as ThemeManager
+    participant AssetMgr as AssetManager
 
-    Browser->>Nginx: GET /pages/welcome
+    Browser->>Nginx: GET /pages/welcome (Accept: text/html)
     Nginx->>PHP: FastCGI Request
     PHP->>Index: Execute index.php
 
@@ -53,11 +56,20 @@ sequenceDiagram
         Controller-->>Kernel: throw NotFoundException()
         Kernel-->>Browser: HTTP 404
     else Page found
-        Note over Controller,Theme: View Rendering Phase
+        Note over Controller,AssetMgr: View Rendering Phase (Content Negotiation)
         Controller->>View: render('pages/show.html', ['page' => $page])
-        View->>Theme: Resolve theme path (default or admin)
-        Theme-->>View: themes/default/pages/show.html
-        View->>Engine: compile($template, $data)
+        View->>RenderAdapter: Detect format (Accept header or ?format)
+        RenderAdapter->>RenderAdapter: Check Accept: text/html or ?format=html
+
+        alt JSON requested (Accept: application/json or ?format=json)
+            RenderAdapter->>RenderAdapter: Use JsonRenderAdapter
+            RenderAdapter-->>Controller: JSON envelope + Problem Details on error
+        else HTML requested (default)
+            RenderAdapter->>Theme: Resolve theme path (default or admin)
+            Theme-->>RenderAdapter: themes/default/pages/show.html
+            RenderAdapter->>AssetMgr: Build asset tags (CSS/JS)
+            AssetMgr-->>RenderAdapter: <link> and <script> tags with cache-busting
+            RenderAdapter->>Engine: compile($template, $data + $assets)
 
         Note over Engine: Template Compilation
         Engine->>Engine: Check cache (storage/cache/templates/)
@@ -66,10 +78,12 @@ sequenceDiagram
             Engine->>Engine: Auto-escape variables (XSS protection)
             Engine->>Engine: Save to cache
         end
-        Engine-->>View: Compiled HTML
+            Engine-->>RenderAdapter: Compiled HTML
+            RenderAdapter-->>View: Final HTML with assets
+        end
 
-        View-->>Controller: Response HTML
-        Controller->>Controller: new Response($html, 200)
+        View-->>Controller: Response (HTML or JSON)
+        Controller->>Controller: new Response($content, 200, $headers)
         Controller-->>Kernel: Response object
 
         Note over Kernel,Browser: Response Phase

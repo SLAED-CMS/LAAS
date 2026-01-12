@@ -14,19 +14,22 @@ We release security updates for the following versions of LAAS CMS:
 
 **Recommendation:** Always use the latest stable release (v3.0.x) for the best security posture.
 
-**v3.0.0 - Frontend-agnostic:**
-- ✅ RenderAdapter v1 (HTML/JSON)
-- ✅ Content negotiation via Accept header and ?format parameter
-- ✅ Headless mode (JSON by default)
-- ✅ Problem Details (RFC 7807) for JSON errors
-- ✅ Secure content-type handling
+**v3.0.0 - Frontend-agnostic Platform:**
+- ✅ RenderAdapter v1 (HTML/JSON content negotiation)
+- ✅ Accept header and ?format parameter for format selection
+- ✅ Headless mode (JSON by default for API-first applications)
+- ✅ Problem Details (RFC 7807) for structured JSON error responses
+- ✅ Secure content-type handling and MIME sniffing protection
+- ✅ ViewModels for data normalization and presentation layer separation
 
 **v2.4.2 - Asset Architecture & Frontend Separation:**
-- ✅ AssetManager with cache-busting and template helpers
-- ✅ Frontend/backend separation (no inline scripts/styles, no CSS classes from PHP)
-- ✅ UI Tokens (controllers return state/status/variant)
-- ✅ CI policy checks (guardrails for code quality)
-- ✅ Theme API v1 with standardized contracts
+- ✅ AssetManager with cache-busting (?v= query parameter)
+- ✅ AssetsManager with template helpers ({% asset_css %}, {% asset_js %})
+- ✅ Complete frontend/backend separation (no inline scripts/styles, no CSS classes from PHP)
+- ✅ UI Tokens system (controllers return state/status/variant, templates map to CSS)
+- ✅ CI policy checks (automated guardrails for frontend separation)
+- ✅ Theme API v1 with standardized contracts (theme.json, layouts/, partials/)
+- ✅ PresentationLeakDetector (runtime enforcement in debug mode)
 
 **v2.4.0 Security Highlights:**
 - ✅ 2FA/TOTP with backup codes

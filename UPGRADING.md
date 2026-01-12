@@ -64,13 +64,13 @@
 
 ### v2.4.2 → v3.0.0 (Current Stable)
 
-**Overview:** Frontend-agnostic mode with RenderAdapter v1, content negotiation, and headless mode support.
+**Overview:** Frontend-agnostic platform with RenderAdapter v1, content negotiation, headless mode, and enhanced asset management.
 
 **Key features (v3.0.0):**
 - **RenderAdapter v1** — Unified rendering layer for HTML and JSON
   - Automatic content-type detection via `Accept` header
   - Query parameter override: `?format=html` or `?format=json`
-  - Problem Details (RFC 7807) for JSON error responses
+  - Problem Details (RFC 7807) for JSON error responses with structured format
   - **Headless mode** — JSON by default for public pages
     - Enable via `APP_HEADLESS=true` in `.env`
     - Public pages return JSON unless `Accept: text/html` is allowlisted or overridden
@@ -79,6 +79,11 @@
   - `Accept: application/json` forces JSON response
   - `Accept: text/html` forces HTML response
   - Query parameter `?format=` overrides header
+- **ViewModels** — Data normalization interface for consistent presentation
+- **Enhanced Asset Management** — Continued improvements from v2.4.2
+  - AssetManager with cache-busting
+  - UI Tokens enforcement (no *_class from PHP)
+  - Theme API v1 compliance
 - **Backward compatible** — All existing HTML endpoints work unchanged
 
 **Upgrade steps:**
