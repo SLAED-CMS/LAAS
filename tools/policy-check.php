@@ -263,6 +263,29 @@ function policy_strict(): bool
     return policy_env_bool('POLICY_STRICT', false);
 }
 
+function policy_core_theme_strict(): bool
+{
+    return policy_env_bool('POLICY_CORE_THEME_STRICT', false);
+}
+
+function policy_is_core_theme_path(string $path): bool
+{
+    $root = policy_root_path();
+    $path = policy_normalize_path($path);
+    $default = policy_normalize_path($root . '/themes/default');
+    $admin = policy_normalize_path($root . '/themes/admin');
+
+    if (str_starts_with($path, $default . '/') || $path === $default
+        || str_starts_with($path, $admin . '/') || $path === $admin) {
+        return true;
+    }
+
+    return str_contains($path, '/themes/default/')
+        || str_contains($path, '/themes/admin/')
+        || str_ends_with($path, '/themes/default')
+        || str_ends_with($path, '/themes/admin');
+}
+
 /**
  * @param array<int, string> $paths
  * @return array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>
@@ -491,6 +514,20 @@ function policy_analyze(array $paths): array
         } else {
             $errors[] = $finding;
         }
+    }
+
+    if (policy_core_theme_strict()) {
+        $strictWarnings = [];
+        foreach ($warnings as $warning) {
+            $code = (string) ($warning['code'] ?? '');
+            $file = (string) ($warning['file'] ?? '');
+            if (in_array($code, ['W4', 'W5', 'W6'], true) && policy_is_core_theme_path($file)) {
+                $errors[] = array_merge($warning, ['level' => 'error']);
+                continue;
+            }
+            $strictWarnings[] = $warning;
+        }
+        $warnings = $strictWarnings;
     }
 
     return [

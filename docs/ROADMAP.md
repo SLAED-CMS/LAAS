@@ -1,32 +1,32 @@
 # LAAS CMS — Full Roadmap
 ## From Prototype to Production-Ready Mature Platform
 
-Документ описывает **все этапы развития LAAS CMS** — от первого каркаса до стабильной платформы уровня v2.0.  
-Фокус: **безопасность, предсказуемость, простота сопровождения, отсутствие архитектурного долга**.
+This document describes **all stages of LAAS CMS development** — from initial scaffold to stable v2.0 platform.
+Focus: **security, predictability, maintainability, zero architectural debt**.
 
 ---
 
 # v0.x — Foundation & Architecture
 
 ## v0.1 — Project Skeleton
-**Цель:** минимальный, но правильный каркас.
+**Goal:** minimal but correct scaffold.
 
 - PHP 8.4+, MySQL/MariaDB
-- Без фреймворков
-- Архитектура:
+- No frameworks
+- Architecture:
   - Kernel → Router → Controller → View
-- Composer (autoload, без навязывания пользователю)
-- HTML строго в themes/*
-- Первый роут `/` и `/api/v1/ping`
-- Базовая структура каталогов
+- Composer (autoload, no imposing on user)
+- HTML strictly in themes/*
+- First routes `/` and `/api/v1/ping`
+- Basic directory structure
 - Nginx/Apache rewrite-ready
 
-**Результат:** проект запускается, архитектура зафиксирована.
+**Result:** project runs, architecture locked.
 
 ---
 
 ## v0.2 — Security Foundation
-**Цель:** безопасный baseline.
+**Goal:** secure baseline.
 
 - Middleware pipeline
 - Sessions hardening:
@@ -38,95 +38,95 @@
   - X-Content-Type-Options
 - Central error handling
 - Monolog logging
-- Без утечки stacktrace в prod
+- No stacktrace leak in prod
 
 ---
 
 ## v0.3 — CSRF + Rate Limiting
-**Цель:** защита от типовых атак.
+**Goal:** protection against typical attacks.
 
 - CSRF middleware
 - CSRF refresh endpoint (`/csrf`)
 - Rate limit middleware
 - Atomic file locking (flock)
-- Без доверия к X-Forwarded-For
+- No trust in X-Forwarded-For
 
 ---
 
 ## v0.4 — Template Engine (HTML-first)
-**Цель:** убрать HTML из PHP полностью.
+**Goal:** remove HTML from PHP completely.
 
-- Собственный template engine:
+- Custom template engine:
   - extends / blocks / include
   - if / foreach
-- Auto-escaping по умолчанию
-- Raw output только явно
+- Auto-escaping by default
+- Raw output only explicit
 - Template cache + compile-once
-- CLI очистка кеша шаблонов
+- CLI template cache cleanup
 
 ---
 
 ## v0.5 — i18n / L10n
-**Цель:** многоязычность без усложнения.
+**Goal:** multilingual without complexity.
 
 - LocaleResolver
 - Translator
-- Поддержка:
+- Support for:
   - core
   - modules
   - themes
-- Fallback на ключ
+- Fallback to key
 - Cookie + URL param
-- 15+ языков (включая non-Latin)
+- 15+ languages (including non-Latin)
 
 ---
 
 ## v0.6 — Database & Migrations
-**Цель:** контролируемая эволюция схемы БД.
+**Goal:** controlled DB schema evolution.
 
 - DatabaseManager (PDO)
 - Migrator
 - Migration status / up
-- SQLite-compatible тесты
+- SQLite-compatible tests
 - SettingsRepository (DB-backed)
 
 ---
 
 ## v0.7 — Module Management (DB-backed)
-**Цель:** гибкая, но безопасная модульность.
+**Goal:** flexible but safe modularity.
 
 - modules table
-- enable / disable через DB
-- fallback на config при проблемах с DB
+- enable / disable via DB
+- fallback to config on DB issues
 - module.json
 - internal vs feature distinction
 
 ---
 
 ## v0.8 — Users & Auth
-**Цель:** полноценная аутентификация.
+**Goal:** complete authentication.
 
 - Users module
 - Password hashing
 - Login / logout
 - Auth middleware
-- NullAuth fallback при ошибках DB
+- NullAuth fallback on DB errors
 - Admin seed (safe)
 
 ---
 
 ## v0.8.1 — Auth Security Hardening
-**Цель:** защита сессий и логина.
+**Goal:** session and login protection.
 
 - session_regenerate_id
 - Safe admin seed
 - Login rate limit
-- Локализуемые ошибки
+- Localizable errors
 
 ---
 
 ## v0.9 — RBAC
-**Цель:** контроль доступа.
+**Goal:** access control.
 
 - Roles
 - Permissions
@@ -139,7 +139,7 @@
 # v1.x — CMS Features & Production Hardening
 
 ## v1.0 — Admin Shell
-**Цель:** единая админ-панель.
+**Goal:** unified admin panel.
 
 - Admin module
 - Admin layout
@@ -149,7 +149,7 @@
 ---
 
 ## v1.1 — Users UI
-**Цель:** управление пользователями.
+**Goal:** user management.
 
 - Admin UI for users
 - Forms + validation
@@ -159,7 +159,7 @@
 ---
 
 ## v1.2 — Pages Module
-**Цель:** контент как сущность.
+**Goal:** content as entity.
 
 - Pages DB schema
 - Slug-based routing
@@ -171,18 +171,18 @@
 ---
 
 ## v1.3 — Core Hardening
-**Цель:** стабильность ядра.
+**Goal:** core stability.
 
 - Dotenv
 - Config sanity
 - PHPUnit setup
 - Core tests
-- Без NOW() в тестах
+- No NOW() in tests
 
 ---
 
 ## v1.4 — Validation Layer
-**Цель:** единый ввод данных.
+**Goal:** unified data input.
 
 - Validator
 - ValidationResult
@@ -193,7 +193,7 @@
 ---
 
 ## v1.5 — Menu / Navigation
-**Цель:** управляемая навигация.
+**Goal:** managed navigation.
 
 - Menus DB
 - Menu items
@@ -204,7 +204,7 @@
 ---
 
 ## v1.6 — Menu Polish + Audit Log
-**Цель:** зрелость админки.
+**Goal:** admin panel maturity.
 
 - Menu UX polish
 - Audit module (internal)
@@ -215,7 +215,7 @@
 ---
 
 ## v1.7 — DevTools
-**Цель:** developer experience без риска.
+**Goal:** developer experience without risk.
 
 - DevTools panel
 - Request details
@@ -233,7 +233,7 @@
 ---
 
 ## v1.8 — Media / Uploads
-**Цель:** безопасные файлы.
+**Goal:** secure files.
 
 ### v1.8.0 — Media Security Core
 - Media module
@@ -270,7 +270,7 @@
 ---
 
 ## v1.9 — Media Transforms
-**Цель:** профессиональная работа с изображениями.
+**Goal:** professional image handling.
 
 ### v1.9.0 — Thumbnails
 - Pre-generated image thumbnails (sm/md/lg)
@@ -294,7 +294,7 @@
 ---
 
 ## v1.10 — Advanced Storage
-**Цель:** облачное хранилище корпоративного уровня.
+**Goal:** enterprise-grade cloud storage.
 
 ### v1.10.0 — Public Media + Signed URLs
 - Public access modes (private/all/signed)
@@ -312,7 +312,7 @@
 ---
 
 ## v1.11 — Stability & Ops
-**Цель:** production readiness.
+**Goal:** production readiness.
 
 ### v1.11.0 — Foundation
 - `/health` endpoint
@@ -345,7 +345,7 @@
 ---
 
 ## v1.12 — CI / QA / Release Engineering
-**Цель:** автоматизация качества.
+**Goal:** quality automation.
 
 - GitHub Actions
 - PHPUnit
@@ -356,7 +356,7 @@
 ---
 
 ## v1.13 — Performance & Cache
-**Цель:** стабильная производительность.
+**Goal:** stable performance.
 
 - Menu cache
 - Settings cache
@@ -366,7 +366,7 @@
 ---
 
 ## v1.14 — Search
-**Цель:** улучшение UX.
+**Goal:** UX improvement.
 
 - Pages search
 - Media search
@@ -376,7 +376,7 @@
 ---
 
 ## v1.15 — RBAC & Audit Maturity
-**Цель:** enterprise-grade control.
+**Goal:** enterprise-grade control.
 
 - Permission grouping
 - Role cloning
@@ -388,7 +388,7 @@
 # v2.0 — Stable Release
 
 ## v2.0.0 — Stable CMS Release
-**Ключевой момент проекта.**
+**Project milestone.**
 
 ### Definition of Done
 - Production-ready ops
@@ -399,64 +399,64 @@
 - Backups tested
 - Predictable upgrades
 
-### Что означает v2.0
-- Архитектура зафиксирована
-- Контракты стабильны
-- Обратная совместимость гарантируется
-- Debug-фичи исключены из prod
+### What v2.0 means
+- Architecture locked
+- Contracts stable
+- Backward compatibility guaranteed
+- Debug features excluded from prod
 
 ---
 
 # v2.x — Mature Platform
 
 ## v2.1 — UX & Operational Transparency
-**Цель:** прозрачность и удобство администрирования.
+**Goal:** transparency and admin convenience.
 
 ### v2.1.0 — Config Snapshot
 - `config:export` CLI command
-- Безопасный JSON snapshot runtime конфигурации
-- Redaction чувствительных данных
-- Storage/media/security flags в экспорте
-- Полезно для поддержки и diff окружений
+- Safe JSON snapshot of runtime config
+- Sensitive data redaction
+- Storage/media/security flags in export
+- Useful for support and env diff
 
 ### v2.1.1 — Global Admin Search
-- Единый поиск в админке
-- Pages/Media/Users в одном интерфейсе
-- HTMX live search с debounce
+- Unified admin search
+- Pages/Media/Users in single interface
+- HTMX live search with debounce
 - Safe highlights
-- Учет permissions
-- Быстрая навигация для админов
+- Permissions-aware
+- Fast navigation for admins
 
 ---
 
 ## v2.2 — Control & Guarantees
-**Цель:** контроль и защита архитектуры.
+**Goal:** control and architecture protection.
 
 ### v2.2.0 — RBAC Diagnostics
 - Permission introspection
-- Диагностика: кто, почему, через какие роли
+- Diagnostics: who, why, through which roles
 - Admin diagnostics page
-- Effective permissions и explanations
-- Audit event для diagnostics views
-- Диагностика прав без догадок
+- Effective permissions and explanations
+- Audit event for diagnostics views
+- Permission diagnostics without guesswork
 
 ### v2.2.1 — Contract Tests
-- Contract test base для module discovery
-- Storage и media contract tests
-- Защита core invariants
-- Основа для сторонних модулей
-- Защита архитектуры v2.0 от деградации
+- Contract test base for module discovery
+- Storage and media contract tests
+- Core invariants protection
+- Foundation for third-party modules
+- v2.0 architecture degradation protection
 
 ---
 
 ## v2.3 — API & Security Hardening
-**Цель:** REST API, security review, DevTools maturity.
+**Goal:** REST API, security review, DevTools maturity.
 
 ### v2.3.0-10 — API v1 & Changelog Module
-- REST API v1 с Bearer token аутентификацией
+- REST API v1 with Bearer token authentication
 - API token management UI (`/admin/api/tokens`)
-- Token rotation с audit trail
-- CORS allowlist для API
+- Token rotation with audit trail
+- CORS allowlist for API
 - Dedicated API rate limit bucket
 - Git-based changelog module (GitHub API/local git provider)
 - Changelog admin UI
@@ -464,45 +464,45 @@
 ### v2.3.11-18 — Security Hardening
 - **v2.3.11**: Stored XSS fix (server-side HTML sanitization)
 - **v2.3.12-14**: RBAC hardening (`users.manage`, `admin.modules.manage`, `admin.settings.manage`)
-- **v2.3.15**: SSRF hardening для GitHub changelog
-- **v2.3.16-18**: Menu URL injection prevention (validation с scheme allowlist)
+- **v2.3.15**: SSRF hardening for GitHub changelog
+- **v2.3.16-18**: Menu URL injection prevention (validation with scheme allowlist)
 - **v2.3.17**: Final security review (C-01..H-02)
 
 ### v2.3.19-28 — DevTools & Performance
-- Request-scope caching для current user и modules
+- Request-scope caching for current user and modules
 - DevTools duplicate query detector
-- Terminal UI с Bluloco theme
-- Compact layouts для профайлера
+- Terminal UI with Bluloco theme
+- Compact layouts for profiler
 - Performance optimization (reduced duplicate queries)
 - Overview-first profiler
 
 ---
 
 ## v2.4 — Complete Security Stack
-**Цель:** enterprise-grade authentication и полное закрытие security audit.
+**Goal:** enterprise-grade authentication and complete security audit closure.
 
 ### v2.4.0 — Security Implementation
-**Дата выпуска:** January 2026
+**Release date:** January 2026
 
-**Ключевые features:**
+**Key features:**
 - **2FA/TOTP** — RFC 6238 time-based one-time passwords
   - 30-second windows, 6-digit codes
-  - QR code enrollment с secret display
+  - QR code enrollment with secret display
   - 10 single-use backup codes (bcrypt hashed)
   - Backup code regeneration flow
-  - Grace period для clock skew
+  - Grace period for clock skew
   - User-controlled opt-in
 
 - **Self-Service Password Reset** — Secure email-token flow
   - 32-byte cryptographically secure tokens
-  - 1-hour token expiry с automatic cleanup
+  - 1-hour token expiry with automatic cleanup
   - Rate limiting: 3 requests per 15 minutes per email
   - Single-use tokens (deleted on successful reset)
   - Email validation
 
 - **Session Timeout Enforcement**:
   - Configurable inactivity timeout (default: 30 minutes)
-  - Automatic logout с flash message
+  - Automatic logout with flash message
   - Session regeneration on login
   - Last activity timestamp tracking
 
@@ -520,49 +520,151 @@
 
 **Security Score:**
 - **99/100 (Outstanding)**
-- Все High и Medium findings resolved
+- All High and Medium findings resolved
 - Full audit report: [docs/IMPROVEMENTS.md](IMPROVEMENTS.md)
 
 **Test Coverage:**
 - 283/283 tests passing
 - 681 assertions
-- 100% coverage для security-critical code
+- 100% coverage for security-critical code
 
 **Backward Compatibility:**
-- Полная обратная совместимость
-- 2FA opt-in per user (не enforced globally)
+- Full backward compatibility
+- 2FA opt-in per user (not enforced globally)
 - Session timeout configurable
 - No breaking changes
 
 ---
 
-## Итог
+# v3.0 — Frontend-Agnostic Architecture
 
-LAAS CMS прошла путь от v0.1 до v2.4.0:
-- от идеи
-- к рабочей CMS
-- к стабильной v2.0
-- к **надёжной, спокойной, поддерживаемой платформе**
-- к **enterprise-grade security с 99/100 score**
+## v3.0 — Frontend-Agnostic Mode
+**Goal:** decouple backend and UI without breaking v2.x compatibility.
 
-### Принципы развития:
-- без фреймворков
-- без хаоса
-- без "магии"
-- с приоритетом безопасности и эксплуатации
-- контроль вместо автоматизма
-- честные ограничения
-- уважение к админам и DevOps
+### Motivation
+- Decouple backend and UI to allow frontend changes without PHP modifications
+- Maintain v2.x compatibility (Classic mode)
+- Standardize data and asset contracts
+- Simplify integrations and automated UI testing
 
-### Что отличает LAAS CMS:
-- Минимум магии
-- Предсказуемое поведение
-- Архитектурные гарантии (contract tests)
-- Прозрачная диагностика
-- Production-first подход
+### What frontend-agnostic means
+
+Backend is independent of specific HTML/CSS/JS framework.
+
+UI can be:
+- server-side (HTML/HTMX)
+- SPA/SSR on external frontend
+- fully headless (JSON API)
+
+### Contracts (mandatory)
+
+#### UI tokens
+
+Data contract describing UI state without CSS classes.
+
+Checklist:
+- [x] Controllers return only `state|status|variant|flags`
+- [x] No `*_class` keys in data
+- [x] Token-to-class mapping done in templates
+
+#### Assets layer
+
+Unified static resource layer.
+
+Checklist:
+- [x] All CSS/JS described in `config/assets.php`
+- [x] Templates include assets only via asset helpers
+- [x] No inline `<style>/<script>` and `style=""`
+- [x] No CDN in templates
+
+#### Response formats
+
+Unified response contract.
+
+Checklist:
+- [x] HTML: full pages with layout
+- [x] HTMX: partial responses without layout
+- [ ] JSON: unified envelope (status, data, error, meta)
+
+### Modes
+
+#### Classic mode (v2.x compatibility)
+
+- Server-side templates (HTML + HTMX)
+- Asset helpers active
+- UI tokens mapped in templates
+- Controllers return data for HTML
+
+#### Headless mode
+
+- Routes return JSON
+- UI tokens mandatory
+- No HTML template binding
+- External frontend handles rendering
+
+### Migration stages (no v2.x breaking)
+
+#### Stage 1: Contracts and validations
+- [x] Fix UI tokens in code standards
+- [x] Introduce policy checks (inline/CDN/asset rules)
+- [x] Guarantee global template variables
+
+#### Stage 2: Dual response format
+- [ ] Introduce unified JSON envelope
+- [x] Add response mode switch (HTML/JSON) at controller level
+- [x] Document HTML/HTMX compatibility
+
+#### Stage 3: Render adapters
+- [x] Introduce render adapter layer (HTML/JSON)
+- [ ] Separate view data and transport data
+- [ ] Simplify controller reuse
+
+#### Stage 4: Headless mode as stable
+- [ ] Fix list of headless endpoints
+- [ ] Contract tests for JSON
+- [ ] Integration documentation
+
+### v3.0 Readiness criteria
+
+- [x] UI tokens followed across entire project
+- [x] Asset layer unified, no inline/CDN
+- [ ] JSON contract stable and test-covered
+- [x] Classic and Headless modes supported in parallel
+
+**Status:** Implemented in v2.8.0 (RenderAdapter v1)
+
+---
+
+## Summary
+
+LAAS CMS evolved from v0.1 to v3.0:
+- from idea
+- to working CMS
+- to stable v2.0
+- to **reliable, calm, maintainable platform**
+- to **enterprise-grade security with 99/100 score** (v2.4.0)
+- to **frontend-agnostic architecture** (v3.0)
+
+### Development principles:
+- no frameworks
+- no chaos
+- no "magic"
+- security and operations priority
+- control over automation
+- honest limitations
+- respect for admins and DevOps
+
+### What distinguishes LAAS CMS:
+- Minimal magic
+- Predictable behavior
+- Architectural guarantees (contract tests)
+- Transparent diagnostics
+- Production-first approach
 - Enterprise-grade security (2FA, password reset, session timeout, SSRF protection)
 - Outstanding security score: 99/100
 
-**v2.4.0 — зрелая, безопасная CMS-платформа enterprise-уровня, которую не страшно поддерживать годами.**
+**v2.4.0 — mature, secure enterprise-grade CMS platform that is safe to maintain for years.**
 
-**Last updated:** January 2026
+**v3.0 — frontend-agnostic architecture allowing UI evolution independent of backend.**
+
+**Last updated:** January 12, 2026

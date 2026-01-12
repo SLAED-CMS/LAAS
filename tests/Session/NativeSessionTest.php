@@ -12,7 +12,7 @@ final class NativeSessionTest extends TestCase
             session_unset();
             session_destroy();
         }
-        session_id('native_test_' . bin2hex(random_bytes(8)));
+        session_id(bin2hex(random_bytes(16)));
     }
 
     protected function tearDown(): void
