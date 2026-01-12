@@ -119,17 +119,14 @@ final class Request
 
     public function wantsJson(): bool
     {
-        $format = $this->query['format'] ?? null;
-        if (is_string($format) && strtolower($format) === 'json') {
-            return true;
-        }
+        $resolver = new FormatResolver();
+        return $resolver->resolve($this) === 'json';
+    }
 
+    public function acceptsJson(): bool
+    {
         $accept = $this->getHeader('accept') ?? '';
-        if (stripos($accept, 'application/json') !== false) {
-            return true;
-        }
-
-        return str_starts_with($this->path, '/api/');
+        return stripos($accept, 'application/json') !== false;
     }
 
     public function expectsJson(): bool

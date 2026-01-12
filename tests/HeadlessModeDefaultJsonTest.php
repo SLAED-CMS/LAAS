@@ -72,13 +72,15 @@ final class HeadlessModeDefaultJsonTest extends TestCase
 
             $controller = new PagesController($view, $db);
             $request = new Request('GET', '/hello', [], [], ['accept' => 'text/html'], '');
+            $view->setRequest($request);
 
             $response = $controller->show($request, ['slug' => 'hello']);
             $this->assertSame(200, $response->getStatus());
             $this->assertSame('application/json; charset=utf-8', $response->getHeader('Content-Type'));
 
             $data = json_decode($response->getBody(), true);
-            $this->assertSame('Hello', $data['page']['title'] ?? null);
+            $payload = is_array($data['data'] ?? null) ? $data['data'] : [];
+            $this->assertSame('Hello', $payload['page']['title'] ?? null);
         } finally {
             if ($prev === null) {
                 unset($_ENV['HEADLESS_MODE']);

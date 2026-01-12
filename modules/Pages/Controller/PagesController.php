@@ -6,14 +6,13 @@ namespace Laas\Modules\Pages\Controller;
 use Laas\Database\DatabaseManager;
 use Laas\Http\Request;
 use Laas\Http\Response;
+use Laas\Http\Responder;
 use Laas\Modules\Pages\Repository\PagesRepository;
 use Laas\Modules\Pages\ViewModel\PagePublicViewModel;
 use Laas\Support\Search\Highlighter;
 use Laas\Support\Search\SearchNormalizer;
 use Laas\Support\Search\SearchQuery;
 use Laas\View\View;
-use Laas\View\Render\HtmlRenderAdapter;
-use Laas\View\Render\JsonRenderAdapter;
 use Throwable;
 
 final class PagesController
@@ -52,15 +51,9 @@ final class PagesController
             return $this->notFound();
         }
 
-        $vm = PagePublicViewModel::fromArray($page);
-        $format = strtolower((string) ($request->query('format') ?? ''));
-        $forceHtml = $format === 'html';
-        if (!$forceHtml && ($request->wantsJson() || $request->isHeadless())) {
-            $adapter = new JsonRenderAdapter();
-            return $adapter->render('pages/page.html', $vm);
-        }
-
-        return (new HtmlRenderAdapter($this->view))->render('pages/page.html', $vm);
+        $data = PagePublicViewModel::fromArray($page)->toArray();
+        $responder = new Responder($this->view);
+        return $responder->respond($request, 'pages/page.html', $data, $data);
     }
 
     public function search(Request $request): Response

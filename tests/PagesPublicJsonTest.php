@@ -67,14 +67,18 @@ final class PagesPublicJsonTest extends TestCase
         );
 
         $controller = new PagesController($view, $db);
-        $request = new Request('GET', '/hello', ['format' => 'json'], [], ['accept' => 'application/json'], '');
+        $request = new Request('GET', '/hello', [], [], ['accept' => 'application/json'], '');
+        $view->setRequest($request);
 
         $response = $controller->show($request, ['slug' => 'hello']);
         $this->assertSame(200, $response->getStatus());
 
         $data = json_decode($response->getBody(), true);
-        $this->assertSame('Hello', $data['page']['title'] ?? null);
-        $this->assertSame('Body', $data['page']['content_raw'] ?? null);
-        $this->assertSame('hello', $data['page']['slug'] ?? null);
+        $this->assertArrayHasKey('data', $data);
+        $this->assertArrayHasKey('meta', $data);
+        $payload = is_array($data['data'] ?? null) ? $data['data'] : [];
+        $this->assertSame('Hello', $payload['page']['title'] ?? null);
+        $this->assertSame('Body', $payload['page']['content_raw'] ?? null);
+        $this->assertSame('hello', $payload['page']['slug'] ?? null);
     }
 }
