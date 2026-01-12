@@ -31,6 +31,12 @@
 
 - SessionInterface introduced; no action needed
 
+### v3.1.1 notes
+
+- Optional Redis sessions (default: native)
+- Config: `SESSION_DRIVER=redis`, `REDIS_URL`, `REDIS_TIMEOUT`, `REDIS_PREFIX`
+- If Redis is unavailable, sessions fall back to native storage
+
 
 ### v3.0.7 config additions
 

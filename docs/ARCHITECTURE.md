@@ -455,6 +455,11 @@ return new RedirectResponse('/admin/pages');
 - No direct `$_SESSION` access outside `NativeSession` (and SessionManager config)
 - No ad-hoc `session_*` calls in controllers/services
 
+**Optional Redis driver:**
+- `SESSION_DRIVER=redis` enables Redis-backed sessions
+- Redis is accessed via a minimal RESP client (no extensions)
+- On Redis failure, the system falls back to native sessions
+
 **Example:**
 ```php
 $session = $request->session();

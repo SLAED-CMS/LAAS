@@ -1,5 +1,9 @@
 # LAAS Versions
 
+- v3.1.1: Optional Redis sessions
+  - Redis session driver via SESSION_DRIVER=redis with safe fallback
+  - No extensions required (minimal RESP client)
+
 - v3.1.0: Session interface
   - SessionInterface + NativeSession abstraction
   - No direct $_SESSION usage outside session layer
