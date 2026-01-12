@@ -27,6 +27,11 @@
 
 ## Version-Specific Upgrade Paths
 
+### v3.1.0 notes
+
+- SessionInterface introduced; no action needed
+
+
 ### v3.0.7 config additions
 
 - `TRUST_PROXY_ENABLED` (default: false)

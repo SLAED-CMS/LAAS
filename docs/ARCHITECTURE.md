@@ -448,17 +448,17 @@ return new RedirectResponse('/admin/pages');
 
 **Abstraction:**
 - `SessionInterface` is the only allowed access to session data
-- `PhpSession` is the only class that touches `$_SESSION`
+- `NativeSession` is the only class that touches `$_SESSION`
 - `Request::session()` returns the current session instance
 
 **Rules:**
-- No direct `$_SESSION` access outside `PhpSession` (and SessionManager config)
+- No direct `$_SESSION` access outside `NativeSession` (and SessionManager config)
 - No ad-hoc `session_*` calls in controllers/services
 
 **Example:**
 ```php
 $session = $request->session();
-$session->regenerate(true);
+$session->regenerateId(true);
 $session->set('user_id', $userId);
 ```
 

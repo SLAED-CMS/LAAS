@@ -1,5 +1,9 @@
 # LAAS Versions
 
+- v3.1.0: Session interface
+  - SessionInterface + NativeSession abstraction
+  - No direct $_SESSION usage outside session layer
+
 - v3.0.8: CLI doctor
   - Doctor command with preflight + env hints
   - Safe diagnostics without secrets
