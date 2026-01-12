@@ -1,5 +1,10 @@
 # LAAS Versions
 
+- v3.1.2: Redis sessions hardening
+  - Session ops checks with WARN fallback
+  - session:smoke CLI for driver diagnostics
+  - URL sanitization for Redis logging
+
 - v3.1.1: Optional Redis sessions
   - Redis session driver via SESSION_DRIVER=redis with safe fallback
   - No extensions required (minimal RESP client)

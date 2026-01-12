@@ -79,6 +79,13 @@ http://laas.loc/
 
 ---
 
+## Redis sessions (optional)
+
+- Enable with `SESSION_DRIVER=redis`
+- Configure: `REDIS_URL`, `REDIS_TIMEOUT`, `REDIS_PREFIX`
+- Fallback: if Redis is unavailable, sessions fall back to native storage
+- Validate: `php tools/cli.php session:smoke`
+
 ## Assets
 
 - All CSS/JS are managed via `config/assets.php`
@@ -373,6 +380,7 @@ tools/                 # CLI utilities
 ### Operations
 - `php tools/cli.php ops:check` — Run production smoke tests
 - `php tools/cli.php config:export [--output=file.json]` — Export runtime config snapshot
+- `php tools/cli.php session:smoke` — Session driver smoke test
 
 ### Doctor
 - `php tools/cli.php doctor` - Run preflight (no tests) + environment hints

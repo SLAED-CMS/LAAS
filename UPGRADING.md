@@ -37,6 +37,12 @@
 - Config: `SESSION_DRIVER=redis`, `REDIS_URL`, `REDIS_TIMEOUT`, `REDIS_PREFIX`
 - If Redis is unavailable, sessions fall back to native storage
 
+### v3.1.2 notes
+
+- If using Redis sessions:
+  - Validate with `php tools/cli.php session:smoke`
+  - Check `REDIS_URL` host/port/db and timeout settings
+
 
 ### v3.0.7 config additions
 
