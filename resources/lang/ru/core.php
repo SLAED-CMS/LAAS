@@ -25,4 +25,6 @@ return [
     'system.health.degraded' => 'Деградация',
     'system.backup.created' => 'Резервная копия создана',
     'system.health.ok' => 'ОК',
+    'system.not_acceptable' => 'Недопустимо.',
+    'system.headless_html_disabled' => 'HTML отключён в headless-режиме.',
 ];

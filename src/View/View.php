@@ -5,6 +5,8 @@ namespace Laas\View;
 
 use Laas\Http\Request;
 use Laas\Http\Response;
+use Laas\Http\Contract\ContractResponse;
+use Laas\Http\HeadlessMode;
 use Laas\Auth\AuthInterface;
 use Laas\Security\Csrf;
 use Laas\I18n\Translator;
@@ -68,6 +70,18 @@ final class View
     ): Response
     {
         $data = $this->normalizeViewModels($data);
+        if ($this->request !== null && HeadlessMode::isEnabled()) {
+            if (HeadlessMode::shouldBlockHtml($this->request)) {
+                return ContractResponse::error('not_acceptable', [
+                    'route' => HeadlessMode::resolveRoute($this->request),
+                ], 406);
+            }
+            if (HeadlessMode::shouldDefaultJson($this->request)) {
+                return ContractResponse::ok($data, [
+                    'route' => HeadlessMode::resolveRoute($this->request),
+                ]);
+            }
+        }
         $ctx = array_merge($this->globalContext(), $data);
         $devtoolsEnabled = $this->resolveDevtoolsEnabled();
         if (!isset($ctx['devtools']) || !is_array($ctx['devtools'])) {

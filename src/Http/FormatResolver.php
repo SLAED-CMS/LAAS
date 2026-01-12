@@ -10,12 +10,28 @@ final class FormatResolver
         $format = $req->query('format');
         if (is_string($format)) {
             $format = strtolower($format);
+        } else {
+            $format = '';
+        }
+
+        if (HeadlessMode::isEnabled()) {
             if ($format === 'json') {
                 return 'json';
             }
             if ($format === 'html') {
-                return 'html';
+                return HeadlessMode::isHtmlAllowed($req) ? 'html' : 'json';
             }
+            if (HeadlessMode::isHtmlRequested($req)) {
+                return HeadlessMode::isHtmlAllowed($req) ? 'html' : 'json';
+            }
+            return 'json';
+        }
+
+        if ($format === 'json') {
+            return 'json';
+        }
+        if ($format === 'html') {
+            return 'html';
         }
 
         $accept = $req->getHeader('accept') ?? '';

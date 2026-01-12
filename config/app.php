@@ -9,6 +9,16 @@ $envString = static function (string $key, string $default) use ($env): string {
     }
     return (string) $value;
 };
+$envStringAllowEmpty = static function (string $key, string $default) use ($env): string {
+    if (!array_key_exists($key, $env)) {
+        return $default;
+    }
+    $value = $env[$key];
+    if ($value === null) {
+        return $default;
+    }
+    return (string) $value;
+};
 $envBool = static function (string $key, bool $default) use ($env): bool {
     $value = $env[$key] ?? null;
     if ($value === null || $value === '') {
@@ -24,6 +34,21 @@ $envList = static function (string $key, array $default) use ($env): array {
     }
     $parts = array_filter(array_map('trim', explode(',', (string) $value)));
     return $parts !== [] ? array_values($parts) : $default;
+};
+$envListAllowEmpty = static function (string $key, array $default) use ($env): array {
+    if (!array_key_exists($key, $env)) {
+        return $default;
+    }
+    $value = $env[$key];
+    if ($value === null) {
+        return $default;
+    }
+    $value = trim((string) $value);
+    if ($value === '') {
+        return [];
+    }
+    $parts = array_filter(array_map('trim', explode(',', $value)));
+    return $parts !== [] ? array_values($parts) : [];
 };
 
 return [
@@ -47,7 +72,9 @@ return [
     'admin_seed_password' => $envString('ADMIN_SEED_PASSWORD', 'change-me'),
     'read_only' => $envBool('APP_READ_ONLY', false),
     'enforce_ui_tokens' => $envBool('APP_ENFORCE_UI_TOKENS', false),
-    'headless_mode' => $envBool('HEADLESS_MODE', false),
+    'headless_mode' => $envBool('APP_HEADLESS', $envBool('HEADLESS_MODE', false)),
+    'headless_html_allowlist' => $envListAllowEmpty('APP_HEADLESS_HTML_ALLOWLIST', ['/login', '/logout', '/admin']),
+    'headless_html_override_param' => $envStringAllowEmpty('APP_HEADLESS_HTML_OVERRIDE_PARAM', '_html'),
     'middleware' => [],
     'home_showcase_enabled' => $envBool('HOME_SHOWCASE_ENABLED', true),
     'home_showcase_blocks' => $envList('HOME_SHOWCASE_BLOCKS', []),

@@ -21,9 +21,6 @@ final class Responder
     public function respond(Request $req, string $template, array $data, array $json = []): Response
     {
         $format = $this->resolver->resolve($req);
-        if ($format === 'html' && $this->shouldForceJson($req)) {
-            $format = 'json';
-        }
 
         if ($format === 'json') {
             [$payload, $meta] = $this->normalizeJsonPayload($data, $json);
@@ -31,16 +28,6 @@ final class Responder
         }
 
         return (new HtmlPresenter($this->view, $template))->present($data);
-    }
-
-    private function shouldForceJson(Request $req): bool
-    {
-        if (!$req->isHeadless()) {
-            return false;
-        }
-
-        $format = strtolower((string) ($req->query('format') ?? ''));
-        return $format !== 'html';
     }
 
     /**

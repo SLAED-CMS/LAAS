@@ -146,12 +146,7 @@ final class Request
 
     public function isHeadless(): bool
     {
-        $value = $_ENV['HEADLESS_MODE'] ?? null;
-        if ($value === null || $value === '') {
-            return false;
-        }
-        $parsed = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-        return $parsed ?? false;
+        return HeadlessMode::isEnabled();
     }
 
     public function getBody(): string

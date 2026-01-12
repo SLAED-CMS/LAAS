@@ -133,15 +133,7 @@ final class PagesController
 
     private function shouldJson(Request $request): bool
     {
-        if ($request->wantsJson()) {
-            return true;
-        }
-        if (!$request->isHeadless()) {
-            return false;
-        }
-
-        $format = strtolower((string) ($request->query('format') ?? ''));
-        return $format !== 'html';
+        return $request->wantsJson();
     }
 
     /** @param array<string, mixed> $page */

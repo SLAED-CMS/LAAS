@@ -25,4 +25,6 @@ return [
     'system.health.degraded' => 'Degradiert',
     'system.backup.created' => 'Backup erstellt',
     'system.health.ok' => 'OK',
+    'system.not_acceptable' => 'Nicht akzeptabel.',
+    'system.headless_html_disabled' => 'HTML ist im Headless-Modus deaktiviert.',
 ];

@@ -16,18 +16,34 @@ final class Response
 
     public static function json(array $data, int $status = 200): self
     {
-        $body = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        if ($body === false) {
-            $body = '{}';
+        $request = RequestScope::getRequest();
+        if ($request !== null && HeadlessMode::shouldBlockHtml($request)) {
+            $payload = HeadlessMode::buildNotAcceptablePayload($request);
+            return self::jsonResponse($payload, 406);
         }
 
-        return new self($body, $status, [
-            'Content-Type' => 'application/json; charset=utf-8',
-        ]);
+        return self::jsonResponse($data, $status);
     }
 
     public static function html(string $body, int $status = 200): self
     {
+        $request = RequestScope::getRequest();
+        if ($request !== null && HeadlessMode::isEnabled()) {
+            if (HeadlessMode::shouldBlockHtml($request)) {
+                $payload = HeadlessMode::buildNotAcceptablePayload($request);
+                return self::jsonResponse($payload, 406);
+            }
+            if (HeadlessMode::shouldDefaultJson($request)) {
+                return self::jsonResponse([
+                    'data' => [],
+                    'meta' => [
+                        'format' => 'json',
+                        'route' => HeadlessMode::resolveRoute($request),
+                    ],
+                ], 200);
+            }
+        }
+
         return new self($body, $status, [
             'Content-Type' => 'text/html; charset=utf-8',
         ]);
@@ -36,6 +52,17 @@ final class Response
     public function send(): void
     {
         $request = RequestScope::getRequest();
+        if ($request !== null && HeadlessMode::shouldBlockHtml($request)) {
+            $payload = HeadlessMode::buildNotAcceptablePayload($request);
+            $body = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            if ($body === false) {
+                $body = '{}';
+            }
+            http_response_code(406);
+            header('Content-Type: application/json; charset=utf-8', true);
+            echo $body;
+            return;
+        }
         $location = $this->getHeader('Location');
         if ($request !== null && $request->isHeadless() && $request->wantsJson() && $location !== null) {
             if ($this->status >= 300 && $this->status < 400) {
@@ -97,5 +124,17 @@ final class Response
     public function withBody(string $body): self
     {
         return new self($body, $this->status, $this->headers);
+    }
+
+    private static function jsonResponse(array $data, int $status): self
+    {
+        $body = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        if ($body === false) {
+            $body = '{}';
+        }
+
+        return new self($body, $status, [
+            'Content-Type' => 'application/json; charset=utf-8',
+        ]);
     }
 }
