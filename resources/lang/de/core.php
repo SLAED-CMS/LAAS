@@ -29,4 +29,7 @@ return [
     'system.headless_html_disabled' => 'HTML ist im Headless-Modus deaktiviert.',
     'system.trust_proxy_enabled' => 'Vertrauenswürdiger Proxy ist aktiviert.',
     'system.trust_proxy_disabled' => 'Vertrauenswürdiger Proxy ist deaktiviert.',
-];
+    'system.over_budget' => 'System is temporarily over budget.',
+    'system.cache_pruned' => 'Cache pruned: {count} file(s) removed.',
+    'system.cache_prune_none' => 'Cache prune: nothing to remove.',];
+

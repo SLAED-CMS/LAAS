@@ -43,6 +43,20 @@
   - Validate with `php tools/cli.php session:smoke`
   - Check `REDIS_URL` host/port/db and timeout settings
 
+### v3.2.0 notes
+
+- Performance budgets (optional):
+  - `PERF_BUDGET_ENABLED=true`
+  - Warn: `PERF_BUDGET_TOTAL_MS_WARN`, `PERF_BUDGET_SQL_COUNT_WARN`, `PERF_BUDGET_SQL_MS_WARN`
+  - Hard: `PERF_BUDGET_TOTAL_MS_HARD`, `PERF_BUDGET_SQL_COUNT_HARD`, `PERF_BUDGET_SQL_MS_HARD`
+  - Hard fail: `PERF_BUDGET_HARD_FAIL=true` returns 503 with `system.over_budget`
+- DB profile guardrails:
+  - `DB_PROFILE_STORE_SQL=false` (default in prod)
+  - Set `DB_PROFILE_STORE_SQL=true` only in debug/dev
+- Cache hygiene:
+  - `CACHE_TTL_DAYS=7`
+  - `php tools/cli.php cache:prune`
+
 
 ### v3.0.7 config additions
 

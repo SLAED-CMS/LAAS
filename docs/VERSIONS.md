@@ -1,5 +1,10 @@
 # LAAS Versions
 
+- v3.2.0: Performance + stability freeze
+  - Performance budgets with warn/hard thresholds and optional hard-fail
+  - DB profiling guardrails (no SQL text in prod)
+  - cache:prune CLI for cache hygiene
+
 - v3.1.2: Redis sessions hardening
   - Session ops checks with WARN fallback
   - session:smoke CLI for driver diagnostics

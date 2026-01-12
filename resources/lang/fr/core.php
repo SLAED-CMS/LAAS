@@ -25,4 +25,7 @@ return [
     'system.health.degraded' => 'Dégradé',
     'system.backup.created' => 'Sauvegarde créée',
     'system.health.ok' => 'OK',
-];
+    'system.over_budget' => 'System is temporarily over budget.',
+    'system.cache_pruned' => 'Cache pruned: {count} file(s) removed.',
+    'system.cache_prune_none' => 'Cache prune: nothing to remove.',];
+

@@ -132,6 +132,13 @@ http://laas.loc/
 - Force JSON: `Accept: application/json` or `?format=json`
 - Force HTML: `Accept: text/html` (allowlist) or `_html=1` for admin in non-prod
 
+## Performance budgets
+
+- Enable with `PERF_BUDGET_ENABLED=true`
+- Warn thresholds: `PERF_BUDGET_TOTAL_MS_WARN`, `PERF_BUDGET_SQL_COUNT_WARN`, `PERF_BUDGET_SQL_MS_WARN`
+- Hard thresholds: `PERF_BUDGET_TOTAL_MS_HARD`, `PERF_BUDGET_SQL_COUNT_HARD`, `PERF_BUDGET_SQL_MS_HARD`
+- Hard fail: `PERF_BUDGET_HARD_FAIL=true` returns 503 with `system.over_budget` (JSON or plain text)
+
 ## Migration notes
 
 ### Writing new modules
@@ -379,6 +386,7 @@ tools/                 # CLI utilities
 
 ### Cache Management
 - `php tools/cli.php cache:clear` — Clear all cache
+- `php tools/cli.php cache:prune` — Remove stale cache files
 - `php tools/cli.php templates:clear` — Clear template cache
 - `php tools/cli.php templates:warmup` — Warmup template cache
 
@@ -420,6 +428,7 @@ tools/                 # CLI utilities
 
 - File cache under `storage/cache/data` (settings/menu).
 - Default TTL: 300s.
+- Prune stale cache: `php tools/cli.php cache:prune` (uses `CACHE_TTL_DAYS`).
 
 ---
 
@@ -440,6 +449,7 @@ vendor/bin/phpunit --coverage-html coverage/html --coverage-clover coverage/clov
 **Policy Checks (CI Guardrails):**
 - Run policy checks: `php tools/policy-check.php`
 - Via CLI: `php tools/cli.php policy:check`
+- Theme validation: `php tools/cli.php theme:validate`
 - Checks for:
   - No inline `<style>` or `<script>` in templates
   - No CDN usage (Bootstrap/HTMX must be local)
@@ -468,6 +478,7 @@ Flags:
 ## CI
 
 - GitHub Actions runs lint, phpunit, coverage, and sqlite smoke checks.
+- Core theme policy strict mode: `POLICY_CORE_THEME_STRICT=true`.
 - Smoke commands: `php tools/cli.php ops:check`, `php tools/cli.php migrate:status`.
 
 ## Release

@@ -25,4 +25,7 @@ return [
     'system.health.degraded' => '降级',
     'system.backup.created' => '备份已创建',
     'system.health.ok' => '正常',
-];
+    'system.over_budget' => 'System is temporarily over budget.',
+    'system.cache_pruned' => 'Cache pruned: {count} file(s) removed.',
+    'system.cache_prune_none' => 'Cache prune: nothing to remove.',];
+

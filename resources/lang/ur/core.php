@@ -25,4 +25,7 @@ return [
     'system.health.degraded' => 'تنزلی',
     'system.backup.created' => 'بیک اپ بنا دیا گیا',
     'system.health.ok' => 'ٹھیک ہے',
-];
+    'system.over_budget' => 'System is temporarily over budget.',
+    'system.cache_pruned' => 'Cache pruned: {count} file(s) removed.',
+    'system.cache_prune_none' => 'Cache prune: nothing to remove.',];
+
