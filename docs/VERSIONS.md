@@ -1,5 +1,9 @@
 # LAAS Versions
 
+- v3.0.8: CLI doctor
+  - Doctor command with preflight + env hints
+  - Safe diagnostics without secrets
+
 - v3.0.7: Post-release hardening
   - Trust proxy config for IP/HTTPS resolution
   - Secure cookies auto on HTTPS

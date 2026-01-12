@@ -374,6 +374,9 @@ tools/                 # CLI utilities
 - `php tools/cli.php ops:check` — Run production smoke tests
 - `php tools/cli.php config:export [--output=file.json]` — Export runtime config snapshot
 
+### Doctor
+- `php tools/cli.php doctor` - Run preflight (no tests) + environment hints
+
 ### Backup & Restore
 - `php tools/cli.php backup:create` — Create database backup
 - `php tools/cli.php backup:list` — List available backups
