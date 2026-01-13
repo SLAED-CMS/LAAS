@@ -19,10 +19,16 @@ final class BackupWritableCheck
         $code = 0;
 
         $backupsDir = $this->rootPath . '/storage/backups';
+        if (!is_dir($backupsDir)) {
+            @mkdir($backupsDir, 0775, true);
+        }
         $backupsOk = is_dir($backupsDir) && is_writable($backupsDir);
         $messages[] = 'backups dir: ' . ($backupsOk ? 'OK' : 'WARN');
 
         $tmpDir = $this->rootPath . '/storage/tmp';
+        if (!is_dir($tmpDir)) {
+            @mkdir($tmpDir, 0775, true);
+        }
         $tmpOk = is_dir($tmpDir) && is_writable($tmpDir);
         $messages[] = 'tmp dir: ' . ($tmpOk ? 'OK' : 'WARN');
 

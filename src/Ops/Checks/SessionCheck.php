@@ -108,6 +108,9 @@ final class SessionCheck
     private function storageWritable(): bool
     {
         $dir = $this->rootPath . '/storage/sessions';
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
         return is_dir($dir) && is_writable($dir);
     }
 }

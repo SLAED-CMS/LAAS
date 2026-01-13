@@ -9,7 +9,8 @@ final class PreflightBackupWritableTest extends TestCase
     public function testWarnsWhenBackupDirsMissing(): void
     {
         $root = sys_get_temp_dir() . '/laas_backup_check_' . bin2hex(random_bytes(4));
-        @mkdir($root . '/storage', 0775, true);
+        @mkdir($root, 0775, true);
+        @file_put_contents($root . '/storage', 'nope');
 
         $check = new BackupWritableCheck($root);
         $result = $check->run();
