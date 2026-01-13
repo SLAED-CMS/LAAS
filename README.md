@@ -74,6 +74,7 @@ http://laas.loc/
   - `API_RATE_LIMIT_PER_MINUTE`, `API_RATE_LIMIT_BURST`
 - Security env knobs:
   - `TRUST_PROXY_ENABLED`, `TRUST_PROXY_IPS`, `TRUST_PROXY_HEADERS`
+  - `CSP_MODE` (`enforce` or `report-only`)
   - Secure cookies auto-enable on HTTPS
 
 ---
@@ -186,11 +187,12 @@ http://laas.loc/
 - **RBAC** — Role-based access control with permission groups
 - **Audit Log** — Track all important actions (incl. API tokens/auth failures)
 - **CSRF Protection** — Token-based CSRF protection
-- **Rate Limiting** — Dedicated API bucket (token/IP) + login/media buckets
-- **API Tokens** — PAT format (LAAS_<prefix>.<secret>), SHA-256 hashes, scopes + expiry, rotation, audit trail
-- **CORS** — Default deny with strict allowlist for API v1
-- **Security Headers** — CSP, X-Frame-Options, etc.
-- **Media Hardening** — MIME validation, ClamAV scanning, quarantine
+- **Rate Limiting** – Dedicated API bucket (token/IP) + login/media buckets
+- **API Tokens** – PAT format (LAAS_<prefix>.<secret>), SHA-256 hashes, scopes + expiry, rotation, audit trail
+- **CORS** – Default deny with strict allowlist for API v1
+- **Security Headers** – CSP, X-Frame-Options, etc.
+- **CSP Reports** – Report-only mode + `/__csp/report` ingestion (rate limited, stored, prunable)
+- **Media Hardening** – MIME validation, ClamAV scanning, quarantine
 
 ### Storage & Media
 - **Local Storage** — File-based storage
@@ -341,10 +343,11 @@ tools/                 # CLI utilities
 ## Routes
 
 ### Public
-- `/` — Homepage (system showcase with live data)
-- `/search` — Frontend search
-- `/pages/{slug}` — Page view
-- `/changelog` — Changelog feed (GitHub/git providers)
+- `/` – Homepage (system showcase with live data)
+- `/search` – Frontend search
+- `/pages/{slug}` – Page view
+- `/changelog` – Changelog feed (GitHub/git providers)
+- `/__csp/report` – CSP report ingestion (POST)
 
 ### API
 - `/api/v1/ping` — Health check (public)
@@ -382,9 +385,18 @@ tools/                 # CLI utilities
 - `/admin/changelog` — Changelog management (GitHub/git providers)
 
 ### Media
-- `/media/{hash}.{ext}` — Media file serving
-- `/media/thumb/{hash}/{size}.{ext}` — Thumbnail serving
-- `/media/signed/{token}/{hash}.{ext}` — Signed URL serving
+- `/media/{hash}.{ext}` – Media file serving
+- `/media/thumb/{hash}/{size}.{ext}` – Thumbnail serving
+- `/media/signed/{token}/{hash}.{ext}` – Signed URL serving
+
+---
+
+## CSP report-only
+
+- Set `CSP_MODE=report-only` to switch CSP into report-only mode.
+- Add `report-uri /__csp/report` (or `report-to`) to `config/security.php` CSP directives.
+- Endpoint: `POST /__csp/report` (public, JSON payload, rate limited).
+- Prune stored reports: `php tools/cli.php security:reports:prune --days=14`.
 
 ---
 
@@ -406,9 +418,10 @@ tools/                 # CLI utilities
 - `php tools/cli.php settings:set KEY VALUE --type=string|int|bool|json` — Set setting value
 
 ### Operations
-- `php tools/cli.php ops:check` — Run production smoke tests
-- `php tools/cli.php config:export [--output=file.json]` — Export runtime config snapshot
-- `php tools/cli.php session:smoke` — Session driver smoke test
+- `php tools/cli.php ops:check` – Run production smoke tests
+- `php tools/cli.php config:export [--output=file.json]` – Export runtime config snapshot
+- `php tools/cli.php session:smoke` – Session driver smoke test
+- `php tools/cli.php security:reports:prune --days=14` – Prune CSP/security reports
 
 ### Doctor
 - `php tools/cli.php doctor` - Run preflight (no tests) + environment hints

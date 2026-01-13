@@ -1384,6 +1384,26 @@ if (!$rateLimit->check($ip, 'login', 5, 60)) {
 - API: 100 requests per 60 seconds
 - Upload: 10 uploads per 60 seconds
 
+**Profiles:**
+- Configured in `config/rate_limits.php`
+- Match by path + method, with optional route-name overrides
+- API bucket uses token hash when available, else IP
+- Unmatched write routes fall back to the default profile
+
+### Security Headers
+
+- `SecurityHeadersMiddleware` emits: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`
+- CSP mode: `enforce` or `report-only` (Report-Only header for diagnostics)
+- HSTS is emitted only on HTTPS requests
+- Preflight/health validation checks critical header config
+
+### CSP Reports
+
+- Endpoint: `POST /__csp/report` (public, JSON payload; legacy `csp-report` supported)
+- Payload is sanitized before logging and storage
+- Stored in `security_reports` with request ID when available
+- Rate-limited via the `csp_report` profile
+
 ---
 
 ## Cache Layer

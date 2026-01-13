@@ -1,5 +1,11 @@
 # LAAS Versions
 
+- v3.5.0: Security Tightening Pack
+  - CSP report-only mode + `/__csp/report` ingestion + prune CLI
+  - Security headers validation in preflight/health
+  - Per-route rate limit profiles
+  - Audit consistency helper for admin writes
+
 - v3.4.0: Personal Access Tokens v1
   - PAT format LAAS_<prefix>.<secret> with scopes + expiry
   - Admin API tokens contracts + fixtures
