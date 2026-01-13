@@ -29,7 +29,8 @@ final class RbacMiddlewareTest extends TestCase
         });
 
         $this->assertSame(403, $response->getStatus());
-        $this->assertSame('{"error":"forbidden"}', $response->getBody());
+        $payload = json_decode($response->getBody(), true);
+        $this->assertSame('E_RBAC_DENIED', $payload['error']['code'] ?? null);
     }
 
     public function testAllowsWhenPermissionGranted(): void

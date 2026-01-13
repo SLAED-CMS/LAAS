@@ -3,7 +3,8 @@ declare(strict_types=1);
 
 namespace Laas\Http\Middleware;
 
-use Laas\Api\ApiResponse;
+use Laas\Http\ErrorCode;
+use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Security\RateLimiter;
@@ -41,8 +42,15 @@ final class RateLimitMiddleware implements MiddlewareInterface
             $result = $this->rateLimiter->hit('api_default', $key, $window, $max, $burst);
 
             if (!$result['allowed']) {
-                return ApiResponse::error('rate_limited', 'Too Many Requests', [], 429)
-                    ->withHeader('Retry-After', (string) $result['retry_after']);
+                return ErrorResponse::respond(
+                    $request,
+                    ErrorCode::RATE_LIMITED,
+                    ['retry_after' => (int) $result['retry_after']],
+                    429,
+                    [],
+                    'rate_limit.middleware',
+                    ['Retry-After' => (string) $result['retry_after']]
+                );
             }
 
             $response = $next($request);
@@ -210,8 +218,15 @@ final class RateLimitMiddleware implements MiddlewareInterface
     private function rateLimitedResponse(Request $request, int $retryAfter): Response
     {
         if ($request->wantsJson()) {
-            return Response::json(['error' => 'rate_limited'], 429)
-                ->withHeader('Retry-After', (string) $retryAfter);
+            return ErrorResponse::respond(
+                $request,
+                ErrorCode::RATE_LIMITED,
+                ['retry_after' => $retryAfter],
+                429,
+                [],
+                'rate_limit.middleware',
+                ['Retry-After' => (string) $retryAfter]
+            );
         }
 
         return (new Response('Too Many Requests', 429, [

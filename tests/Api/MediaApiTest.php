@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 use Laas\Auth\AuthorizationService;
 use Laas\Database\DatabaseManager;
+use Laas\Http\ErrorCode;
 use Laas\Http\Middleware\ApiMiddleware;
 use Laas\Http\Request;
 use Laas\Http\Response;
@@ -24,7 +25,7 @@ final class MediaApiTest extends TestCase
             $response = $controller->index($request);
 
             $payload = json_decode($response->getBody(), true);
-            $this->assertFalse($payload['ok']);
+            $this->assertSame(ErrorCode::RBAC_DENIED, $payload['error']['code'] ?? null);
             $this->assertSame(403, $response->getStatus());
         } finally {
             $this->restoreEnv('MEDIA_PUBLIC_MODE', $prev);

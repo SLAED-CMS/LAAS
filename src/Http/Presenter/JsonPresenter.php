@@ -4,12 +4,14 @@ declare(strict_types=1);
 namespace Laas\Http\Presenter;
 
 use Laas\Http\Response;
+use Laas\Http\ResponseMeta;
 
 final class JsonPresenter implements PresenterInterface
 {
     public function present(array $data, array $meta = []): Response
     {
         $meta['format'] = 'json';
+        $meta = ResponseMeta::enrich($meta);
         return Response::json([
             'data' => $data,
             'meta' => $meta,

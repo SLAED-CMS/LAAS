@@ -624,6 +624,8 @@ final class DevToolsContext
         array $budgets
     ): array {
         $status = (int) ($this->response['status'] ?? 0);
+        $errorSource = (string) ($this->response['error_source'] ?? '');
+        $errorCode = (string) ($this->response['error_code'] ?? '');
         $method = (string) ($this->request['method'] ?? '');
         $path = (string) ($this->request['path'] ?? '');
         $methodUpper = $method !== '' ? strtoupper($method) : '';
@@ -661,6 +663,8 @@ final class DevToolsContext
             'post_params' => $postParams,
             'status' => $status,
             'request_id' => $this->requestId,
+            'error_source' => $errorSource,
+            'error_code' => $errorCode,
         ];
 
         $promptLine = TerminalFormatter::formatPromptLine(

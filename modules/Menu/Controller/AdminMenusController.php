@@ -8,6 +8,7 @@ use Laas\Core\Validation\Validator;
 use Laas\Core\Validation\ValidationResult;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
+use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Support\AuditLogger;
@@ -516,7 +517,7 @@ final class AdminMenusController
     private function errorResponse(Request $request, string $code, int $status): Response
     {
         if ($request->isHtmx() || $request->wantsJson()) {
-            return Response::json(['error' => $code], $status);
+            return ErrorResponse::respond($request, $code, [], $status, [], 'admin.menus');
         }
 
         return new Response('Error', $status, [
@@ -546,4 +547,3 @@ final class AdminMenusController
         return $messages;
     }
 }
-

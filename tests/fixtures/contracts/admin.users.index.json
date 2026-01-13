@@ -19,6 +19,8 @@
     },
     "meta": {
         "format": "json",
-        "route": "admin.users.index"
+        "route": "admin.users.index",
+        "request_id": "__REQ__",
+        "ts": "__TIME__"
     }
 }

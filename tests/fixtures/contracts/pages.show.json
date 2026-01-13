@@ -10,6 +10,8 @@
     },
     "meta": {
         "format": "json",
-        "route": "pages.show"
+        "route": "pages.show",
+        "request_id": "__REQ__",
+        "ts": "__TIME__"
     }
 }

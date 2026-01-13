@@ -9,6 +9,7 @@ use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Database\Repositories\SettingsRepository;
 use Laas\Database\Repositories\UsersRepository;
+use Laas\Http\ErrorCode;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Security\Csrf;
@@ -24,7 +25,7 @@ final class AuthController
     public function token(Request $request): Response
     {
         if ($this->db === null || !$this->db->healthCheck()) {
-            return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
+            return ApiResponse::error(ErrorCode::SERVICE_UNAVAILABLE, 'Service Unavailable', [], 503);
         }
 
         $input = $this->readInput($request);
@@ -61,31 +62,31 @@ final class AuthController
 
         if ($userId !== null) {
             if (!$this->canManageTokens($userId)) {
-                return ApiResponse::error('forbidden', 'Forbidden', [], 403);
+                return ApiResponse::error(ErrorCode::RBAC_DENIED, 'Forbidden', [], 403);
             }
 
             if (!$this->validateCsrf($request)) {
-                return ApiResponse::error('csrf_mismatch', 'CSRF Token Mismatch', [], 419);
+                return ApiResponse::error(ErrorCode::CSRF_INVALID, 'CSRF Token Mismatch', [], 419);
             }
         } else {
             if ($mode !== 'admin_or_password') {
-                return ApiResponse::error('unauthorized', 'Unauthorized', [], 401);
+                return ApiResponse::error(ErrorCode::AUTH_REQUIRED, 'Unauthorized', [], 401);
             }
 
             $username = trim((string) ($input['username'] ?? ''));
             $password = (string) ($input['password'] ?? '');
             if ($username === '' || $password === '') {
-                return ApiResponse::error('unauthorized', 'Unauthorized', [], 401);
+                return ApiResponse::error(ErrorCode::AUTH_INVALID, 'Unauthorized', [], 401);
             }
 
             $userId = $this->verifyCredentials($username, $password);
             if ($userId === null) {
-                return ApiResponse::error('unauthorized', 'Unauthorized', [], 401);
+                return ApiResponse::error(ErrorCode::AUTH_INVALID, 'Unauthorized', [], 401);
             }
         }
 
         if ($errors !== []) {
-            return ApiResponse::error('validation_failed', 'Validation failed', $errors, 422);
+            return ApiResponse::error(ErrorCode::VALIDATION_FAILED, 'Validation failed', $errors, 422);
         }
 
         $result = $service->createToken($userId, $name, $scopes, $expiresAt);
@@ -121,7 +122,7 @@ final class AuthController
         $user = $request->getAttribute('api.user');
         $token = $request->getAttribute('api.token');
         if (!is_array($user) || !is_array($token)) {
-            return ApiResponse::error('unauthorized', 'Unauthorized', [], 401);
+            return ApiResponse::error(ErrorCode::AUTH_REQUIRED, 'Unauthorized', [], 401);
         }
 
         return ApiResponse::ok([
@@ -150,23 +151,23 @@ final class AuthController
         $user = $request->getAttribute('api.user');
         $token = $request->getAttribute('api.token');
         if (!is_array($user) || !is_array($token)) {
-            return ApiResponse::error('unauthorized', 'Unauthorized', [], 401);
+            return ApiResponse::error(ErrorCode::AUTH_REQUIRED, 'Unauthorized', [], 401);
         }
 
         if ($this->db === null || !$this->db->healthCheck()) {
-            return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
+            return ApiResponse::error(ErrorCode::SERVICE_UNAVAILABLE, 'Service Unavailable', [], 503);
         }
 
         $tokenId = (int) ($token['id'] ?? 0);
         $userId = (int) ($user['id'] ?? 0);
         if ($tokenId <= 0 || $userId <= 0) {
-            return ApiResponse::error('unauthorized', 'Unauthorized', [], 401);
+            return ApiResponse::error(ErrorCode::AUTH_REQUIRED, 'Unauthorized', [], 401);
         }
 
         $service = new ApiTokenService($this->db);
         $ok = $service->revoke($tokenId, $userId);
         if (!$ok) {
-            return ApiResponse::error('not_found', 'Not Found', [], 404);
+            return ApiResponse::error(ErrorCode::NOT_FOUND, 'Not Found', [], 404);
         }
 
         (new AuditLogger($this->db, $request->session()))->log(

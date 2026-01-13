@@ -5,6 +5,8 @@ namespace Laas\Http\Middleware;
 
 use Laas\Auth\AuthInterface;
 use Laas\Auth\AuthorizationService;
+use Laas\Http\ErrorCode;
+use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\View\View;
@@ -25,6 +27,9 @@ final class RbacMiddleware implements MiddlewareInterface
         }
 
         if (!$this->auth->check()) {
+            if ($request->wantsJson()) {
+                return ErrorResponse::respond($request, ErrorCode::AUTH_REQUIRED, [], 401, [], 'rbac.guard');
+            }
             return new Response('', 302, [
                 'Location' => '/login',
             ]);
@@ -33,7 +38,7 @@ final class RbacMiddleware implements MiddlewareInterface
         $user = $this->auth->user();
         if (!$this->authorization->can($user, 'admin.access')) {
             if ($request->wantsJson()) {
-                return Response::json(['error' => 'forbidden'], 403);
+                return ErrorResponse::respond($request, ErrorCode::RBAC_DENIED, [], 403, [], 'rbac.guard');
             }
 
             return $this->view->render('pages/403.html', [], 403, [], [

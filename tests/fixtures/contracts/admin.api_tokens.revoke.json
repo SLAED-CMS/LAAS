@@ -1,10 +1,12 @@
 {
-  "data": {
-    "revoked": true,
-    "token_id": "__ID__"
-  },
-  "meta": {
-    "format": "json",
-    "route": "admin.api_tokens.revoke"
-  }
+    "data": {
+        "revoked": true,
+        "token_id": "__ID__"
+    },
+    "meta": {
+        "format": "json",
+        "route": "admin.api_tokens.revoke",
+        "request_id": "__REQ__",
+        "ts": "__TIME__"
+    }
 }

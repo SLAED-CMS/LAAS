@@ -6,6 +6,7 @@ namespace Laas\Modules\Admin\Controller;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\AuditLogRepository;
 use Laas\Database\Repositories\RbacRepository;
+use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\View\View;
@@ -169,7 +170,7 @@ final class AuditController
     private function forbidden(Request $request): Response
     {
         if ($request->wantsJson()) {
-            return Response::json(['error' => 'forbidden'], 403);
+            return ErrorResponse::respond($request, 'forbidden', [], 403, [], 'admin.audit');
         }
 
         return $this->view->render('pages/403.html', [], 403, [], [
@@ -180,7 +181,7 @@ final class AuditController
     private function errorResponse(Request $request, string $code, int $status): Response
     {
         if ($request->isHtmx() || $request->wantsJson()) {
-            return Response::json(['error' => $code], $status);
+            return ErrorResponse::respond($request, $code, [], $status, [], 'admin.audit');
         }
 
         return new Response('Error', $status, [

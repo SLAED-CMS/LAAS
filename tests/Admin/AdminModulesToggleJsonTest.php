@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use Laas\Database\DatabaseManager;
+use Laas\Http\ErrorCode;
 use Laas\Http\Request;
 use Laas\Modules\Admin\Controller\ModulesController;
 use Laas\View\View;
@@ -26,7 +27,7 @@ final class AdminModulesToggleJsonTest extends TestCase
         $this->assertSame(400, $response->getStatus());
         $this->assertSame('application/json; charset=utf-8', $response->getHeader('Content-Type'));
         $payload = json_decode($response->getBody(), true);
-        $this->assertSame('protected_module', $payload['error'] ?? null);
+        $this->assertSame(ErrorCode::INVALID_REQUEST, $payload['error']['code'] ?? null);
         $this->assertSame('json', $payload['meta']['format'] ?? null);
         $this->assertSame('admin.modules.toggle', $payload['meta']['route'] ?? null);
     }

@@ -5,7 +5,7 @@ namespace Laas\Http\Middleware;
 
 use Laas\Api\ApiTokenService;
 use Laas\Database\DatabaseManager;
-use Laas\Http\Contract\ContractResponse;
+use Laas\Http\ErrorResponse;
 use Laas\Http\HeadlessMode;
 use Laas\Http\Request;
 use Laas\Http\Response;
@@ -130,6 +130,6 @@ final class ApiTokenAuthMiddleware implements MiddlewareInterface
         $meta = [
             'route' => HeadlessMode::resolveRoute($request),
         ];
-        return ContractResponse::error($error, $meta, $status);
+        return ErrorResponse::respond($request, $error, [], $status, $meta, 'api.token.auth');
     }
 }

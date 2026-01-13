@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use Laas\Database\DatabaseManager;
+use Laas\Http\ErrorCode;
 use Laas\Http\Request;
 use Laas\Modules\Media\Controller\AdminMediaController;
 use Laas\View\View;
@@ -57,7 +58,7 @@ final class AdminMediaUploadJsonTest extends TestCase
         $this->assertSame(400, $response->getStatus());
         $this->assertSame('application/json; charset=utf-8', $response->getHeader('Content-Type'));
         $payload = json_decode($response->getBody(), true);
-        $this->assertSame('invalid_mime', $payload['error'] ?? null);
+        $this->assertSame(ErrorCode::VALIDATION_FAILED, $payload['error']['code'] ?? null);
         $this->assertSame('json', $payload['meta']['format'] ?? null);
         $this->assertSame('admin.media.upload', $payload['meta']['route'] ?? null);
     }

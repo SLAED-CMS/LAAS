@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use Laas\Database\DatabaseManager;
+use Laas\Http\ErrorCode;
 use Laas\Http\Request;
 use Laas\Modules\Api\Controller\PagesController;
 use PHPUnit\Framework\Attributes\Group;
@@ -60,7 +61,7 @@ final class PagesApiTest extends TestCase
         $response = $controller->index($request);
 
         $payload = json_decode($response->getBody(), true);
-        $this->assertFalse($payload['ok']);
+        $this->assertSame(ErrorCode::VALIDATION_FAILED, $payload['error']['code'] ?? null);
         $this->assertSame(422, $response->getStatus());
     }
 

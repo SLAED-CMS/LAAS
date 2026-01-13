@@ -9,7 +9,8 @@ use Laas\Core\Validation\Validator;
 use Laas\Core\Validation\ValidationResult;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\Http\ProblemDetails;
+use Laas\Http\ErrorCode;
+use Laas\Http\ErrorResponse;
 use Laas\Modules\Pages\Repository\PagesRepository;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Security\HtmlSanitizer;
@@ -454,9 +455,9 @@ final class AdminPagesController
         }
 
         if ($request->wantsJson()) {
-            $errorId = $this->generateErrorId();
+            $fields = [];
             if ($errors instanceof ValidationResult) {
-                $problem = ProblemDetails::validationFailed($request, $errors, $errorId);
+                $fields = $errors->toErrorMap();
             } else {
                 $result = new ValidationResult();
                 foreach ($errors as $error) {
@@ -466,10 +467,10 @@ final class AdminPagesController
                         $result->addError($field, $key, $error['params'] ?? []);
                     }
                 }
-                $problem = ProblemDetails::validationFailed($request, $result, $errorId);
+                $fields = $result->toErrorMap();
             }
 
-            return Response::json($problem->toArray(), 422);
+            return ErrorResponse::respond($request, ErrorCode::VALIDATION_FAILED, ['fields' => $fields], 422, [], 'validation.pages.save');
         }
 
         $isEdit = !empty($page['id']);
@@ -503,7 +504,7 @@ final class AdminPagesController
     private function errorResponse(Request $request, string $code, int $status): Response
     {
         if ($request->isHtmx() || $request->wantsJson()) {
-            return Response::json(['error' => $code], $status);
+            return ErrorResponse::respond($request, $code, [], $status, [], 'pages.admin');
         }
 
         return new Response('Error', $status, [
@@ -567,4 +568,3 @@ final class AdminPagesController
         return 'ERR-' . strtoupper(bin2hex(random_bytes(6)));
     }
 }
-

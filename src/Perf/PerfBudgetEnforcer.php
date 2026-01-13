@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Laas\Perf;
 
 use Laas\DevTools\DevToolsContext;
+use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 
@@ -42,7 +43,7 @@ final class PerfBudgetEnforcer
     public function buildOverBudgetResponse(Request $request): Response
     {
         if ($request->wantsJson()) {
-            return Response::json(['error' => 'system.over_budget'], 503);
+            return ErrorResponse::respond($request, 'system.over_budget', [], 503, [], 'perf.budget');
         }
 
         return new Response('system.over_budget', 503, [

@@ -3,7 +3,8 @@ declare(strict_types=1);
 
 namespace Laas\Http\Middleware;
 
-use Laas\Api\ApiResponse;
+use Laas\Http\ErrorCode;
+use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\I18n\Translator;
@@ -40,7 +41,7 @@ final class ReadOnlyMiddleware implements MiddlewareInterface
 
         $message = $this->translator->trans('system.read_only');
         if (str_starts_with($path, '/api/')) {
-            return ApiResponse::error('read_only', $message, [], 503);
+            return ErrorResponse::respond($request, ErrorCode::READ_ONLY, [], 503, [], 'read_only.middleware');
         }
 
         if ($request->isHtmx() && $this->view !== null) {
@@ -51,7 +52,7 @@ final class ReadOnlyMiddleware implements MiddlewareInterface
         }
 
         if ($request->wantsJson()) {
-            return Response::json(['error' => $message], 503);
+            return ErrorResponse::respond($request, ErrorCode::READ_ONLY, [], 503, [], 'read_only.middleware');
         }
 
         return new Response($message, 503, [

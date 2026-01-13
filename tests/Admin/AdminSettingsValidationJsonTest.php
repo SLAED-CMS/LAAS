@@ -29,9 +29,9 @@ final class AdminSettingsValidationJsonTest extends TestCase
         $this->assertSame(422, $response->getStatus());
         $this->assertSame('application/json; charset=utf-8', $response->getHeader('Content-Type'));
         $payload = json_decode($response->getBody(), true);
-        $this->assertSame('validation_failed', $payload['error'] ?? null);
-        $this->assertArrayHasKey('fields', $payload);
-        $this->assertArrayHasKey('site_name', $payload['fields']);
+        $this->assertSame('E_VALIDATION_FAILED', $payload['error']['code'] ?? null);
+        $this->assertArrayHasKey('fields', $payload['error']['details'] ?? []);
+        $this->assertArrayHasKey('site_name', $payload['error']['details']['fields'] ?? []);
         $this->assertSame('json', $payload['meta']['format'] ?? null);
         $this->assertSame('admin.settings.save', $payload['meta']['route'] ?? null);
     }

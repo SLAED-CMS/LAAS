@@ -7,6 +7,7 @@ use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\PermissionsRepository;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Database\Repositories\RolesRepository;
+use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Support\AuditLogger;
@@ -535,7 +536,7 @@ final class RolesController
     private function forbidden(Request $request): Response
     {
         if ($request->wantsJson()) {
-            return Response::json(['error' => 'forbidden'], 403);
+            return ErrorResponse::respond($request, 'forbidden', [], 403, [], 'admin.roles');
         }
 
         return $this->view->render('pages/403.html', [], 403, [], [
@@ -546,7 +547,7 @@ final class RolesController
     private function errorResponse(Request $request, string $code, int $status): Response
     {
         if ($request->isHtmx() || $request->wantsJson()) {
-            return Response::json(['error' => $code], $status);
+            return ErrorResponse::respond($request, $code, [], $status, [], 'admin.roles');
         }
 
         return new Response('Error', $status, [

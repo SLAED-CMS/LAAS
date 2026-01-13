@@ -6,6 +6,7 @@ namespace Laas\Modules\Admin\Controller;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Database\Repositories\UsersRepository;
+use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Support\AuditLogger;
@@ -218,7 +219,7 @@ final class RbacDiagnosticsController
     private function forbidden(Request $request): Response
     {
         if ($request->wantsJson()) {
-            return Response::json(['error' => 'forbidden'], 403);
+            return ErrorResponse::respond($request, 'forbidden', [], 403, [], 'admin.rbac_diagnostics');
         }
 
         return $this->view->render('pages/403.html', [], 403, [], [
@@ -229,7 +230,7 @@ final class RbacDiagnosticsController
     private function errorResponse(Request $request, string $code, int $status): Response
     {
         if ($request->isHtmx() || $request->wantsJson()) {
-            return Response::json(['error' => $code], $status);
+            return ErrorResponse::respond($request, $code, [], $status, [], 'admin.rbac_diagnostics');
         }
 
         return new Response('Error', $status, [

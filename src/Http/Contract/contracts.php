@@ -46,6 +46,8 @@ ContractRegistry::register('pages.show', [
             'meta' => [
                 'format' => 'json',
                 'route' => 'pages.show',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
             ],
         ],
     ],
@@ -106,6 +108,8 @@ ContractRegistry::register('admin.modules.index', [
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.modules.index',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
             ],
         ],
     ],
@@ -200,13 +204,20 @@ ContractRegistry::register('admin.settings.save', [
     'example_error' => [
         'fixture' => 'admin.settings.save.validation_failed',
         'payload' => [
-            'error' => 'validation_failed',
+            'error' => [
+                'code' => 'E_VALIDATION_FAILED',
+                'message' => 'Validation failed.',
+                'details' => [
+                    'fields' => [
+                        'site_name' => ['invalid'],
+                    ],
+                ],
+            ],
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.settings.save',
-            ],
-            'fields' => [
-                'site_name' => ['invalid'],
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
             ],
         ],
     ],
@@ -273,6 +284,8 @@ ContractRegistry::register('admin.api_tokens.index', [
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.api_tokens.index',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
             ],
         ],
     ],
@@ -327,6 +340,8 @@ ContractRegistry::register('admin.api_tokens.create', [
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.api_tokens.create',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
             ],
         ],
     ],
@@ -372,6 +387,8 @@ ContractRegistry::register('admin.api_tokens.revoke', [
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.api_tokens.revoke',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
             ],
         ],
     ],
@@ -434,6 +451,8 @@ ContractRegistry::register('admin.users.index', [
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.users.index',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
             ],
         ],
     ],
@@ -533,6 +552,8 @@ ContractRegistry::register('admin.media.index', [
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.media.index',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
             ],
         ],
     ],
@@ -636,6 +657,8 @@ ContractRegistry::register('media.show', [
             'meta' => [
                 'format' => 'json',
                 'route' => 'media.show',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
             ],
         ],
     ],

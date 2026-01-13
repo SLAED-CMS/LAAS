@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use Laas\DevTools\DevToolsContext;
+use Laas\Http\ErrorCode;
 use Laas\Http\Request;
 use Laas\Perf\PerfBudgetEnforcer;
 use PHPUnit\Framework\TestCase;
@@ -42,7 +43,7 @@ final class PerfBudgetHardFailTest extends TestCase
         $this->assertSame(503, $response->getStatus());
         $payload = json_decode($response->getBody(), true);
         $this->assertIsArray($payload);
-        $this->assertSame('system.over_budget', $payload['error'] ?? null);
+        $this->assertSame(ErrorCode::SERVICE_UNAVAILABLE, $payload['error']['code'] ?? null);
     }
 
     public function testHardFailReturnsPlainTextForHtml(): void
@@ -80,4 +81,3 @@ final class PerfBudgetHardFailTest extends TestCase
         $this->assertSame('system.over_budget', $response->getBody());
     }
 }
-

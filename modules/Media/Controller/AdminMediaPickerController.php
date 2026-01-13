@@ -5,6 +5,7 @@ namespace Laas\Modules\Media\Controller;
 
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
+use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Media\Repository\MediaRepository;
@@ -262,7 +263,7 @@ final class AdminMediaPickerController
     private function errorResponse(Request $request, string $code, int $status): Response
     {
         if ($request->isHtmx() || $request->wantsJson()) {
-            return Response::json(['error' => $code], $status);
+            return ErrorResponse::respond($request, $code, [], $status, [], 'admin.media_picker');
         }
 
         return new Response('Error', $status, [

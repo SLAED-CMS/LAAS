@@ -4,10 +4,11 @@ declare(strict_types=1);
 namespace Laas\Http\Middleware;
 
 use Laas\Api\ApiResponse;
+use Laas\Http\ErrorCode;
+use Laas\Http\ErrorResponse;
 use Laas\Api\ApiTokenService;
 use Laas\Auth\AuthorizationService;
 use Laas\Database\DatabaseManager;
-use Laas\Http\Contract\ContractResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Support\AuditLogger;
@@ -322,9 +323,10 @@ final class ApiMiddleware implements MiddlewareInterface
 
     private function unauthorized(Request $request): Response
     {
-        return ContractResponse::error('auth.invalid_token', [
+        $meta = [
             'route' => \Laas\Http\HeadlessMode::resolveRoute($request),
-        ], 401)
+        ];
+        return ErrorResponse::respond($request, ErrorCode::API_TOKEN_INVALID, [], 401, $meta, 'api.auth')
             ->withHeader('WWW-Authenticate', 'Bearer');
     }
 

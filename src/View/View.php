@@ -18,6 +18,7 @@ use Laas\Support\Cache\CacheFactory;
 use Laas\Support\Cache\CacheKey;
 use Laas\Support\RequestScope;
 use Laas\DevTools\DevToolsContext;
+use Laas\Http\RequestContext;
 use Laas\View\AssetManager;
 use Laas\View\ViewModelInterface;
 use Laas\View\Template\TemplateEngine;
@@ -84,6 +85,7 @@ final class View
         }
         $ctx = array_merge($this->globalContext(), $data);
         $devtoolsEnabled = $this->resolveDevtoolsEnabled();
+        $showRequestId = $this->debug || $devtoolsEnabled;
         if (!isset($ctx['devtools']) || !is_array($ctx['devtools'])) {
             $ctx['devtools'] = ['enabled' => $devtoolsEnabled];
         } elseif (!array_key_exists('enabled', $ctx['devtools'])) {
@@ -227,6 +229,8 @@ final class View
             'request' => [
                 'path' => $this->request?->getPath() ?? '/',
                 'is_htmx' => $this->request?->isHtmx() ?? false,
+                'id' => RequestContext::requestId(),
+                'show_request_id' => $showRequestId,
             ],
             'devtools' => [
                 'enabled' => $devtoolsEnabled,

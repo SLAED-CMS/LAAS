@@ -6,6 +6,7 @@ namespace Laas\Modules\Media\Controller;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Http\Contract\ContractResponse;
+use Laas\Http\ErrorCode;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Media\Repository\MediaRepository;
@@ -346,7 +347,7 @@ final class MediaServeController
 
     private function contractForbidden(): Response
     {
-        return ContractResponse::error('forbidden', [
+        return ContractResponse::error(ErrorCode::MEDIA_FORBIDDEN, [
             'route' => 'media.show',
         ], 403);
     }

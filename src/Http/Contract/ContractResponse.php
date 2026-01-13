@@ -3,8 +3,9 @@ declare(strict_types=1);
 
 namespace Laas\Http\Contract;
 
-use Laas\DevTools\DevToolsContext;
+use Laas\Http\ErrorResponse;
 use Laas\Http\Response;
+use Laas\Http\ResponseMeta;
 use Laas\Support\RequestScope;
 
 final class ContractResponse
@@ -22,36 +23,16 @@ final class ContractResponse
     public static function error(string $error, array $meta = [], int $status = 400, array $fields = []): Response
     {
         $meta = self::normalizeMeta($meta);
-        $payload = [
-            'error' => $error,
-            'meta' => $meta,
-        ];
-        if ($fields !== []) {
-            $payload['fields'] = $fields;
-        }
+        $details = $fields !== [] ? ['fields' => $fields] : [];
+        $request = RequestScope::getRequest();
+        $built = ErrorResponse::buildPayload($request, $error, $details, $status, $meta);
 
-        return Response::json($payload, $status);
+        return Response::json($built['payload'], $built['status']);
     }
 
     private static function normalizeMeta(array $meta): array
     {
         $meta['format'] = 'json';
-        $requestId = self::resolveRequestId();
-        if ($requestId !== null) {
-            $meta['request_id'] = $requestId;
-        }
-
-        return $meta;
-    }
-
-    private static function resolveRequestId(): ?string
-    {
-        $context = RequestScope::get('devtools.context');
-        if ($context instanceof DevToolsContext) {
-            $id = $context->getRequestId();
-            return $id !== '' ? $id : null;
-        }
-
-        return null;
+        return ResponseMeta::enrich($meta);
     }
 }

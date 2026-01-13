@@ -15,6 +15,8 @@ final class ContractResponseTest extends TestCase
         $this->assertSame('bar', $payload['data']['foo'] ?? null);
         $this->assertSame('json', $payload['meta']['format'] ?? null);
         $this->assertSame('test.ok', $payload['meta']['route'] ?? null);
+        $this->assertArrayHasKey('request_id', $payload['meta'] ?? []);
+        $this->assertArrayHasKey('ts', $payload['meta'] ?? []);
     }
 
     public function testErrorEnvelopeWithFields(): void
@@ -25,9 +27,11 @@ final class ContractResponseTest extends TestCase
 
         $this->assertSame(422, $response->getStatus());
         $payload = json_decode($response->getBody(), true);
-        $this->assertSame('validation_failed', $payload['error'] ?? null);
+        $this->assertSame('E_VALIDATION_FAILED', $payload['error']['code'] ?? null);
         $this->assertSame('json', $payload['meta']['format'] ?? null);
         $this->assertSame('test.save', $payload['meta']['route'] ?? null);
-        $this->assertSame(['required'], $payload['fields']['name'] ?? null);
+        $this->assertSame(['required'], $payload['error']['details']['fields']['name'] ?? null);
+        $this->assertArrayHasKey('request_id', $payload['meta'] ?? []);
+        $this->assertArrayHasKey('ts', $payload['meta'] ?? []);
     }
 }

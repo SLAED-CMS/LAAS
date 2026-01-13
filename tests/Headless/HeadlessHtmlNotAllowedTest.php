@@ -33,8 +33,10 @@ final class HeadlessHtmlNotAllowedTest extends TestCase
             $this->assertSame(406, $response->getStatus());
             $this->assertSame('application/json; charset=utf-8', $response->getHeader('Content-Type'));
             $payload = json_decode($response->getBody(), true);
-            $this->assertSame('not_acceptable', $payload['error'] ?? null);
+            $this->assertSame('E_FORMAT_NOT_ACCEPTABLE', $payload['error']['code'] ?? null);
             $this->assertSame('json', $payload['meta']['format'] ?? null);
+            $this->assertArrayHasKey('request_id', $payload['meta'] ?? []);
+            $this->assertArrayHasKey('ts', $payload['meta'] ?? []);
         } finally {
             RequestScope::reset();
             RequestScope::setRequest(null);

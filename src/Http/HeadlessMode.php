@@ -86,13 +86,12 @@ final class HeadlessMode
     /** @return array<string, mixed> */
     public static function buildNotAcceptablePayload(Request $request): array
     {
-        return [
-            'error' => 'not_acceptable',
-            'meta' => [
-                'format' => 'json',
-                'route' => self::resolveRoute($request),
-            ],
+        $meta = [
+            'format' => 'json',
+            'route' => self::resolveRoute($request),
         ];
+        $built = ErrorResponse::buildPayload($request, ErrorCode::FORMAT_NOT_ACCEPTABLE, [], 406, $meta, 'headless.mode');
+        return $built['payload'];
     }
 
     public static function resolveRoute(Request $request): string

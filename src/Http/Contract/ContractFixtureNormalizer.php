@@ -5,7 +5,7 @@ namespace Laas\Http\Contract;
 
 final class ContractFixtureNormalizer
 {
-    private const TIME_KEYS = ['created_at', 'updated_at'];
+    private const TIME_KEYS = ['created_at', 'updated_at', 'ts'];
     private const ID_KEYS = [
         'id',
         'user_id',

@@ -53,7 +53,7 @@ final class ApiTokenMiddlewareTest extends TestCase
 
         $this->assertSame(401, $response->getStatus());
         $payload = json_decode($response->getBody(), true);
-        $this->assertSame('auth.invalid_token', $payload['error'] ?? null);
+        $this->assertSame('E_API_TOKEN_INVALID', $payload['error']['code'] ?? null);
     }
 
     public function testExpiredTokenReturnsUnauthorized(): void
@@ -72,7 +72,7 @@ final class ApiTokenMiddlewareTest extends TestCase
 
         $this->assertSame(401, $response->getStatus());
         $payload = json_decode($response->getBody(), true);
-        $this->assertSame('auth.token_expired', $payload['error'] ?? null);
+        $this->assertSame('E_API_TOKEN_INVALID', $payload['error']['code'] ?? null);
     }
 
     /** @return array{0: DatabaseManager, 1: PDO} */

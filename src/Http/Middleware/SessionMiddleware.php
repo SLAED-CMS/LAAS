@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Laas\Http\Middleware;
 
+use Laas\Http\ErrorCode;
+use Laas\Http\ErrorResponse;
 use Laas\Http\HeadlessMode;
 use Laas\Http\Request;
 use Laas\Http\Response;
@@ -104,7 +106,7 @@ final class SessionMiddleware implements MiddlewareInterface
     private function expiredResponse(Request $request): Response
     {
         if ($request->wantsJson() || HeadlessMode::shouldDefaultJson($request)) {
-            return Response::json(['error' => 'unauthorized'], 401);
+            return ErrorResponse::respond($request, ErrorCode::AUTH_REQUIRED, [], 401, [], 'session.middleware');
         }
 
         return new Response('', 302, [

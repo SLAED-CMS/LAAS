@@ -22,7 +22,7 @@ final class Response
             return self::jsonResponse($payload, 406);
         }
 
-        return self::jsonResponse($data, $status);
+        return self::jsonResponse(self::ensureMeta($data), $status);
     }
 
     public static function html(string $body, int $status = 200): self
@@ -34,12 +34,13 @@ final class Response
                 return self::jsonResponse($payload, 406);
             }
             if (HeadlessMode::shouldDefaultJson($request)) {
+                $meta = ResponseMeta::enrich([
+                    'format' => 'json',
+                    'route' => HeadlessMode::resolveRoute($request),
+                ]);
                 return self::jsonResponse([
                     'data' => [],
-                    'meta' => [
-                        'format' => 'json',
-                        'route' => HeadlessMode::resolveRoute($request),
-                    ],
+                    'meta' => $meta,
                 ], 200);
             }
         }
@@ -136,5 +137,22 @@ final class Response
         return new self($body, $status, [
             'Content-Type' => 'application/json; charset=utf-8',
         ]);
+    }
+
+    private static function ensureMeta(array $data): array
+    {
+        if (array_key_exists('meta', $data)) {
+            if (is_array($data['meta'])) {
+                if (!array_key_exists('request_id', $data['meta']) || !array_key_exists('ts', $data['meta'])) {
+                    $data['meta'] = ResponseMeta::enrich($data['meta']);
+                }
+            }
+
+            return $data;
+        }
+
+        $data['meta'] = ResponseMeta::enrich([]);
+
+        return $data;
     }
 }

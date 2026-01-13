@@ -9,6 +9,8 @@
     },
     "meta": {
         "format": "json",
-        "route": "media.show"
+        "route": "media.show",
+        "request_id": "__REQ__",
+        "ts": "__TIME__"
     }
 }

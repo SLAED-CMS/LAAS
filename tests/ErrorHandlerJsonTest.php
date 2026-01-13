@@ -3,16 +3,21 @@ declare(strict_types=1);
 
 use Laas\Http\Middleware\ErrorHandlerMiddleware;
 use Laas\Http\Request;
+use Laas\Support\RequestScope;
+use Laas\DevTools\DevToolsContext;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 final class ErrorHandlerJsonTest extends TestCase
 {
-    public function testJsonErrorUsesProblemDetails(): void
+    public function testJsonErrorUsesEnvelope(): void
     {
         $logger = new ErrorSpyLogger();
         $middleware = new ErrorHandlerMiddleware($logger, true, 'req-1');
         $request = new Request('GET', '/api/test', [], [], ['accept' => 'application/json'], '');
+
+        RequestScope::setRequest($request);
+        RequestScope::set('devtools.context', new DevToolsContext(['enabled' => true, 'request_id' => 'req-1']));
 
         $response = $middleware->process($request, static function (): never {
             throw new RuntimeException('Boom');
@@ -21,13 +26,14 @@ final class ErrorHandlerJsonTest extends TestCase
         $this->assertSame(500, $response->getStatus());
         $data = json_decode($response->getBody(), true);
 
-        $this->assertSame('Internal Server Error', $data['title'] ?? null);
-        $this->assertSame(500, $data['status'] ?? null);
-        $this->assertSame('/api/test', $data['instance'] ?? null);
-        $this->assertArrayHasKey('error_id', $data);
-        $this->assertArrayNotHasKey('trace', $data);
-        $this->assertArrayNotHasKey('message', $data);
+        $this->assertSame('E_INTERNAL', $data['error']['code'] ?? null);
+        $this->assertArrayHasKey('message', $data['error'] ?? []);
+        $this->assertSame('req-1', $data['meta']['request_id'] ?? null);
+        $this->assertArrayHasKey('ts', $data['meta'] ?? []);
         $this->assertNotEmpty($logger->lastContext['error_id'] ?? null);
+
+        RequestScope::reset();
+        RequestScope::setRequest(null);
     }
 }
 

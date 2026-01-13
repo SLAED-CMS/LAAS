@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Laas\Http\Middleware;
 
+use Laas\Http\ErrorCode;
+use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Security\Csrf;
@@ -33,7 +35,7 @@ final class CsrfMiddleware implements MiddlewareInterface
 
         if (!$csrf->validate($token)) {
             if ($request->wantsJson()) {
-                return Response::json(['error' => 'csrf_mismatch'], 419);
+                return ErrorResponse::respond($request, ErrorCode::CSRF_INVALID, [], 419, [], 'csrf.middleware');
             }
 
             return new Response('419 CSRF Token Mismatch', 419, [

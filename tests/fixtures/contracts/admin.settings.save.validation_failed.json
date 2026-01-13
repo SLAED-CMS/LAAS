@@ -1,12 +1,19 @@
 {
-    "error": "validation_failed",
+    "error": {
+        "code": "E_VALIDATION_FAILED",
+        "message": "Validation failed.",
+        "details": {
+            "fields": {
+                "site_name": [
+                    "invalid"
+                ]
+            }
+        }
+    },
     "meta": {
         "format": "json",
-        "route": "admin.settings.save"
-    },
-    "fields": {
-        "site_name": [
-            "invalid"
-        ]
+        "route": "admin.settings.save",
+        "request_id": "__REQ__",
+        "ts": "__TIME__"
     }
 }

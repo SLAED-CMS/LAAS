@@ -7,6 +7,7 @@ use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\DevTools\DevToolsContext;
 use Laas\DevTools\JsErrorInbox;
+use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Support\Cache\FileCache;
@@ -25,7 +26,7 @@ final class DevToolsController
     public function ping(Request $request): Response
     {
         if (!$this->isAllowed($request)) {
-            return Response::json(['error' => 'forbidden'], 403);
+            return ErrorResponse::respond($request, 'forbidden', [], 403, [], 'devtools.controller');
         }
 
         return Response::json(['status' => 'ok']);
@@ -34,7 +35,7 @@ final class DevToolsController
     public function panel(Request $request): Response
     {
         if (!$this->isAllowed($request)) {
-            return Response::json(['error' => 'forbidden'], 403);
+            return ErrorResponse::respond($request, 'forbidden', [], 403, [], 'devtools.controller');
         }
 
         $context = new DevToolsContext([
@@ -68,35 +69,35 @@ final class DevToolsController
     public function jsErrorsCollect(Request $request): Response
     {
         if (!$this->isAllowed($request)) {
-            return Response::json(['error' => 'forbidden'], 403);
+            return ErrorResponse::respond($request, 'forbidden', [], 403, [], 'devtools.controller');
         }
 
         $userId = $this->getUserId($request);
         if ($userId === null) {
-            return Response::json(['error' => 'unauthorized'], 401);
+            return ErrorResponse::respond($request, 'unauthorized', [], 401, [], 'devtools.controller');
         }
 
         if (!$this->checkRateLimit($userId, 10, 60)) {
-            return Response::json(['error' => 'rate limit exceeded'], 429);
+            return ErrorResponse::respond($request, 'rate limit exceeded', [], 429, [], 'devtools.controller');
         }
 
         $contentType = $request->header('Content-Type') ?? '';
         if (!str_contains(strtolower($contentType), 'application/json')) {
-            return Response::json(['error' => 'content-type must be application/json'], 400);
+            return ErrorResponse::respond($request, 'content-type must be application/json', [], 400, [], 'devtools.controller');
         }
 
         $body = $request->getBody();
         if ($body === '') {
-            return Response::json(['error' => 'empty body'], 400);
+            return ErrorResponse::respond($request, 'empty body', [], 400, [], 'devtools.controller');
         }
 
         $data = json_decode($body, true);
         if (!is_array($data)) {
-            return Response::json(['error' => 'invalid json'], 400);
+            return ErrorResponse::respond($request, 'invalid json', [], 400, [], 'devtools.controller');
         }
 
         if (!isset($data['type'], $data['message'])) {
-            return Response::json(['error' => 'type and message are required'], 422);
+            return ErrorResponse::respond($request, 'type and message are required', [], 422, [], 'devtools.controller');
         }
 
         $cache = new FileCache(dirname(__DIR__, 3) . '/storage/cache', 'devtools');
@@ -154,12 +155,12 @@ final class DevToolsController
     public function jsErrorsClear(Request $request): Response
     {
         if (!$this->isAllowed($request)) {
-            return Response::json(['error' => 'forbidden'], 403);
+            return ErrorResponse::respond($request, 'forbidden', [], 403, [], 'devtools.controller');
         }
 
         $userId = $this->getUserId($request);
         if ($userId === null) {
-            return Response::json(['error' => 'unauthorized'], 401);
+            return ErrorResponse::respond($request, 'unauthorized', [], 401, [], 'devtools.controller');
         }
 
         $cache = new FileCache(dirname(__DIR__, 3) . '/storage/cache', 'devtools');

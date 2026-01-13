@@ -3,7 +3,8 @@ declare(strict_types=1);
 
 namespace Laas\Http\Middleware;
 
-use Laas\Http\ProblemDetails;
+use Laas\Http\ErrorCode;
+use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Psr\Log\LoggerInterface;
@@ -31,19 +32,14 @@ final class ErrorHandlerMiddleware implements MiddlewareInterface
             ]);
 
             if ($request->expectsJson()) {
-                $problem = ProblemDetails::internalError($request, $errorId);
-                return Response::json($problem->toArray(), 500)
-                    ->withHeader('X-Request-Id', $this->requestId);
+                return ErrorResponse::respond($request, ErrorCode::INTERNAL, [], 500, [], 'error.handler');
             }
 
             $message = 'Internal Server Error';
-            if ($this->debug) {
-                $message .= "\n" . $e->getMessage() . "\n" . $e->getTraceAsString();
-            }
 
             return (new Response($message, 500, [
                 'Content-Type' => 'text/plain; charset=utf-8',
-            ]))->withHeader('X-Request-Id', $this->requestId);
+            ]));
         }
     }
 

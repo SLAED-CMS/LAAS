@@ -7,6 +7,8 @@ use Laas\Api\ApiCacheInvalidator;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Http\Contract\ContractResponse;
+use Laas\Http\ErrorCode;
+use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Media\Repository\MediaRepository;
@@ -288,10 +290,7 @@ final class AdminMediaController
                 }
 
                 if ($request->wantsJson()) {
-                    return Response::json([
-                        'error' => 'storage_error',
-                        'message' => $message,
-                    ], 500);
+                    return ErrorResponse::respond($request, 'storage_error', [], 500, [], 'media.delete');
                 }
 
                 return new Response($message, 500, [
@@ -1031,7 +1030,7 @@ final class AdminMediaController
     private function errorResponse(Request $request, string $code, int $status): Response
     {
         if ($request->isHtmx() || $request->wantsJson()) {
-            return Response::json(['error' => $code], $status);
+            return ErrorResponse::respond($request, $code, [], $status, [], 'admin.media');
         }
 
         return new Response('Error', $status, [
@@ -1078,7 +1077,7 @@ final class AdminMediaController
 
     private function contractForbidden(string $route): Response
     {
-        return ContractResponse::error('forbidden', [
+        return ContractResponse::error(ErrorCode::MEDIA_FORBIDDEN, [
             'route' => $route,
         ], 403);
     }
@@ -1109,4 +1108,3 @@ final class AdminMediaController
         return $items;
     }
 }
-
