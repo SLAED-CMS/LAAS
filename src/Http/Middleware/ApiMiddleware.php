@@ -258,16 +258,17 @@ final class ApiMiddleware implements MiddlewareInterface
     private function bearerToken(Request $request): ?string
     {
         $header = $request->getHeader('authorization');
-        if ($header === null) {
-            return null;
+        if (is_string($header) && str_starts_with($header, 'Bearer ')) {
+            $token = trim(substr($header, 7));
+            return $this->normalizeToken($token);
         }
 
-        if (!str_starts_with($header, 'Bearer ')) {
-            return null;
+        $header = $request->getHeader('x-api-token');
+        if (is_string($header) && $header !== '') {
+            return $this->normalizeToken($header);
         }
 
-        $token = trim(substr($header, 7));
-        return $token !== '' ? $token : null;
+        return null;
     }
 
     private function requiresAuth(Request $request): bool
@@ -372,5 +373,15 @@ final class ApiMiddleware implements MiddlewareInterface
         }
 
         return substr(hash('sha256', $plainToken), 0, 12);
+    }
+
+    private function normalizeToken(string $token): ?string
+    {
+        $token = trim($token);
+        if ($token === '' || preg_match('/\\s/', $token) === 1) {
+            return null;
+        }
+
+        return $token;
     }
 }

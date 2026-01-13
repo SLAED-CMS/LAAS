@@ -66,6 +66,10 @@ This document defines the JSON response envelope and the internal contract regis
 - breaking change => bump `contracts_version`
 - additive fields are allowed without bump
 
+## API auth errors
+
+- `api.auth.forbidden_scope` (403): token does not have required scope
+
 ## Examples
 
 **Pages show (OK)**

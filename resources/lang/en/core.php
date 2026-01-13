@@ -77,5 +77,5 @@ return [
     'error.invalid_content_type' => 'Invalid content type.',
     'error.empty_body' => 'Empty body.',
     'error.invalid_json' => 'Invalid JSON.',
+    'api.auth.forbidden_scope' => 'Insufficient token scope.',
 ];
-

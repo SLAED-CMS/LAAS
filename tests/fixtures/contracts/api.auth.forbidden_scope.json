@@ -1,0 +1,12 @@
+{
+    "error": {
+        "code": "E_RBAC_DENIED",
+        "message": "Insufficient token scope."
+    },
+    "meta": {
+        "format": "json",
+        "route": "/api/v1/me",
+        "request_id": "__REQ__",
+        "ts": "__TIME__"
+    }
+}

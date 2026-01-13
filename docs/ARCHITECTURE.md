@@ -1211,6 +1211,8 @@ $auth->logout();
   - `auth_user_id`
   - `auth_scopes`
   - `auth_token_id`
+- Route scopes enforcement uses `config/api.php` `routes_scopes` (METHOD + pattern).
+  - On insufficient scope: `403` with `api.auth.forbidden_scope` (no scope details in prod).
 
 **Session regeneration:**
 ```php

@@ -1,5 +1,9 @@
 # LAAS Versions
 
+- v3.17.0 (WIP): API token scopes enforcement
+  - Route-level required scopes map in config
+  - 403 api.auth.forbidden_scope for insufficient scope
+
 - v3.9.0: Media Ops/GC
   - media:gc (orphans/retention) with dry-run default and delete cap
   - media:verify for DB -> storage consistency checks

@@ -50,4 +50,8 @@ return [
         'headers' => $envCsv('API_CORS_HEADERS', ['Authorization', 'Content-Type', 'X-Requested-With']),
         'max_age' => $envInt('API_CORS_MAX_AGE', 600),
     ],
+    'routes_scopes' => [
+        'GET /api/v1/ping' => ['ping:read'],
+        'GET /api/v1/pages/{id:\\d+}' => ['pages:read'],
+    ],
 ];

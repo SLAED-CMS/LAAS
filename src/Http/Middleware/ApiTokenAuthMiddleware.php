@@ -84,6 +84,27 @@ final class ApiTokenAuthMiddleware implements MiddlewareInterface
 
         $this->setAuthAttributes($request, $user, $row);
 
+        $required = $this->requiredScopes($request);
+        if ($required !== []) {
+            $tokenScopes = $this->normalizeScopes($row['scopes'] ?? null);
+            if (!$this->allowsScopes($tokenScopes, $required)) {
+                $meta = [
+                    'route' => HeadlessMode::resolveRoute($request),
+                ];
+                if ($this->isDebug()) {
+                    $meta['required_scopes'] = $required;
+                    $meta['token_scopes'] = $tokenScopes;
+                }
+                return [
+                    'status' => 'forbidden',
+                    'reason' => 'forbidden_scope',
+                    'response' => $this->errorResponse($request, 'api.auth.forbidden_scope', 403, $meta),
+                    'user' => $user,
+                    'token' => $row,
+                ];
+            }
+        }
+
         return [
             'status' => 'ok',
             'reason' => 'ok',
@@ -100,22 +121,23 @@ final class ApiTokenAuthMiddleware implements MiddlewareInterface
     private function bearerToken(Request $request): ?string
     {
         $header = $request->getHeader('authorization');
-        if ($header === null) {
-            return null;
+        if (is_string($header) && str_starts_with($header, 'Bearer ')) {
+            $token = trim(substr($header, 7));
+            return $this->normalizeToken($token);
         }
 
-        if (!str_starts_with($header, 'Bearer ')) {
-            return null;
+        $header = $request->getHeader('x-api-token');
+        if (is_string($header) && $header !== '') {
+            return $this->normalizeToken($header);
         }
 
-        $token = trim(substr($header, 7));
-        return $token !== '' ? $token : null;
+        return null;
     }
 
     private function setAuthAttributes(Request $request, array $user, array $tokenRow): void
     {
         $request->setAttribute('auth_user_id', (int) ($user['id'] ?? 0));
-        $request->setAttribute('auth_scopes', is_array($tokenRow['scopes'] ?? null) ? $tokenRow['scopes'] : []);
+        $request->setAttribute('auth_scopes', $this->normalizeScopes($tokenRow['scopes'] ?? null));
         $request->setAttribute('auth_token_id', (int) ($tokenRow['id'] ?? 0));
     }
 
@@ -125,11 +147,133 @@ final class ApiTokenAuthMiddleware implements MiddlewareInterface
             ->withHeader('WWW-Authenticate', 'Bearer');
     }
 
-    private function errorResponse(Request $request, string $error, int $status): Response
+    private function errorResponse(Request $request, string $error, int $status, array $meta = []): Response
     {
-        $meta = [
-            'route' => HeadlessMode::resolveRoute($request),
-        ];
+        if ($meta === []) {
+            $meta = [
+                'route' => HeadlessMode::resolveRoute($request),
+            ];
+        }
         return ErrorResponse::respond($request, $error, [], $status, $meta, 'api.token.auth');
+    }
+
+    private function normalizeToken(string $token): ?string
+    {
+        $token = trim($token);
+        if ($token === '' || preg_match('/\\s/', $token) === 1) {
+            return null;
+        }
+
+        return $token;
+    }
+
+    /** @return array<int, string> */
+    private function requiredScopes(Request $request): array
+    {
+        $map = $this->config['routes_scopes'] ?? null;
+        if (!is_array($map)) {
+            return [];
+        }
+
+        $method = strtoupper($request->getMethod());
+        $pattern = $request->getAttribute('route.pattern');
+        $path = is_string($pattern) && $pattern !== '' ? $pattern : $request->getPath();
+        $signature = $method . ' ' . $path;
+        $scopes = $map[$signature] ?? null;
+        if (!is_array($scopes)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($scopes as $scope) {
+            if (!is_string($scope)) {
+                continue;
+            }
+            $scope = strtolower(trim($scope));
+            if ($scope === '' || $scope === '*') {
+                continue;
+            }
+            $out[] = $scope;
+        }
+
+        return array_values(array_unique($out));
+    }
+
+    /** @return array<int, string> */
+    private function normalizeScopes(mixed $raw): array
+    {
+        if (is_array($raw)) {
+            $items = array_map(static fn($item): string => strtolower(trim((string) $item)), $raw);
+            $items = array_values(array_filter($items, static fn(string $item): bool => $item !== ''));
+            if (in_array('*', $items, true)) {
+                return ['*'];
+            }
+            return array_values(array_unique($items));
+        }
+        if (!is_string($raw) || $raw === '') {
+            return [];
+        }
+
+        $decoded = json_decode($raw, true);
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        $items = [];
+        foreach ($decoded as $item) {
+            if (!is_string($item)) {
+                continue;
+            }
+            $item = strtolower(trim($item));
+            if ($item !== '') {
+                $items[] = $item;
+            }
+        }
+        if (in_array('*', $items, true)) {
+            return ['*'];
+        }
+
+        return array_values(array_unique($items));
+    }
+
+    /** @param array<int, string> $tokenScopes @param array<int, string> $requiredScopes */
+    private function allowsScopes(array $tokenScopes, array $requiredScopes): bool
+    {
+        if ($requiredScopes === []) {
+            return true;
+        }
+        if (in_array('*', $tokenScopes, true)) {
+            return true;
+        }
+
+        $map = array_flip($tokenScopes);
+        foreach ($requiredScopes as $scope) {
+            if (!isset($map[$scope])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function isDebug(): bool
+    {
+        $env = $_ENV['APP_DEBUG'] ?? getenv('APP_DEBUG') ?: null;
+        if ($env !== null && $env !== '') {
+            $parsed = filter_var($env, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if ($parsed !== null) {
+                return $parsed;
+            }
+        }
+
+        $configPath = $this->rootPath . '/config/app.php';
+        if (is_file($configPath)) {
+            $config = require $configPath;
+            if (is_array($config)) {
+                return (bool) ($config['debug'] ?? false);
+            }
+        }
+
+        return false;
     }
 }

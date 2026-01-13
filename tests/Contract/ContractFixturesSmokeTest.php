@@ -11,6 +11,7 @@ final class ContractFixturesSmokeTest extends TestCase
     {
         $required = [
             'pages.show',
+            'api.auth.forbidden_scope',
             'admin.modules.index',
             'admin.settings.save.validation_failed',
             'admin.api_tokens.index',

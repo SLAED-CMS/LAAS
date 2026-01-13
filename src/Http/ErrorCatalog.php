@@ -28,6 +28,7 @@ final class ErrorCatalog
     private const ALIASES = [
         'auth.invalid_token' => ['code' => ErrorCode::API_TOKEN_INVALID, 'message_key' => 'auth.invalid_token', 'status' => 401],
         'auth.token_expired' => ['code' => ErrorCode::API_TOKEN_INVALID, 'message_key' => 'auth.token_expired', 'status' => 401],
+        'api.auth.forbidden_scope' => ['code' => ErrorCode::RBAC_DENIED, 'message_key' => 'api.auth.forbidden_scope', 'status' => 403],
         'csrf_mismatch' => ErrorCode::CSRF_INVALID,
         'not_found' => ErrorCode::NOT_FOUND,
         'method_not_allowed' => ErrorCode::METHOD_NOT_ALLOWED,

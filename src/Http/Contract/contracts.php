@@ -53,6 +53,36 @@ ContractRegistry::register('pages.show', [
     ],
 ]);
 
+ContractRegistry::register('api.auth.forbidden_scope', [
+    'route' => '/api/v1/me',
+    'methods' => ['GET'],
+    'rbac' => 'api',
+    'responses' => [
+        '403' => [
+            'error' => 'api.auth.forbidden_scope',
+            'meta' => [
+                'format' => 'json',
+                'route' => '/api/v1/me',
+            ],
+        ],
+    ],
+    'example_error' => [
+        'fixture' => 'api.auth.forbidden_scope',
+        'payload' => [
+            'error' => [
+                'code' => 'E_RBAC_DENIED',
+                'message' => 'Insufficient token scope.',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => '/api/v1/me',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
 ContractRegistry::register('admin.modules.index', [
     'route' => '/admin/modules',
     'methods' => ['GET'],
