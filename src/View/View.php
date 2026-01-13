@@ -268,7 +268,6 @@ final class View
             $path = (string) ($warning['path'] ?? '');
             $code = (string) ($warning['code'] ?? 'presentation_leak');
             $message = 'Presentation key in view data: ' . $path;
-            error_log('[ui-tokens] ' . $message);
             if ($this->debug && $context instanceof DevToolsContext) {
                 $context->addWarning($code, $message);
             }

@@ -192,7 +192,6 @@ final class ThemeManager
     private function warnDeprecatedLayout(string $theme, string $layout): void
     {
         $message = 'Theme layout fallback used for ' . $theme . ': ' . $layout;
-        error_log('[theme] ' . $message);
 
         $context = RequestScope::get('devtools.context');
         if ($context instanceof DevToolsContext && (bool) $context->getFlag('debug', false)) {
