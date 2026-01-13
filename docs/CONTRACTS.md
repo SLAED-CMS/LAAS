@@ -52,6 +52,7 @@ This document defines the JSON response envelope and the internal contract regis
 - `route` is a stable internal route name
 - `request_id` is always included
 - `ts` is UTC ISO8601
+- `ok=false` and `meta.error` are present on error responses
 
 ## Headless mode
 
@@ -61,8 +62,9 @@ This document defines the JSON response envelope and the internal contract regis
 
 ## Versioning
 
-- `contracts:dump` outputs `{ "contracts_version": "...", "items": [...] }`
-- `contracts_version` is included in `contracts:dump`
+- `contracts:dump` outputs `{ "contracts_version": "...", "app_version": "...", "items": [...] }`
+- `contracts_version` is required and represents the contract snapshot version
+- `app_version` comes from `config/app.php`
 - breaking change => bump `contracts_version`
 - additive fields are allowed without bump
 
@@ -99,11 +101,16 @@ This document defines the JSON response envelope and the internal contract regis
 - Update fixtures only via CLI and review the diff:
   - `php tools/cli.php contracts:fixtures:dump --force`
 - Validate fixtures with: `php tools/cli.php contracts:fixtures:check`
-- Guard test compares registry examples to fixtures and fails on breaking changes
+- Check fixtures & contracts: `php tools/cli.php contracts:check`
+- Snapshot file: `tests/fixtures/contracts/_snapshot.json`
+- Update snapshot only on intentional breaking change:
+  - `php tools/cli.php contracts:snapshot:update`
+- Guard test compares registry examples to fixtures and snapshot and fails on breaking changes
 
 **Admin settings save (validation error)**
 ```json
 {
+  "data": null,
   "error": {
     "code": "E_VALIDATION_FAILED",
     "message": "Validation failed.",
@@ -115,6 +122,11 @@ This document defines the JSON response envelope and the internal contract regis
   },
   "meta": {
     "format": "json",
+    "ok": false,
+    "error": {
+      "key": "error.validation_failed",
+      "message": "Validation failed."
+    },
     "route": "admin.settings.save",
     "request_id": "req-1",
     "ts": "2026-01-01T00:00:00Z"

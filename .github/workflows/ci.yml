@@ -32,8 +32,12 @@ jobs:
           find src modules tools database public -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: Policy checks
         run: php tools/policy-check.php
+      - name: Policy check (cli)
+        run: php tools/cli.php policy:check
       - name: Contract fixtures check
         run: php tools/cli.php contracts:fixtures:check
+      - name: Contracts check
+        run: php tools/cli.php contracts:check
       - name: Debt sweep
         run: |
           if rg -n "TODO|FIXME" src modules tools; then

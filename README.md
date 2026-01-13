@@ -499,6 +499,13 @@ vendor/bin/phpunit --coverage-html coverage/html --coverage-clover coverage/clov
 **Contract Fixtures:**
 - Dump fixtures: `php tools/cli.php contracts:fixtures:dump --force`
 
+**QA quick commands:**
+- `php tools/cli.php policy:check`
+- `php tools/cli.php contracts:fixtures:check`
+- `php tools/cli.php contracts:check`
+- `vendor/bin/phpunit`
+- `php tools/cli.php contracts:snapshot:update` (only when breaking contracts)
+
 ## Preflight before deploy
 
 ```

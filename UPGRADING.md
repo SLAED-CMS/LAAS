@@ -142,6 +142,7 @@
 - Breaking changes require:
   - bump `contracts_version`
   - update fixtures via `php tools/cli.php contracts:fixtures:dump --force`
+  - update snapshot via `php tools/cli.php contracts:snapshot:update`
   - note the change in this file
 
 **Examples**

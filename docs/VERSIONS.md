@@ -1,5 +1,10 @@
 # LAAS Versions
 
+- v3.18.0: Contracts & fixtures hardening
+  - contracts_version + app_version in contracts:dump
+  - contracts:check + snapshot guardrail
+  - fixtures normalization & stability rules
+
 - v3.17.0 (WIP): API token scopes enforcement
   - Route-level required scopes map in config
   - 403 api.auth.forbidden_scope for insufficient scope
