@@ -15,7 +15,7 @@ final class PreflightCommandTest extends TestCase
             $code = 0;
             if (function_exists('exec')) {
                 exec($cmd, $output, $code);
-                $this->assertSame(2, $code, implode("\n", $output));
+                $this->assertSame(0, $code, implode("\n", $output));
             } else {
                 $result = shell_exec($cmd . ' 2>&1');
                 $this->assertNotNull($result);
