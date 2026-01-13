@@ -166,6 +166,54 @@ final class MediaRepository
         return $row ?: null;
     }
 
+    public function existsByObjectKey(string $key): bool
+    {
+        $stmt = $this->pdo->prepare('SELECT 1 FROM media_files WHERE disk_path = :key LIMIT 1');
+        $stmt->execute(['key' => $key]);
+        $row = $stmt->fetch();
+
+        return $row !== false;
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function listRecent(int $limit, int $offset = 0): array
+    {
+        $limit = max(1, min(500, $limit));
+        $offset = max(0, $offset);
+
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM media_files ORDER BY id DESC LIMIT :limit OFFSET :offset'
+        );
+        $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue('offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        $rows = $stmt->fetchAll();
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function listCandidatesForRetention(string $cutoff, int $limit, int $afterId, bool $allowPublic): array
+    {
+        $limit = max(1, min(500, $limit));
+        $afterId = max(0, $afterId);
+
+        $sql = 'SELECT * FROM media_files WHERE created_at < :cutoff AND id > :after_id';
+        if (!$allowPublic) {
+            $sql .= ' AND (is_public IS NULL OR is_public = 0)';
+        }
+        $sql .= ' ORDER BY id ASC LIMIT :limit';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue('cutoff', $cutoff);
+        $stmt->bindValue('after_id', $afterId, PDO::PARAM_INT);
+        $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        $rows = $stmt->fetchAll();
+
+        return is_array($rows) ? $rows : [];
+    }
+
     public function create(array $data): int
     {
         $now = date('Y-m-d H:i:s');

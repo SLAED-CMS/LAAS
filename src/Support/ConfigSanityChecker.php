@@ -99,6 +99,33 @@ final class ConfigSanityChecker
             }
         }
 
+        if (array_key_exists('gc_enabled', $media) && !is_bool($media['gc_enabled'])) {
+            $errors[] = 'media.gc_enabled invalid';
+        }
+
+        $retention = $media['gc_retention_days'] ?? null;
+        if ($retention !== null && (!is_numeric($retention) || (int) $retention < 0)) {
+            $errors[] = 'media.gc_retention_days invalid';
+        }
+
+        if (array_key_exists('gc_dry_run_default', $media) && !is_bool($media['gc_dry_run_default'])) {
+            $errors[] = 'media.gc_dry_run_default invalid';
+        }
+
+        $maxDelete = $media['gc_max_delete_per_run'] ?? null;
+        if ($maxDelete !== null && (!is_numeric($maxDelete) || (int) $maxDelete < 0)) {
+            $errors[] = 'media.gc_max_delete_per_run invalid';
+        }
+
+        $exempt = $media['gc_exempt_prefixes'] ?? null;
+        if ($exempt !== null && !$this->isStringList($exempt)) {
+            $errors[] = 'media.gc_exempt_prefixes invalid';
+        }
+
+        if (array_key_exists('gc_allow_delete_public', $media) && !is_bool($media['gc_allow_delete_public'])) {
+            $errors[] = 'media.gc_allow_delete_public invalid';
+        }
+
         return $errors;
     }
 

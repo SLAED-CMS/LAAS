@@ -11,8 +11,13 @@ use Laas\Database\Repositories\SettingsRepository;
 use Laas\Database\Repositories\UsersRepository;
 use Laas\Database\Repositories\SecurityReportsRepository;
 use Laas\Modules\Media\Repository\MediaRepository;
+use Laas\Modules\Media\Service\LocalStorageDriver;
+use Laas\Modules\Media\Service\MediaGcService;
 use Laas\Modules\Media\Service\MediaThumbnailService;
+use Laas\Modules\Media\Service\MediaVerifyService;
+use Laas\Modules\Media\Service\S3Storage;
 use Laas\Modules\Media\Service\StorageService;
+use Laas\Modules\Media\Service\StorageWalker;
 use Laas\Support\AuditLogger;
 use Laas\Support\BackupManager;
 use Laas\Support\ConfigSanityChecker;
@@ -575,6 +580,109 @@ $commands['media:thumbs:sync'] = function () use ($dbManager, $rootPath): int {
         echo "Thumb sync failed: " . $e->getMessage() . "\n";
         return 1;
     }
+};
+
+$commands['media:gc'] = function () use ($dbManager, $rootPath, $storageConfig, $args): int {
+    $mediaConfig = is_file($rootPath . '/config/media.php') ? require $rootPath . '/config/media.php' : [];
+    $mediaConfig = is_array($mediaConfig) ? $mediaConfig : [];
+
+    if (!(bool) ($mediaConfig['gc_enabled'] ?? true)) {
+        echo "Media GC disabled.\n";
+        return 1;
+    }
+
+    if (!$dbManager->healthCheck()) {
+        echo "DB not available.\n";
+        return 1;
+    }
+
+    $disk = (string) (getOption($args, 'disk') ?? ($storageConfig['default'] ?? 'local'));
+    $error = '';
+    $driver = buildStorageDriver($rootPath, $storageConfig, $disk, $error);
+    if ($driver === null) {
+        echo "Storage not available.\n";
+        return 1;
+    }
+
+    $mode = strtolower((string) (getOption($args, 'mode') ?? 'all'));
+    $dryRunDefault = (bool) ($mediaConfig['gc_dry_run_default'] ?? true);
+    $dryRun = parseBoolOption($args, 'dry-run', $dryRunDefault);
+
+    $limit = (int) ($mediaConfig['gc_max_delete_per_run'] ?? 500);
+    if ($limit < 0) {
+        $limit = 0;
+    }
+    $limitRaw = getOption($args, 'limit');
+    if ($limitRaw !== null && is_numeric($limitRaw)) {
+        $limitParsed = (int) $limitRaw;
+        if ($limitParsed < 0) {
+            $limitParsed = 0;
+        }
+        if ($limit > 0 && $limitParsed > 0) {
+            $limit = min($limitParsed, $limit);
+        } else {
+            $limit = $limitParsed;
+        }
+    }
+
+    $repo = new MediaRepository($dbManager);
+    $walker = new StorageWalker($rootPath, $driver);
+    $service = new MediaGcService($repo, $driver, $walker, $mediaConfig, new AuditLogger($dbManager));
+    $result = $service->run([
+        'mode' => $mode,
+        'dry_run' => $dryRun,
+        'limit' => $limit,
+        'scan_prefix' => 'uploads/',
+        'disk' => $disk,
+    ]);
+
+    echo 'disk: ' . (string) ($result['disk'] ?? '') . "\n";
+    echo 'dry_run: ' . ((bool) ($result['dry_run'] ?? true) ? 'true' : 'false') . "\n";
+    echo 'mode: ' . (string) ($result['mode'] ?? '') . "\n";
+    echo 'limit: ' . (int) ($result['limit'] ?? 0) . "\n";
+    echo 'scanned_db: ' . (int) ($result['scanned_db'] ?? 0) . "\n";
+    echo 'scanned_storage: ' . (int) ($result['scanned_storage'] ?? 0) . "\n";
+    echo 'orphans_found: ' . (int) ($result['orphans_found'] ?? 0) . "\n";
+    echo 'deleted_count: ' . (int) ($result['deleted_count'] ?? 0) . "\n";
+    echo 'bytes_freed_estimate: ' . (int) ($result['bytes_freed_estimate'] ?? 0) . "\n";
+    if (!($result['ok'] ?? false)) {
+        echo 'error: ' . (string) ($result['error'] ?? 'unknown') . "\n";
+    }
+
+    return ($result['ok'] ?? false) ? 0 : 2;
+};
+
+$commands['media:verify'] = function () use ($dbManager, $rootPath, $storageConfig, $args): int {
+    if (!$dbManager->healthCheck()) {
+        echo "DB not available.\n";
+        return 1;
+    }
+
+    $disk = (string) (getOption($args, 'disk') ?? ($storageConfig['default'] ?? 'local'));
+    $error = '';
+    $driver = buildStorageDriver($rootPath, $storageConfig, $disk, $error);
+    if ($driver === null) {
+        echo "Storage not available.\n";
+        return 1;
+    }
+
+    $limit = 0;
+    $limitRaw = getOption($args, 'limit');
+    if ($limitRaw !== null && is_numeric($limitRaw)) {
+        $limit = max(0, (int) $limitRaw);
+    }
+
+    $repo = new MediaRepository($dbManager);
+    $service = new MediaVerifyService($rootPath, $repo, $driver);
+    $result = $service->verify($limit);
+
+    echo 'ok_count: ' . (int) ($result['ok_count'] ?? 0) . "\n";
+    echo 'missing_count: ' . (int) ($result['missing_count'] ?? 0) . "\n";
+    echo 'mismatch_count: ' . (int) ($result['mismatch_count'] ?? 0) . "\n";
+    echo 'scanned: ' . (int) ($result['scanned'] ?? 0) . "\n";
+
+    $issues = (int) ($result['missing_count'] ?? 0) + (int) ($result['mismatch_count'] ?? 0);
+    return $issues > 0 ? 2 : 0;
 };
 
 $commands['backup:create'] = function () use ($rootPath, $dbManager, $appConfig, $storageConfig, $args): int {
@@ -1445,6 +1553,40 @@ function parseBoolOption(array $args, string $name, bool $default): bool
 
     $parsed = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
     return $parsed ?? $default;
+}
+
+function buildStorageDriver(string $rootPath, array $storageConfig, string $disk, ?string &$error = null): ?object
+{
+    $disk = strtolower(trim($disk));
+    if ($disk === '') {
+        $disk = 'local';
+    }
+
+    if (!in_array($disk, ['local', 's3'], true)) {
+        $error = 'invalid_disk';
+        return null;
+    }
+
+    if ($disk === 'local') {
+        return new LocalStorageDriver($rootPath);
+    }
+
+    $s3 = $storageConfig['disks']['s3'] ?? null;
+    if (!is_array($s3)) {
+        $error = 's3_config_missing';
+        return null;
+    }
+    if (($s3['region'] ?? '') === '' || ($s3['bucket'] ?? '') === '' || ($s3['access_key'] ?? '') === '' || ($s3['secret_key'] ?? '') === '') {
+        $error = 's3_config_missing';
+        return null;
+    }
+
+    try {
+        return new S3Storage($s3);
+    } catch (Throwable) {
+        $error = 's3_init_failed';
+        return null;
+    }
 }
 
 function envValue(string $key): string

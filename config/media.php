@@ -35,6 +35,15 @@ $envJson = static function (string $key, array $default) use ($env): array {
     $decoded = json_decode((string) $value, true);
     return is_array($decoded) ? $decoded : $default;
 };
+$envList = static function (string $key, array $default) use ($env): array {
+    $value = $env[$key] ?? null;
+    if ($value === null || $value === '') {
+        return $default;
+    }
+    $parts = array_map('trim', explode(',', (string) $value));
+    $parts = array_filter($parts, static fn(string $item): bool => $item !== '');
+    return $parts === [] ? $default : array_values($parts);
+};
 
 $allowed = $envString('MEDIA_ALLOWED_MIME', 'image/jpeg,image/png,image/webp,application/pdf');
 $allowedList = array_filter(array_map('trim', explode(',', $allowed)));
@@ -90,4 +99,10 @@ return [
     'thumb_format' => $envString('MEDIA_THUMB_FORMAT', 'webp'),
     'thumb_quality' => $envInt('MEDIA_THUMB_QUALITY', 82),
     'thumb_algo_version' => $envInt('MEDIA_THUMB_ALGO_VERSION', 1),
+    'gc_enabled' => $envBool('MEDIA_GC_ENABLED', true),
+    'gc_retention_days' => $envInt('MEDIA_RETENTION_DAYS', 180),
+    'gc_dry_run_default' => $envBool('MEDIA_GC_DRY_RUN_DEFAULT', true),
+    'gc_max_delete_per_run' => $envInt('MEDIA_GC_MAX_DELETE_PER_RUN', 500),
+    'gc_exempt_prefixes' => $envList('MEDIA_GC_EXEMPT_PREFIXES', ['quarantine/', '_cache/', 'thumbs/']),
+    'gc_allow_delete_public' => $envBool('MEDIA_GC_ALLOW_DELETE_PUBLIC', false),
 ];

@@ -106,6 +106,88 @@ final class S3Storage implements StorageDriverInterface
         return is_numeric($length) ? (int) $length : 0;
     }
 
+    /** @return array{status: int, headers: array<string, string>} */
+    public function headObject(string $diskPath): array
+    {
+        $response = $this->request('HEAD', $diskPath, null, $this->emptyHash());
+        $headers = is_array($response['headers'] ?? null) ? $response['headers'] : [];
+        return ['status' => (int) $response['status'], 'headers' => $headers];
+    }
+
+    /**
+     * @return array{items: array<int, array{disk_path: string, size: int}>, next_token: ?string}
+     */
+    public function listObjects(string $prefix, ?string $continuationToken, int $maxKeys = 1000): array
+    {
+        $prefix = ltrim($prefix, '/');
+        $maxKeys = max(1, min(1000, $maxKeys));
+
+        $queryPrefix = $prefix;
+        if ($queryPrefix !== '') {
+            $queryPrefix = $this->objectKey($queryPrefix);
+        } elseif ($this->prefix !== '') {
+            $queryPrefix = $this->prefix . '/';
+        }
+
+        $query = [
+            'list-type' => '2',
+            'prefix' => $queryPrefix,
+            'max-keys' => (string) $maxKeys,
+        ];
+        if ($continuationToken !== null && $continuationToken !== '') {
+            $query['continuation-token'] = $continuationToken;
+        }
+
+        $response = $this->requestWithQuery('GET', '', $query, null, $this->emptyHash());
+        if ($response['status'] !== 200) {
+            throw new RuntimeException('s3_list_failed');
+        }
+
+        $xml = simplexml_load_string($response['body'] ?? '', 'SimpleXMLElement', LIBXML_NOERROR | LIBXML_NOWARNING);
+        if ($xml === false) {
+            throw new RuntimeException('s3_list_failed');
+        }
+
+        $items = [];
+        $ns = $xml->getNamespaces(true);
+        $nodes = [];
+        if (is_array($ns) && $ns !== []) {
+            $xml->registerXPathNamespace('s3', $ns['']);
+            $nodes = $xml->xpath('//s3:Contents') ?: [];
+        } else {
+            $nodes = $xml->xpath('//Contents') ?: [];
+        }
+
+        $basePrefix = $this->prefix !== '' ? $this->prefix . '/' : '';
+        foreach ($nodes as $node) {
+            $key = (string) ($node->Key ?? '');
+            if ($key === '') {
+                continue;
+            }
+            if ($basePrefix !== '' && str_starts_with($key, $basePrefix)) {
+                $key = substr($key, strlen($basePrefix));
+            }
+            if ($key === '' || str_ends_with($key, '/')) {
+                continue;
+            }
+            $items[] = [
+                'disk_path' => $key,
+                'size' => (int) ($node->Size ?? 0),
+            ];
+        }
+
+        $truncated = strtolower((string) ($xml->IsTruncated ?? '')) === 'true';
+        $nextToken = $truncated ? (string) ($xml->NextContinuationToken ?? '') : null;
+        if ($nextToken === '') {
+            $nextToken = null;
+        }
+
+        return [
+            'items' => $items,
+            'next_token' => $nextToken,
+        ];
+    }
+
     public function stats(): array
     {
         return ['requests' => $this->requests, 'total_ms' => $this->totalMs];
@@ -120,6 +202,28 @@ final class S3Storage implements StorageDriverInterface
         $key = $this->objectKey($diskPath);
         $url = $this->buildUrl($key);
         $headers = $this->signedHeaders($method, $url, $key, $payloadHash);
+
+        $result = $this->client !== null
+            ? ($this->client)($method, $url, $headers, $body, $this->timeout, $this->verifyTls)
+            : $this->curlRequest($method, $url, $headers, $body);
+
+        $this->totalMs += (microtime(true) - $started) * 1000;
+
+        return $result;
+    }
+
+    /** @return array{status: int, headers: array<string, string>, body: string} */
+    private function requestWithQuery(string $method, string $key, array $query, ?string $body, string $payloadHash): array
+    {
+        $this->requests++;
+        $started = microtime(true);
+
+        $url = $this->buildUrl($key);
+        $queryString = S3Signer::canonicalQuery($query);
+        if ($queryString !== '') {
+            $url .= '?' . $queryString;
+        }
+        $headers = $this->signedHeadersWithQuery($method, $url, $key, $query, $payloadHash);
 
         $result = $this->client !== null
             ? ($this->client)($method, $url, $headers, $body, $this->timeout, $this->verifyTls)
@@ -178,6 +282,40 @@ final class S3Storage implements StorageDriverInterface
         ];
 
         $canonical = S3Signer::canonicalRequest($method, $path, [], $headers, $payloadHash);
+        $stringToSign = S3Signer::stringToSign($amzDate, $scope, $canonical);
+        $signature = S3Signer::signature($this->secretKey, $date, $this->region, 's3', $stringToSign);
+        $signedHeaders = implode(';', array_keys(S3Signer::canonicalHeaders($headers)));
+
+        $authorization = 'AWS4-HMAC-SHA256 Credential='
+            . $this->accessKey . '/' . $scope
+            . ', SignedHeaders=' . $signedHeaders
+            . ', Signature=' . $signature;
+
+        return [
+            'Host' => $host,
+            'x-amz-content-sha256' => $payloadHash,
+            'x-amz-date' => $amzDate,
+            'Authorization' => $authorization,
+        ];
+    }
+
+    /** @return array<string, string> */
+    private function signedHeadersWithQuery(string $method, string $url, string $key, array $query, string $payloadHash): array
+    {
+        $amzDate = gmdate('Ymd\THis\Z');
+        $date = gmdate('Ymd');
+        $scope = $date . '/' . $this->region . '/s3/aws4_request';
+
+        $host = parse_url($url, PHP_URL_HOST) ?? '';
+        $path = '/' . ltrim($key, '/');
+
+        $headers = [
+            'host' => $host,
+            'x-amz-content-sha256' => $payloadHash,
+            'x-amz-date' => $amzDate,
+        ];
+
+        $canonical = S3Signer::canonicalRequest($method, $path, $query, $headers, $payloadHash);
         $stringToSign = S3Signer::stringToSign($amzDate, $scope, $canonical);
         $signature = S3Signer::signature($this->secretKey, $date, $this->region, 's3', $stringToSign);
         $signedHeaders = implode(';', array_keys(S3Signer::canonicalHeaders($headers)));

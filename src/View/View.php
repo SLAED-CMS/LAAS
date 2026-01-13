@@ -210,6 +210,7 @@ final class View
         }
 
         $devtoolsEnabled = $this->resolveDevtoolsEnabled();
+        $showRequestId = $this->debug || $devtoolsEnabled;
 
         return [
             'csrf_token' => $csrfToken,
