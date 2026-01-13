@@ -1,13 +1,13 @@
 {
     "data": null,
     "error": {
-        "code": "E_RBAC_DENIED",
-        "message": "Insufficient token scope."
+        "code": "E_API_TOKEN_INVALID",
+        "message": "Invalid token"
     },
     "meta": {
         "error": {
-            "key": "api.auth.forbidden_scope",
-            "message": "Insufficient token scope."
+            "key": "auth.invalid_token",
+            "message": "Invalid token"
         },
         "format": "json",
         "ok": false,

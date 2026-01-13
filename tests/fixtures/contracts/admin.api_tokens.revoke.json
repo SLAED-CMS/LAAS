@@ -5,8 +5,8 @@
     },
     "meta": {
         "format": "json",
-        "route": "admin.api_tokens.revoke",
         "request_id": "__REQ__",
+        "route": "admin.api_tokens.revoke",
         "ts": "__TIME__"
     }
 }

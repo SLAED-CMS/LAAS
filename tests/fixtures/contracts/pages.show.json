@@ -1,17 +1,17 @@
 {
     "data": {
         "page": {
+            "content": "Body",
             "id": "__ID__",
             "slug": "hello",
             "title": "Hello",
-            "content": "Body",
             "updated_at": "__TIME__"
         }
     },
     "meta": {
         "format": "json",
-        "route": "pages.show",
         "request_id": "__REQ__",
+        "route": "pages.show",
         "ts": "__TIME__"
     }
 }

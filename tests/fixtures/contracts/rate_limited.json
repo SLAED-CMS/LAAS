@@ -1,0 +1,18 @@
+{
+    "data": null,
+    "error": {
+        "code": "E_RATE_LIMITED",
+        "message": "Rate limit exceeded."
+    },
+    "meta": {
+        "error": {
+            "key": "rate_limit.exceeded",
+            "message": "Rate limit exceeded."
+        },
+        "format": "json",
+        "ok": false,
+        "request_id": "__REQ__",
+        "route": "/api/v1/pages",
+        "ts": "__TIME__"
+    }
+}

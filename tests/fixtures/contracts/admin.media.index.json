@@ -1,26 +1,26 @@
 {
     "data": {
+        "counts": {
+            "page": 1,
+            "total": 1,
+            "total_pages": 1
+        },
         "items": [
             {
-                "id": "__ID__",
-                "name": "photo.jpg",
-                "mime": "image/jpeg",
-                "size": 12345,
-                "hash": "abc123",
+                "created_at": "__TIME__",
                 "disk": "local",
-                "created_at": "__TIME__"
+                "hash": "abc123",
+                "id": "__ID__",
+                "mime": "image/jpeg",
+                "name": "photo.jpg",
+                "size": 12345
             }
-        ],
-        "counts": {
-            "total": 1,
-            "page": 1,
-            "total_pages": 1
-        }
+        ]
     },
     "meta": {
         "format": "json",
-        "route": "admin.media.index",
         "request_id": "__REQ__",
+        "route": "admin.media.index",
         "ts": "__TIME__"
     }
 }

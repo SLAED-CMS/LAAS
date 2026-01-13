@@ -1,29 +1,29 @@
 {
     "data": {
+        "counts": {
+            "total": 1
+        },
         "items": [
             {
+                "created_at": "__TIME__",
+                "expires_at": "__TIME__",
                 "id": "__ID__",
+                "last_used_at": "__TIME__",
                 "name": "CLI",
-                "token_prefix": "ABCDEF123456",
+                "revoked_at": "__TIME__",
                 "scopes": [
                     "admin.read",
                     "admin.write"
                 ],
-                "last_used_at": "2026-01-01 00:00:00",
-                "expires_at": null,
-                "revoked_at": null,
-                "created_at": "__TIME__",
-                "status": "active"
+                "status": "active",
+                "token_prefix": "ABCDEF123456"
             }
-        ],
-        "counts": {
-            "total": 1
-        }
+        ]
     },
     "meta": {
         "format": "json",
-        "route": "admin.api_tokens.index",
         "request_id": "__REQ__",
+        "route": "admin.api_tokens.index",
         "ts": "__TIME__"
     }
 }

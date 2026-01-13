@@ -12,6 +12,14 @@ final class ErrorResponse
     private static ?Translator $translator = null;
     private static ?LocaleResolver $localeResolver = null;
     private static ?array $appConfig = null;
+    private const SECURITY_ERRORS = [
+        ErrorCode::AUTH_REQUIRED,
+        ErrorCode::AUTH_INVALID,
+        ErrorCode::RBAC_DENIED,
+        ErrorCode::CSRF_INVALID,
+        ErrorCode::RATE_LIMITED,
+        ErrorCode::API_TOKEN_INVALID,
+    ];
 
     /**
      * @return array{payload: array<string, mixed>, status: int}
@@ -32,6 +40,9 @@ final class ErrorResponse
         $message = self::translate($resolved['message_key'], $request);
 
         $details = self::normalizeDetails($code, $details);
+        if (self::isSecurityError($code) && !self::isDebug()) {
+            $details = [];
+        }
         $details = self::attachSource($details, $source);
 
         if ($source !== null && $source !== '') {
@@ -40,8 +51,14 @@ final class ErrorResponse
         RequestScope::set('error.code', $code);
 
         $meta = ResponseMeta::enrich($meta);
+        $meta['ok'] = false;
+        $meta['error'] = [
+            'key' => $resolved['message_key'],
+            'message' => $message,
+        ];
 
         $payload = [
+            'data' => null,
             'error' => [
                 'code' => $code,
                 'message' => $message,
@@ -101,6 +118,11 @@ final class ErrorResponse
         $details['source'] = $source;
 
         return $details;
+    }
+
+    private static function isSecurityError(string $code): bool
+    {
+        return in_array($code, self::SECURITY_ERRORS, true);
     }
 
     private static function isDebug(): bool

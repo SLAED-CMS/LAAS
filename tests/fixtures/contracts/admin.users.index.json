@@ -2,13 +2,13 @@
     "data": {
         "items": [
             {
+                "active": true,
+                "created_at": "__TIME__",
                 "id": "__ID__",
-                "username": "admin",
                 "roles": [
                     "admin"
                 ],
-                "active": true,
-                "created_at": "__TIME__"
+                "username": "admin"
             }
         ],
         "pagination": {
@@ -19,8 +19,8 @@
     },
     "meta": {
         "format": "json",
-        "route": "admin.users.index",
         "request_id": "__REQ__",
+        "route": "admin.users.index",
         "ts": "__TIME__"
     }
 }

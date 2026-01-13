@@ -36,4 +36,19 @@ final class UrlSanitizer
 
         return $scheme . '://' . $auth . $host . $port . $path;
     }
+
+    public static function sanitizeUrl(string $url): string
+    {
+        if ($url === '') {
+            return '';
+        }
+
+        $parts = parse_url($url);
+        if ($parts === false || !isset($parts['host'])) {
+            return $url;
+        }
+
+        $path = $parts['path'] ?? '';
+        return $path !== '' ? $path : '/';
+    }
 }

@@ -1,16 +1,16 @@
 {
     "data": {
+        "hash": "abc123",
         "id": "__ID__",
         "mime": "image/jpeg",
-        "size": 12345,
-        "hash": "abc123",
         "mode": "inline",
-        "signed_url": null
+        "signed_url": null,
+        "size": 12345
     },
     "meta": {
         "format": "json",
-        "route": "media.show",
         "request_id": "__REQ__",
+        "route": "media.show",
         "ts": "__TIME__"
     }
 }

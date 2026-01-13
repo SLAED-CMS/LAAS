@@ -69,12 +69,275 @@ ContractRegistry::register('api.auth.forbidden_scope', [
     'example_error' => [
         'fixture' => 'api.auth.forbidden_scope',
         'payload' => [
+            'data' => null,
             'error' => [
                 'code' => 'E_RBAC_DENIED',
                 'message' => 'Insufficient token scope.',
             ],
             'meta' => [
                 'format' => 'json',
+                'ok' => false,
+                'error' => [
+                    'key' => 'api.auth.forbidden_scope',
+                    'message' => 'Insufficient token scope.',
+                ],
+                'route' => '/api/v1/me',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('api.auth.failed', [
+    'route' => '/api/v1/me',
+    'methods' => ['GET'],
+    'rbac' => 'api',
+    'responses' => [
+        '401' => [
+            'error' => 'auth.invalid_token',
+            'meta' => [
+                'format' => 'json',
+                'route' => '/api/v1/me',
+            ],
+        ],
+    ],
+    'example_error' => [
+        'fixture' => 'api.auth.failed',
+        'payload' => [
+            'data' => null,
+            'error' => [
+                'code' => 'E_API_TOKEN_INVALID',
+                'message' => 'Invalid token',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'ok' => false,
+                'error' => [
+                    'key' => 'auth.invalid_token',
+                    'message' => 'Invalid token',
+                ],
+                'route' => '/api/v1/me',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('rbac.forbidden', [
+    'route' => 'admin.modules.index',
+    'methods' => ['GET'],
+    'rbac' => 'admin.modules.manage',
+    'responses' => [
+        '403' => [
+            'error' => 'forbidden',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.modules.index',
+            ],
+        ],
+    ],
+    'example_error' => [
+        'fixture' => 'rbac.forbidden',
+        'payload' => [
+            'data' => null,
+            'error' => [
+                'code' => 'E_RBAC_DENIED',
+                'message' => 'Access denied.',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'ok' => false,
+                'error' => [
+                    'key' => 'error.rbac_denied',
+                    'message' => 'Access denied.',
+                ],
+                'route' => 'admin.modules.index',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('csrf.failed', [
+    'route' => 'admin.settings.save',
+    'methods' => ['POST'],
+    'rbac' => 'admin.settings.manage',
+    'responses' => [
+        '419' => [
+            'error' => 'csrf_mismatch',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.settings.save',
+            ],
+        ],
+    ],
+    'example_error' => [
+        'fixture' => 'csrf.failed',
+        'payload' => [
+            'data' => null,
+            'error' => [
+                'code' => 'E_CSRF_INVALID',
+                'message' => 'Invalid CSRF token.',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'ok' => false,
+                'error' => [
+                    'key' => 'error.csrf_invalid',
+                    'message' => 'Invalid CSRF token.',
+                ],
+                'route' => 'admin.settings.save',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('rate_limited', [
+    'route' => '/api/v1/pages',
+    'methods' => ['GET'],
+    'rbac' => 'public',
+    'responses' => [
+        '429' => [
+            'error' => 'rate_limited',
+            'meta' => [
+                'format' => 'json',
+                'route' => '/api/v1/pages',
+            ],
+        ],
+    ],
+    'example_error' => [
+        'fixture' => 'rate_limited',
+        'payload' => [
+            'data' => null,
+            'error' => [
+                'code' => 'E_RATE_LIMITED',
+                'message' => 'Rate limit exceeded.',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'ok' => false,
+                'error' => [
+                    'key' => 'rate_limit.exceeded',
+                    'message' => 'Rate limit exceeded.',
+                ],
+                'route' => '/api/v1/pages',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('api.validation_failed', [
+    'route' => '/api/v1/pages',
+    'methods' => ['GET'],
+    'rbac' => 'public',
+    'responses' => [
+        '422' => [
+            'error' => 'validation_failed',
+            'meta' => [
+                'format' => 'json',
+                'route' => '/api/v1/pages',
+            ],
+        ],
+    ],
+    'example_error' => [
+        'fixture' => 'api.validation_failed',
+        'payload' => [
+            'data' => null,
+            'error' => [
+                'code' => 'E_VALIDATION_FAILED',
+                'message' => 'Validation failed.',
+                'details' => [
+                    'fields' => [
+                        'q' => ['invalid'],
+                    ],
+                ],
+            ],
+            'meta' => [
+                'format' => 'json',
+                'ok' => false,
+                'error' => [
+                    'key' => 'error.validation_failed',
+                    'message' => 'Validation failed.',
+                ],
+                'route' => '/api/v1/pages',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('system.read_only', [
+    'route' => 'admin.settings.save',
+    'methods' => ['POST'],
+    'rbac' => 'admin.settings.manage',
+    'responses' => [
+        '503' => [
+            'error' => 'read_only',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.settings.save',
+            ],
+        ],
+    ],
+    'example_error' => [
+        'fixture' => 'system.read_only',
+        'payload' => [
+            'data' => null,
+            'error' => [
+                'code' => 'E_READ_ONLY',
+                'message' => 'Read-only mode: write operations are disabled.',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'ok' => false,
+                'error' => [
+                    'key' => 'system.read_only',
+                    'message' => 'Read-only mode: write operations are disabled.',
+                ],
+                'route' => 'admin.settings.save',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('service_unavailable', [
+    'route' => '/api/v1/me',
+    'methods' => ['GET'],
+    'rbac' => 'api',
+    'responses' => [
+        '503' => [
+            'error' => 'service_unavailable',
+            'meta' => [
+                'format' => 'json',
+                'route' => '/api/v1/me',
+            ],
+        ],
+    ],
+    'example_error' => [
+        'fixture' => 'service_unavailable',
+        'payload' => [
+            'data' => null,
+            'error' => [
+                'code' => 'E_SERVICE_UNAVAILABLE',
+                'message' => 'Service Unavailable.',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'ok' => false,
+                'error' => [
+                    'key' => 'error.service_unavailable',
+                    'message' => 'Service Unavailable.',
+                ],
                 'route' => '/api/v1/me',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
@@ -234,6 +497,7 @@ ContractRegistry::register('admin.settings.save', [
     'example_error' => [
         'fixture' => 'admin.settings.save.validation_failed',
         'payload' => [
+            'data' => null,
             'error' => [
                 'code' => 'E_VALIDATION_FAILED',
                 'message' => 'Validation failed.',
@@ -245,6 +509,11 @@ ContractRegistry::register('admin.settings.save', [
             ],
             'meta' => [
                 'format' => 'json',
+                'ok' => false,
+                'error' => [
+                    'key' => 'error.validation_failed',
+                    'message' => 'Validation failed.',
+                ],
                 'route' => 'admin.settings.save',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',

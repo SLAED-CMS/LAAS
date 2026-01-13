@@ -1,0 +1,1046 @@
+{
+    "app_version": "v3.0.0",
+    "contracts_version": "3.18.0",
+    "items": [
+        {
+            "example_ok": {
+                "fixture": "admin.api_tokens.create",
+                "payload": {
+                    "data": {
+                        "expires_at": "__TIME__",
+                        "name": "CLI",
+                        "scopes": [
+                            "admin.read"
+                        ],
+                        "token_id": "__ID__",
+                        "token_once": "LAAS_ABCDEF123456.S3CR3T",
+                        "token_prefix": "ABCDEF123456"
+                    },
+                    "meta": {
+                        "format": "json",
+                        "request_id": "__REQ__",
+                        "route": "admin.api_tokens.create",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "POST"
+            ],
+            "name": "admin.api_tokens.create",
+            "rbac": "api_tokens.create",
+            "responses": {
+                "201": {
+                    "data": {
+                        "expires_at": "__TIME__",
+                        "name": "string",
+                        "scopes": [
+                            "string"
+                        ],
+                        "token_id": "int",
+                        "token_once": "string",
+                        "token_prefix": "string"
+                    },
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.api_tokens.create"
+                    }
+                },
+                "403": {
+                    "error": "forbidden",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.api_tokens.create"
+                    }
+                },
+                "422": {
+                    "error": "validation_failed",
+                    "fields": "object",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.api_tokens.create"
+                    }
+                }
+            },
+            "route": "/admin/api-tokens",
+            "version": "3.18.0"
+        },
+        {
+            "example_ok": {
+                "fixture": "admin.api_tokens.index",
+                "payload": {
+                    "data": {
+                        "counts": {
+                            "total": 1
+                        },
+                        "items": [
+                            {
+                                "created_at": "__TIME__",
+                                "expires_at": "__TIME__",
+                                "id": "__ID__",
+                                "last_used_at": "__TIME__",
+                                "name": "CLI",
+                                "revoked_at": "__TIME__",
+                                "scopes": [
+                                    "admin.read",
+                                    "admin.write"
+                                ],
+                                "status": "active",
+                                "token_prefix": "ABCDEF123456"
+                            }
+                        ]
+                    },
+                    "meta": {
+                        "format": "json",
+                        "request_id": "__REQ__",
+                        "route": "admin.api_tokens.index",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "admin.api_tokens.index",
+            "rbac": "api_tokens.view",
+            "responses": {
+                "200": {
+                    "data": {
+                        "counts": {
+                            "total": "int"
+                        },
+                        "items": [
+                            {
+                                "created_at": "__TIME__",
+                                "expires_at": "__TIME__",
+                                "id": "int",
+                                "last_used_at": "__TIME__",
+                                "name": "string",
+                                "revoked_at": "__TIME__",
+                                "scopes": [
+                                    "string"
+                                ],
+                                "status": "active|expired|revoked",
+                                "token_prefix": "string"
+                            }
+                        ]
+                    },
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.api_tokens.index"
+                    }
+                },
+                "403": {
+                    "error": "forbidden",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.api_tokens.index"
+                    }
+                }
+            },
+            "route": "/admin/api-tokens",
+            "version": "3.18.0"
+        },
+        {
+            "example_ok": {
+                "fixture": "admin.api_tokens.revoke",
+                "payload": {
+                    "data": {
+                        "revoked": true,
+                        "token_id": "__ID__"
+                    },
+                    "meta": {
+                        "format": "json",
+                        "request_id": "__REQ__",
+                        "route": "admin.api_tokens.revoke",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "POST"
+            ],
+            "name": "admin.api_tokens.revoke",
+            "rbac": "api_tokens.revoke",
+            "responses": {
+                "200": {
+                    "data": {
+                        "revoked": "bool",
+                        "token_id": "int"
+                    },
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.api_tokens.revoke"
+                    }
+                },
+                "403": {
+                    "error": "forbidden",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.api_tokens.revoke"
+                    }
+                },
+                "404": {
+                    "error": "not_found",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.api_tokens.revoke"
+                    }
+                }
+            },
+            "route": "/admin/api-tokens/revoke",
+            "version": "3.18.0"
+        },
+        {
+            "example_ok": {
+                "fixture": "admin.media.index",
+                "payload": {
+                    "data": {
+                        "counts": {
+                            "page": 1,
+                            "total": 1,
+                            "total_pages": 1
+                        },
+                        "items": [
+                            {
+                                "created_at": "__TIME__",
+                                "disk": "local",
+                                "hash": "abc123",
+                                "id": "__ID__",
+                                "mime": "image/jpeg",
+                                "name": "photo.jpg",
+                                "size": 12345
+                            }
+                        ]
+                    },
+                    "meta": {
+                        "format": "json",
+                        "request_id": "__REQ__",
+                        "route": "admin.media.index",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "admin.media.index",
+            "rbac": "media.view",
+            "responses": {
+                "200": {
+                    "data": {
+                        "counts": {
+                            "page": "int",
+                            "total": "int",
+                            "total_pages": "int"
+                        },
+                        "items": [
+                            {
+                                "created_at": "__TIME__",
+                                "disk": "string",
+                                "hash": "string|null",
+                                "id": "int",
+                                "mime": "string",
+                                "name": "string",
+                                "size": "int"
+                            }
+                        ]
+                    },
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.media.index"
+                    }
+                },
+                "403": {
+                    "error": "forbidden",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.media.index"
+                    }
+                }
+            },
+            "route": "/admin/media",
+            "version": "3.18.0"
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "name": "admin.media.upload",
+            "rbac": "media.upload",
+            "responses": {
+                "201": {
+                    "data": {
+                        "deduped": "bool",
+                        "hash": "string",
+                        "id": "int",
+                        "mime": "string",
+                        "size": "int"
+                    },
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.media.upload"
+                    }
+                },
+                "400": {
+                    "error": "invalid_mime",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.media.upload"
+                    }
+                },
+                "403": {
+                    "error": "forbidden",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.media.upload"
+                    }
+                },
+                "413": {
+                    "error": "file_too_large",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.media.upload"
+                    }
+                },
+                "422": {
+                    "error": "validation_failed",
+                    "fields": "object",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.media.upload"
+                    }
+                }
+            },
+            "route": "/admin/media/upload",
+            "version": "3.18.0"
+        },
+        {
+            "example_ok": {
+                "fixture": "admin.modules.index",
+                "payload": {
+                    "data": {
+                        "counts": {
+                            "enabled": 1,
+                            "total": 1
+                        },
+                        "items": [
+                            {
+                                "enabled": true,
+                                "name": "System",
+                                "protected": true,
+                                "type": "core",
+                                "version": "1.0.0"
+                            }
+                        ]
+                    },
+                    "meta": {
+                        "format": "json",
+                        "request_id": "__REQ__",
+                        "route": "admin.modules.index",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "admin.modules.index",
+            "rbac": "admin.modules.manage",
+            "responses": {
+                "200": {
+                    "data": {
+                        "counts": {
+                            "enabled": "int",
+                            "total": "int"
+                        },
+                        "items": [
+                            {
+                                "enabled": "bool",
+                                "name": "string",
+                                "protected": "bool",
+                                "type": "core|module|internal",
+                                "version": "string|null"
+                            }
+                        ]
+                    },
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.modules.index"
+                    }
+                },
+                "403": {
+                    "error": "forbidden",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.modules.index"
+                    }
+                }
+            },
+            "route": "/admin/modules",
+            "version": "3.18.0"
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "name": "admin.modules.toggle",
+            "rbac": "admin.modules.manage",
+            "responses": {
+                "200": {
+                    "data": {
+                        "enabled": "bool",
+                        "name": "string",
+                        "protected": "bool"
+                    },
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.modules.toggle"
+                    }
+                },
+                "400": {
+                    "error": "protected_module",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.modules.toggle"
+                    }
+                }
+            },
+            "route": "/admin/modules/toggle",
+            "version": "3.18.0"
+        },
+        {
+            "methods": [
+                "GET"
+            ],
+            "name": "admin.settings.index",
+            "rbac": "admin.settings.manage",
+            "responses": {
+                "200": {
+                    "data": {
+                        "items": [
+                            {
+                                "key": "string",
+                                "source": "DB|CONFIG",
+                                "type": "string",
+                                "value": "string"
+                            }
+                        ]
+                    },
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.settings.index"
+                    }
+                },
+                "403": {
+                    "error": "forbidden",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.settings.index"
+                    }
+                }
+            },
+            "route": "/admin/settings",
+            "version": "3.18.0"
+        },
+        {
+            "example_error": {
+                "fixture": "admin.settings.save.validation_failed",
+                "payload": {
+                    "data": null,
+                    "error": {
+                        "code": "E_VALIDATION_FAILED",
+                        "details": {
+                            "fields": {
+                                "site_name": [
+                                    "invalid"
+                                ]
+                            }
+                        },
+                        "message": "Validation failed."
+                    },
+                    "meta": {
+                        "error": {
+                            "key": "error.validation_failed",
+                            "message": "Validation failed."
+                        },
+                        "format": "json",
+                        "ok": false,
+                        "request_id": "__REQ__",
+                        "route": "admin.settings.save",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "POST"
+            ],
+            "name": "admin.settings.save",
+            "rbac": "admin.settings.manage",
+            "responses": {
+                "200": {
+                    "data": {
+                        "saved": "bool",
+                        "updated": [
+                            {
+                                "key": "string",
+                                "value": "string"
+                            }
+                        ]
+                    },
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.settings.save"
+                    }
+                },
+                "422": {
+                    "error": "validation_failed",
+                    "fields": "object",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.settings.save"
+                    }
+                }
+            },
+            "route": "/admin/settings",
+            "version": "3.18.0"
+        },
+        {
+            "example_ok": {
+                "fixture": "admin.users.index",
+                "payload": {
+                    "data": {
+                        "items": [
+                            {
+                                "active": true,
+                                "created_at": "__TIME__",
+                                "id": "__ID__",
+                                "roles": [
+                                    "admin"
+                                ],
+                                "username": "admin"
+                            }
+                        ],
+                        "pagination": {
+                            "limit": 50,
+                            "offset": 0,
+                            "total": 1
+                        }
+                    },
+                    "meta": {
+                        "format": "json",
+                        "request_id": "__REQ__",
+                        "route": "admin.users.index",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "admin.users.index",
+            "rbac": "users.manage",
+            "responses": {
+                "200": {
+                    "data": {
+                        "items": [
+                            {
+                                "active": "bool",
+                                "created_at": "__TIME__",
+                                "id": "int",
+                                "roles": [
+                                    "string"
+                                ],
+                                "username": "string"
+                            }
+                        ],
+                        "pagination": {
+                            "limit": "int",
+                            "offset": "int",
+                            "total": "int"
+                        }
+                    },
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.users.index"
+                    }
+                },
+                "403": {
+                    "error": "forbidden",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.users.index"
+                    }
+                }
+            },
+            "route": "/admin/users",
+            "version": "3.18.0"
+        },
+        {
+            "methods": [
+                "POST"
+            ],
+            "name": "admin.users.toggle",
+            "rbac": "users.manage",
+            "responses": {
+                "200": {
+                    "data": {
+                        "active": "bool",
+                        "id": "int"
+                    },
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.users.toggle"
+                    }
+                },
+                "403": {
+                    "error": "forbidden",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.users.toggle"
+                    }
+                },
+                "422": {
+                    "error": "validation_failed",
+                    "fields": "object",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.users.toggle"
+                    }
+                }
+            },
+            "route": "/admin/users/status",
+            "version": "3.18.0"
+        },
+        {
+            "example_error": {
+                "fixture": "api.auth.failed",
+                "payload": {
+                    "data": null,
+                    "error": {
+                        "code": "E_API_TOKEN_INVALID",
+                        "message": "Invalid token"
+                    },
+                    "meta": {
+                        "error": {
+                            "key": "auth.invalid_token",
+                            "message": "Invalid token"
+                        },
+                        "format": "json",
+                        "ok": false,
+                        "request_id": "__REQ__",
+                        "route": "/api/v1/me",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "api.auth.failed",
+            "rbac": "api",
+            "responses": {
+                "401": {
+                    "error": "auth.invalid_token",
+                    "meta": {
+                        "format": "json",
+                        "route": "/api/v1/me"
+                    }
+                }
+            },
+            "route": "/api/v1/me",
+            "version": "3.18.0"
+        },
+        {
+            "example_error": {
+                "fixture": "api.auth.forbidden_scope",
+                "payload": {
+                    "data": null,
+                    "error": {
+                        "code": "E_RBAC_DENIED",
+                        "message": "Insufficient token scope."
+                    },
+                    "meta": {
+                        "error": {
+                            "key": "api.auth.forbidden_scope",
+                            "message": "Insufficient token scope."
+                        },
+                        "format": "json",
+                        "ok": false,
+                        "request_id": "__REQ__",
+                        "route": "/api/v1/me",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "api.auth.forbidden_scope",
+            "rbac": "api",
+            "responses": {
+                "403": {
+                    "error": "api.auth.forbidden_scope",
+                    "meta": {
+                        "format": "json",
+                        "route": "/api/v1/me"
+                    }
+                }
+            },
+            "route": "/api/v1/me",
+            "version": "3.18.0"
+        },
+        {
+            "example_error": {
+                "fixture": "api.validation_failed",
+                "payload": {
+                    "data": null,
+                    "error": {
+                        "code": "E_VALIDATION_FAILED",
+                        "details": {
+                            "fields": {
+                                "q": [
+                                    "invalid"
+                                ]
+                            }
+                        },
+                        "message": "Validation failed."
+                    },
+                    "meta": {
+                        "error": {
+                            "key": "error.validation_failed",
+                            "message": "Validation failed."
+                        },
+                        "format": "json",
+                        "ok": false,
+                        "request_id": "__REQ__",
+                        "route": "/api/v1/pages",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "api.validation_failed",
+            "rbac": "public",
+            "responses": {
+                "422": {
+                    "error": "validation_failed",
+                    "meta": {
+                        "format": "json",
+                        "route": "/api/v1/pages"
+                    }
+                }
+            },
+            "route": "/api/v1/pages",
+            "version": "3.18.0"
+        },
+        {
+            "example_error": {
+                "fixture": "csrf.failed",
+                "payload": {
+                    "data": null,
+                    "error": {
+                        "code": "E_CSRF_INVALID",
+                        "message": "Invalid CSRF token."
+                    },
+                    "meta": {
+                        "error": {
+                            "key": "error.csrf_invalid",
+                            "message": "Invalid CSRF token."
+                        },
+                        "format": "json",
+                        "ok": false,
+                        "request_id": "__REQ__",
+                        "route": "admin.settings.save",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "POST"
+            ],
+            "name": "csrf.failed",
+            "rbac": "admin.settings.manage",
+            "responses": {
+                "419": {
+                    "error": "csrf_mismatch",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.settings.save"
+                    }
+                }
+            },
+            "route": "admin.settings.save",
+            "version": "3.18.0"
+        },
+        {
+            "example_ok": {
+                "fixture": "media.show",
+                "payload": {
+                    "data": {
+                        "hash": "abc123",
+                        "id": "__ID__",
+                        "mime": "image/jpeg",
+                        "mode": "inline",
+                        "signed_url": null,
+                        "size": 12345
+                    },
+                    "meta": {
+                        "format": "json",
+                        "request_id": "__REQ__",
+                        "route": "media.show",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "media.show",
+            "rbac": "media.view",
+            "responses": {
+                "200": {
+                    "data": {
+                        "hash": "string|null",
+                        "id": "int",
+                        "mime": "string",
+                        "mode": "inline|attachment",
+                        "signed_url": "string|null",
+                        "size": "int"
+                    },
+                    "meta": {
+                        "format": "json",
+                        "route": "media.show"
+                    }
+                },
+                "403": {
+                    "error": "forbidden",
+                    "meta": {
+                        "format": "json",
+                        "route": "media.show"
+                    }
+                },
+                "404": {
+                    "error": "not_found",
+                    "meta": {
+                        "format": "json",
+                        "route": "media.show"
+                    }
+                }
+            },
+            "route": "/media/{id}",
+            "version": "3.18.0"
+        },
+        {
+            "example_ok": {
+                "fixture": "pages.show",
+                "payload": {
+                    "data": {
+                        "page": {
+                            "content": "Body",
+                            "id": "__ID__",
+                            "slug": "hello",
+                            "title": "Hello",
+                            "updated_at": "__TIME__"
+                        }
+                    },
+                    "meta": {
+                        "format": "json",
+                        "request_id": "__REQ__",
+                        "route": "pages.show",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "pages.show",
+            "rbac": "public",
+            "responses": {
+                "200": {
+                    "data": {
+                        "page": {
+                            "content": "string",
+                            "id": "int",
+                            "slug": "string",
+                            "title": "string",
+                            "updated_at": "__TIME__"
+                        }
+                    },
+                    "meta": {
+                        "format": "json",
+                        "route": "pages.show"
+                    }
+                },
+                "404": {
+                    "error": "not_found",
+                    "meta": {
+                        "format": "json",
+                        "route": "pages.show"
+                    }
+                }
+            },
+            "route": "/{slug}",
+            "version": "3.18.0"
+        },
+        {
+            "example_error": {
+                "fixture": "rate_limited",
+                "payload": {
+                    "data": null,
+                    "error": {
+                        "code": "E_RATE_LIMITED",
+                        "message": "Rate limit exceeded."
+                    },
+                    "meta": {
+                        "error": {
+                            "key": "rate_limit.exceeded",
+                            "message": "Rate limit exceeded."
+                        },
+                        "format": "json",
+                        "ok": false,
+                        "request_id": "__REQ__",
+                        "route": "/api/v1/pages",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "rate_limited",
+            "rbac": "public",
+            "responses": {
+                "429": {
+                    "error": "rate_limited",
+                    "meta": {
+                        "format": "json",
+                        "route": "/api/v1/pages"
+                    }
+                }
+            },
+            "route": "/api/v1/pages",
+            "version": "3.18.0"
+        },
+        {
+            "example_error": {
+                "fixture": "rbac.forbidden",
+                "payload": {
+                    "data": null,
+                    "error": {
+                        "code": "E_RBAC_DENIED",
+                        "message": "Access denied."
+                    },
+                    "meta": {
+                        "error": {
+                            "key": "error.rbac_denied",
+                            "message": "Access denied."
+                        },
+                        "format": "json",
+                        "ok": false,
+                        "request_id": "__REQ__",
+                        "route": "admin.modules.index",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "rbac.forbidden",
+            "rbac": "admin.modules.manage",
+            "responses": {
+                "403": {
+                    "error": "forbidden",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.modules.index"
+                    }
+                }
+            },
+            "route": "admin.modules.index",
+            "version": "3.18.0"
+        },
+        {
+            "example_error": {
+                "fixture": "service_unavailable",
+                "payload": {
+                    "data": null,
+                    "error": {
+                        "code": "E_SERVICE_UNAVAILABLE",
+                        "message": "Service Unavailable."
+                    },
+                    "meta": {
+                        "error": {
+                            "key": "error.service_unavailable",
+                            "message": "Service Unavailable."
+                        },
+                        "format": "json",
+                        "ok": false,
+                        "request_id": "__REQ__",
+                        "route": "/api/v1/me",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "service_unavailable",
+            "rbac": "api",
+            "responses": {
+                "503": {
+                    "error": "service_unavailable",
+                    "meta": {
+                        "format": "json",
+                        "route": "/api/v1/me"
+                    }
+                }
+            },
+            "route": "/api/v1/me",
+            "version": "3.18.0"
+        },
+        {
+            "example_error": {
+                "fixture": "system.read_only",
+                "payload": {
+                    "data": null,
+                    "error": {
+                        "code": "E_READ_ONLY",
+                        "message": "Read-only mode: write operations are disabled."
+                    },
+                    "meta": {
+                        "error": {
+                            "key": "system.read_only",
+                            "message": "Read-only mode: write operations are disabled."
+                        },
+                        "format": "json",
+                        "ok": false,
+                        "request_id": "__REQ__",
+                        "route": "admin.settings.save",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "POST"
+            ],
+            "name": "system.read_only",
+            "rbac": "admin.settings.manage",
+            "responses": {
+                "503": {
+                    "error": "read_only",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.settings.save"
+                    }
+                }
+            },
+            "route": "admin.settings.save",
+            "version": "3.18.0"
+        }
+    ]
+}

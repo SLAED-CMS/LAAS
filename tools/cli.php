@@ -38,6 +38,7 @@ use Laas\Session\Redis\RedisClient;
 use Laas\I18n\Translator;
 use Laas\Http\Contract\ContractRegistry;
 use Laas\Http\Contract\ContractFixtureNormalizer;
+use Laas\Http\Contract\ContractDump;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
 use Laas\View\Template\TemplateWarmupService;
@@ -1019,12 +1020,31 @@ $commands['config:export'] = function () use ($rootPath, $dbManager, $appConfig,
     return 0;
 };
 
-$commands['contracts:dump'] = function (): int {
-    $payload = [
-        'contracts_version' => ContractRegistry::version(),
-        'items' => ContractRegistry::all(),
-    ];
+$commands['contracts:dump'] = function () use ($appConfig): int {
+    $appVersion = is_string($appConfig['version'] ?? null) ? (string) $appConfig['version'] : '';
+    $payload = ContractDump::build($appVersion);
     echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n";
+    return 0;
+};
+
+$commands['contracts:snapshot:update'] = function () use ($rootPath, $appConfig): int {
+    $dir = $rootPath . '/tests/fixtures/contracts';
+    if (!is_dir($dir)) {
+        mkdir($dir, 0775, true);
+    }
+
+    $appVersion = is_string($appConfig['version'] ?? null) ? (string) $appConfig['version'] : '';
+    $dump = ContractDump::build($appVersion);
+    $normalized = ContractFixtureNormalizer::normalize($dump);
+    $json = json_encode($normalized, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    if ($json === false) {
+        echo "Failed to encode snapshot.\n";
+        return 1;
+    }
+
+    $file = $dir . '/_snapshot.json';
+    file_put_contents($file, $json . "\n");
+    echo "Wrote: {$file}\n";
     return 0;
 };
 
@@ -1072,6 +1092,9 @@ $commands['contracts:fixtures:check'] = function () use ($rootPath): int {
     }
 
     $files = glob($dir . '/*.json') ?: [];
+    $files = array_values(array_filter($files, static function (string $file): bool {
+        return basename($file) !== '_snapshot.json';
+    }));
     if ($files === []) {
         echo "No fixtures found.\n";
         return 1;
@@ -1134,6 +1157,103 @@ $commands['contracts:fixtures:check'] = function () use ($rootPath): int {
 
     if ($errors > 0) {
         return 1;
+    }
+
+    echo "OK\n";
+    return 0;
+};
+
+$commands['contracts:check'] = function () use ($rootPath, $appConfig): int {
+    $errors = 0;
+    $warnings = 0;
+
+    $appVersion = is_string($appConfig['version'] ?? null) ? (string) $appConfig['version'] : '';
+    $dump = ContractDump::build($appVersion);
+    if (($dump['contracts_version'] ?? '') === '') {
+        echo "Missing contracts_version.\n";
+        $errors++;
+    }
+
+    $dir = $rootPath . '/tests/fixtures/contracts';
+    if (!is_dir($dir)) {
+        echo "Fixtures directory not found.\n";
+        return 1;
+    }
+
+    $files = glob($dir . '/*.json') ?: [];
+    $files = array_values(array_filter($files, static function (string $file): bool {
+        return basename($file) !== '_snapshot.json';
+    }));
+    if ($files === []) {
+        echo "No fixtures found.\n";
+        return 1;
+    }
+
+    $contracts = ContractRegistry::all();
+    $names = [];
+    $specByName = [];
+    foreach ($contracts as $spec) {
+        $name = is_string($spec['name'] ?? null) ? $spec['name'] : '';
+        if ($name !== '') {
+            $names[] = $name;
+            $specByName[$name] = $spec;
+        }
+    }
+
+    $fixtures = collectContractFixtures($contracts);
+    $expectedFixtures = [];
+    foreach ($fixtures as $fixture) {
+        $expectedFixtures[$fixture['fixture']] = $fixture;
+    }
+
+    foreach ($files as $file) {
+        $raw = (string) file_get_contents($file);
+        $payload = json_decode($raw, true);
+        if (!is_array($payload)) {
+            echo "Invalid JSON: {$file}\n";
+            $errors++;
+            continue;
+        }
+
+        $fixtureName = basename($file, '.json');
+        $contractName = findContractNameForFixture($fixtureName, $names);
+        if ($contractName === null) {
+            echo "Unknown fixture contract: {$fixtureName}\n";
+            $errors++;
+            continue;
+        }
+
+        if (isset($expectedFixtures[$fixtureName])) {
+            $expected = ContractFixtureNormalizer::normalize($expectedFixtures[$fixtureName]['payload']);
+            if ($payload !== $expected) {
+                echo "Fixture mismatch: {$fixtureName}\n";
+                $errors++;
+            }
+        }
+    }
+
+    foreach ($expectedFixtures as $fixtureName => $fixture) {
+        $spec = $specByName[$fixture['contract']] ?? [];
+        $noFixture = (bool) ($spec['no_fixture'] ?? false);
+        $path = $dir . '/' . $fixtureName . '.json';
+        if (!is_file($path)) {
+            if ($noFixture) {
+                echo "WARN: Missing fixture (no_fixture): {$fixtureName}\n";
+                $warnings++;
+            } else {
+                echo "Missing fixture: {$fixtureName}\n";
+                $errors++;
+            }
+        }
+    }
+
+    if ($errors > 0) {
+        return 1;
+    }
+
+    if ($warnings > 0) {
+        echo "OK (warnings={$warnings})\n";
+        return 0;
     }
 
     echo "OK\n";

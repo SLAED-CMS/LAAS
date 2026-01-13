@@ -27,9 +27,12 @@ final class ContractResponseTest extends TestCase
 
         $this->assertSame(422, $response->getStatus());
         $payload = json_decode($response->getBody(), true);
+        $this->assertNull($payload['data'] ?? null);
         $this->assertSame('E_VALIDATION_FAILED', $payload['error']['code'] ?? null);
         $this->assertSame('json', $payload['meta']['format'] ?? null);
         $this->assertSame('test.save', $payload['meta']['route'] ?? null);
+        $this->assertFalse($payload['meta']['ok'] ?? true);
+        $this->assertSame('error.validation_failed', $payload['meta']['error']['key'] ?? null);
         $this->assertSame(['required'], $payload['error']['details']['fields']['name'] ?? null);
         $this->assertArrayHasKey('request_id', $payload['meta'] ?? []);
         $this->assertArrayHasKey('ts', $payload['meta'] ?? []);

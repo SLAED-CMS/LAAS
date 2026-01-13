@@ -2,17 +2,17 @@
     "data": null,
     "error": {
         "code": "E_RBAC_DENIED",
-        "message": "Insufficient token scope."
+        "message": "Access denied."
     },
     "meta": {
         "error": {
-            "key": "api.auth.forbidden_scope",
-            "message": "Insufficient token scope."
+            "key": "error.rbac_denied",
+            "message": "Access denied."
         },
         "format": "json",
         "ok": false,
         "request_id": "__REQ__",
-        "route": "/api/v1/me",
+        "route": "admin.modules.index",
         "ts": "__TIME__"
     }
 }
