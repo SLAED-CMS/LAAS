@@ -197,8 +197,8 @@ final class ReleaseChecker
             return $errors;
         }
 
-        $inspect = $this->backupManager->inspect($file);
-        if (!$inspect['ok']) {
+        $verify = $this->backupManager->verify($file);
+        if (!$verify['ok']) {
             $errors[] = 'backup_inspect_failed';
         }
 

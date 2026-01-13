@@ -58,7 +58,10 @@ final class HealthService
         return [
             'ok' => $ok,
             'checks' => $checks,
-            'warnings' => $this->sessionValidator->warnings($this->sessionConfig),
+            'warnings' => array_merge(
+                $this->sessionValidator->warnings($this->sessionConfig),
+                $this->backupWarnings()
+            ),
         ];
     }
 
@@ -136,5 +139,23 @@ final class HealthService
         }
 
         return [];
+    }
+
+    /** @return array<int, string> */
+    private function backupWarnings(): array
+    {
+        $warnings = [];
+
+        $backupsDir = $this->rootPath . '/storage/backups';
+        if (!is_dir($backupsDir) || !is_writable($backupsDir)) {
+            $warnings[] = 'backups dir not writable';
+        }
+
+        $tmpDir = $this->rootPath . '/storage/tmp';
+        if (!is_dir($tmpDir) || !is_writable($tmpDir)) {
+            $warnings[] = 'tmp dir not writable';
+        }
+
+        return $warnings;
     }
 }

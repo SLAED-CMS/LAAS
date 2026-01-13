@@ -89,11 +89,8 @@ final class OpsSafetySecurityTest extends TestCase
         $manager = $this->manager($root, $db, $storage, 'dev');
         $result = $manager->create(['db_driver' => 'pdo']);
 
-        $inspect = $manager->inspect($result['file']);
-        $this->assertTrue($inspect['ok']);
-        $this->assertTrue($inspect['checks']['manifest']);
-        $this->assertTrue($inspect['checks']['db']);
-        $this->assertTrue($inspect['checks']['entries']);
+        $verify = $manager->verify($result['file']);
+        $this->assertTrue($verify['ok']);
     }
 
     public function testRestoreForbiddenInProdWithoutForce(): void

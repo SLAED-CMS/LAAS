@@ -15,11 +15,8 @@ final class BackupManagerTest extends TestCase
         $result = $manager->create(['db_driver' => 'pdo']);
         $this->assertTrue($result['ok']);
 
-        $inspect = $manager->inspect($result['file']);
-        $this->assertTrue($inspect['ok']);
-        $this->assertTrue($inspect['checks']['manifest']);
-        $this->assertTrue($inspect['checks']['db']);
-        $this->assertTrue($inspect['checks']['entries']);
+        $verify = $manager->verify($result['file']);
+        $this->assertTrue($verify['ok']);
     }
 
     public function testRestoreRequiresDoubleConfirm(): void

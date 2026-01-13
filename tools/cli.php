@@ -24,6 +24,7 @@ use Laas\Settings\SettingsProvider;
 use Laas\Theme\ThemeValidator;
 use Laas\Support\Cache\CachePruner;
 use Laas\Support\PreflightRunner;
+use Laas\Ops\Checks\BackupWritableCheck;
 use Laas\Ops\Checks\SessionCheck;
 use Laas\Ops\Checks\SecurityHeadersCheck;
 use Laas\Session\SessionFactory;
@@ -558,23 +559,19 @@ $commands['backup:create'] = function () use ($rootPath, $dbManager, $appConfig,
         $storage = new StorageService($rootPath);
         $manager = new BackupManager($rootPath, $dbManager, $storage, $appConfig, $storageConfig);
         $driver = (string) (getOption($args, 'db-driver') ?? 'auto');
-        $result = $manager->create(['db_driver' => $driver]);
+        $includeDb = parseBoolOption($args, 'include-db', true);
+        $includeMedia = parseBoolOption($args, 'include-media', true);
+        $result = $manager->create([
+            'db_driver' => $driver,
+            'include_db' => $includeDb,
+            'include_media' => $includeMedia,
+        ]);
         if (!$result['ok']) {
             echo "Backup failed.\n";
             return 1;
         }
 
-        $translator = new Translator(
-            $rootPath,
-            (string) ($appConfig['theme'] ?? 'default'),
-            (string) ($appConfig['default_locale'] ?? 'en')
-        );
-        $message = $translator->trans('system.backup.created');
-        echo $message . ': ' . ($result['file'] ?? '') . "\n";
-        $driverKey = ($result['driver'] ?? '') === 'mysqldump'
-            ? 'backup.create.driver_mysqldump'
-            : 'backup.create.driver_pdo';
-        echo $translator->trans($driverKey) . "\n";
+        echo 'Backup created: ' . ($result['file'] ?? '') . "\n";
         return 0;
     } catch (Throwable) {
         echo "Backup failed.\n";
@@ -599,22 +596,29 @@ $commands['backup:restore'] = function () use ($rootPath, $dbManager, $appConfig
         (string) ($appConfig['theme'] ?? 'default'),
         (string) ($appConfig['default_locale'] ?? 'en')
     );
-    $prompt1 = $translator->trans('backup.restore.confirm_1');
-    echo $prompt1 . "\n> ";
-    $input1 = trim((string) fgets(STDIN));
-    $prompt2 = $translator->trans('backup.restore.confirm_2');
-    echo $prompt2 . "\n> ";
-    $input2 = trim((string) fgets(STDIN));
-    if ($input1 !== 'RESTORE' || $input2 !== basename($file)) {
-        echo "Aborted.\n";
-        return 1;
+
+    $dryRun = parseBoolOption($args, 'dry-run', false);
+    $force = parseBoolOption($args, 'force', false);
+    $input1 = '';
+    $input2 = '';
+    if (!$dryRun) {
+        $prompt1 = $translator->trans('backup.restore.confirm_1');
+        echo $prompt1 . "\n> ";
+        $input1 = trim((string) fgets(STDIN));
+        $prompt2 = $translator->trans('backup.restore.confirm_2');
+        echo $prompt2 . "\n> ";
+        $input2 = trim((string) fgets(STDIN));
+        if ($input1 !== 'RESTORE' || $input2 !== basename($file)) {
+            echo "Aborted.\n";
+            return 1;
+        }
     }
 
     $storage = new StorageService($rootPath);
     $manager = new BackupManager($rootPath, $dbManager, $storage, $appConfig, $storageConfig);
     $result = $manager->restore($file, [
-        'force' => hasFlag($args, 'force'),
-        'dry_run' => hasFlag($args, 'dry-run'),
+        'force' => $force,
+        'dry_run' => $dryRun,
         'confirm1' => $input1,
         'confirm2' => $input2,
     ]);
@@ -630,7 +634,15 @@ $commands['backup:restore'] = function () use ($rootPath, $dbManager, $appConfig
         return 1;
     }
 
-    if (hasFlag($args, 'dry-run')) {
+    if ($dryRun) {
+        echo "Plan:\n";
+        $plan = $result['plan'] ?? [];
+        echo '- DB import: ' . (!empty($plan['db']) ? 'yes' : 'no') . "\n";
+        echo '- Media restore: ' . (!empty($plan['media']) ? 'yes' : 'no') . "\n";
+        $targets = is_array($plan['targets'] ?? null) ? $plan['targets'] : [];
+        echo "- Target paths:\n";
+        echo '  - db: ' . (string) ($targets['db'] ?? '-') . "\n";
+        echo '  - media: ' . (string) ($targets['media'] ?? '-') . "\n";
         echo $translator->trans('backup.restore.dry_run_ok') . "\n";
         return 0;
     }
@@ -663,7 +675,7 @@ $commands['backup:inspect'] = function () use ($rootPath, $dbManager, $appConfig
 
     $meta = $result['metadata'] ?? [];
     $checks = $result['checks'] ?? [];
-    $top = $result['top'] ?? [];
+    $manifest = $result['manifest'] ?? [];
 
     echo $translator->trans('backup.inspect.ok') . "\n";
     foreach ($meta as $key => $value) {
@@ -672,9 +684,48 @@ $commands['backup:inspect'] = function () use ($rootPath, $dbManager, $appConfig
     foreach ($checks as $key => $value) {
         echo 'check.' . $key . ': ' . ($value ? 'ok' : 'fail') . "\n";
     }
-    foreach ($top as $key => $value) {
-        echo 'size.' . $key . ': ' . $value . "\n";
+    $files = $manifest['files'] ?? null;
+    if (is_array($files)) {
+        echo 'files.count: ' . count($files) . "\n";
     }
+    return 0;
+};
+
+$commands['backup:verify'] = function () use ($rootPath, $dbManager, $storageConfig, $appConfig, $args): int {
+    $file = $args[0] ?? '';
+    if ($file === '') {
+        echo "Usage: backup:verify <file>\n";
+        return 1;
+    }
+
+    $storage = new StorageService($rootPath);
+    $manager = new BackupManager($rootPath, $dbManager, $storage, $appConfig, $storageConfig);
+    $result = $manager->verify($file);
+    if (!$result['ok']) {
+        echo "Verify failed.\n";
+        $errors = $result['errors'] ?? [];
+        if (is_array($errors) && $errors !== []) {
+            foreach ($errors as $error) {
+                echo '- ' . (string) $error . "\n";
+            }
+        }
+        return 2;
+    }
+
+    echo "OK\n";
+    return 0;
+};
+
+$commands['backup:prune'] = function () use ($rootPath, $dbManager, $storageConfig, $appConfig, $args): int {
+    $keep = (int) (getOption($args, 'keep') ?? 10);
+    if ($keep < 0) {
+        $keep = 10;
+    }
+
+    $storage = new StorageService($rootPath);
+    $manager = new BackupManager($rootPath, $dbManager, $storage, $appConfig, $storageConfig);
+    $result = $manager->prune($keep);
+    echo "Pruned: " . (int) ($result['deleted'] ?? 0) . "\n";
     return 0;
 };
 
@@ -1054,6 +1105,7 @@ $commands['doctor'] = function () use (&$commands, $rootPath, $appConfig, $stora
     $runner = new PreflightRunner();
     $dbConfigured = dbEnvConfigured();
     $sessionCheck = new SessionCheck($securityConfig['session'] ?? [], $rootPath);
+    $backupCheck = new BackupWritableCheck($rootPath);
     $steps = [
         [
             'label' => 'policy:check',
@@ -1084,6 +1136,15 @@ $commands['doctor'] = function () use (&$commands, $rootPath, $appConfig, $stora
             'run' => static function () use ($securityConfig): int {
                 $check = new SecurityHeadersCheck($securityConfig, null);
                 $result = $check->run();
+                echo $result['message'] . "\n";
+                return $result['code'];
+            },
+        ],
+        [
+            'label' => 'backup_writable',
+            'enabled' => true,
+            'run' => static function () use ($backupCheck): int {
+                $result = $backupCheck->run();
                 echo $result['message'] . "\n";
                 return $result['code'];
             },
@@ -1179,6 +1240,7 @@ $commands['preflight'] = function () use (&$commands, $args, $rootPath, $securit
 
     $runner = new PreflightRunner();
     $sessionCheck = new SessionCheck($securityConfig['session'] ?? [], $rootPath);
+    $backupCheck = new BackupWritableCheck($rootPath);
     $steps = [
         [
             'label' => 'policy:check',
@@ -1219,6 +1281,15 @@ $commands['preflight'] = function () use (&$commands, $args, $rootPath, $securit
             'run' => static function () use ($securityConfig): int {
                 $check = new SecurityHeadersCheck($securityConfig, null);
                 $result = $check->run();
+                echo $result['message'] . "\n";
+                return $result['code'];
+            },
+        ],
+        [
+            'label' => 'backup_writable',
+            'enabled' => true,
+            'run' => static function () use ($backupCheck): int {
+                $result = $backupCheck->run();
                 echo $result['message'] . "\n";
                 return $result['code'];
             },
@@ -1335,6 +1406,17 @@ function getOption(array $args, string $name): ?string
 function hasFlag(array $args, string $name): bool
 {
     return in_array('--' . $name, $args, true);
+}
+
+function parseBoolOption(array $args, string $name, bool $default): bool
+{
+    $value = getOption($args, $name);
+    if ($value === null) {
+        return hasFlag($args, $name) ? true : $default;
+    }
+
+    $parsed = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    return $parsed ?? $default;
 }
 
 function envValue(string $key): string

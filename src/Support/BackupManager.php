@@ -4,12 +4,15 @@ declare(strict_types=1);
 namespace Laas\Support;
 
 use DateTimeImmutable;
+use DateTimeZone;
 use Laas\Database\DatabaseManager;
 use Laas\Modules\Media\Service\MediaThumbnailService;
 use Laas\Modules\Media\Service\StorageService;
+use Phar;
+use PharData;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-use ZipArchive;
+use Throwable;
 
 class BackupManager
 {
@@ -39,191 +42,243 @@ class BackupManager
     /** @return array{ok: bool, file?: string, error?: string, driver?: string} */
     public function create(array $options = []): array
     {
+        $tempFiles = [];
+        $tmpTar = '';
+        $tmpGz = '';
+        $tmpDir = '';
+
         try {
             $backupDir = $this->backupsDir();
             if (!is_dir($backupDir) && !mkdir($backupDir, 0775, true) && !is_dir($backupDir)) {
                 throw new RuntimeException('backup_dir_failed');
             }
 
-            $timestamp = (new DateTimeImmutable('now'))->format('Y-m-d_His');
-            $label = (string) ($options['label'] ?? 'backup');
-            $file = $backupDir . '/' . $label . '_' . $timestamp . '.zip';
+            $timestamp = (new DateTimeImmutable('now', new DateTimeZone('UTC')))->format('Ymd_His');
+            $file = $backupDir . '/laas_backup_' . $timestamp . '_v2.tar.gz';
 
-            $dbDriver = $this->selectDbDriver((string) ($options['db_driver'] ?? 'auto'));
-            $dump = $this->dumpDatabase($dbDriver);
+            $includeDb = array_key_exists('include_db', $options) ? (bool) $options['include_db'] : true;
+            $includeMedia = array_key_exists('include_media', $options) ? (bool) $options['include_media'] : true;
 
-            $zip = new ZipArchive();
-            if ($zip->open($file, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-                throw new RuntimeException('zip_open_failed');
+            $tmpDir = $this->tempDir('backup');
+            if ($tmpDir === '') {
+                throw new RuntimeException('backup_temp_failed');
             }
 
-            $manifest = [];
-            $dbEntry = 'db/dump.sql';
-            $zip->addFile($dump['file'], $dbEntry);
-            $manifest[] = [
-                'path' => $dbEntry,
-                'sha256' => hash_file('sha256', $dump['file']) ?: '',
-            ];
+            $files = [];
+            $dbDriverUsed = null;
 
-            $tempFiles = [];
-            foreach ($this->storageFiles() as $entry => $sourcePath) {
-                $zip->addFile($sourcePath, $entry);
-                $manifest[] = [
-                    'path' => $entry,
-                    'sha256' => hash_file('sha256', $sourcePath) ?: '',
-                ];
-                if ($this->isTempPath($sourcePath)) {
-                    $tempFiles[] = $sourcePath;
+            if ($includeDb) {
+                $dbDriver = $this->selectDbDriver((string) ($options['db_driver'] ?? 'auto'));
+                $dump = $this->dumpDatabase($dbDriver);
+                $dbGz = $tmpDir . '/db.sql.gz';
+                if (!$this->gzipFile($dump['file'], $dbGz)) {
+                    throw new RuntimeException('db_gzip_failed');
+                }
+                @unlink($dump['file']);
+                $files['db.sql.gz'] = $dbGz;
+                $tempFiles[] = $dbGz;
+                $dbDriverUsed = $dump['driver'];
+            }
+
+            if ($includeMedia) {
+                foreach ($this->mediaFiles() as $entry => $sourcePath) {
+                    $files[$entry] = $sourcePath;
+                    if ($this->isTempPath($sourcePath)) {
+                        $tempFiles[] = $sourcePath;
+                    }
                 }
             }
-
-            usort($manifest, static fn (array $a, array $b): int => strcmp($a['path'], $b['path']));
-            $manifestJson = json_encode($manifest, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-            if ($manifestJson === false) {
-                throw new RuntimeException('manifest_encode_failed');
-            }
-            $zip->addFromString('manifest.json', $manifestJson);
-
-            $metadata = [
-                'version' => (string) ($this->appConfig['version'] ?? 'v0.0.0'),
-                'timestamp' => (new DateTimeImmutable('now'))->format(DateTimeImmutable::ATOM),
-                'app_env' => (string) ($this->appConfig['env'] ?? 'dev'),
-                'storage_disk' => $this->storageDisk(),
-                'db_driver_used' => $dump['driver'],
-                'checksum_db' => hash_file('sha256', $dump['file']) ?: '',
-                'checksum_manifest' => hash('sha256', $manifestJson),
-            ];
-
+            $metadata = $this->buildMetadata($includeDb, $includeMedia, $dbDriverUsed);
             $metadataJson = json_encode($metadata, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             if ($metadataJson === false) {
                 throw new RuntimeException('metadata_encode_failed');
             }
-            $zip->addFromString('metadata.json', $metadataJson);
-            $zip->close();
+            $metadataPath = $tmpDir . '/metadata.json';
+            file_put_contents($metadataPath, $metadataJson);
+            $files['metadata.json'] = $metadataPath;
+            $tempFiles[] = $metadataPath;
 
-            @unlink($dump['file']);
-            foreach ($tempFiles as $temp) {
-                if (is_file($temp)) {
-                    @unlink($temp);
-                }
+            $manifest = $this->buildManifest($files);
+            $manifestJson = json_encode($manifest, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            if ($manifestJson === false) {
+                throw new RuntimeException('manifest_encode_failed');
+            }
+            $manifestPath = $tmpDir . '/manifest.json';
+            file_put_contents($manifestPath, $manifestJson);
+            $tempFiles[] = $manifestPath;
+
+            $tmpBase = $backupDir . '/.backup_' . bin2hex(random_bytes(6));
+            $tmpTar = $tmpBase . '.tar';
+            $tmpGz = $tmpBase . '.tar.gz';
+
+            $tar = new PharData($tmpTar);
+            foreach ($files as $path => $source) {
+                $tar->addFile($source, $path);
+            }
+            $tar->addFile($manifestPath, 'manifest.json');
+            $tar->compress(Phar::GZ);
+
+            if (is_file($tmpTar)) {
+                @unlink($tmpTar);
+            }
+
+            if (!is_file($tmpGz)) {
+                throw new RuntimeException('backup_compress_failed');
+            }
+
+            if (!rename($tmpGz, $file)) {
+                throw new RuntimeException('backup_rename_failed');
             }
 
             return [
                 'ok' => true,
                 'file' => $file,
-                'driver' => $dump['driver'],
+                'driver' => $dbDriverUsed ?? 'pdo',
             ];
         } catch (Throwable $e) {
             $this->logError('backup:create', (string) $e->getMessage(), ['exception' => get_class($e)]);
             return ['ok' => false, 'error' => 'backup_failed'];
+        } finally {
+            foreach ($tempFiles as $temp) {
+                if (is_file($temp)) {
+                    @unlink($temp);
+                }
+            }
+            if ($tmpDir !== '' && is_dir($tmpDir)) {
+                $this->removeDir($tmpDir);
+            }
+            if ($tmpTar !== '' && is_file($tmpTar)) {
+                @unlink($tmpTar);
+            }
+            if ($tmpGz !== '' && is_file($tmpGz)) {
+                @unlink($tmpGz);
+            }
         }
     }
-
-    /** @return array{ok: bool, metadata?: array, checks?: array, errors?: array, top?: array} */
-    public function inspect(string $file): array
+    /** @return array{ok: bool, metadata?: array, manifest?: array, errors?: array} */
+    public function verify(string $file): array
     {
         try {
             if (!is_file($file)) {
                 return ['ok' => false, 'errors' => ['file_missing']];
             }
 
-            $zip = new ZipArchive();
-            if ($zip->open($file) !== true) {
-                return ['ok' => false, 'errors' => ['zip_open_failed']];
+            try {
+                $archive = new PharData($file);
+            } catch (Throwable) {
+                return ['ok' => false, 'errors' => ['archive_open_failed']];
             }
 
-            $metadataRaw = $zip->getFromName('metadata.json');
-            $manifestRaw = $zip->getFromName('manifest.json');
-            if ($metadataRaw === false || $manifestRaw === false) {
-                $zip->close();
+            if (!$archive->offsetExists('metadata.json') || !$archive->offsetExists('manifest.json')) {
                 return ['ok' => false, 'errors' => ['metadata_missing']];
             }
 
+            $metadataRaw = $archive['metadata.json']->getContent();
+            $manifestRaw = $archive['manifest.json']->getContent();
             $metadata = json_decode((string) $metadataRaw, true);
             $manifest = json_decode((string) $manifestRaw, true);
             if (!is_array($metadata) || !is_array($manifest)) {
-                $zip->close();
                 return ['ok' => false, 'errors' => ['metadata_invalid']];
             }
 
             $errors = [];
-            $checks = [
-                'manifest' => hash('sha256', (string) $manifestRaw) === (string) ($metadata['checksum_manifest'] ?? ''),
-                'db' => false,
-                'entries' => true,
-            ];
+            $format = (string) ($metadata['format'] ?? '');
+            if ($format !== 'laas-backup-v2') {
+                $errors[] = 'format_invalid';
+            }
 
-            foreach ($manifest as $entry) {
+            $files = $manifest['files'] ?? null;
+            if (!is_array($files)) {
+                $errors[] = 'manifest_invalid';
+                return ['ok' => false, 'errors' => $errors];
+            }
+
+            $paths = [];
+            foreach ($files as $entry) {
+                if (!is_array($entry)) {
+                    $errors[] = 'manifest_entry_invalid';
+                    continue;
+                }
+
                 $path = (string) ($entry['path'] ?? '');
                 $expected = (string) ($entry['sha256'] ?? '');
-                if ($path === '' || $expected === '') {
-                    $checks['entries'] = false;
+                $size = $entry['size'] ?? null;
+
+                if ($path === '' || $expected === '' || str_contains($path, '..')) {
+                    $errors[] = 'manifest_entry_invalid';
                     continue;
                 }
-                $content = $zip->getFromName($path);
-                if ($content === false) {
-                    $checks['entries'] = false;
+
+                $paths[$path] = true;
+
+                if (!$archive->offsetExists($path)) {
+                    $errors[] = 'entry_missing';
                     continue;
                 }
-                $hash = hash('sha256', (string) $content);
-                if (!hash_equals($expected, $hash)) {
-                    $checks['entries'] = false;
+
+                $actualSize = $archive[$path]->getSize();
+                if ($size !== null && (int) $size !== (int) $actualSize) {
+                    $errors[] = 'entry_size_mismatch';
                 }
-                if ($path === 'db/dump.sql') {
-                    $checks['db'] = hash_equals($expected, (string) ($metadata['checksum_db'] ?? ''));
+
+                $hash = $this->hashArchiveEntry($file, $path);
+                if ($hash === '' || !hash_equals($expected, $hash)) {
+                    $errors[] = 'entry_hash_mismatch';
                 }
             }
 
-            if (!$checks['manifest']) {
-                $errors[] = 'manifest_checksum';
-            }
-            if (!$checks['db']) {
-                $errors[] = 'db_checksum';
-            }
-            if (!$checks['entries']) {
-                $errors[] = 'entries_checksum';
+            $includes = $metadata['includes'] ?? [];
+            if (is_array($includes)) {
+                if (!empty($includes['db']) && !isset($paths['db.sql.gz'])) {
+                    $errors[] = 'db_missing';
+                }
             }
 
-            $top = [];
-            for ($i = 0; $i < $zip->numFiles; $i++) {
-                $stat = $zip->statIndex($i);
-                if (!is_array($stat)) {
-                    continue;
+            $archiveSha = (string) ($manifest['archive_sha256'] ?? '');
+            if ($archiveSha !== '') {
+                $actual = hash_file('sha256', $file) ?: '';
+                if (!hash_equals($archiveSha, $actual)) {
+                    $errors[] = 'archive_hash_mismatch';
                 }
-                $name = (string) ($stat['name'] ?? '');
-                if ($name === '') {
-                    continue;
-                }
-                $parts = explode('/', $name);
-                $topKey = $parts[0] ?? '';
-                if ($topKey === '') {
-                    continue;
-                }
-                $size = (int) ($stat['size'] ?? 0);
-                $top[$topKey] = ($top[$topKey] ?? 0) + $size;
             }
-            ksort($top);
-            $zip->close();
 
             return [
                 'ok' => $errors === [],
                 'metadata' => $metadata,
-                'checks' => $checks,
+                'manifest' => $manifest,
                 'errors' => $errors,
-                'top' => $top,
             ];
         } catch (Throwable $e) {
-            $this->logError('backup:inspect', (string) $e->getMessage(), ['exception' => get_class($e)]);
-            return ['ok' => false, 'errors' => ['inspect_failed']];
+            $this->logError('backup:verify', (string) $e->getMessage(), ['exception' => get_class($e)]);
+            return ['ok' => false, 'errors' => ['verify_failed']];
         }
     }
 
-    /** @return array{ok: bool, error?: string} */
+    /** @return array{ok: bool, metadata?: array, manifest?: array, errors?: array, checks?: array} */
+    public function inspect(string $file): array
+    {
+        $result = $this->verify($file);
+        $checks = [
+            'verify' => $result['ok'] ?? false,
+        ];
+
+        return [
+            'ok' => $result['ok'] ?? false,
+            'metadata' => $result['metadata'] ?? [],
+            'manifest' => $result['manifest'] ?? [],
+            'errors' => $result['errors'] ?? [],
+            'checks' => $checks,
+        ];
+    }
+
+    /** @return array{ok: bool, error?: string, plan?: array} */
     public function restore(string $file, array $options = []): array
     {
+        $dryRun = (bool) ($options['dry_run'] ?? false);
         $confirm1 = (string) ($options['confirm1'] ?? '');
         $confirm2 = (string) ($options['confirm2'] ?? '');
-        $skipConfirm = (bool) ($options['skip_confirm'] ?? false);
+        $skipConfirm = (bool) ($options['skip_confirm'] ?? false) || $dryRun;
+
         if (!$skipConfirm && ($confirm1 !== 'RESTORE' || $confirm2 !== basename($file))) {
             return ['ok' => false, 'error' => 'confirm_failed'];
         }
@@ -233,27 +288,32 @@ class BackupManager
             return ['ok' => false, 'error' => 'forbidden_in_prod'];
         }
 
-        $lock = $this->acquireRestoreLock();
-        if ($lock === null) {
-            return ['ok' => false, 'error' => 'locked'];
+        $lock = null;
+        if (!$dryRun) {
+            $lock = $this->acquireRestoreLock();
+            if ($lock === null) {
+                return ['ok' => false, 'error' => 'locked'];
+            }
         }
 
         try {
-            $inspect = $this->inspect($file);
-            if (!$inspect['ok']) {
-                return ['ok' => false, 'error' => 'inspect_failed'];
+            $verify = $this->verify($file);
+            if (!$verify['ok']) {
+                return ['ok' => false, 'error' => 'verify_failed'];
             }
 
-            $metadata = $inspect['metadata'] ?? [];
-            if (!$this->isCompatibleVersion((string) ($metadata['version'] ?? ''))) {
+            $metadata = $verify['metadata'] ?? [];
+            $version = (string) ($metadata['laas_version'] ?? '');
+            if (!$force && !$this->isCompatibleVersion($version)) {
                 return ['ok' => false, 'error' => 'incompatible_version'];
             }
 
-            if ((bool) ($options['dry_run'] ?? false)) {
-                return ['ok' => true];
+            $plan = $this->buildRestorePlan($metadata, $verify['manifest'] ?? []);
+            if ($dryRun) {
+                return ['ok' => true, 'plan' => $plan];
             }
 
-            $safety = $this->create(['db_driver' => 'pdo', 'label' => 'safety']);
+            $safety = $this->create(['db_driver' => 'pdo', 'include_db' => true, 'include_media' => false]);
             if (!$safety['ok']) {
                 return ['ok' => false, 'error' => 'safety_backup_failed'];
             }
@@ -263,77 +323,117 @@ class BackupManager
                 return $result;
             }
 
-            $safetyInspect = $this->inspect($safety['file']);
+            $safetyVerify = $this->verify($safety['file']);
             $this->restoreInternal(
                 $safety['file'],
-                $safetyInspect['metadata'] ?? [],
+                $safetyVerify['metadata'] ?? [],
                 ['skip_confirm' => true, 'force' => true],
                 true
             );
             return $result;
         } finally {
-            $this->releaseLock($lock);
+            if ($lock !== null) {
+                $this->releaseLock($lock);
+            }
         }
     }
 
+    /** @return array{deleted: int} */
+    public function prune(int $keep): array
+    {
+        $keep = max(0, $keep);
+        $dir = $this->backupsDir();
+        if (!is_dir($dir)) {
+            return ['deleted' => 0];
+        }
+
+        $files = glob($dir . '/laas_backup_*_v2.tar.gz') ?: [];
+        if ($files === []) {
+            return ['deleted' => 0];
+        }
+
+        rsort($files, SORT_STRING);
+        $deleted = 0;
+        $remove = array_slice($files, $keep);
+        foreach ($remove as $file) {
+            if (is_file($file) && preg_match('/laas_backup_\d{8}_\d{6}_v2\.tar\.gz$/', basename($file))) {
+                @unlink($file);
+                $deleted++;
+            }
+        }
+
+        return ['deleted' => $deleted];
+    }
     /** @return array{ok: bool, error?: string} */
     protected function restoreInternal(string $file, array $metadata, array $options, bool $recovery): array
     {
-        $zip = new ZipArchive();
-        if ($zip->open($file) !== true) {
-            return ['ok' => false, 'error' => 'zip_open_failed'];
+        try {
+            $archive = new PharData($file);
+        } catch (Throwable) {
+            return ['ok' => false, 'error' => 'archive_open_failed'];
         }
 
-        $sql = $zip->getFromName('db/dump.sql');
-        if ($sql === false) {
-            $zip->close();
-            return ['ok' => false, 'error' => 'db_dump_missing'];
+        $includes = $metadata['includes'] ?? [];
+        $includeDb = is_array($includes) ? !empty($includes['db']) : $archive->offsetExists('db.sql.gz');
+        $includeMedia = is_array($includes) ? !empty($includes['media']) : $this->archiveHasMedia($file);
+
+        if ($includeDb) {
+            if (!$archive->offsetExists('db.sql.gz')) {
+                return ['ok' => false, 'error' => 'db_dump_missing'];
+            }
+
+            $sqlGz = $archive['db.sql.gz']->getContent();
+            $sql = $sqlGz !== '' ? @gzdecode((string) $sqlGz) : false;
+            if ($sql === false) {
+                return ['ok' => false, 'error' => 'db_dump_invalid'];
+            }
+
+            if (!$this->restoreDatabaseFromSql((string) $sql)) {
+                return ['ok' => false, 'error' => 'db_restore_failed'];
+            }
         }
 
-        if (!$this->restoreDatabaseFromSql((string) $sql)) {
-            $zip->close();
-            return ['ok' => false, 'error' => 'db_restore_failed'];
-        }
-
-        $disk = (string) ($metadata['storage_disk'] ?? $this->storageDisk());
-        $storageEntries = $this->storageEntriesFromZip($zip, $disk);
-        $result = $this->restoreStorageFromZip($zip, $disk, $storageEntries);
-        $zip->close();
-
-        if (!$result['ok']) {
-            return $result;
+        if ($includeMedia) {
+            $disk = $this->restoreDisk($metadata);
+            $entries = $this->mediaEntriesFromArchive($file);
+            $result = $this->restoreMediaFromArchive($file, $disk, $entries);
+            if (!$result['ok']) {
+                return $result;
+            }
         }
 
         return ['ok' => true];
     }
 
     /** @return array{ok: bool, error?: string} */
-    protected function restoreStorageFromZip(ZipArchive $zip, string $disk, array $entries): array
+    protected function restoreMediaFromArchive(string $file, string $disk, array $entries): array
     {
+        if ($entries === []) {
+            return ['ok' => true];
+        }
+
         $temp = $this->tempDir('restore');
         if ($temp === '') {
             return ['ok' => false, 'error' => 'restore_temp_failed'];
         }
 
-        $diskRoot = $temp . '/storage/' . $disk;
         foreach ($entries as $entry) {
-            $content = $zip->getFromName($entry);
-            if ($content === false) {
-                $this->removeDir($temp);
-                return ['ok' => false, 'error' => 'zip_entry_missing'];
-            }
-
-            $target = $diskRoot . '/' . $entry;
+            $source = $this->archivePath($file, $entry);
+            $target = $temp . '/' . $entry;
             $dir = dirname($target);
             if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
                 $this->removeDir($temp);
                 return ['ok' => false, 'error' => 'restore_storage_failed'];
             }
-            file_put_contents($target, $content);
+
+            if (!copy($source, $target)) {
+                $this->removeDir($temp);
+                return ['ok' => false, 'error' => 'restore_storage_failed'];
+            }
         }
 
         if ($disk === 'local') {
-            $source = $diskRoot . '/uploads';
+            $source = $temp . '/media/uploads';
             $target = $this->rootPath . '/storage/uploads';
             $backup = $this->rootPath . '/storage/uploads.bak_' . bin2hex(random_bytes(4));
 
@@ -362,8 +462,9 @@ class BackupManager
 
         $stage = 'restore_tmp/' . bin2hex(random_bytes(8));
         foreach ($entries as $entry) {
-            $local = $diskRoot . '/' . $entry;
-            $stagePath = $stage . '/' . $entry;
+            $relative = $this->stripMediaPrefix($entry);
+            $local = $temp . '/' . $entry;
+            $stagePath = $stage . '/' . $relative;
             if (!$this->storage->put($stagePath, $local)) {
                 $this->removeDir($temp);
                 $this->cleanupStage($stage, $entries);
@@ -372,8 +473,9 @@ class BackupManager
         }
 
         foreach ($entries as $entry) {
-            $local = $diskRoot . '/' . $entry;
-            if (!$this->storage->put($entry, $local)) {
+            $relative = $this->stripMediaPrefix($entry);
+            $local = $temp . '/' . $entry;
+            if (!$this->storage->put($relative, $local)) {
                 $this->removeDir($temp);
                 $this->cleanupStage($stage, $entries);
                 return ['ok' => false, 'error' => 'restore_storage_failed'];
@@ -388,35 +490,260 @@ class BackupManager
     private function cleanupStage(string $stage, array $entries): void
     {
         foreach ($entries as $entry) {
-            $this->storage->delete($stage . '/' . $entry);
+            $relative = $this->stripMediaPrefix($entry);
+            $this->storage->delete($stage . '/' . $relative);
         }
     }
 
     /** @return string[] */
-    private function storageEntriesFromZip(ZipArchive $zip, string $disk): array
+    private function mediaEntriesFromArchive(string $file): array
     {
         $entries = [];
-        $prefix = 'storage/' . $disk . '/';
-        for ($i = 0; $i < $zip->numFiles; $i++) {
-            $stat = $zip->statIndex($i);
-            if (!is_array($stat)) {
+        $base = $this->archiveBase($file) . '/media';
+        if (!is_dir($base)) {
+            return [];
+        }
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($base, \FilesystemIterator::SKIP_DOTS)
+        );
+
+        foreach ($iterator as $item) {
+            if (!$item->isFile()) {
                 continue;
             }
-            $name = (string) ($stat['name'] ?? '');
-            if (!str_starts_with($name, $prefix)) {
-                continue;
-            }
-            $relative = substr($name, strlen($prefix));
+
+            $path = str_replace('\\', '/', $item->getPathname());
+            $prefix = $this->archiveBase($file) . '/';
+            $relative = str_starts_with($path, $prefix) ? substr($path, strlen($prefix)) : '';
             if ($relative === '' || str_contains($relative, '..')) {
-                continue;
-            }
-            if (str_ends_with($relative, '/')) {
                 continue;
             }
             $entries[] = $relative;
         }
+
         sort($entries);
         return $entries;
+    }
+
+    private function archiveHasMedia(string $file): bool
+    {
+        $base = $this->archiveBase($file) . '/media';
+        return is_dir($base);
+    }
+
+    private function stripMediaPrefix(string $entry): string
+    {
+        if (str_starts_with($entry, 'media/')) {
+            return substr($entry, strlen('media/'));
+        }
+        return $entry;
+    }
+    private function buildRestorePlan(array $metadata, array $manifest): array
+    {
+        $includes = $metadata['includes'] ?? [];
+        $files = $manifest['files'] ?? [];
+        $hasDb = false;
+        $hasMedia = false;
+
+        if (is_array($files)) {
+            foreach ($files as $entry) {
+                if (!is_array($entry)) {
+                    continue;
+                }
+                $path = (string) ($entry['path'] ?? '');
+                if ($path === 'db.sql.gz') {
+                    $hasDb = true;
+                }
+                if (str_starts_with($path, 'media/')) {
+                    $hasMedia = true;
+                }
+            }
+        }
+
+        $includeDb = is_array($includes) ? !empty($includes['db']) : $hasDb;
+        $includeMedia = is_array($includes) ? !empty($includes['media']) : $hasMedia;
+
+        $dbName = $this->databaseName();
+        $dbTarget = $this->databaseDriver() . ($dbName !== '' ? (':' . $dbName) : '');
+
+        $disk = $this->restoreDisk($metadata);
+        $mediaTarget = $disk === 'local'
+            ? ($this->rootPath . '/storage/uploads')
+            : 's3';
+
+        return [
+            'db' => $includeDb,
+            'media' => $includeMedia,
+            'targets' => [
+                'db' => $dbTarget,
+                'media' => $mediaTarget,
+            ],
+        ];
+    }
+
+    private function restoreDisk(array $metadata): string
+    {
+        $storage = $metadata['storage'] ?? [];
+        if (is_array($storage)) {
+            $disk = (string) ($storage['disk'] ?? '');
+            if (in_array($disk, ['local', 's3'], true)) {
+                return $disk;
+            }
+        }
+
+        return $this->storageDisk();
+    }
+
+    private function buildMetadata(bool $includeDb, bool $includeMedia, ?string $dbDriverUsed): array
+    {
+        $dbName = $this->databaseName();
+        $counts = $this->collectCounts();
+        $driver = $this->databaseDriver();
+
+        return [
+            'format' => 'laas-backup-v2',
+            'created_at' => (new DateTimeImmutable('now', new DateTimeZone('UTC')))->format(DateTimeImmutable::ATOM),
+            'laas_version' => (string) ($this->appConfig['version'] ?? 'v0.0.0'),
+            'php' => PHP_VERSION,
+            'db' => [
+                'driver' => $dbDriverUsed ?? $driver,
+                'name' => $dbName,
+            ],
+            'storage' => [
+                'disk' => $this->storageDisk(),
+                'mode' => 'export',
+            ],
+            'counts' => $counts,
+            'includes' => [
+                'db' => $includeDb,
+                'media' => $includeMedia,
+            ],
+        ];
+    }
+
+    /** @param array<string, string> $files */
+    private function buildManifest(array $files): array
+    {
+        $entries = [];
+        foreach ($files as $path => $source) {
+            if ($path === '' || !is_file($source)) {
+                continue;
+            }
+            $entries[] = [
+                'path' => $path,
+                'sha256' => hash_file('sha256', $source) ?: '',
+                'size' => filesize($source) ?: 0,
+            ];
+        }
+
+        usort($entries, static fn (array $a, array $b): int => strcmp((string) $a['path'], (string) $b['path']));
+
+        return [
+            'files' => $entries,
+        ];
+    }
+
+    private function collectCounts(): array
+    {
+        $counts = [];
+        try {
+            $pdo = $this->db->pdo();
+        } catch (Throwable) {
+            return $counts;
+        }
+
+        $tables = [
+            'media_files' => 'media_files',
+            'pages' => 'pages',
+        ];
+
+        foreach ($tables as $key => $table) {
+            $value = $this->countTable($pdo, $table);
+            if ($value !== null) {
+                $counts[$key] = $value;
+            }
+        }
+
+        return $counts;
+    }
+
+    private function countTable(\PDO $pdo, string $table): ?int
+    {
+        try {
+            $stmt = $pdo->query('SELECT COUNT(*) AS c FROM ' . $table);
+            $count = $stmt ? $stmt->fetchColumn() : null;
+            return is_numeric($count) ? (int) $count : null;
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    private function databaseName(): string
+    {
+        $config = $this->databaseConfig();
+        $db = (string) ($config['database'] ?? $config['name'] ?? '');
+        if ($db === '') {
+            return '';
+        }
+        if (str_contains($db, '/') || str_contains($db, '\\')) {
+            return basename($db);
+        }
+        return $db;
+    }
+
+    private function archiveBase(string $file): string
+    {
+        return str_replace('\\', '/', 'phar://' . $file);
+    }
+
+    private function archivePath(string $file, string $entry): string
+    {
+        return $this->archiveBase($file) . '/' . ltrim($entry, '/');
+    }
+
+    private function hashArchiveEntry(string $file, string $path): string
+    {
+        $stream = fopen($this->archivePath($file, $path), 'rb');
+        if ($stream === false) {
+            return '';
+        }
+
+        $hash = hash_init('sha256');
+        if (!hash_update_stream($hash, $stream)) {
+            fclose($stream);
+            return '';
+        }
+        fclose($stream);
+        return (string) hash_final($hash);
+    }
+
+    private function gzipFile(string $source, string $target): bool
+    {
+        $in = fopen($source, 'rb');
+        if ($in === false) {
+            return false;
+        }
+
+        $out = gzopen($target, 'wb9');
+        if ($out === false) {
+            fclose($in);
+            return false;
+        }
+
+        while (!feof($in)) {
+            $chunk = fread($in, 1024 * 1024);
+            if ($chunk === false) {
+                fclose($in);
+                gzclose($out);
+                return false;
+            }
+            gzwrite($out, $chunk);
+        }
+
+        fclose($in);
+        gzclose($out);
+        return true;
     }
 
     private function removeDir(string $path): void
@@ -482,7 +809,6 @@ class BackupManager
         }
         return $path;
     }
-
     /** @return array{file: string, driver: string} */
     private function dumpDatabase(string $driver): array
     {
@@ -656,7 +982,6 @@ class BackupManager
 
         file_put_contents($file, implode("\n", $sql));
     }
-
     private function databaseDriver(): string
     {
         try {
@@ -685,19 +1010,19 @@ class BackupManager
     }
 
     /** @return array<string, string> */
-    private function storageFiles(): array
+    private function mediaFiles(): array
     {
         $disk = $this->storageDisk();
         if ($disk === 'local') {
             $root = $this->rootPath . '/storage/uploads';
-            return $this->localStorageFiles($root, 'storage/' . $disk . '/');
+            return $this->localMediaFiles($root, 'media/');
         }
 
-        return $this->s3StorageFiles($disk);
+        return $this->s3MediaFiles($disk);
     }
 
     /** @return array<string, string> */
-    private function localStorageFiles(string $root, string $prefix): array
+    private function localMediaFiles(string $root, string $prefix): array
     {
         if (!is_dir($root)) {
             return [];
@@ -721,7 +1046,7 @@ class BackupManager
     }
 
     /** @return array<string, string> */
-    private function s3StorageFiles(string $disk): array
+    private function s3MediaFiles(string $disk): array
     {
         $result = [];
         $pdo = $this->db->pdo();
@@ -735,7 +1060,7 @@ class BackupManager
                 continue;
             }
             if ($this->storage->exists($diskPath)) {
-                $entry = 'storage/' . $disk . '/' . $diskPath;
+                $entry = 'media/' . ltrim($diskPath, '/');
                 $tmp = $this->storage->readToTemp($diskPath);
                 if ($tmp !== null && is_file($tmp)) {
                     $result[$entry] = $tmp;
@@ -756,7 +1081,7 @@ class BackupManager
                 }
                 $thumbPath = $thumb['disk_path'];
                 if ($this->storage->exists($thumbPath)) {
-                    $entry = 'storage/' . $disk . '/' . $thumbPath;
+                    $entry = 'media/' . ltrim($thumbPath, '/');
                     $tmp = $this->storage->readToTemp($thumbPath);
                     if ($tmp !== null && is_file($tmp)) {
                         $result[$entry] = $tmp;
@@ -764,7 +1089,7 @@ class BackupManager
                 }
                 $reasonPath = $thumbPath . '.reason';
                 if ($this->storage->exists($reasonPath)) {
-                    $entry = 'storage/' . $disk . '/' . $reasonPath;
+                    $entry = 'media/' . ltrim($reasonPath, '/');
                     $tmp = $this->storage->readToTemp($reasonPath);
                     if ($tmp !== null && is_file($tmp)) {
                         $result[$entry] = $tmp;
@@ -786,7 +1111,6 @@ class BackupManager
         $config = require $path;
         return is_array($config) ? $config : [];
     }
-
     private function acquireRestoreLock()
     {
         $dir = $this->backupsDir();
@@ -826,7 +1150,7 @@ class BackupManager
         if ($version === '') {
             return '';
         }
-        if (preg_match('/v(\\d+)/', $version, $m)) {
+        if (preg_match('/v(\d+)/', $version, $m)) {
             return (string) $m[1];
         }
         return '';

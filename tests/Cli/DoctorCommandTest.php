@@ -35,7 +35,7 @@ final class DoctorCommandTest extends TestCase
             $code = proc_close($process);
 
             $combined = (string) $output . (string) $error;
-            $this->assertSame(0, $code, $combined);
+            $this->assertSame(2, $code, $combined);
             $this->assertStringContainsString('PHP', $combined);
             $this->assertStringContainsString('STORAGE_DISK', $combined);
             $this->assertStringNotContainsString('DB_PASSWORD', $combined);
@@ -71,7 +71,7 @@ final class DoctorCommandTest extends TestCase
             }
 
             $combined = implode("\n", $output);
-            $this->assertSame(0, $code, $combined);
+            $this->assertSame(2, $code, $combined);
             $this->assertStringContainsString('PHP', $combined);
             $this->assertStringContainsString('STORAGE_DISK', $combined);
             $this->assertStringNotContainsString('DB_PASSWORD', $combined);
