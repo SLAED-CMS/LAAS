@@ -1,5 +1,10 @@
 # LAAS Versions
 
+- v3.3.0: Session hardening & ops polish
+  - Centralized session cookie policy with HTTPS secure auto
+  - Idle/absolute TTL enforcement + RBAC-triggered rotation
+  - session:doctor CLI and session config warnings in health/preflight
+
 - v3.2.0: Performance + stability freeze
   - Performance budgets with warn/hard thresholds and optional hard-fail
   - DB profiling guardrails (no SQL text in prod)

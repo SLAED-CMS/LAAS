@@ -181,7 +181,7 @@ http://laas.loc/
 ### Security
 - **2FA/TOTP** — Time-based one-time passwords with backup codes (v2.4.0)
 - **Password Reset** — Self-service password reset with email tokens (v2.4.0)
-- **Session Security** — Timeout enforcement, regeneration, secure cookies (v2.4.0)
+- **Session Security** — SameSite=Lax + HttpOnly by default, Secure auto on HTTPS, idle/absolute TTL via SESSION_IDLE_TTL/SESSION_ABSOLUTE_TTL
 - **SSRF Protection** — S3 endpoint + GitHub API validation, private IP blocking (v2.4.0)
 - **RBAC** — Role-based access control with permission groups
 - **Audit Log** — Track all important actions (incl. API tokens/auth failures)

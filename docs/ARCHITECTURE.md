@@ -467,6 +467,12 @@ $session->regenerateId(true);
 $session->set('user_id', $userId);
 ```
 
+**Session lifecycle:**
+- Cookie policy is centralized in `SessionFactory` (SameSite=Lax, HttpOnly, Secure auto on HTTPS, path `/`, optional domain).
+- `SESSION_IDLE_TTL` and `SESSION_ABSOLUTE_TTL` enforce inactivity and absolute timeouts on every request.
+- Role elevation marks a per-user cache flag; the next request rotates the session ID to prevent fixation.
+- Expired sessions are invalidated and return `401` for JSON or redirect to `/login` for HTML.
+
 ### Security Layer
 
 **Components:**
