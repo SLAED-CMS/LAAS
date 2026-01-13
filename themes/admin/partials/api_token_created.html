@@ -1,7 +1,10 @@
 {% if plain_token %}
 <div class="alert alert-warning">
   <div class="fw-semibold">{% t 'admin.api_tokens.token_label' %}</div>
-  <div class="mt-2"><code>{% plain_token %}</code></div>
-  <div class="small text-muted mt-2">{% t 'admin.api_tokens.token_notice' %}</div>
+  <div class="mt-2 d-flex flex-wrap align-items-center gap-2">
+    <code id="api-token-plain">{% plain_token %}</code>
+    <button class="btn btn-sm btn-outline-secondary" type="button" data-copy-target="#api-token-plain">Copy</button>
+  </div>
+  <div class="small text-muted mt-2">{% t 'api_tokens.token_once_notice' %}</div>
 </div>
 {% endif %}

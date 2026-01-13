@@ -36,6 +36,13 @@ $envInt = static function (string $key, int $default) use ($env): int {
 return [
     'enabled' => $envBool('API_ENABLED', true),
     'token_issue_mode' => $envString('API_TOKEN_ISSUE_MODE', 'admin'),
+    'token_scopes' => $envCsv('API_TOKEN_SCOPES', [
+        'admin.read',
+        'admin.write',
+        'media.read',
+        'media.write',
+        'pages.read',
+    ]),
     'cors' => [
         'enabled' => $envBool('API_CORS_ENABLED', false),
         'origins' => $envCsv('API_CORS_ORIGINS', []),

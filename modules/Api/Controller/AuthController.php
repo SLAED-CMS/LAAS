@@ -30,9 +30,10 @@ final class AuthController
         $input = $this->readInput($request);
         $name = trim((string) ($input['name'] ?? ''));
         $expiresRaw = trim((string) ($input['expires_at'] ?? ''));
+        $scopesInput = $this->readScopes($input);
 
         $errors = [];
-        if ($name === '' || strlen($name) > 100) {
+        if ($name === '' || strlen($name) > 120) {
             $errors['name'] = 'invalid';
         }
 
@@ -42,6 +43,17 @@ final class AuthController
             if ($expiresAt === null) {
                 $errors['expires_at'] = 'invalid';
             }
+        }
+
+        $service = new ApiTokenService($this->db, $this->apiConfig(), dirname(__DIR__, 3));
+        $allowedScopes = $service->allowedScopes();
+        $invalidScopes = $this->invalidScopes($scopesInput, $allowedScopes);
+        $scopes = $service->normalizeScopes($scopesInput);
+        if ($scopesInput === [] && $allowedScopes !== []) {
+            $scopes = $allowedScopes;
+        }
+        if ($invalidScopes !== []) {
+            $errors['scopes'] = 'invalid';
         }
 
         $userId = $this->sessionUserId($request);
@@ -76,8 +88,7 @@ final class AuthController
             return ApiResponse::error('validation_failed', 'Validation failed', $errors, 422);
         }
 
-        $service = new ApiTokenService($this->db);
-        $result = $service->issueToken($userId, $name, $expiresAt);
+        $result = $service->createToken($userId, $name, $scopes, $expiresAt);
 
         (new AuditLogger($this->db, $request->session()))->log(
             'api.token.created',
@@ -86,6 +97,8 @@ final class AuthController
             [
                 'name' => $name,
                 'expires_at' => $expiresAt,
+                'scopes' => $scopes,
+                'token_prefix' => (string) ($result['token_prefix'] ?? ''),
             ],
             $userId,
             $request->ip()
@@ -94,8 +107,10 @@ final class AuthController
         return ApiResponse::ok([
             'token' => $result['token'],
             'token_id' => (int) ($result['token_id'] ?? 0),
+            'token_prefix' => (string) ($result['token_prefix'] ?? ''),
             'name' => $name,
             'expires_at' => $expiresAt,
+            'scopes' => $scopes,
         ], [], 201, [
             'Cache-Control' => 'no-store',
         ]);
@@ -229,6 +244,18 @@ final class AuthController
         return $mode;
     }
 
+    /** @return array<string, mixed> */
+    private function apiConfig(): array
+    {
+        $configPath = dirname(__DIR__, 3) . '/config/api.php';
+        if (!is_file($configPath)) {
+            return [];
+        }
+
+        $config = require $configPath;
+        return is_array($config) ? $config : [];
+    }
+
     private function canManageTokens(int $userId): bool
     {
         if ($this->db === null || !$this->db->healthCheck()) {
@@ -303,5 +330,56 @@ final class AuthController
         }
 
         return $csrf->validate($token);
+    }
+
+    /** @return array<int, string> */
+    private function readScopes(array $input): array
+    {
+        $raw = $input['scopes'] ?? [];
+        if (is_string($raw)) {
+            $parts = array_map('trim', explode(',', $raw));
+            return array_values(array_filter($parts, static fn(string $part): bool => $part !== ''));
+        }
+        if (!is_array($raw)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($raw as $item) {
+            if (!is_string($item)) {
+                continue;
+            }
+            $item = trim($item);
+            if ($item !== '') {
+                $out[] = $item;
+            }
+        }
+
+        return array_values(array_unique($out));
+    }
+
+    /** @return array<int, string> */
+    private function invalidScopes(array $scopes, array $allowlist): array
+    {
+        if ($scopes === []) {
+            return [];
+        }
+
+        $allowed = array_flip($allowlist);
+        $invalid = [];
+        foreach ($scopes as $scope) {
+            if (!is_string($scope)) {
+                continue;
+            }
+            $scope = trim($scope);
+            if ($scope === '') {
+                continue;
+            }
+            if (!isset($allowed[$scope])) {
+                $invalid[] = $scope;
+            }
+        }
+
+        return array_values(array_unique($invalid));
     }
 }

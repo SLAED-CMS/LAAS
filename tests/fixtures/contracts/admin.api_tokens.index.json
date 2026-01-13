@@ -1,0 +1,27 @@
+{
+  "data": {
+    "items": [
+      {
+        "id": "__ID__",
+        "name": "CLI",
+        "token_prefix": "ABCDEF123456",
+        "scopes": [
+          "admin.read",
+          "admin.write"
+        ],
+        "last_used_at": "2026-01-01 00:00:00",
+        "expires_at": null,
+        "revoked_at": null,
+        "created_at": "__TIME__",
+        "status": "active"
+      }
+    ],
+    "counts": {
+      "total": 1
+    }
+  },
+  "meta": {
+    "format": "json",
+    "route": "admin.api_tokens.index"
+  }
+}

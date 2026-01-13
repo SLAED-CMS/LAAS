@@ -14,6 +14,7 @@ final class ContractFixtureNormalizer
         'media_id',
         'page_id',
         'module_id',
+        'token_id',
     ];
 
     /** @return array<string, mixed> */

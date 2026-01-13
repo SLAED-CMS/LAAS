@@ -27,5 +27,7 @@ return [
     'system.health.ok' => 'ঠিক আছে',
     'system.over_budget' => 'System is temporarily over budget.',
     'system.cache_pruned' => 'Cache pruned: {count} file(s) removed.',
-    'system.cache_prune_none' => 'Cache prune: nothing to remove.',];
-
+    'system.cache_prune_none' => 'Cache prune: nothing to remove.',
+    'auth.invalid_token' => 'Invalid token',
+    'auth.token_expired' => 'Token expired',
+];

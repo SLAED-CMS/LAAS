@@ -25,7 +25,7 @@ final class ApiAuthSecurityTest extends TestCase
         $db = $this->createDb($root);
 
         $service = new ApiTokenService($db);
-        $issued = $service->issueToken(1, 'CLI');
+        $issued = $service->createToken(1, 'CLI', ['admin.read']);
 
         $repo = new ApiTokensRepository($db->pdo());
         $repo->revoke((int) $issued['token_id'], 1);
@@ -54,7 +54,7 @@ final class ApiAuthSecurityTest extends TestCase
         $db = $this->createDb($root);
 
         $service = new ApiTokenService($db);
-        $issued = $service->issueToken(1, 'CLI', date('Y-m-d H:i:s', strtotime('-1 day')));
+        $issued = $service->createToken(1, 'CLI', ['admin.read'], date('Y-m-d H:i:s', strtotime('-1 day')));
 
         $middleware = new ApiMiddleware($db, $this->authorizationWithApiAccess($db), [
             'enabled' => true,
@@ -80,7 +80,7 @@ final class ApiAuthSecurityTest extends TestCase
         $db = $this->createDb($root);
 
         $service = new ApiTokenService($db);
-        $issued = $service->issueToken(1, 'CLI');
+        $issued = $service->createToken(1, 'CLI', ['admin.read']);
 
         $session = new InMemorySession();
         $session->start();
@@ -182,10 +182,13 @@ final class ApiAuthSecurityTest extends TestCase
             user_id INT NOT NULL,
             name TEXT NOT NULL,
             token_hash CHAR(64) NOT NULL UNIQUE,
+            token_prefix TEXT NOT NULL,
+            scopes TEXT NULL,
             last_used_at DATETIME NULL,
             expires_at DATETIME NULL,
             revoked_at DATETIME NULL,
-            created_at DATETIME NOT NULL
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NOT NULL
         )');
 
         $pdo->exec('CREATE TABLE roles (

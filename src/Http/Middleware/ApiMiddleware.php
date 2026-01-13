@@ -7,6 +7,7 @@ use Laas\Api\ApiResponse;
 use Laas\Api\ApiTokenService;
 use Laas\Auth\AuthorizationService;
 use Laas\Database\DatabaseManager;
+use Laas\Http\Contract\ContractResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Support\AuditLogger;
@@ -21,9 +22,11 @@ final class ApiMiddleware implements MiddlewareInterface
         ?string $rootPath = null
     ) {
         $this->rootPath = $rootPath ?? dirname(__DIR__, 3);
+        $this->tokenAuth = new ApiTokenAuthMiddleware($db, $this->config, $this->rootPath);
     }
 
     private string $rootPath;
+    private ApiTokenAuthMiddleware $tokenAuth;
 
     public function process(Request $request, callable $next): Response
     {
@@ -51,20 +54,16 @@ final class ApiMiddleware implements MiddlewareInterface
 
         $token = $this->bearerToken($request);
         $authReason = 'missing_token';
-        if ($token !== null) {
-            if (!$this->db->healthCheck()) {
-                return $this->applyHeaders(ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503), $request, $corsHeaders);
-            }
-
-            $auth = (new ApiTokenService($this->db))->authenticateWithReason($token);
-            if (!$auth['ok']) {
-                $authReason = (string) ($auth['reason'] ?? 'invalid');
-                $this->auditAuthFailure($request, $authReason, $token, $auth['token'] ?? null);
-                return $this->applyHeaders($this->unauthorized(), $request, $corsHeaders);
-            }
-
-            $request->setAttribute('api.user', $auth['user'] ?? null);
-            $request->setAttribute('api.token', $auth['token'] ?? null);
+        $tokenResult = $this->tokenAuth->authenticate($request);
+        if (isset($tokenResult['response']) && $tokenResult['response'] instanceof Response) {
+            $authReason = (string) ($tokenResult['reason'] ?? 'invalid');
+            $token = $this->bearerToken($request);
+            $this->auditAuthFailure($request, $authReason, $token, $tokenResult['token'] ?? null);
+            return $this->applyHeaders($tokenResult['response'], $request, $corsHeaders);
+        }
+        if (($tokenResult['status'] ?? '') === 'ok') {
+            $request->setAttribute('api.user', $tokenResult['user'] ?? null);
+            $request->setAttribute('api.token', $tokenResult['token'] ?? null);
             $authReason = 'ok';
         }
 
@@ -72,7 +71,7 @@ final class ApiMiddleware implements MiddlewareInterface
             $user = $request->getAttribute('api.user');
             if (!is_array($user)) {
                 $this->auditAuthFailure($request, $authReason, $token, $request->getAttribute('api.token'));
-                return $this->applyHeaders($this->unauthorized(), $request, $corsHeaders);
+                return $this->applyHeaders($this->unauthorized($request), $request, $corsHeaders);
             }
 
             if (!$this->authorization->can($user, 'api.access')) {
@@ -321,11 +320,12 @@ final class ApiMiddleware implements MiddlewareInterface
         return false;
     }
 
-    private function unauthorized(): Response
+    private function unauthorized(Request $request): Response
     {
-        return ApiResponse::error('unauthorized', 'Unauthorized', [], 401, [
-            'WWW-Authenticate' => 'Bearer',
-        ]);
+        return ContractResponse::error('auth.invalid_token', [
+            'route' => \Laas\Http\HeadlessMode::resolveRoute($request),
+        ], 401)
+            ->withHeader('WWW-Authenticate', 'Bearer');
     }
 
     private function auditAuthFailure(Request $request, string $reason, ?string $plainToken, mixed $tokenRow): void
@@ -334,10 +334,10 @@ final class ApiMiddleware implements MiddlewareInterface
         $ip = $request->ip();
         $tokenPrefix = null;
 
-        if (is_array($tokenRow) && isset($tokenRow['token_hash'])) {
-            $tokenPrefix = substr((string) $tokenRow['token_hash'], 0, 12);
+        if (is_array($tokenRow) && isset($tokenRow['token_prefix'])) {
+            $tokenPrefix = (string) $tokenRow['token_prefix'];
         } elseif ($plainToken !== null) {
-            $tokenPrefix = substr(hash('sha256', $plainToken), 0, 12);
+            $tokenPrefix = $this->extractTokenPrefix($plainToken);
         }
 
         $key = 'api.auth.failed:' . ($tokenPrefix !== null ? 't:' . $tokenPrefix : 'ip:' . $ip) . ':' . date('YmdHi');
@@ -357,5 +357,18 @@ final class ApiMiddleware implements MiddlewareInterface
             null,
             $ip
         );
+    }
+
+    private function extractTokenPrefix(string $plainToken): ?string
+    {
+        if (str_starts_with($plainToken, 'LAAS_')) {
+            $raw = substr($plainToken, 5);
+            $parts = explode('.', $raw, 2);
+            if (count($parts) === 2 && $parts[0] !== '') {
+                return substr($parts[0], 0, 16);
+            }
+        }
+
+        return substr(hash('sha256', $plainToken), 0, 12);
     }
 }

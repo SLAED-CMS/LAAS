@@ -9,54 +9,64 @@ use PHPUnit\Framework\TestCase;
 
 #[Group('api')]
 #[Group('security')]
-final class AuthTokenTest extends TestCase
+final class ApiTokenServiceTest extends TestCase
 {
-    public function testIssueTokenStoresHashOnly(): void
+    public function testCreateTokenStoresScopesAndPrefix(): void
     {
         [$db, $pdo] = $this->createDb();
 
-        $service = new ApiTokenService($db);
-        $result = $service->createToken(1, 'CLI', ['admin.read']);
+        $service = $this->createService($db);
+        $result = $service->createToken(1, 'CLI', ['admin.read', 'media.read']);
 
-        $this->assertNotEmpty($result['token']);
         $this->assertStringStartsWith('LAAS_', $result['token']);
-        $this->assertGreaterThan(0, $result['token_id']);
+        $this->assertSame(12, strlen((string) ($result['token_prefix'] ?? '')));
 
         $repo = new ApiTokensRepository($pdo);
         $row = $repo->findById((int) $result['token_id']);
         $this->assertNotNull($row);
 
         $this->assertSame(hash('sha256', $result['token']), (string) ($row['token_hash'] ?? ''));
-        $this->assertNotSame($result['token'], (string) ($row['token_hash'] ?? ''));
         $this->assertSame((string) ($result['token_prefix'] ?? ''), (string) ($row['token_prefix'] ?? ''));
+        $this->assertNotSame($result['token'], (string) ($row['token_hash'] ?? ''));
+        $storedScopes = json_decode((string) ($row['scopes'] ?? ''), true);
+        $this->assertSame(['admin.read', 'media.read'], $storedScopes);
     }
 
-    public function testBearerAuthWorks(): void
+    public function testVerifyTokenReturnsUserAndScopes(): void
     {
         [$db] = $this->createDb();
 
-        $service = new ApiTokenService($db);
-        $result = $service->createToken(1, 'CLI', ['admin.read']);
+        $service = $this->createService($db);
+        $result = $service->createToken(1, 'CLI', ['admin.read', 'media.read']);
 
-        $auth = $service->authenticate($result['token']);
-        $this->assertNotNull($auth);
-        $this->assertSame(1, (int) ($auth['user']['id'] ?? 0));
-        $this->assertSame((int) $result['token_id'], (int) ($auth['token']['id'] ?? 0));
+        $verified = $service->verifyToken($result['token']);
+
+        $this->assertNotNull($verified);
+        $this->assertSame(1, (int) ($verified['user_id'] ?? 0));
+        $this->assertSame(['admin.read', 'media.read'], $verified['scopes'] ?? []);
+        $this->assertSame((int) $result['token_id'], (int) ($verified['token_id'] ?? 0));
     }
 
-    public function testRevokeRemovesToken(): void
+    public function testExpiredTokenRejected(): void
     {
         [$db] = $this->createDb();
 
-        $service = new ApiTokenService($db);
+        $service = $this->createService($db);
+        $expiredAt = date('Y-m-d H:i:s', strtotime('-1 day'));
+        $result = $service->createToken(1, 'CLI', ['admin.read'], $expiredAt);
+
+        $this->assertNull($service->verifyToken($result['token']));
+    }
+
+    public function testRevokeTokenInvalidates(): void
+    {
+        [$db] = $this->createDb();
+
+        $service = $this->createService($db);
         $result = $service->createToken(1, 'CLI', ['admin.read']);
 
         $this->assertTrue($service->revokeToken((int) $result['token_id'], 1));
-        $repo = new ApiTokensRepository($db->pdo());
-        $row = $repo->findById((int) $result['token_id']);
-        $this->assertNotNull($row);
-        $this->assertNotEmpty($row['revoked_at']);
-        $this->assertNull($service->authenticate($result['token']));
+        $this->assertNull($service->verifyToken($result['token']));
     }
 
     /** @return array{0: DatabaseManager, 1: PDO} */
@@ -101,5 +111,12 @@ final class AuthTokenTest extends TestCase
         $ref->setValue($db, $pdo);
 
         return [$db, $pdo];
+    }
+
+    private function createService(DatabaseManager $db): ApiTokenService
+    {
+        return new ApiTokenService($db, [
+            'token_scopes' => ['admin.read', 'media.read'],
+        ]);
     }
 }

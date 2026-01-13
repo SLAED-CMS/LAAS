@@ -22,7 +22,19 @@ final class ApiTokensControllerTest extends TestCase
         $pdo->exec('CREATE TABLE permissions (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(100) UNIQUE, title VARCHAR(150), created_at DATETIME, updated_at DATETIME)');
         $pdo->exec('CREATE TABLE role_user (user_id INT NOT NULL, role_id INT NOT NULL)');
         $pdo->exec('CREATE TABLE permission_role (role_id INT NOT NULL, permission_id INT NOT NULL)');
-        $pdo->exec('CREATE TABLE api_tokens (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INT NOT NULL, name TEXT NOT NULL, token_hash CHAR(64) NOT NULL UNIQUE, last_used_at DATETIME NULL, expires_at DATETIME NULL, revoked_at DATETIME NULL, created_at DATETIME NOT NULL)');
+        $pdo->exec('CREATE TABLE api_tokens (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INT NOT NULL,
+            name TEXT NOT NULL,
+            token_hash CHAR(64) NOT NULL UNIQUE,
+            token_prefix TEXT NOT NULL,
+            scopes TEXT NULL,
+            last_used_at DATETIME NULL,
+            expires_at DATETIME NULL,
+            revoked_at DATETIME NULL,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NOT NULL
+        )');
 
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
 

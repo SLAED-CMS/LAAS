@@ -11,20 +11,31 @@ final class ApiTokensRepository
     {
     }
 
-    public function create(int $userId, string $name, string $tokenHash, ?string $expiresAt): int
+    public function create(
+        int $userId,
+        string $name,
+        string $tokenHash,
+        string $tokenPrefix,
+        array $scopes,
+        ?string $expiresAt
+    ): int
     {
+        $now = $this->now();
         $stmt = $this->pdo->prepare(
-            'INSERT INTO api_tokens (user_id, name, token_hash, last_used_at, expires_at, revoked_at, created_at)
-             VALUES (:user_id, :name, :token_hash, :last_used_at, :expires_at, :revoked_at, :created_at)'
+            'INSERT INTO api_tokens (user_id, name, token_hash, token_prefix, scopes, last_used_at, expires_at, revoked_at, created_at, updated_at)
+             VALUES (:user_id, :name, :token_hash, :token_prefix, :scopes, :last_used_at, :expires_at, :revoked_at, :created_at, :updated_at)'
         );
         $stmt->execute([
             'user_id' => $userId,
             'name' => $name,
             'token_hash' => $tokenHash,
+            'token_prefix' => $tokenPrefix,
+            'scopes' => $this->encodeScopes($scopes),
             'last_used_at' => null,
             'expires_at' => $expiresAt,
             'revoked_at' => null,
-            'created_at' => $this->now(),
+            'created_at' => $now,
+            'updated_at' => $now,
         ]);
 
         return (int) $this->pdo->lastInsertId();
@@ -52,7 +63,7 @@ final class ApiTokensRepository
     public function listByUser(int $userId, int $limit, int $offset): array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT id, user_id, name, last_used_at, expires_at, revoked_at, created_at
+            'SELECT id, user_id, name, token_prefix, scopes, last_used_at, expires_at, revoked_at, created_at, updated_at
              FROM api_tokens WHERE user_id = :user_id
              ORDER BY created_at DESC, id DESC LIMIT :limit OFFSET :offset'
         );
@@ -69,9 +80,9 @@ final class ApiTokensRepository
     public function listAll(int $limit, int $offset): array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT api_tokens.id, api_tokens.user_id, api_tokens.name, api_tokens.last_used_at, api_tokens.expires_at,
-                    api_tokens.revoked_at,
-                    api_tokens.created_at, users.username
+            'SELECT api_tokens.id, api_tokens.user_id, api_tokens.name, api_tokens.token_prefix, api_tokens.scopes,
+                    api_tokens.last_used_at, api_tokens.expires_at, api_tokens.revoked_at,
+                    api_tokens.created_at, api_tokens.updated_at, users.username
              FROM api_tokens LEFT JOIN users ON users.id = api_tokens.user_id
              ORDER BY api_tokens.created_at DESC, api_tokens.id DESC LIMIT :limit OFFSET :offset'
         );
@@ -102,19 +113,23 @@ final class ApiTokensRepository
 
     public function touchLastUsed(int $id): void
     {
-        $stmt = $this->pdo->prepare('UPDATE api_tokens SET last_used_at = :last_used_at WHERE id = :id');
+        $stmt = $this->pdo->prepare('UPDATE api_tokens SET last_used_at = :last_used_at, updated_at = :updated_at WHERE id = :id');
+        $now = $this->now();
         $stmt->execute([
             'id' => $id,
-            'last_used_at' => $this->now(),
+            'last_used_at' => $now,
+            'updated_at' => $now,
         ]);
     }
 
     public function revoke(int $id, ?int $userId = null): bool
     {
-        $sql = 'UPDATE api_tokens SET revoked_at = :revoked_at WHERE id = :id AND revoked_at IS NULL';
+        $sql = 'UPDATE api_tokens SET revoked_at = :revoked_at, updated_at = :updated_at WHERE id = :id AND revoked_at IS NULL';
+        $now = $this->now();
         $params = [
             'id' => $id,
-            'revoked_at' => $this->now(),
+            'revoked_at' => $now,
+            'updated_at' => $now,
         ];
 
         if ($userId !== null) {
@@ -131,5 +146,15 @@ final class ApiTokensRepository
     private function now(): string
     {
         return (new \DateTimeImmutable())->format('Y-m-d H:i:s');
+    }
+
+    private function encodeScopes(array $scopes): ?string
+    {
+        if ($scopes === []) {
+            return null;
+        }
+
+        $encoded = json_encode(array_values($scopes), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        return $encoded !== false ? $encoded : null;
     }
 }

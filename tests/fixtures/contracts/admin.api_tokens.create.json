@@ -1,0 +1,16 @@
+{
+  "data": {
+    "token_id": "__ID__",
+    "name": "CLI",
+    "token_prefix": "ABCDEF123456",
+    "scopes": [
+      "admin.read"
+    ],
+    "expires_at": null,
+    "token_once": "LAAS_ABCDEF123456.S3CR3T"
+  },
+  "meta": {
+    "format": "json",
+    "route": "admin.api_tokens.create"
+  }
+}

@@ -212,6 +212,171 @@ ContractRegistry::register('admin.settings.save', [
     ],
 ]);
 
+ContractRegistry::register('admin.api_tokens.index', [
+    'route' => '/admin/api-tokens',
+    'methods' => ['GET'],
+    'rbac' => 'api_tokens.view',
+    'responses' => [
+        '200' => [
+            'data' => [
+                'items' => [
+                    [
+                        'id' => 'int',
+                        'name' => 'string',
+                        'token_prefix' => 'string',
+                        'scopes' => ['string'],
+                        'last_used_at' => 'string|null',
+                        'expires_at' => 'string|null',
+                        'revoked_at' => 'string|null',
+                        'created_at' => 'string',
+                        'status' => 'active|expired|revoked',
+                    ],
+                ],
+                'counts' => [
+                    'total' => 'int',
+                ],
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.api_tokens.index',
+            ],
+        ],
+        '403' => [
+            'error' => 'forbidden',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.api_tokens.index',
+            ],
+        ],
+    ],
+    'example_ok' => [
+        'fixture' => 'admin.api_tokens.index',
+        'payload' => [
+            'data' => [
+                'items' => [
+                    [
+                        'id' => 1,
+                        'name' => 'CLI',
+                        'token_prefix' => 'ABCDEF123456',
+                        'scopes' => ['admin.read', 'admin.write'],
+                        'last_used_at' => '2026-01-01 00:00:00',
+                        'expires_at' => null,
+                        'revoked_at' => null,
+                        'created_at' => '2026-01-01 00:00:00',
+                        'status' => 'active',
+                    ],
+                ],
+                'counts' => [
+                    'total' => 1,
+                ],
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.api_tokens.index',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('admin.api_tokens.create', [
+    'route' => '/admin/api-tokens',
+    'methods' => ['POST'],
+    'rbac' => 'api_tokens.create',
+    'responses' => [
+        '201' => [
+            'data' => [
+                'token_id' => 'int',
+                'name' => 'string',
+                'token_prefix' => 'string',
+                'scopes' => ['string'],
+                'expires_at' => 'string|null',
+                'token_once' => 'string',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.api_tokens.create',
+            ],
+        ],
+        '422' => [
+            'error' => 'validation_failed',
+            'fields' => 'object',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.api_tokens.create',
+            ],
+        ],
+        '403' => [
+            'error' => 'forbidden',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.api_tokens.create',
+            ],
+        ],
+    ],
+    'example_ok' => [
+        'fixture' => 'admin.api_tokens.create',
+        'payload' => [
+            'data' => [
+                'token_id' => 1,
+                'name' => 'CLI',
+                'token_prefix' => 'ABCDEF123456',
+                'scopes' => ['admin.read'],
+                'expires_at' => null,
+                'token_once' => 'LAAS_ABCDEF123456.S3CR3T',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.api_tokens.create',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('admin.api_tokens.revoke', [
+    'route' => '/admin/api-tokens/revoke',
+    'methods' => ['POST'],
+    'rbac' => 'api_tokens.revoke',
+    'responses' => [
+        '200' => [
+            'data' => [
+                'revoked' => 'bool',
+                'token_id' => 'int',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.api_tokens.revoke',
+            ],
+        ],
+        '404' => [
+            'error' => 'not_found',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.api_tokens.revoke',
+            ],
+        ],
+        '403' => [
+            'error' => 'forbidden',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.api_tokens.revoke',
+            ],
+        ],
+    ],
+    'example_ok' => [
+        'fixture' => 'admin.api_tokens.revoke',
+        'payload' => [
+            'data' => [
+                'revoked' => true,
+                'token_id' => 1,
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.api_tokens.revoke',
+            ],
+        ],
+    ],
+]);
+
 ContractRegistry::register('admin.users.index', [
     'route' => '/admin/users',
     'methods' => ['GET'],
