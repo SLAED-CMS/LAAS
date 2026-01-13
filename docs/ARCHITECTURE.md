@@ -1639,23 +1639,31 @@ if (config('app.read_only') && $request->isWriteMethod()) {
 **CLI commands:**
 
 ```bash
-# Create backup
-php tools/cli.php backup:create
+# Create backup (v2)
+php tools/cli.php backup:create [--include-media=1] [--include-db=1]
 
-# List backups
-php tools/cli.php backup:list
+# Verify backup
+php tools/cli.php backup:verify storage/backups/laas_backup_2026-01-03_020000_v2.tar.gz
 
-# Inspect backup
-php tools/cli.php backup:inspect storage/backups/backup_2026-01-03_020000.sql.gz
+# Inspect backup metadata
+php tools/cli.php backup:inspect storage/backups/laas_backup_2026-01-03_020000_v2.tar.gz
 
 # Restore backup (DESTRUCTIVE)
-php tools/cli.php backup:restore storage/backups/backup_2026-01-03_020000.sql.gz
+php tools/cli.php backup:restore storage/backups/laas_backup_2026-01-03_020000_v2.tar.gz
+
+# Restore dry-run
+php tools/cli.php backup:restore storage/backups/laas_backup_2026-01-03_020000_v2.tar.gz --dry-run=1
+
+# Prune old backups
+php tools/cli.php backup:prune --keep=10
 ```
 
-**Backup includes:**
-- Full database dump
-- Gzip compression
-- Timestamped filename
+**Backup format v2:**
+- `storage/backups/laas_backup_<UTC_YYYYmmdd_HHMMSS>_v2.tar.gz`
+- `metadata.json` (format, created_at, laas_version, storage/db info)
+- `db.sql.gz` (SQL dump, gzipped)
+- `media/` (exported storage tree)
+- `manifest.json` (sha256 + size per file)
 
 ---
 

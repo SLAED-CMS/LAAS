@@ -204,7 +204,7 @@ http://laas.loc/
 ### Operations
 - **Health Endpoint** — `/health` for monitoring
 - **Read-only Mode** — Maintenance mode with write protection
-- **Backup/Restore** — CLI tools for database backup
+- **Backup/Restore** — CLI tools for v2 backups (db + media)
 - **Config Export** — Runtime configuration snapshot
 - **Contract Tests** — Architectural invariant protection
 
@@ -427,10 +427,11 @@ tools/                 # CLI utilities
 - `php tools/cli.php doctor` - Run preflight (no tests) + environment hints
 
 ### Backup & Restore
-- `php tools/cli.php backup:create` — Create database backup
-- `php tools/cli.php backup:list` — List available backups
-- `php tools/cli.php backup:inspect <file>` — Inspect backup file
-- `php tools/cli.php backup:restore <file>` — Restore from backup (destructive)
+- `php tools/cli.php backup:create [--include-media=1] [--include-db=1]` — Create backup v2
+- `php tools/cli.php backup:verify <file>` — Verify backup file
+- `php tools/cli.php backup:inspect <file>` — Inspect backup metadata
+- `php tools/cli.php backup:restore <file> [--dry-run=1] [--force=1]` — Restore from backup (destructive)
+- `php tools/cli.php backup:prune --keep=10` — Prune old backups
 
 ### RBAC
 - `php tools/cli.php rbac:status` — Show RBAC status
@@ -521,6 +522,8 @@ Flags:
 
 ### Backups
 - Set up automated backups: `php tools/cli.php backup:create`
+- Verify backups: `php tools/cli.php backup:verify <file>`
+- Prune old backups: `php tools/cli.php backup:prune --keep=10`
 - Store backups from `storage/backups/` off-site
 - Test restore procedure (destructive operation)
 - Review backup/restore safety: [docs/BACKUP.md](docs/BACKUP.md)

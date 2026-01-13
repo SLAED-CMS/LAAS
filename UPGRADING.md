@@ -27,6 +27,12 @@
 
 ## Version-Specific Upgrade Paths
 
+### v3.6.0 notes
+
+- Backup format v2: `laas_backup_<UTC_YYYYmmdd_HHMMSS>_v2.tar.gz`
+- New commands: `backup:verify`, `backup:prune`, restore `--dry-run`
+- `backup:create` now produces tar.gz with `metadata.json`, `db.sql.gz`, `media/`, `manifest.json`
+
 ### v3.1.0 notes
 
 - SessionInterface introduced; no action needed
@@ -708,7 +714,7 @@ composer install --no-dev
 ### Database Rollback
 ```bash
 # Restore from backup
-php tools/cli.php backup:restore storage/backups/backup-YYYYMMDD-HHMMSS.sql
+php tools/cli.php backup:restore storage/backups/laas_backup_YYYYmmdd_HHMMSS_v2.tar.gz
 
 # Confirm destruction prompt carefully!
 ```
@@ -716,7 +722,7 @@ php tools/cli.php backup:restore storage/backups/backup-YYYYMMDD-HHMMSS.sql
 **Warning:** Restore is **destructive** and **irreversible**. Always test on staging first.
 
 ### Storage Rollback
-- Local storage: restore `storage/media/` directory from backup archive
+- Local storage: restore `storage/uploads/` directory from backup archive
 - S3 storage: use S3 versioning or restore from S3 backup
 
 ---

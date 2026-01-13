@@ -1,5 +1,10 @@
 # LAAS Versions
 
+- v3.6.0: Backup v2 production readiness
+  - tar.gz format with metadata + manifest sha256
+  - backup:verify, restore --dry-run, prune command
+  - Preflight/health warnings for backup/tmp writability
+
 - v3.5.0: Security Tightening Pack
   - CSP report-only mode + `/__csp/report` ingestion + prune CLI
   - Security headers validation in preflight/health
