@@ -443,6 +443,10 @@ tools/                 # CLI utilities
 - `php tools/cli.php backup:restore <file> [--dry-run=1] [--force=1]` — Restore from backup (destructive)
 - `php tools/cli.php backup:prune --keep=10` — Prune old backups
 
+### Media Ops
+- `php tools/cli.php media:gc [--disk=<name>] [--dry-run=1] [--mode=orphans|retention|all] [--limit=N]` ƒ?" Cleanup orphans/retention (dry-run by default)
+- `php tools/cli.php media:verify [--disk=<name>] [--limit=N]` ƒ?" Verify DB -> storage consistency
+
 ### RBAC
 - `php tools/cli.php rbac:status` — Show RBAC status
 - `php tools/cli.php rbac:grant <username> <permission>` — Grant permission

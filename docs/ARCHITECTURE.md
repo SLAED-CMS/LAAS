@@ -1511,6 +1511,22 @@ Serve (/media/{hash}.{ext})
 - Secure serving headers
 - Signed URLs (temporary access)
 
+### Media Ops / GC
+
+**CLI commands:**
+- `media:gc` (dry-run by default, modes: orphans/retention/all)
+- `media:verify` (DB -> storage consistency)
+
+**Safety rules:**
+- Fail-closed on storage listing errors (no deletion).
+- Deletion cap per run (`MEDIA_GC_MAX_DELETE_PER_RUN`).
+- Exempt prefixes for quarantine/thumb caches.
+- Optional block on public media deletes (`MEDIA_GC_ALLOW_DELETE_PUBLIC=false`).
+
+**Audit:**
+- `media.gc.dry_run` when dry-run.
+- `media.gc.delete` when deletions occur.
+
 ---
 
 ## i18n & Localization

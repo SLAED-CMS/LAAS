@@ -1,5 +1,10 @@
 # LAAS Versions
 
+- v3.9.0: Media Ops/GC
+  - media:gc (orphans/retention) with dry-run default and delete cap
+  - media:verify for DB -> storage consistency checks
+  - Media GC config knobs + fail-closed storage scans
+
 - v3.8.0: Performance Baseline
   - Perf guard limits with warn/block modes + admin overrides
   - Cache knobs + cache:status CLI

@@ -27,6 +27,11 @@
 
 ## Version-Specific Upgrade Paths
 
+### v3.9.0 notes
+
+- Media ops: `media:gc` (dry-run by default), `media:verify`
+- New env knobs: `MEDIA_GC_ENABLED`, `MEDIA_RETENTION_DAYS`, `MEDIA_GC_DRY_RUN_DEFAULT`, `MEDIA_GC_MAX_DELETE_PER_RUN`, `MEDIA_GC_EXEMPT_PREFIXES`, `MEDIA_GC_ALLOW_DELETE_PUBLIC`
+
 ### v3.6.0 notes
 
 - Backup format v2: `laas_backup_<UTC_YYYYmmdd_HHMMSS>_v2.tar.gz`
