@@ -8,6 +8,7 @@ use Laas\Database\DatabaseManager;
 use Laas\Http\Request;
 use Laas\Http\Session\SessionManager;
 use Laas\I18n\Translator;
+use Laas\Session\SessionFactory;
 use Laas\Settings\SettingsProvider;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
@@ -43,7 +44,8 @@ final class SecurityTestHelper
 
     public static function startSession(string $rootPath, array $config = []): void
     {
-        $manager = new SessionManager($rootPath, ['session' => $config]);
+        $factory = new SessionFactory($config, null, $rootPath);
+        $manager = new SessionManager($rootPath, ['session' => $config], $factory);
         $manager->start();
     }
 

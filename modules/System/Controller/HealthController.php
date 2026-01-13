@@ -12,6 +12,7 @@ use Laas\Support\ConfigSanityChecker;
 use Laas\Support\HealthService;
 use Laas\Support\HealthStatusTracker;
 use Laas\Support\LoggerFactory;
+use Laas\Support\SessionConfigValidator;
 
 final class HealthController
 {
@@ -25,6 +26,7 @@ final class HealthController
         $appConfig = $this->loadConfig($rootPath . '/config/app.php');
         $mediaConfig = $this->loadConfig($rootPath . '/config/media.php');
         $storageConfig = $this->loadConfig($rootPath . '/config/storage.php');
+        $securityConfig = $this->loadConfig($rootPath . '/config/security.php');
 
         $locale = (string) ($appConfig['default_locale'] ?? 'en');
         $theme = (string) ($appConfig['theme'] ?? 'default');
@@ -42,6 +44,7 @@ final class HealthController
         $config = [
             'media' => $mediaConfig,
             'storage' => $storageConfig,
+            'session' => is_array($securityConfig['session'] ?? null) ? $securityConfig['session'] : [],
         ];
         $writeCheck = (bool) ($appConfig['health_write_check'] ?? false);
 
@@ -51,7 +54,8 @@ final class HealthController
             $storage,
             $checker,
             $config,
-            $writeCheck
+            $writeCheck,
+            new SessionConfigValidator()
         );
 
         $logger = (new LoggerFactory($rootPath))->create($appConfig);
@@ -68,12 +72,16 @@ final class HealthController
         }
 
         $checks = $result['checks'] ?? [];
+        $warnings = $result['warnings'] ?? [];
         $payload = [
             'status' => $ok ? 'ok' : 'degraded',
             'message' => $this->translator->trans($messageKey),
             'checks' => $this->formatChecks($checks),
             'timestamp' => gmdate('c'),
         ];
+        if (is_array($warnings) && $warnings !== []) {
+            $payload['warnings'] = array_values(array_filter(array_map('strval', $warnings)));
+        }
 
         return Response::json($payload, $ok ? 200 : 503);
     }

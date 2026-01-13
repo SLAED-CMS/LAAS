@@ -18,13 +18,32 @@ use Tests\Support\InMemorySession;
 final class DevToolsProdDisableTest extends TestCase
 {
     private string $rootPath;
+    private array $envBackup = [];
 
     protected function setUp(): void
     {
         $this->rootPath = dirname(__DIR__);
+        $this->envBackup = [
+            'APP_ENV' => $_ENV['APP_ENV'] ?? null,
+            'APP_DEBUG' => $_ENV['APP_DEBUG'] ?? null,
+            'DEVTOOLS_ENABLED' => $_ENV['DEVTOOLS_ENABLED'] ?? null,
+        ];
         $_ENV['APP_ENV'] = 'prod';
         $_ENV['APP_DEBUG'] = 'true';
         $_ENV['DEVTOOLS_ENABLED'] = 'true';
+    }
+
+    protected function tearDown(): void
+    {
+        foreach ($this->envBackup as $key => $value) {
+            if ($value === null) {
+                unset($_ENV[$key]);
+                putenv($key);
+                continue;
+            }
+            $_ENV[$key] = $value;
+            putenv($key . '=' . $value);
+        }
     }
 
     public function testDevToolsDisabledInProd(): void

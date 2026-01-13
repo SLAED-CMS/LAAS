@@ -40,6 +40,13 @@ $envList = static function (string $key, array $default) use ($env): array {
     return $parts !== [] ? array_values($parts) : $default;
 };
 
+$cookieSecure = $envBool('SESSION_COOKIE_SECURE', $envBool('SESSION_SECURE', false));
+$cookieHttpOnly = $envBool('SESSION_COOKIE_HTTPONLY', $envBool('SESSION_HTTPONLY', true));
+$cookieSamesite = $envString('SESSION_COOKIE_SAMESITE', $envString('SESSION_SAMESITE', 'Lax'));
+$cookieDomain = $envString('SESSION_COOKIE_DOMAIN', $envString('SESSION_DOMAIN', ''));
+$idleTtl = $envInt('SESSION_IDLE_TTL', 0);
+$absoluteTtl = $envInt('SESSION_ABSOLUTE_TTL', 0);
+
 $allowCdn = $envBool('CSP_ALLOW_CDN', false);
 $cdnSources = $allowCdn ? ['https://cdn.jsdelivr.net'] : [];
 $scriptExtra = $envList('CSP_SCRIPT_SRC_EXTRA', []);
@@ -69,6 +76,13 @@ return [
         'lifetime' => $envInt('SESSION_LIFETIME', 0),
         'domain' => $envString('SESSION_DOMAIN', ''),
         'timeout' => $envInt('SESSION_TIMEOUT', 7200),
+        'idle_ttl' => $idleTtl,
+        'absolute_ttl' => $absoluteTtl,
+        'cookie_secure' => $cookieSecure,
+        'cookie_httponly' => $cookieHttpOnly,
+        'cookie_samesite' => $cookieSamesite,
+        'cookie_domain' => $cookieDomain,
+        'cookie_path' => '/',
         'redis' => [
             'url' => $envString('REDIS_URL', 'redis://127.0.0.1:6379/0'),
             'timeout' => $envFloat('REDIS_TIMEOUT', 1.5),

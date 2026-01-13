@@ -53,6 +53,7 @@ final class RbacRepository
             'role_id' => $roleId,
         ]);
         $this->cache->delete(CacheKey::permissionsUser($userId));
+        $this->cache->set(CacheKey::sessionRbacVersion($userId), time(), 86400);
     }
 
     public function revokeRoleFromUser(int $userId, string $roleName): void
@@ -68,6 +69,7 @@ final class RbacRepository
             'role_id' => $roleId,
         ]);
         $this->cache->delete(CacheKey::permissionsUser($userId));
+        $this->cache->set(CacheKey::sessionRbacVersion($userId), time(), 86400);
     }
 
     public function grantPermissionToRole(string $roleName, string $permissionName): void

@@ -349,7 +349,8 @@ function policy_check_php_file(string $path): array
             continue;
         }
         foreach ($matches[0] as $match) {
-            $findings[] = policy_make_finding('warning', 'W3a', $path, $match[1], 'Presentation leak in PHP data (explicit class key)', $contents);
+            $offset = (int) $match[1];
+            $findings[] = policy_make_finding('warning', 'W3a', $path, $offset, 'Presentation leak in PHP data (explicit class key)', $contents);
         }
     }
 
@@ -358,7 +359,8 @@ function policy_check_php_file(string $path): array
             continue;
         }
         foreach ($matches[0] as $match) {
-            $findings[] = policy_make_finding('warning', 'W3b', $path, $match[1], 'Presentation leak in PHP data (suspicious key)', $contents);
+            $offset = (int) $match[1];
+            $findings[] = policy_make_finding('warning', 'W3b', $path, $offset, 'Presentation leak in PHP data (suspicious key)', $contents);
         }
     }
 

@@ -4,19 +4,50 @@ declare(strict_types=1);
 namespace Laas\Ops\Checks;
 
 use Laas\Session\Redis\RedisClient;
+use Laas\Support\SessionConfigValidator;
 
 final class SessionCheck
 {
-    public function __construct(private array $sessionConfig)
-    {
+    private string $rootPath;
+    private SessionConfigValidator $validator;
+
+    public function __construct(
+        private array $sessionConfig,
+        ?string $rootPath = null,
+        ?SessionConfigValidator $validator = null
+    ) {
+        $this->rootPath = $rootPath ?? dirname(__DIR__, 3);
+        $this->validator = $validator ?? new SessionConfigValidator();
     }
 
     /** @return array{code: int, message: string} */
     public function run(): array
     {
+        $messages = [];
+        $code = 0;
+
+        if (!$this->storageWritable()) {
+            $messages[] = 'session storage: FAIL';
+            $code = 1;
+        } else {
+            $messages[] = 'session storage: OK';
+        }
+
+        $warnings = $this->validator->warnings($this->sessionConfig);
+        if ($warnings !== []) {
+            $messages[] = 'session config: WARN (' . implode(', ', $warnings) . ')';
+            if ($code === 0) {
+                $code = 2;
+            }
+        }
+
         $driver = strtolower(trim((string) ($this->sessionConfig['driver'] ?? 'native')));
         if ($driver !== 'redis') {
-            return ['code' => 0, 'message' => 'native session: OK'];
+            $messages[] = 'native session: OK';
+            return [
+                'code' => $code,
+                'message' => implode("\n", $messages),
+            ];
         }
 
         $redis = $this->sessionConfig['redis'] ?? [];
@@ -28,17 +59,29 @@ final class SessionCheck
             $client->connect();
             $client->ping();
         } catch (\Throwable) {
-            $target = $this->formatTarget($url);
+            $target = self::formatTarget($url);
             $suffix = $target !== '' ? (' (' . $target . ')') : '';
-            return ['code' => 2, 'message' => 'redis session: FAIL (fallback native)' . $suffix];
+            $messages[] = 'redis session: FAIL (fallback native)' . $suffix;
+            if ($code === 0) {
+                $code = 2;
+            }
+            return [
+                'code' => $code,
+                'message' => implode("\n", $messages),
+            ];
         }
 
-        $target = $this->formatTarget($url);
+        $target = self::formatTarget($url);
         $suffix = $target !== '' ? (' (' . $target . ')') : '';
-        return ['code' => 0, 'message' => 'redis session: OK' . $suffix];
+        $messages[] = 'redis session: OK' . $suffix;
+
+        return [
+            'code' => $code,
+            'message' => implode("\n", $messages),
+        ];
     }
 
-    private function formatTarget(string $url): string
+    public static function formatTarget(string $url): string
     {
         $parts = parse_url($url);
         if ($parts === false) {
@@ -60,5 +103,11 @@ final class SessionCheck
         }
 
         return $host . ':' . $port . '/' . $db;
+    }
+
+    private function storageWritable(): bool
+    {
+        $dir = $this->rootPath . '/storage/sessions';
+        return is_dir($dir) && is_writable($dir);
     }
 }

@@ -12,7 +12,9 @@ final class HealthService
     private $dbCheck;
     private StorageService $storage;
     private ConfigSanityChecker $configChecker;
+    private SessionConfigValidator $sessionValidator;
     private array $config;
+    private array $sessionConfig;
     private bool $writeCheck;
 
     public function __construct(
@@ -21,17 +23,20 @@ final class HealthService
         StorageService $storage,
         ConfigSanityChecker $configChecker,
         array $config,
-        bool $writeCheck = false
+        bool $writeCheck = false,
+        ?SessionConfigValidator $sessionValidator = null
     ) {
         $this->rootPath = $rootPath;
         $this->dbCheck = $dbCheck;
         $this->storage = $storage;
         $this->configChecker = $configChecker;
         $this->config = $config;
+        $this->sessionConfig = $this->resolveSessionConfig($config);
+        $this->sessionValidator = $sessionValidator ?? new SessionConfigValidator();
         $this->writeCheck = $writeCheck;
     }
 
-    /** @return array{ok: bool, checks: array<string, bool>} */
+    /** @return array{ok: bool, checks: array<string, bool>, warnings: array<int, string>} */
     public function check(): array
     {
         $checks = [
@@ -53,6 +58,7 @@ final class HealthService
         return [
             'ok' => $ok,
             'checks' => $checks,
+            'warnings' => $this->sessionValidator->warnings($this->sessionConfig),
         ];
     }
 
@@ -115,5 +121,20 @@ final class HealthService
         }
 
         return true;
+    }
+
+    private function resolveSessionConfig(array $config): array
+    {
+        $session = $config['session'] ?? null;
+        if (is_array($session)) {
+            return $session;
+        }
+
+        $security = $config['security'] ?? null;
+        if (is_array($security) && is_array($security['session'] ?? null)) {
+            return $security['session'];
+        }
+
+        return [];
     }
 }

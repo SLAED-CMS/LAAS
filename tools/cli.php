@@ -25,6 +25,7 @@ use Laas\Support\Cache\CachePruner;
 use Laas\Support\PreflightRunner;
 use Laas\Ops\Checks\SessionCheck;
 use Laas\Session\SessionFactory;
+use Laas\Session\Redis\RedisClient;
 use Laas\I18n\Translator;
 use Laas\Http\Contract\ContractRegistry;
 use Laas\Http\Contract\ContractFixtureNormalizer;
@@ -927,7 +928,7 @@ $commands['contracts:fixtures:check'] = function () use ($rootPath): int {
 };
 
 $commands['session:smoke'] = function () use ($rootPath, $securityConfig, $logger): int {
-    $sessionCheck = new SessionCheck($securityConfig['session'] ?? []);
+    $sessionCheck = new SessionCheck($securityConfig['session'] ?? [], $rootPath);
     $checkResult = $sessionCheck->run();
 
     $savePath = $rootPath . '/storage/sessions';
@@ -961,10 +962,72 @@ $commands['session:smoke'] = function () use ($rootPath, $securityConfig, $logge
     return $checkResult['code'] === 2 ? 2 : 0;
 };
 
+$commands['session:doctor'] = function () use ($rootPath, $securityConfig, $logger): int {
+    $sessionConfig = $securityConfig['session'] ?? [];
+    $factory = new SessionFactory($sessionConfig, $logger, $rootPath);
+    $sessionCheck = new SessionCheck($sessionConfig, $rootPath);
+    $result = $sessionCheck->run();
+    echo $result['message'] . "\n";
+
+    $driver = strtolower(trim((string) ($sessionConfig['driver'] ?? 'native')));
+    $handler = $driver === 'redis' ? 'redis' : 'files';
+    echo 'handler: ' . $handler . "\n";
+
+    if ($driver === 'redis') {
+        $redis = $sessionConfig['redis'] ?? [];
+        $url = (string) ($redis['url'] ?? '');
+        $timeout = (float) ($redis['timeout'] ?? 1.5);
+        $target = SessionCheck::formatTarget($url);
+        $suffix = $target !== '' ? (' (' . $target . ')') : '';
+        try {
+            $client = RedisClient::fromUrl($url, $timeout);
+            $client->connect();
+            $client->ping();
+            echo 'redis reachable: yes' . $suffix . "\n";
+        } catch (Throwable) {
+            echo 'redis reachable: no' . $suffix . "\n";
+        }
+    }
+
+    $idle = (int) ($sessionConfig['idle_ttl'] ?? 0);
+    $absolute = (int) ($sessionConfig['absolute_ttl'] ?? 0);
+    $legacyTimeout = (int) ($sessionConfig['timeout'] ?? 0);
+
+    $idleLabel = $idle > 0
+        ? ($idle . ' min')
+        : ($legacyTimeout > 0 ? ((int) ceil($legacyTimeout / 60)) . ' min (legacy)' : 'disabled');
+    $absoluteLabel = $absolute > 0 ? ($absolute . ' min') : 'disabled';
+
+    $gcMax = (int) ini_get('session.gc_maxlifetime');
+    $gcProb = (int) ini_get('session.gc_probability');
+    $gcDiv = (int) ini_get('session.gc_divisor');
+
+    $cookie = $factory->cookiePolicy(true);
+    echo 'idle ttl: ' . $idleLabel . "\n";
+    echo 'absolute ttl: ' . $absoluteLabel . "\n";
+    echo 'gc_maxlifetime: ' . $gcMax . "s\n";
+    echo 'gc_probability: ' . $gcProb . ' gc_divisor: ' . $gcDiv . "\n";
+    echo 'cookie: name=' . $cookie['name']
+        . ' samesite=' . $cookie['samesite']
+        . ' secure=' . ($cookie['secure'] ? 'true' : 'false')
+        . ' httponly=' . ($cookie['httponly'] ? 'true' : 'false')
+        . ' domain=' . ($cookie['domain'] !== '' ? $cookie['domain'] : '-')
+        . ' path=' . $cookie['path'] . "\n";
+
+    if ($result['code'] === 1) {
+        return 1;
+    }
+    if ($result['code'] === 2) {
+        return 2;
+    }
+
+    return 0;
+};
+
 $commands['doctor'] = function () use (&$commands, $rootPath, $appConfig, $storageConfig, $securityConfig): int {
     $runner = new PreflightRunner();
     $dbConfigured = dbEnvConfigured();
-    $sessionCheck = new SessionCheck($securityConfig['session'] ?? []);
+    $sessionCheck = new SessionCheck($securityConfig['session'] ?? [], $rootPath);
     $steps = [
         [
             'label' => 'policy:check',
@@ -1079,7 +1142,7 @@ $commands['preflight'] = function () use (&$commands, $args, $rootPath, $securit
     $strict = hasFlag($args, 'strict');
 
     $runner = new PreflightRunner();
-    $sessionCheck = new SessionCheck($securityConfig['session'] ?? []);
+    $sessionCheck = new SessionCheck($securityConfig['session'] ?? [], $rootPath);
     $steps = [
         [
             'label' => 'policy:check',

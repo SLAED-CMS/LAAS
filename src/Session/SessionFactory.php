@@ -60,4 +60,53 @@ final class SessionFactory
             return new NativeSession();
         }
     }
+
+    /** @return array{name: string, lifetime: int, path: string, domain: string, secure: bool, httponly: bool, samesite: string} */
+    public function cookiePolicy(bool $isHttps = false): array
+    {
+        $name = (string) ($this->sessionConfig['name'] ?? 'LAASID');
+        if ($name === '') {
+            $name = 'LAASID';
+        }
+
+        $secure = (bool) ($this->sessionConfig['cookie_secure'] ?? $this->sessionConfig['secure'] ?? false);
+        if ($isHttps) {
+            $secure = true;
+        }
+
+        $path = (string) ($this->sessionConfig['cookie_path'] ?? '/');
+        if ($path === '') {
+            $path = '/';
+        }
+
+        $samesite = (string) ($this->sessionConfig['cookie_samesite'] ?? $this->sessionConfig['samesite'] ?? 'Lax');
+        $normalizedSameSite = ucfirst(strtolower($samesite));
+        if (!in_array($normalizedSameSite, ['Lax', 'Strict', 'None'], true)) {
+            $normalizedSameSite = 'Lax';
+        }
+
+        return [
+            'name' => $name,
+            'lifetime' => (int) ($this->sessionConfig['lifetime'] ?? 0),
+            'path' => $path,
+            'domain' => (string) ($this->sessionConfig['cookie_domain'] ?? $this->sessionConfig['domain'] ?? ''),
+            'secure' => $secure,
+            'httponly' => (bool) ($this->sessionConfig['cookie_httponly'] ?? $this->sessionConfig['httponly'] ?? true),
+            'samesite' => $normalizedSameSite,
+        ];
+    }
+
+    public function applyCookiePolicy(bool $isHttps = false): void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            return;
+        }
+
+        $policy = $this->cookiePolicy($isHttps);
+        $name = (string) ($policy['name'] ?? 'LAASID');
+        unset($policy['name']);
+
+        session_name($name);
+        session_set_cookie_params($policy);
+    }
 }

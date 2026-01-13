@@ -33,6 +33,9 @@ final class AuthService implements AuthInterface
 
         if ($this->session->isStarted()) {
             $this->session->regenerateId(true);
+            $now = time();
+            $this->session->set('_session_started_at', $now);
+            $this->session->set('_last_activity', $now);
         } elseif ($this->logger !== null) {
             $this->logger->warning('Session ID regeneration skipped', [
                 'username' => $username,

@@ -31,4 +31,9 @@ final class CacheKey
     {
         return 'permissions:v' . self::VERSION . ':user:' . $userId;
     }
+
+    public static function sessionRbacVersion(int $userId): string
+    {
+        return 'session:v' . self::VERSION . ':rbac:' . $userId;
+    }
 }
