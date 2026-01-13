@@ -68,7 +68,7 @@ final class ModulesControllerAccessTest extends TestCase
         $response = $controller->toggle($request);
 
         $this->assertSame(200, $response->getStatus());
-        $count = (int) $pdo->query("SELECT COUNT(*) FROM audit_logs WHERE action = 'modules.toggled'")->fetchColumn();
+        $count = (int) $pdo->query("SELECT COUNT(*) FROM audit_logs WHERE action = 'modules.toggle'")->fetchColumn();
         $this->assertSame(1, $count);
     }
 

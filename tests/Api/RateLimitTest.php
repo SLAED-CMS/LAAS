@@ -23,6 +23,11 @@ final class RateLimitTest extends TestCase
                 'api' => ['window' => 60, 'max' => 1, 'burst' => 1],
             ],
         ]);
+        $this->setProfileConfig($middleware, [
+            'profiles' => [
+                'api_default' => ['window' => 60, 'max' => 1, 'burst' => 1],
+            ],
+        ]);
 
         $request = new Request('GET', '/api/v1/pages', [], [], [], '');
         $ok = $middleware->process($request, static fn (Request $req): Response => new Response('OK', 200));
@@ -41,6 +46,11 @@ final class RateLimitTest extends TestCase
         $middleware = new RateLimitMiddleware($limiter, [
             'rate_limit' => [
                 'api' => ['window' => 60, 'max' => 1, 'burst' => 1],
+            ],
+        ]);
+        $this->setProfileConfig($middleware, [
+            'profiles' => [
+                'api_default' => ['window' => 60, 'max' => 1, 'burst' => 1],
             ],
         ]);
 
@@ -69,6 +79,11 @@ final class RateLimitTest extends TestCase
                 'api' => ['window' => 60, 'max' => 1, 'burst' => 1],
             ],
         ]);
+        $this->setProfileConfig($middleware, [
+            'profiles' => [
+                'api_default' => ['window' => 60, 'max' => 1, 'burst' => 1],
+            ],
+        ]);
 
         $request = new Request('GET', '/api/v1/pages', [], [], [], '');
         $ok = $middleware->process($request, static fn (Request $req): Response => new Response('OK', 200));
@@ -76,5 +91,12 @@ final class RateLimitTest extends TestCase
 
         $this->assertSame(200, $ok->getStatus());
         $this->assertSame(429, $blocked->getStatus());
+    }
+
+    private function setProfileConfig(RateLimitMiddleware $middleware, array $config): void
+    {
+        $ref = new \ReflectionProperty($middleware, 'profileConfig');
+        $ref->setAccessible(true);
+        $ref->setValue($middleware, $config);
     }
 }

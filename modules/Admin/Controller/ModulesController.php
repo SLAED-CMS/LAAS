@@ -9,7 +9,7 @@ use Laas\Database\Repositories\RbacRepository;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\Support\AuditLogger;
+use Laas\Support\Audit;
 use Laas\View\View;
 use Throwable;
 
@@ -137,20 +137,12 @@ final class ModulesController
             $repo->enable($name);
         }
 
-        $actorId = $this->currentUserId($request);
-        (new AuditLogger($this->db, $request->session()))->log(
-            'modules.toggled',
-            'module',
-            null,
-            [
-                'actor_user_id' => $actorId,
-                'module' => $name,
-                'from_enabled' => $enabled,
-                'to_enabled' => !$enabled,
-            ],
-            $actorId,
-            $request->ip()
-        );
+        Audit::log('modules.toggle', 'module', null, [
+            'actor_user_id' => $this->currentUserId($request),
+            'module' => $name,
+            'from_enabled' => $enabled,
+            'to_enabled' => !$enabled,
+        ]);
 
         $row = $current[$name] ?? ['enabled' => !$enabled, 'version' => null];
         $typeLabel = $this->typeLabel($type);

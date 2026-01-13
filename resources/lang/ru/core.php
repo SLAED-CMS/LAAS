@@ -34,4 +34,12 @@ return [
     'system.cache_prune_none' => 'Cache prune: nothing to remove.',
     'auth.invalid_token' => '???????????????? ?????',
     'auth.token_expired' => '???? ???????? ?????? ?????',
+    'security.csp_report_received' => 'CSP report received.',
+    'security.reports_pruned' => 'Security reports pruned: {count} row(s) removed (older than {days} days).',
+    'security.headers_invalid' => 'Security headers configuration is invalid.',
+    'rate_limit.exceeded' => 'Rate limit exceeded.',
+    'audit.action.api_tokens.create' => 'API token created',
+    'audit.action.api_tokens.revoke' => 'API token revoked',
+    'audit.action.modules.toggle' => 'Module toggled',
+    'audit.action.settings.save' => 'Settings saved',
 ];

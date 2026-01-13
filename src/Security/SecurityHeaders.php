@@ -10,8 +10,9 @@ final class SecurityHeaders
     }
 
     /** @return array<string, string> */
-    public function all(): array
+    public function all(?bool $isHttps = null): array
     {
+        $isHttps = $isHttps ?? true;
         $headers = [
             'X-Content-Type-Options' => 'nosniff',
             'Referrer-Policy' => $this->config['referrer_policy'] ?? 'strict-origin-when-cross-origin',
@@ -23,12 +24,13 @@ final class SecurityHeaders
             $headers['X-Frame-Options'] = $frameOptions;
         }
 
-        $csp = $this->buildCsp($this->config['csp'] ?? []);
+        $cspConfig = $this->config['csp'] ?? [];
+        $csp = $this->buildCsp($cspConfig);
         if ($csp !== '') {
-            $headers['Content-Security-Policy'] = $csp;
+            $headers[$this->cspHeaderName($cspConfig)] = $csp;
         }
 
-        if (!empty($this->config['hsts_enabled'])) {
+        if (!empty($this->config['hsts_enabled']) && $isHttps) {
             $maxAge = (int) ($this->config['hsts_max_age'] ?? 31536000);
             $headers['Strict-Transport-Security'] = 'max-age=' . $maxAge;
         }
@@ -54,5 +56,15 @@ final class SecurityHeaders
         }
 
         return implode('; ', $parts);
+    }
+
+    private function cspHeaderName(array $csp): string
+    {
+        $mode = strtolower(trim((string) ($csp['mode'] ?? 'enforce')));
+        if ($mode === 'report-only') {
+            return 'Content-Security-Policy-Report-Only';
+        }
+
+        return 'Content-Security-Policy';
     }
 }

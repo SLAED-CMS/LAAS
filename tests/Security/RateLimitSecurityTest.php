@@ -40,6 +40,11 @@ final class RateLimitSecurityTest extends TestCase
                 'api' => ['window' => 60, 'max' => 0],
             ],
         ]);
+        $this->setProfileConfig($middleware, [
+            'profiles' => [
+                'api_default' => ['window' => 60, 'max' => 0],
+            ],
+        ]);
 
         $request = new Request('GET', '/api/v1/ping', [], [], ['accept' => 'application/json'], '');
         $next = static fn(): Response => new Response('ok', 200);
@@ -56,5 +61,12 @@ final class RateLimitSecurityTest extends TestCase
         foreach (glob($dir . '/*.json') ?: [] as $file) {
             @unlink($file);
         }
+    }
+
+    private function setProfileConfig(RateLimitMiddleware $middleware, array $config): void
+    {
+        $ref = new \ReflectionProperty($middleware, 'profileConfig');
+        $ref->setAccessible(true);
+        $ref->setValue($middleware, $config);
     }
 }

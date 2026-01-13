@@ -17,7 +17,7 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
     {
         $response = $next($request);
 
-        foreach ($this->securityHeaders->all() as $name => $value) {
+        foreach ($this->securityHeaders->all($request->isHttps()) as $name => $value) {
             $response = $response->withHeader($name, $value);
         }
 

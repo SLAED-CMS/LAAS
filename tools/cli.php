@@ -9,6 +9,7 @@ use Laas\Database\Repositories\RbacRepository;
 use Laas\Database\Repositories\RolesRepository;
 use Laas\Database\Repositories\SettingsRepository;
 use Laas\Database\Repositories\UsersRepository;
+use Laas\Database\Repositories\SecurityReportsRepository;
 use Laas\Modules\Media\Repository\MediaRepository;
 use Laas\Modules\Media\Service\MediaThumbnailService;
 use Laas\Modules\Media\Service\StorageService;
@@ -24,6 +25,7 @@ use Laas\Theme\ThemeValidator;
 use Laas\Support\Cache\CachePruner;
 use Laas\Support\PreflightRunner;
 use Laas\Ops\Checks\SessionCheck;
+use Laas\Ops\Checks\SecurityHeadersCheck;
 use Laas\Session\SessionFactory;
 use Laas\Session\Redis\RedisClient;
 use Laas\I18n\Translator;
@@ -123,6 +125,30 @@ $commands['cache:prune'] = function () use ($rootPath, $appConfig): int {
     } else {
         echo $translator->trans('system.cache_prune_none') . "\n";
     }
+
+    return 0;
+};
+
+$commands['security:reports:prune'] = function () use ($rootPath, $dbManager, $appConfig, $args): int {
+    $days = (int) (getOption($args, 'days') ?? 14);
+    if ($days <= 0) {
+        $days = 14;
+    }
+
+    if (!$dbManager->healthCheck()) {
+        echo "DB not available.\n";
+        return 1;
+    }
+
+    $repo = new SecurityReportsRepository($dbManager);
+    $deleted = $repo->prune($days);
+
+    $translator = new Translator(
+        $rootPath,
+        (string) ($appConfig['theme'] ?? 'default'),
+        (string) ($appConfig['default_locale'] ?? 'en')
+    );
+    echo $translator->trans('security.reports_pruned', ['count' => $deleted, 'days' => $days]) . "\n";
 
     return 0;
 };
@@ -1053,6 +1079,16 @@ $commands['doctor'] = function () use (&$commands, $rootPath, $appConfig, $stora
             },
         ],
         [
+            'label' => 'security_headers',
+            'enabled' => true,
+            'run' => static function () use ($securityConfig): int {
+                $check = new SecurityHeadersCheck($securityConfig, null);
+                $result = $check->run();
+                echo $result['message'] . "\n";
+                return $result['code'];
+            },
+        ],
+        [
             'label' => 'phpunit',
             'enabled' => false,
             'run' => static function (): int {
@@ -1173,6 +1209,16 @@ $commands['preflight'] = function () use (&$commands, $args, $rootPath, $securit
             'enabled' => true,
             'run' => static function () use ($sessionCheck): int {
                 $result = $sessionCheck->run();
+                echo $result['message'] . "\n";
+                return $result['code'];
+            },
+        ],
+        [
+            'label' => 'security_headers',
+            'enabled' => true,
+            'run' => static function () use ($securityConfig): int {
+                $check = new SecurityHeadersCheck($securityConfig, null);
+                $result = $check->run();
                 echo $result['message'] . "\n";
                 return $result['code'];
             },

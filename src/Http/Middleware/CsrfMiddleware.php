@@ -17,6 +17,10 @@ final class CsrfMiddleware implements MiddlewareInterface
             return $next($request);
         }
 
+        if ($request->getPath() === '/__csp/report') {
+            return $next($request);
+        }
+
         if (!in_array($request->getMethod(), self::METHODS, true)) {
             return $next($request);
         }

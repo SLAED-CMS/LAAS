@@ -39,6 +39,10 @@ $envList = static function (string $key, array $default) use ($env): array {
     $parts = array_filter(array_map('trim', explode(',', (string) $value)));
     return $parts !== [] ? array_values($parts) : $default;
 };
+$envEnum = static function (string $key, array $allowed, string $default) use ($env, $envString): string {
+    $value = strtolower(trim($envString($key, $default)));
+    return in_array($value, $allowed, true) ? $value : $default;
+};
 
 $cookieSecure = $envBool('SESSION_COOKIE_SECURE', $envBool('SESSION_SECURE', false));
 $cookieHttpOnly = $envBool('SESSION_COOKIE_HTTPONLY', $envBool('SESSION_HTTPONLY', true));
@@ -48,6 +52,7 @@ $idleTtl = $envInt('SESSION_IDLE_TTL', 0);
 $absoluteTtl = $envInt('SESSION_ABSOLUTE_TTL', 0);
 
 $allowCdn = $envBool('CSP_ALLOW_CDN', false);
+$cspMode = $envEnum('CSP_MODE', ['enforce', 'report-only'], 'enforce');
 $cdnSources = $allowCdn ? ['https://cdn.jsdelivr.net'] : [];
 $scriptExtra = $envList('CSP_SCRIPT_SRC_EXTRA', []);
 $styleExtra = $envList('CSP_STYLE_SRC_EXTRA', []);
@@ -96,6 +101,7 @@ return [
     'frame_options' => 'DENY',
     'csp' => [
         'enabled' => true,
+        'mode' => $cspMode,
         'allow_cdn' => $allowCdn,
         'directives' => [
             'default-src' => ["'self'"],

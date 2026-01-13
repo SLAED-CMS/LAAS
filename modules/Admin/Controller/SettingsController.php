@@ -9,7 +9,7 @@ use Laas\Database\Repositories\SettingsRepository;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\Support\AuditLogger;
+use Laas\Support\Audit;
 use Laas\View\View;
 use Throwable;
 
@@ -143,19 +143,13 @@ final class SettingsController
         $repo->set('default_locale', $defaultLocale, 'string');
         $repo->set('theme', $theme, 'string');
         $repo->set('api.token_issue_mode', $apiTokenIssueMode, 'string');
-        (new AuditLogger($this->db, $request->session()))->log(
-            'settings.update',
-            'setting',
-            null,
-            [
-                'site_name' => $siteName,
-                'default_locale' => $defaultLocale,
-                'theme' => $theme,
-                'api_token_issue_mode' => $apiTokenIssueMode,
-            ],
-            $this->currentUserId($request),
-            $request->ip()
-        );
+        Audit::log('settings.save', 'setting', null, [
+            'actor_user_id' => $this->currentUserId($request),
+            'site_name' => $siteName,
+            'default_locale' => $defaultLocale,
+            'theme' => $theme,
+            'api_token_issue_mode' => $apiTokenIssueMode,
+        ]);
 
         if ($request->wantsJson()) {
             return ContractResponse::ok([

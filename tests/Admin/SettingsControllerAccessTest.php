@@ -63,7 +63,7 @@ final class SettingsControllerAccessTest extends TestCase
         $response = $controller->save($request);
 
         $this->assertSame(200, $response->getStatus());
-        $count = (int) $pdo->query("SELECT COUNT(*) FROM audit_logs WHERE action = 'settings.update'")->fetchColumn();
+        $count = (int) $pdo->query("SELECT COUNT(*) FROM audit_logs WHERE action = 'settings.save'")->fetchColumn();
         $this->assertSame(1, $count);
     }
 

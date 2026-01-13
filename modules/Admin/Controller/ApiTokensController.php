@@ -10,7 +10,7 @@ use Laas\Database\Repositories\RbacRepository;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\Support\AuditLogger;
+use Laas\Support\Audit;
 use Laas\View\View;
 use Throwable;
 
@@ -122,19 +122,13 @@ final class ApiTokensController
         $service = $this->service();
         $created = $service->createToken($userId, $name, $scopes, $expiresAt);
 
-        (new AuditLogger($this->db, $request->session()))->log(
-            'api.token.created',
-            'api_token',
-            (int) ($created['token_id'] ?? 0),
-            [
-                'name' => $name,
-                'expires_at' => $expiresAt,
-                'scopes' => $scopes,
-                'token_prefix' => (string) ($created['token_prefix'] ?? ''),
-            ],
-            $userId,
-            $request->ip()
-        );
+        Audit::log('api_tokens.create', 'api_token', (int) ($created['token_id'] ?? 0), [
+            'actor_user_id' => $userId,
+            'name' => $name,
+            'expires_at' => $expiresAt,
+            'scopes' => $scopes,
+            'token_prefix' => (string) ($created['token_prefix'] ?? ''),
+        ]);
 
         if ($request->wantsJson()) {
             return ContractResponse::ok([
@@ -234,34 +228,22 @@ final class ApiTokensController
         $service = $this->service();
         $created = $service->createToken($userId, $name, $scopes, $expiresAt);
 
-        (new AuditLogger($this->db, $request->session()))->log(
-            'api.token.created',
-            'api_token',
-            (int) ($created['token_id'] ?? 0),
-            [
-                'name' => $name,
-                'expires_at' => $expiresAt,
-                'scopes' => $scopes,
-                'token_prefix' => (string) ($created['token_prefix'] ?? ''),
-                'rotated_from' => $id,
-            ],
-            $userId,
-            $request->ip()
-        );
+        Audit::log('api_tokens.create', 'api_token', (int) ($created['token_id'] ?? 0), [
+            'actor_user_id' => $userId,
+            'name' => $name,
+            'expires_at' => $expiresAt,
+            'scopes' => $scopes,
+            'token_prefix' => (string) ($created['token_prefix'] ?? ''),
+            'rotated_from' => $id,
+        ]);
 
         if ($revokeOld && $repo->revoke($id, $userId)) {
-            (new AuditLogger($this->db, $request->session()))->log(
-                'api.token.revoked',
-                'api_token',
-                $id,
-                [
-                    'token_id' => $id,
-                    'user_id' => $userId,
-                    'rotated_to' => (int) ($created['token_id'] ?? 0),
-                ],
-                $userId,
-                $request->ip()
-            );
+            Audit::log('api_tokens.revoke', 'api_token', $id, [
+                'actor_user_id' => $userId,
+                'token_id' => $id,
+                'user_id' => $userId,
+                'rotated_to' => (int) ($created['token_id'] ?? 0),
+            ]);
         }
 
         if ($request->wantsJson()) {
@@ -309,17 +291,11 @@ final class ApiTokensController
 
         $ok = $repo->revoke($id, $userId);
         if ($ok) {
-            (new AuditLogger($this->db, $request->session()))->log(
-                'api.token.revoked',
-                'api_token',
-                $id,
-                [
-                    'token_id' => $id,
-                    'user_id' => $userId,
-                ],
-                $userId,
-                $request->ip()
-            );
+            Audit::log('api_tokens.revoke', 'api_token', $id, [
+                'actor_user_id' => $userId,
+                'token_id' => $id,
+                'user_id' => $userId,
+            ]);
         }
 
         if ($request->wantsJson()) {

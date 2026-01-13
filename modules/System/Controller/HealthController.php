@@ -8,6 +8,7 @@ use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\I18n\Translator;
 use Laas\Modules\Media\Service\StorageService;
+use Laas\Ops\Checks\SecurityHeadersCheck;
 use Laas\Support\ConfigSanityChecker;
 use Laas\Support\HealthService;
 use Laas\Support\HealthStatusTracker;
@@ -19,6 +20,7 @@ final class HealthController
     private HealthService $healthService;
     private Translator $translator;
     private ?HealthStatusTracker $tracker = null;
+    private array $securityConfig = [];
 
     public function __construct(?HealthService $healthService = null, ?Translator $translator = null)
     {
@@ -27,6 +29,7 @@ final class HealthController
         $mediaConfig = $this->loadConfig($rootPath . '/config/media.php');
         $storageConfig = $this->loadConfig($rootPath . '/config/storage.php');
         $securityConfig = $this->loadConfig($rootPath . '/config/security.php');
+        $this->securityConfig = $securityConfig;
 
         $locale = (string) ($appConfig['default_locale'] ?? 'en');
         $theme = (string) ($appConfig['theme'] ?? 'default');
@@ -66,13 +69,22 @@ final class HealthController
     {
         $result = $this->healthService->check();
         $ok = (bool) ($result['ok'] ?? false);
+        $securityCheck = new SecurityHeadersCheck($this->securityConfig, $request->isHttps());
+        $headersResult = $securityCheck->run();
+        if ($headersResult['code'] === 1) {
+            $ok = false;
+        }
         $messageKey = $ok ? 'system.health.ok' : 'system.health.degraded';
         if ($this->tracker !== null) {
             $this->tracker->logHealthTransition($ok);
         }
 
         $checks = $result['checks'] ?? [];
+        $checks['security_headers'] = $headersResult['code'] !== 1;
         $warnings = $result['warnings'] ?? [];
+        if ($headersResult['code'] !== 0) {
+            $warnings[] = $this->translator->trans('security.headers_invalid');
+        }
         $payload = [
             'status' => $ok ? 'ok' : 'degraded',
             'message' => $this->translator->trans($messageKey),

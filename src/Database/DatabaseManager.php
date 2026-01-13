@@ -16,6 +16,7 @@ final class DatabaseManager
 
     public function __construct(private array $config)
     {
+        RequestScope::set('db.manager', $this);
     }
 
     public function enableDevTools(DevToolsContext $context, array $config): void
