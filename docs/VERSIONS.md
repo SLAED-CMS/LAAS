@@ -1,5 +1,10 @@
 # LAAS Versions
 
+- v3.4.0: Personal Access Tokens v1
+  - PAT format LAAS_<prefix>.<secret> with scopes + expiry
+  - Admin API tokens contracts + fixtures
+  - Bearer auth middleware + tests
+
 - v3.3.0: Session hardening & ops polish
   - Centralized session cookie policy with HTTPS secure auto
   - Idle/absolute TTL enforcement + RBAC-triggered rotation

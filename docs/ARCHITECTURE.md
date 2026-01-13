@@ -1197,6 +1197,15 @@ if ($auth->check()) {
 $auth->logout();
 ```
 
+**API token authentication (PAT v1):**
+
+- Tokens are issued as `LAAS_<prefix>.<secret>`; only SHA-256 hashes are stored.
+- Scopes + expiry are persisted per token; revoked/expired tokens are rejected.
+- Middleware reads `Authorization: Bearer <token>` and injects:
+  - `auth_user_id`
+  - `auth_scopes`
+  - `auth_token_id`
+
 **Session regeneration:**
 ```php
 // After login (prevent session fixation)

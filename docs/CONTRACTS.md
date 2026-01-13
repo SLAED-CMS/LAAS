@@ -116,3 +116,27 @@ This document defines the JSON response envelope and the internal contract regis
   }
 }
 ```
+
+## Admin API tokens
+
+- `GET /admin/api-tokens` -> `admin.api_tokens.index`
+- `POST /admin/api-tokens` -> `admin.api_tokens.create`
+- `POST /admin/api-tokens/revoke` -> `admin.api_tokens.revoke`
+
+**Admin API tokens create (OK)**
+```json
+{
+  "data": {
+    "token_id": 1,
+    "name": "CLI",
+    "token_prefix": "ABCDEF123456",
+    "scopes": ["admin.read"],
+    "expires_at": null,
+    "token_once": "LAAS_ABCDEF123456.S3CR3T"
+  },
+  "meta": {
+    "format": "json",
+    "route": "admin.api_tokens.create"
+  }
+}
+```

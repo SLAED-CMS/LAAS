@@ -187,7 +187,7 @@ http://laas.loc/
 - **Audit Log** — Track all important actions (incl. API tokens/auth failures)
 - **CSRF Protection** — Token-based CSRF protection
 - **Rate Limiting** — Dedicated API bucket (token/IP) + login/media buckets
-- **API Tokens** — SHA-256 hashes, expiry/revocation, rotation flow, audit trail
+- **API Tokens** — PAT format (LAAS_<prefix>.<secret>), SHA-256 hashes, scopes + expiry, rotation, audit trail
 - **CORS** — Default deny with strict allowlist for API v1
 - **Security Headers** — CSP, X-Frame-Options, etc.
 - **Media Hardening** — MIME validation, ClamAV scanning, quarantine
@@ -357,6 +357,12 @@ tools/                 # CLI utilities
 - `/health` — System health endpoint
 - `/csrf` — CSRF token refresh
 
+
+**Personal Access Tokens (PAT)**
+- Create via `/admin/api-tokens` (admin UI) or `/api/v1/auth/token`
+- Use header: `Authorization: Bearer LAAS_<prefix>.<secret>`
+- Scopes are allowlisted via `API_TOKEN_SCOPES`
+
 ### Auth
 - `/login` — Login page (GET/POST)
 - `/logout` — Logout (POST)
@@ -372,7 +378,7 @@ tools/                 # CLI utilities
 - `/admin/audit` — Audit log
 - `/admin/search` — Global admin search
 - `/admin/diagnostics` — RBAC diagnostics
-- `/admin/api/tokens` — API tokens (issue, rotate, revoke)
+- `/admin/api-tokens` — API tokens (issue, rotate, revoke)
 - `/admin/changelog` — Changelog management (GitHub/git providers)
 
 ### Media
@@ -574,7 +580,7 @@ New install flow:
 - `/admin/menus` — Menu management
 
 ### API & Integrations
-- `/admin/api/tokens` — API token management (issue, rotate, revoke)
+- `/admin/api-tokens` — API token management (issue, rotate, revoke)
 - `/admin/changelog` — Changelog configuration (GitHub/local git providers)
 
 ---
