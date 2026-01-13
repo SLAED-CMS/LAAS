@@ -444,6 +444,12 @@ return new JsonResponse(['status' => 'ok'], 200);
 return new RedirectResponse('/admin/pages');
 ```
 
+**Error envelope & request_id (v3.7):**
+- JSON errors use `{ error: { code, message, details? }, meta: { format, request_id, ts } }`.
+- `X-Request-Id` header is always present; `meta.request_id` mirrors it for JSON.
+- HTML includes `<meta name="request-id">` only when `APP_DEBUG=true` or `DEVTOOLS_ENABLED=true`.
+- `error.details.source` is included only when `APP_DEBUG=true` (for safe diagnostics).
+
 ### Session Layer
 
 **Abstraction:**
@@ -963,9 +969,9 @@ public function render(string $template, array $data): string
 - No full layout rendering for partial responses
 
 **JSON:**
-- Unhandled exceptions return ProblemDetails
-- Validation errors return 422 + ProblemDetails.errors
-- No stacktrace in JSON responses
+- Unhandled exceptions return error envelope with `error.code=E_INTERNAL`
+- Validation errors return 422 + `error.details.fields`
+- JSON errors include `meta.request_id` + `meta.ts`, no stacktrace
 
 ### RenderAdapter v1
 
@@ -1960,8 +1966,8 @@ return $responder->respond($request, 'pages/page.html', $data, $data);
 - `POST /admin/settings` -> `{ data: { saved, updated }, meta: { format, status } }`
 
 **Error contracts:**
-- Protected module toggle: `400` + `{ "error": "protected_module" }`
-- Settings validation: `422` + `{ "error": "validation_failed", "fields": { ... } }`
+- Protected module toggle: `400` + `{ "error": { "code": "E_INVALID_REQUEST", "message": "..."} }`
+- Settings validation: `422` + `{ "error": { "code": "E_VALIDATION_FAILED", "details": { "fields": { ... } } } }`
 
 **Negotiation:**
 - Same routes, same controllers, same HTMX/UI behavior
@@ -1972,8 +1978,8 @@ return $responder->respond($request, 'pages/page.html', $data, $data);
 ## v3.0 Contracts foundation
 
 **Standard envelope:**
-- OK: `{ "data": {...}, "meta": { "format": "json", "route": "..." } }`
-- ERROR: `{ "error": "...", "meta": { "format": "json", "route": "..." }, "fields": {...} }`
+- OK: `{ "data": {...}, "meta": { "format": "json", "route": "...", "request_id": "...", "ts": "..." } }`
+- ERROR: `{ "error": { "code": "...", "message": "...", "details": {...} }, "meta": { "format": "json", "route": "...", "request_id": "...", "ts": "..." } }`
 
 **Contract registry:**
 - Lightweight internal registry (not OpenAPI)
@@ -1982,7 +1988,8 @@ return $responder->respond($request, 'pages/page.html', $data, $data);
 **Rules:**
 - `meta.format` is always `json`
 - `meta.route` is stable and required for contract endpoints
-- `meta.request_id` is included when available
+- `meta.request_id` is always present
+- `meta.ts` is always present (UTC ISO8601)
 
 ---
 

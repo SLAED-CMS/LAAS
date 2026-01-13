@@ -17,12 +17,19 @@ This document defines the JSON response envelope and the internal contract regis
 **ERROR**
 ```json
 {
-  "error": "some_error_key",
-  "meta": {
-    "format": "json"
+  "error": {
+    "code": "E_SOME_ERROR",
+    "message": "Human readable message",
+    "details": {
+      "fields": {
+        "field_name": ["message"]
+      }
+    }
   },
-  "fields": {
-    "field_name": ["message"]
+  "meta": {
+    "format": "json",
+    "request_id": "req-1",
+    "ts": "2026-01-01T00:00:00Z"
   }
 }
 ```
@@ -43,14 +50,14 @@ This document defines the JSON response envelope and the internal contract regis
 
 - `format` is always `json`
 - `route` is a stable internal route name
-- `request_id` is included when available
+- `request_id` is always included
+- `ts` is UTC ISO8601
 
 ## Headless mode
 
 - When `APP_HEADLESS=true`, JSON envelope is the default response format
 - HTML is only served on explicit `Accept: text/html` and allowlisted routes
-- Blocked HTML requests return `406` with `error: "not_acceptable"`
-- Standard error keys: `not_acceptable`, `headless_html_disabled`
+- Blocked HTML requests return `406` with `error.code: "E_FORMAT_NOT_ACCEPTABLE"`
 
 ## Versioning
 
@@ -75,7 +82,9 @@ This document defines the JSON response envelope and the internal contract regis
   },
   "meta": {
     "format": "json",
-    "route": "pages.show"
+    "route": "pages.show",
+    "request_id": "req-1",
+    "ts": "2026-01-01T00:00:00Z"
   }
 }
 ```
@@ -91,13 +100,20 @@ This document defines the JSON response envelope and the internal contract regis
 **Admin settings save (validation error)**
 ```json
 {
-  "error": "validation_failed",
+  "error": {
+    "code": "E_VALIDATION_FAILED",
+    "message": "Validation failed.",
+    "details": {
+      "fields": {
+        "site_name": ["invalid"]
+      }
+    }
+  },
   "meta": {
     "format": "json",
-    "route": "admin.settings.save"
-  },
-  "fields": {
-    "site_name": ["invalid"]
+    "route": "admin.settings.save",
+    "request_id": "req-1",
+    "ts": "2026-01-01T00:00:00Z"
   }
 }
 ```
@@ -112,7 +128,9 @@ This document defines the JSON response envelope and the internal contract regis
   },
   "meta": {
     "format": "json",
-    "route": "admin.modules.toggle"
+    "route": "admin.modules.toggle",
+    "request_id": "req-1",
+    "ts": "2026-01-01T00:00:00Z"
   }
 }
 ```
@@ -136,7 +154,9 @@ This document defines the JSON response envelope and the internal contract regis
   },
   "meta": {
     "format": "json",
-    "route": "admin.api_tokens.create"
+    "route": "admin.api_tokens.create",
+    "request_id": "req-1",
+    "ts": "2026-01-01T00:00:00Z"
   }
 }
 ```

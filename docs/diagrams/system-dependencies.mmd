@@ -44,7 +44,7 @@ graph TB
         UiTokenMapper["UiTokenMapper<br/>State/Status Mapping"]
         PresentationLeakDetector["PresentationLeakDetector<br/>Policy Enforcement"]
         ViewModels["ViewModels<br/>Data Normalization"]
-        ProblemDetails["ProblemDetails<br/>RFC 7807 JSON Errors"]
+        ErrorEnvelope["ErrorEnvelope<br/>JSON Error Envelope"]
     end
 
     subgraph Services["Application Services"]
@@ -77,7 +77,7 @@ graph TB
     ViewEngine --> TemplateEngine
     ViewEngine --> ThemeManager
     ViewEngine --> AssetManager
-    ViewEngine --> ProblemDetails
+    ViewEngine --> ErrorEnvelope
     TemplateEngine --> Cache
     ThemeManager --> Cache
     AssetManager --> AssetsManager
@@ -130,7 +130,7 @@ graph TB
     style UiTokenMapper fill:#ffd3b6
     style PresentationLeakDetector fill:#ffaaa5
     style ViewModels fill:#95e1d3
-    style ProblemDetails fill:#ff9ff3
+    style ErrorEnvelope fill:#ff9ff3
 
     style Backup fill:#c7ceea
     style Health fill:#ffd3b6

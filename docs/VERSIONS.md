@@ -1,5 +1,10 @@
 # LAAS Versions
 
+- v3.7.0: Incident Debuggability
+  - Unified error codes + JSON error envelope with request_id/ts
+  - Debug-only error source tagging + DevTools display
+  - Request ID propagation (header + JSON meta + HTML meta tag)
+
 - v3.6.0: Backup v2 production readiness
   - tar.gz format with metadata + manifest sha256
   - backup:verify, restore --dry-run, prune command
