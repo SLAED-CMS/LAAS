@@ -1,5 +1,10 @@
 # LAAS Versions
 
+- v3.8.0: Performance Baseline
+  - Perf guard limits with warn/block modes + admin overrides
+  - Cache knobs + cache:status CLI
+  - Perf guard error envelope E_PERF_BUDGET_EXCEEDED
+
 - v3.7.0: Incident Debuggability
   - Unified error codes + JSON error envelope with request_id/ts
   - Debug-only error source tagging + DevTools display

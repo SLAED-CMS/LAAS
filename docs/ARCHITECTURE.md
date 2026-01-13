@@ -1640,6 +1640,17 @@ if (config('app.read_only') && $request->isWriteMethod()) {
 - Blocks can be disabled via config
 - RBAC-gated blocks are hidden when not allowed
 
+### Performance guard
+
+**Purpose:** Enforce predictable request limits (DB/HTTP/time) without adding middleware.
+
+**Implementation:**
+- Evaluated after dispatch in `PerfBudgetEnforcer` (uses `DevToolsContext` metrics)
+- Mode `warn`: DevTools warning token + audit event `perf.guard.warn`
+- Mode `block`: 503 (JSON envelope `E_PERF_BUDGET_EXCEEDED`, HTML via `partials/messages.html`)
+- Admin GET overrides apply for `/admin` paths
+- Exempt paths/routes skip guard
+
 ### Backup & Restore
 
 **CLI commands:**

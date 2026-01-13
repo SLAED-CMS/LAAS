@@ -140,6 +140,15 @@ http://laas.loc/
 - Hard thresholds: `PERF_BUDGET_TOTAL_MS_HARD`, `PERF_BUDGET_SQL_COUNT_HARD`, `PERF_BUDGET_SQL_MS_HARD`
 - Hard fail: `PERF_BUDGET_HARD_FAIL=true` returns 503 with `system.over_budget` (JSON or plain text)
 
+## Performance guard
+
+- Enable with `PERF_GUARDS_ENABLED=true`
+- Mode: `PERF_GUARD_MODE=warn|block`
+- Limits: `PERF_DB_MAX_QUERIES`, `PERF_DB_MAX_UNIQUE`, `PERF_DB_MAX_TOTAL_MS`, `PERF_HTTP_MAX_CALLS`, `PERF_HTTP_MAX_TOTAL_MS`, `PERF_TOTAL_MAX_MS`
+- Admin GET overrides: `PERF_DB_MAX_QUERIES_ADMIN`, `PERF_TOTAL_MAX_MS_ADMIN`
+- Exemptions: `PERF_GUARD_EXEMPT_PATHS`, `PERF_GUARD_EXEMPT_ROUTES`
+- Block returns 503 with `E_PERF_BUDGET_EXCEEDED` + `Retry-After: 5`
+
 ## Migration notes
 
 ### Writing new modules
@@ -404,6 +413,7 @@ tools/                 # CLI utilities
 
 ### Cache Management
 - `php tools/cli.php cache:clear` — Clear all cache
+- `php tools/cli.php cache:status` — Show cache config/status
 - `php tools/cli.php cache:prune` — Remove stale cache files
 - `php tools/cli.php templates:clear` — Clear template cache
 - `php tools/cli.php templates:warmup` — Warmup template cache
@@ -449,6 +459,7 @@ tools/                 # CLI utilities
 - File cache under `storage/cache/data` (settings/menu).
 - Default TTL: 300s.
 - Prune stale cache: `php tools/cli.php cache:prune` (uses `CACHE_TTL_DAYS`).
+- Knobs: `CACHE_ENABLED`, `CACHE_DEFAULT_TTL`, `CACHE_TAG_TTL`, `CACHE_DEVTOOLS_TRACKING`.
 
 ---
 
