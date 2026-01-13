@@ -26,6 +26,9 @@ return [
     'system.backup.created' => 'बैकअप बनाया गया',
     'system.health.ok' => 'ठीक है',
     'system.over_budget' => 'System is temporarily over budget.',
+    'perf.budget_exceeded' => 'Performance budget exceeded.',
+    'perf.guard_warn' => 'Performance guard warning.',
+    'perf.guard_blocked' => 'Request blocked by performance guard.',
     'system.cache_pruned' => 'Cache pruned: {count} file(s) removed.',
     'system.cache_prune_none' => 'Cache prune: nothing to remove.',
     'auth.invalid_token' => 'Invalid token',
@@ -59,3 +62,4 @@ return [
     'error.empty_body' => 'Empty body.',
     'error.invalid_json' => 'Invalid JSON.',
 ];
+

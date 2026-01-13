@@ -28,12 +28,19 @@ $envInt = static function (string $key, int $default) use ($env): int {
     return (int) $value;
 };
 
+$defaultTtl = $envInt('CACHE_DEFAULT_TTL', $envInt('CACHE_TTL_DEFAULT', 60));
+$tagTtl = $envInt('CACHE_TAG_TTL', $defaultTtl);
+$devtoolsTracking = $envBool('CACHE_DEVTOOLS_TRACKING', true);
+
 return [
     'enabled' => $envBool('CACHE_ENABLED', true),
-    'ttl_default' => $envInt('CACHE_TTL_DEFAULT', 60),
+    'ttl_default' => $defaultTtl,
+    'default_ttl' => $defaultTtl,
     'ttl_settings' => $envInt('CACHE_TTL_SETTINGS', 60),
     'ttl_permissions' => $envInt('CACHE_TTL_PERMISSIONS', 60),
     'ttl_menus' => $envInt('CACHE_TTL_MENUS', 60),
     'prefix' => $envString('CACHE_PREFIX', 'laas'),
     'ttl_days' => $envInt('CACHE_TTL_DAYS', 7),
+    'tag_ttl' => $tagTtl,
+    'devtools_tracking' => $devtoolsTracking,
 ];

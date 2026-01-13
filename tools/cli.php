@@ -23,6 +23,7 @@ use Laas\Support\ReleaseChecker;
 use Laas\Settings\SettingsProvider;
 use Laas\Theme\ThemeValidator;
 use Laas\Support\Cache\CachePruner;
+use Laas\Support\Cache\CacheFactory;
 use Laas\Support\PreflightRunner;
 use Laas\Ops\Checks\BackupWritableCheck;
 use Laas\Ops\Checks\SessionCheck;
@@ -127,6 +128,33 @@ $commands['cache:prune'] = function () use ($rootPath, $appConfig): int {
         echo $translator->trans('system.cache_prune_none') . "\n";
     }
 
+    return 0;
+};
+
+$commands['cache:status'] = function () use ($rootPath): int {
+    $config = CacheFactory::config($rootPath);
+    $enabled = (bool) ($config['enabled'] ?? true);
+    $ttl = (int) ($config['ttl_default'] ?? $config['default_ttl'] ?? 300);
+    $tagTtl = (int) ($config['tag_ttl'] ?? $ttl);
+    $dir = $rootPath . '/storage/cache/data';
+    $pruneFile = $rootPath . '/storage/cache/.prune.json';
+    $lastPrune = 'n/a';
+    if (is_file($pruneFile)) {
+        $raw = json_decode((string) file_get_contents($pruneFile), true);
+        if (is_array($raw) && isset($raw['at'])) {
+            $lastPrune = gmdate('Y-m-d\\TH:i:s\\Z', (int) $raw['at']);
+        }
+    }
+
+    $hits = 'n/a';
+    $misses = 'n/a';
+
+    echo 'enabled: ' . ($enabled ? 'true' : 'false') . "\n";
+    echo 'default_ttl: ' . $ttl . "\n";
+    echo 'tag_ttl: ' . $tagTtl . "\n";
+    echo 'cache_dir: ' . $dir . "\n";
+    echo 'last_prune: ' . $lastPrune . "\n";
+    echo 'stats: hits=' . $hits . ' misses=' . $misses . "\n";
     return 0;
 };
 

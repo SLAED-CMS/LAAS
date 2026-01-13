@@ -10,6 +10,7 @@ use Laas\DevTools\JsErrorInbox;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
+use Laas\Support\Cache\CacheFactory;
 use Laas\Support\Cache\FileCache;
 use Laas\View\View;
 
@@ -100,8 +101,7 @@ final class DevToolsController
             return ErrorResponse::respond($request, 'type and message are required', [], 422, [], 'devtools.controller');
         }
 
-        $cache = new FileCache(dirname(__DIR__, 3) . '/storage/cache', 'devtools');
-        $inbox = new JsErrorInbox($cache, $userId);
+        $inbox = new JsErrorInbox($this->devtoolsCache(), $userId);
         $inbox->add($data);
 
         return new Response('', 204, ['Content-Type' => 'text/plain']);
@@ -118,8 +118,7 @@ final class DevToolsController
             return Response::html('', 401);
         }
 
-        $cache = new FileCache(dirname(__DIR__, 3) . '/storage/cache', 'devtools');
-        $inbox = new JsErrorInbox($cache, $userId);
+        $inbox = new JsErrorInbox($this->devtoolsCache(), $userId);
         $errors = $inbox->list(200);
 
         // Format time_ago for each error
@@ -163,8 +162,7 @@ final class DevToolsController
             return ErrorResponse::respond($request, 'unauthorized', [], 401, [], 'devtools.controller');
         }
 
-        $cache = new FileCache(dirname(__DIR__, 3) . '/storage/cache', 'devtools');
-        $inbox = new JsErrorInbox($cache, $userId);
+        $inbox = new JsErrorInbox($this->devtoolsCache(), $userId);
         $inbox->clear();
 
         // Return empty list HTML for HTMX swap
@@ -213,6 +211,14 @@ final class DevToolsController
 
         $limit['count']++;
         return true;
+    }
+
+    private function devtoolsCache(): FileCache
+    {
+        $rootPath = dirname(__DIR__, 3);
+        $config = CacheFactory::config($rootPath);
+        $track = (bool) ($config['devtools_tracking'] ?? true);
+        return new FileCache($rootPath . '/storage/cache', 'devtools', 300, $track);
     }
 
     private function isAllowed(Request $request): bool

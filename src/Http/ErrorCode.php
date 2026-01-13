@@ -19,6 +19,7 @@ final class ErrorCode
     public const MEDIA_FORBIDDEN = 'E_MEDIA_FORBIDDEN';
     public const API_TOKEN_INVALID = 'E_API_TOKEN_INVALID';
     public const BACKUP_VERIFY_FAILED = 'E_BACKUP_VERIFY_FAILED';
+    public const PERF_BUDGET_EXCEEDED = 'E_PERF_BUDGET_EXCEEDED';
     public const INVALID_REQUEST = 'E_INVALID_REQUEST';
     public const SERVICE_UNAVAILABLE = 'E_SERVICE_UNAVAILABLE';
 }

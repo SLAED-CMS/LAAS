@@ -30,6 +30,9 @@ return [
     'system.trust_proxy_enabled' => 'Vertrauenswürdiger Proxy ist aktiviert.',
     'system.trust_proxy_disabled' => 'Vertrauenswürdiger Proxy ist deaktiviert.',
     'system.over_budget' => 'System is temporarily over budget.',
+    'perf.budget_exceeded' => 'Performance budget exceeded.',
+    'perf.guard_warn' => 'Performance guard warning.',
+    'perf.guard_blocked' => 'Request blocked by performance guard.',
     'system.cache_pruned' => 'Cache pruned: {count} file(s) removed.',
     'system.cache_prune_none' => 'Cache prune: nothing to remove.',
     'auth.invalid_token' => 'Ung?ltiges Token',
@@ -63,3 +66,4 @@ return [
     'error.empty_body' => 'Empty body.',
     'error.invalid_json' => 'Invalid JSON.',
 ];
+

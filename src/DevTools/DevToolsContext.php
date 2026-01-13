@@ -101,6 +101,17 @@ final class DevToolsContext
         return $this->dbTotalMs;
     }
 
+    public function getDbUniqueCount(): int
+    {
+        return count($this->dbDuplicates);
+    }
+
+    /** @return array{available: bool, count: ?int, total_ms: ?float, top3_slowest_calls: array<int, array<string, mixed>>} */
+    public function getExternalStats(): array
+    {
+        return $this->buildExternalStats();
+    }
+
     public function getDbDuplicateCount(): int
     {
         $count = 0;
@@ -725,9 +736,13 @@ final class DevToolsContext
         $slowHttpWarn = (float) ($budgets['slow_http_warn'] ?? 200);
         $slowSqlWarn = (float) ($budgets['slow_sql_warn'] ?? 50);
         $perfMessages = [];
+        $guardMessages = [];
         foreach ($this->customWarnings as $custom) {
             if (($custom['code'] ?? '') === 'perf_budget') {
                 $perfMessages[] = (string) ($custom['message'] ?? '');
+            }
+            if (($custom['code'] ?? '') === 'perf_guard') {
+                $guardMessages[] = (string) ($custom['message'] ?? '');
             }
         }
         if (in_array('slow_external_http', $warnings, true) && $external['available'] && $httpMax >= $slowHttpWarn) {
@@ -757,6 +772,17 @@ final class DevToolsContext
                 }
             } else {
                 $warningTokens[] = 'Performance budget exceeded';
+            }
+        }
+        if (in_array('perf_guard', $warnings, true)) {
+            if ($guardMessages !== []) {
+                foreach ($guardMessages as $message) {
+                    if ($message !== '') {
+                        $warningTokens[] = $message;
+                    }
+                }
+            } else {
+                $warningTokens[] = 'Performance guard exceeded';
             }
         }
 

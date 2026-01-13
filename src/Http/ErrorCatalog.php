@@ -20,6 +20,7 @@ final class ErrorCatalog
         ErrorCode::MEDIA_FORBIDDEN => ['status' => 403, 'message_key' => 'error.media_forbidden'],
         ErrorCode::API_TOKEN_INVALID => ['status' => 401, 'message_key' => 'auth.invalid_token'],
         ErrorCode::BACKUP_VERIFY_FAILED => ['status' => 500, 'message_key' => 'error.backup_verify_failed'],
+        ErrorCode::PERF_BUDGET_EXCEEDED => ['status' => 503, 'message_key' => 'perf.budget_exceeded'],
         ErrorCode::INVALID_REQUEST => ['status' => 400, 'message_key' => 'error.invalid_request'],
         ErrorCode::SERVICE_UNAVAILABLE => ['status' => 503, 'message_key' => 'error.service_unavailable'],
     ];

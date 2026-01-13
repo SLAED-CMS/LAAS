@@ -41,6 +41,23 @@ final class CachePruner
             }
         }
 
+        $this->recordPrune($root, $deleted, $scanned);
+
         return ['deleted' => $deleted, 'scanned' => $scanned];
+    }
+
+    private function recordPrune(string $root, int $deleted, int $scanned): void
+    {
+        if (!is_dir($root)) {
+            return;
+        }
+
+        $path = $root . '/.prune.json';
+        $payload = [
+            'at' => time(),
+            'deleted' => $deleted,
+            'scanned' => $scanned,
+        ];
+        @file_put_contents($path, json_encode($payload, JSON_UNESCAPED_SLASHES));
     }
 }

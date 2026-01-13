@@ -60,6 +60,7 @@ final class View
     public function setRequest(Request $request): void
     {
         $this->request = $request;
+        RequestScope::set('view', $this);
     }
 
     public function render(

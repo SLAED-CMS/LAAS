@@ -11,6 +11,8 @@ use Laas\DevTools\CollectorInterface;
 use Laas\DevTools\DevToolsContext;
 use Laas\Http\Request;
 use Laas\Http\Response;
+use Laas\Support\Cache\CacheFactory;
+use Laas\Support\RequestScope;
 use Laas\View\View;
 
 final class DevToolsMiddleware implements MiddlewareInterface
@@ -32,24 +34,29 @@ final class DevToolsMiddleware implements MiddlewareInterface
         $response = $next($request);
 
         if (!$this->isEnabled()) {
+            RequestScope::set('response', $response);
             return $response;
         }
 
         $this->collect($request, $response);
 
         if (!$this->shouldShow($request, $response)) {
+            RequestScope::set('response', $response);
             return $response;
         }
 
         $toolbar = $this->renderToolbar($request);
         if ($toolbar === '') {
+            RequestScope::set('response', $response);
             return $response;
         }
 
         $body = $response->getBody();
         $updated = $this->injectToolbar($body, $toolbar);
 
-        return $response->withBody($updated);
+        $final = $response->withBody($updated);
+        RequestScope::set('response', $final);
+        return $final;
     }
 
     private function isEnabled(): bool
@@ -81,7 +88,10 @@ final class DevToolsMiddleware implements MiddlewareInterface
         // Load JS Errors
         if (is_array($user) && isset($user['id'])) {
             try {
-                $cache = new \Laas\Support\Cache\FileCache(dirname(__DIR__, 3) . '/storage/cache', 'devtools');
+                $rootPath = dirname(__DIR__, 3);
+                $cacheConfig = CacheFactory::config($rootPath);
+                $track = (bool) ($cacheConfig['devtools_tracking'] ?? true);
+                $cache = new \Laas\Support\Cache\FileCache($rootPath . '/storage/cache', 'devtools', 300, $track);
                 $inbox = new \Laas\DevTools\JsErrorInbox($cache, (int) $user['id']);
                 $errors = $inbox->list(200);
 

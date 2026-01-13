@@ -127,6 +127,13 @@ final class Response
         return new self($body, $this->status, $this->headers);
     }
 
+    public function replace(self $other): void
+    {
+        $this->body = $other->body;
+        $this->status = $other->status;
+        $this->headers = $other->headers;
+    }
+
     private static function jsonResponse(array $data, int $status): self
     {
         $body = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);

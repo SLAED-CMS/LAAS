@@ -23,6 +23,16 @@ final class ConfigSanityChecker
             $errors = array_merge($errors, $this->checkMedia($media));
         }
 
+        $perf = $config['perf'] ?? null;
+        if (is_array($perf)) {
+            $errors = array_merge($errors, $this->checkPerf($perf));
+        }
+
+        $cache = $config['cache'] ?? null;
+        if (is_array($cache)) {
+            $errors = array_merge($errors, $this->checkCache($cache));
+        }
+
         return $errors;
     }
 
@@ -90,5 +100,95 @@ final class ConfigSanityChecker
         }
 
         return $errors;
+    }
+
+    /** @return array<int, string> */
+    private function checkPerf(array $perf): array
+    {
+        $errors = [];
+        $mode = strtolower((string) ($perf['guard_mode'] ?? ''));
+        if ($mode !== '' && !in_array($mode, ['warn', 'block'], true)) {
+            $errors[] = 'perf.guard_mode invalid';
+        }
+
+        $intKeys = [
+            'db_max_queries',
+            'db_max_unique',
+            'db_max_total_ms',
+            'http_max_calls',
+            'http_max_total_ms',
+            'total_max_ms',
+            'db_max_queries_admin',
+            'total_max_ms_admin',
+            'total_ms_warn',
+            'total_ms_hard',
+            'sql_count_warn',
+            'sql_count_hard',
+            'sql_ms_warn',
+            'sql_ms_hard',
+        ];
+        foreach ($intKeys as $key) {
+            if (!array_key_exists($key, $perf)) {
+                continue;
+            }
+            $value = $perf[$key];
+            if (!is_numeric($value) || (int) $value < 0) {
+                $errors[] = 'perf.' . $key . ' invalid';
+            }
+        }
+
+        $paths = $perf['guard_exempt_paths'] ?? null;
+        if ($paths !== null && !$this->isStringList($paths)) {
+            $errors[] = 'perf.guard_exempt_paths invalid';
+        }
+        $routes = $perf['guard_exempt_routes'] ?? null;
+        if ($routes !== null && !$this->isStringList($routes)) {
+            $errors[] = 'perf.guard_exempt_routes invalid';
+        }
+
+        return $errors;
+    }
+
+    /** @return array<int, string> */
+    private function checkCache(array $cache): array
+    {
+        $errors = [];
+        $ttlKeys = [
+            'ttl_default',
+            'default_ttl',
+            'ttl_settings',
+            'ttl_permissions',
+            'ttl_menus',
+            'tag_ttl',
+            'ttl_days',
+        ];
+        foreach ($ttlKeys as $key) {
+            if (!array_key_exists($key, $cache)) {
+                continue;
+            }
+            $value = $cache[$key];
+            if (!is_numeric($value) || (int) $value < 0) {
+                $errors[] = 'cache.' . $key . ' invalid';
+            }
+        }
+
+        if (array_key_exists('devtools_tracking', $cache) && !is_bool($cache['devtools_tracking'])) {
+            $errors[] = 'cache.devtools_tracking invalid';
+        }
+
+        return $errors;
+    }
+
+    private function isStringList(mixed $value): bool
+    {
+        if (!is_array($value)) {
+            return false;
+        }
+        foreach ($value as $item) {
+            if (!is_string($item) || $item === '') {
+                return false;
+            }
+        }
+        return true;
     }
 }

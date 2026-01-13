@@ -10,12 +10,14 @@ final class FileCache implements CacheInterface
     private string $dir;
     private string $prefix;
     private int $defaultTtl;
+    private bool $trackStats;
 
-    public function __construct(string $dir, string $prefix = 'laas', int $defaultTtl = 300)
+    public function __construct(string $dir, string $prefix = 'laas', int $defaultTtl = 300, bool $trackStats = true)
     {
         $this->dir = rtrim($dir, '/\\');
         $this->prefix = $prefix;
         $this->defaultTtl = $defaultTtl > 0 ? $defaultTtl : 300;
+        $this->trackStats = $trackStats;
     }
 
     public function get(string $key): mixed
@@ -149,6 +151,9 @@ final class FileCache implements CacheInterface
 
     private function recordCacheGet(bool $hit): void
     {
+        if (!$this->trackStats) {
+            return;
+        }
         $context = RequestScope::get('devtools.context');
         if ($context instanceof \Laas\DevTools\DevToolsContext) {
             $context->recordCacheGet($hit);
@@ -157,6 +162,9 @@ final class FileCache implements CacheInterface
 
     private function recordCacheSet(): void
     {
+        if (!$this->trackStats) {
+            return;
+        }
         $context = RequestScope::get('devtools.context');
         if ($context instanceof \Laas\DevTools\DevToolsContext) {
             $context->recordCacheSet();
