@@ -251,6 +251,7 @@
   var lastToastByKey = {};
   var toastDedupeWindowMs = 2000;
   var toastQueueLimit = 5;
+  var toastEventsLimit = 3;
   var debugEnabled = document.body && document.body.getAttribute('data-app-debug') === '1';
 
   function resolveToastTone(kind) {
@@ -274,7 +275,7 @@
     }
     if (Array.isArray(payload)) {
       var handled = false;
-      payload.forEach(function (entry) {
+      payload.slice(0, toastEventsLimit).forEach(function (entry) {
         handled = handleLaasToastPayload(entry) || handled;
       });
       return handled;
@@ -419,7 +420,7 @@
     if (contentType.indexOf('application/json') !== -1 || body.trim().charAt(0) === '{') {
       var json = parseJsonBody(body);
       if (json && json.meta && Array.isArray(json.meta.events)) {
-        json.meta.events.forEach(function (evt) {
+        json.meta.events.slice(0, toastEventsLimit).forEach(function (evt) {
           handleLaasToastPayload(evt);
         });
       }
