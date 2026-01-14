@@ -121,13 +121,6 @@ final class DatabaseManager
             RequestScope::set('db.healthcheck', $ok);
             return $ok;
         } catch (\Throwable $e) {
-            // Debug output for CI/test environments
-            if (getenv('CI') === 'true' || getenv('APP_ENV') === 'test') {
-                fwrite(STDERR, "DEBUG: DatabaseManager::healthCheck() exception: " . $e->getMessage() . "\n");
-                fwrite(STDERR, "DEBUG: Database config driver: " . ($this->config['driver'] ?? 'none') . "\n");
-                fwrite(STDERR, "DEBUG: Database config database: " . ($this->config['database'] ?? 'none') . "\n");
-                fwrite(STDERR, "DEBUG: PDO is null: " . ($this->pdo === null ? 'yes' : 'no') . "\n");
-            }
             RequestScope::set('db.healthcheck', false);
             return false;
         }
