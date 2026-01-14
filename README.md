@@ -165,6 +165,13 @@ http://laas.loc/
 
 --- 
 
+## Release hygiene checklist
+
+- `php tools/cli.php policy:check`
+- `php tools/cli.php contracts:fixtures:check`
+- `php tools/cli.php contracts:check`
+- `vendor/bin/phpunit`
+
 ## Tech Stack
 
 - **Backend:** PHP 8.4 with strict types

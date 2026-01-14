@@ -1053,6 +1053,13 @@ public function render(string $template, array $data): string
 - Controllers provide only `state`, `status`, `variant`, `flags`
 - Templates map tokens to CSS classes via `if/else`
 
+### UI events layer (toasts)
+
+- `UiToast` builds normalized toast payloads (type/message/request_id + optional fields)
+- `ResponseMeta` attaches events to JSON envelopes and caps the list at 3
+- `HtmxTrigger` (via `Response::withToast*`) emits `HX-Trigger` with `laas:toast`
+- Admin renderer consumes either header trigger or `meta.events` (also caps at 3)
+
 **Configuration (`config/assets.php`):**
 - `ASSETS_BASE_URL` for path prefix
 - `ASSETS_VERSION` for cache busting

@@ -27,6 +27,12 @@
 
 ## Version-Specific Upgrade Paths
 
+### v3.28.0 notes
+
+- No new features; release closure and documentation sync.
+- No contract schema changes; keep fixtures/snapshot stable.
+- Run release checks: `policy:check`, `contracts:fixtures:check`, `contracts:check`, `phpunit`.
+
 ### v3.27.0 notes
 
 - Toast payload schema is now `message` + optional `title`/`code`/`dedupe_key`; `message_key` is no longer emitted.

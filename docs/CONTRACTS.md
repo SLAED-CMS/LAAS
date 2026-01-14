@@ -66,6 +66,7 @@ This document defines the JSON response envelope and the internal contract regis
 - Toast payloads MUST adhere to the `laas:toast` contract (`type` is `success|info|warning|danger`, localized `message`, `request_id`, optional `title`, optional `code`, optional numeric `ttl_ms`, optional `dedupe_key`); no secrets (tokens, SQL, stack traces) should leak inside these fields.
 - `laas:error` is not used for UI events; all notifications use `laas:toast`.
 - `meta.events` is capped at 3 items per response.
+- Admin UI renderer also caps to 3 toast events as a safety guard.
 
 Example toast payload:
 

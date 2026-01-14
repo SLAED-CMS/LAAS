@@ -1,5 +1,10 @@
 # LAAS Versions
 
+- v3.28.0: Release closure polish
+  - No new features; consistency, hygiene, and documentation sync
+  - Toast events remain capped at 3 (server + admin renderer)
+  - Release checklist reinforced (policy/contracts/phpunit)
+
 - v3.27.0: Toast UX polish + Events hygiene + Admin JS robustness
   - Toast payload schema tightened (`message`, optional `title`/`code`/`dedupe_key`, required `request_id`)
   - JSON `meta.events` capped at 3 items; HTMX uses only `laas:toast`
