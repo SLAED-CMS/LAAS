@@ -79,6 +79,13 @@ final class DevToolsMiddleware implements MiddlewareInterface
             }
         }
 
+        $rawSqlAllowed = false;
+        if (is_array($user) && $this->authorization->can($user, 'admin.access')) {
+            $rawSqlAllowed = (bool) $this->context->getFlag('debug', false)
+                && (bool) ($this->config['show_secrets'] ?? false);
+        }
+        $this->context->setRawSqlAllowed($rawSqlAllowed);
+
         $this->context->setUser([
             'id' => $user['id'] ?? null,
             'username' => $user['username'] ?? null,

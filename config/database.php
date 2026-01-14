@@ -16,6 +16,21 @@ $envInt = static function (string $key, int $default) use ($env): int {
     }
     return is_numeric($value) ? (int) $value : $default;
 };
+$envBool = static function (string $key, bool $default) use ($env): bool {
+    $value = $env[$key] ?? getenv($key);
+    if ($value === null || $value === '') {
+        return $default;
+    }
+    $parsed = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    return $parsed ?? $default;
+};
+
+$appEnv = strtolower($envString('APP_ENV', 'dev'));
+$defaultSafeMode = in_array($appEnv, ['prod', 'production'], true) ? 'block' : 'warn';
+$safeMode = strtolower($envString('DB_MIGRATIONS_SAFE_MODE', $defaultSafeMode));
+if (!in_array($safeMode, ['off', 'warn', 'block'], true)) {
+    $safeMode = $defaultSafeMode;
+}
 
 return [
     'driver' => $envString('DB_DRIVER', $envString('DB_CONNECTION', 'sqlite')),
@@ -29,5 +44,9 @@ return [
         \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
         \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
         \PDO::ATTR_EMULATE_PREPARES => false,
+    ],
+    'migrations' => [
+        'safe_mode' => $safeMode,
+        'allow_destructive' => $envBool('ALLOW_DESTRUCTIVE_MIGRATIONS', false),
     ],
 ];

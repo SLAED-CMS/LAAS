@@ -22,6 +22,7 @@ use Laas\Http\Middleware\SecurityHeadersMiddleware;
 use Laas\Http\Middleware\SessionMiddleware;
 use Laas\Http\Session\SessionManager;
 use Laas\Database\DatabaseManager;
+use Laas\Database\DbProfileCollector;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Database\Repositories\UsersRepository;
 use Laas\I18n\LocaleResolver;
@@ -75,7 +76,8 @@ final class Kernel
         $devtoolsConfig = array_merge($this->config['devtools'] ?? [], $appConfig['devtools'] ?? []);
         $perfConfig = $this->config['perf'] ?? [];
         $env = strtolower((string) ($appConfig['env'] ?? ''));
-        $devtoolsEnabled = (bool) ($appConfig['debug'] ?? false) && (bool) ($devtoolsConfig['enabled'] ?? false);
+        $appDebug = (bool) ($appConfig['debug'] ?? false);
+        $devtoolsEnabled = $appDebug && (bool) ($devtoolsConfig['enabled'] ?? false);
         $perfEnabled = (bool) ($perfConfig['enabled'] ?? false);
         $collectDb = (bool) ($devtoolsConfig['collect_db'] ?? false);
         if ($perfEnabled) {
@@ -89,12 +91,14 @@ final class Kernel
         }
         $devtoolsConfig['collect_db'] = $collectDb;
         $devtoolsConfig['enabled'] = $devtoolsEnabled;
-        $storeSql = (bool) (($appConfig['db_profile']['store_sql'] ?? false));
+        $storeSql = $appDebug
+            && (bool) ($devtoolsConfig['show_secrets'] ?? false)
+            && (bool) ($appConfig['db_profile']['store_sql'] ?? false);
 
         $requestId = bin2hex(random_bytes(16));
         $devtoolsContext = new DevToolsContext([
             'enabled' => $devtoolsEnabled,
-            'debug' => (bool) ($appConfig['debug'] ?? false),
+            'debug' => $appDebug,
             'env' => (string) ($appConfig['env'] ?? ''),
             'is_dev' => $env !== 'prod',
             'root_path' => $this->rootPath,
@@ -108,7 +112,11 @@ final class Kernel
         ]);
         RequestScope::set('devtools.context', $devtoolsContext);
 
+        $dbProfileCollector = new DbProfileCollector();
+        RequestScope::set('db.profile', $dbProfileCollector);
+
         $this->database()->enableDevTools($devtoolsContext, $devtoolsConfig);
+        $this->database()->enableDbProfiling($dbProfileCollector);
 
         $settingsProvider = new SettingsProvider(
             $this->database(),

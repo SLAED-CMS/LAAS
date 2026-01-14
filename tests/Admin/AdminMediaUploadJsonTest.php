@@ -12,6 +12,40 @@ use Tests\Support\InMemorySession;
 
 final class AdminMediaUploadJsonTest extends TestCase
 {
+    private array $serverBackup = [];
+    private array $filesBackup = [];
+
+    protected function setUp(): void
+    {
+        $this->serverBackup = [
+            'CONTENT_LENGTH' => [
+                'present' => array_key_exists('CONTENT_LENGTH', $_SERVER),
+                'value' => $_SERVER['CONTENT_LENGTH'] ?? null,
+            ],
+            'REQUEST_TIME_FLOAT' => [
+                'present' => array_key_exists('REQUEST_TIME_FLOAT', $_SERVER),
+                'value' => $_SERVER['REQUEST_TIME_FLOAT'] ?? null,
+            ],
+        ];
+        $this->filesBackup = $_FILES;
+
+        $_SERVER['CONTENT_LENGTH'] = '';
+        $_SERVER['REQUEST_TIME_FLOAT'] = microtime(true);
+        $_FILES = [];
+    }
+
+    protected function tearDown(): void
+    {
+        foreach ($this->serverBackup as $key => $state) {
+            if (empty($state['present'])) {
+                unset($_SERVER[$key]);
+                continue;
+            }
+            $_SERVER[$key] = $state['value'];
+        }
+        $_FILES = $this->filesBackup;
+    }
+
     public function testUploadReturnsJsonContract(): void
     {
         $pdo = $this->createBaseSchema();

@@ -78,4 +78,9 @@ return [
     'error.empty_body' => 'Empty body.',
     'error.invalid_json' => 'Invalid JSON.',
     'api.auth.forbidden_scope' => 'Insufficient token scope.',
+    'db.profile.raw_sql_blocked' => 'Raw SQL hidden.',
+    'db.migrations.blocked' => 'Destructive migrations are blocked.',
+    'db.migrations.analyze_ok' => 'Migrations safety check OK.',
+    'db.indexes.missing' => 'Required database indexes are missing.',
+    'db.indexes.ok' => 'Database indexes OK.',
 ];

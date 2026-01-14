@@ -170,7 +170,7 @@
             {% foreach devtools.db.top_slow as s %}
             <div class="mt-1">
               <span class="c-num">{% s.duration_ms %}</span> ms
-              <div><code class="text-break">{% s.sql %}</code></div>
+              <div><code class="text-break">{% s.fingerprint %}</code></div>
             </div>
             {% endforeach %}
             {% else %}<div class="c-muted">none</div>{% endif %}
@@ -182,7 +182,7 @@
             {% foreach devtools.db.duplicates as d %}
             <div class="mt-1">
               <span class="c-warn">x{% d.count %}</span> <span class="c-num">{% d.avg_ms %}</span> ms avg
-              <div><code class="text-break">{% d.sql %}</code></div>
+              <div><code class="text-break">{% if d.sql %}{% d.sql %}{% else %}{% d.fingerprint %}{% endif %}</code></div>
               {% if d.trace %}
               <ol class="mb-0">
                 {% foreach d.trace as t %}
@@ -201,7 +201,7 @@
             {% foreach devtools.db.grouped as g %}
             <div class="mt-1">
               <span class="c-num">{% g.count %}</span> calls / <span class="c-num">{% g.total_ms %}</span> ms
-              <div><code class="text-break">{% g.sql %}</code></div>
+              <div><code class="text-break">{% if g.sql %}{% g.sql %}{% else %}{% g.fingerprint %}{% endif %}</code></div>
             </div>
             {% endforeach %}
             {% else %}<div class="c-muted">none</div>{% endif %}
@@ -209,6 +209,7 @@
 
           <div class="mb-2" id="devtools-sql-raw">
             <span class="c-info">SQL raw</span>
+            {% if devtools.flags.raw_sql_allowed %}
             {% if devtools.db.queries %}
             {% foreach devtools.db.queries as q %}
             <div class="mt-1">
@@ -217,6 +218,9 @@
             </div>
             {% endforeach %}
             {% else %}<div class="c-muted">none</div>{% endif %}
+            {% else %}
+            <div class="c-muted">{% t 'db.profile.raw_sql_blocked' %}</div>
+            {% endif %}
           </div>
 
           <div class="mb-2" id="devtools-external">

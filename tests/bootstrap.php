@@ -11,3 +11,6 @@ putenv('APP_ENV=test');
 if (class_exists(Dotenv\Dotenv::class)) {
     Dotenv\Dotenv::createImmutable($rootPath)->safeLoad();
 }
+
+$_ENV['APP_VERSION'] = 'v3.0.0';
+putenv('APP_VERSION=v3.0.0');

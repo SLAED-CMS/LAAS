@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Laas\DevTools;
 
+use Laas\Database\DbSqlFingerprint;
+
 final class DevToolsContext
 {
     private string $requestId;
@@ -13,6 +15,7 @@ final class DevToolsContext
     private int $memoryPeak = 0;
     private array $dbQueries = [];
     private array $dbDuplicates = [];
+    private array $dbTopSlow = [];
     private array $externalCalls = [];
     private array $cacheStats = [
         'hits' => 0,
@@ -29,6 +32,7 @@ final class DevToolsContext
     private array $jsErrors = [];
     private array $customWarnings = [];
     private bool $storeSql = true;
+    private bool $rawSqlAllowed = false;
 
     public function __construct(array $flags)
     {
@@ -47,6 +51,14 @@ final class DevToolsContext
             }
         }
         $this->storeSql = (bool) $storeSql;
+        $this->rawSqlAllowed = (bool) ($flags['raw_sql_allowed'] ?? false);
+        $debug = (bool) ($flags['debug'] ?? false);
+        if (!$debug || !$this->storeSql) {
+            $this->storeSql = false;
+            $this->rawSqlAllowed = false;
+        }
+        $this->flags['raw_sql_allowed'] = $this->rawSqlAllowed;
+        $this->flags['raw_sql_configured'] = $this->storeSql;
         $this->externalAvailable = $enabled;
         $this->cacheAvailable = $enabled;
         $this->request = [
@@ -131,6 +143,18 @@ final class DevToolsContext
     public function setUser(array $data): void
     {
         $this->user = $data;
+    }
+
+    public function setRawSqlAllowed(bool $allowed): void
+    {
+        if (!$this->storeSql) {
+            $this->rawSqlAllowed = false;
+            $this->flags['raw_sql_allowed'] = false;
+            return;
+        }
+
+        $this->rawSqlAllowed = $allowed;
+        $this->flags['raw_sql_allowed'] = $allowed;
     }
 
     public function setJsErrors(array $errors): void
@@ -227,7 +251,9 @@ final class DevToolsContext
 
         $this->dbCount++;
         $this->dbTotalMs += $durationMs;
-        if (!$this->storeSql) {
+        $this->recordTopSlow($sql, $paramsCount, $durationMs);
+
+        if (!$this->rawSqlAllowed) {
             return;
         }
 
@@ -238,6 +264,7 @@ final class DevToolsContext
         $index = count($this->dbQueries) + 1;
         $this->dbQueries[] = [
             'index' => $index,
+            'fingerprint' => $this->fingerprint($sql, $paramsCount),
             'sql' => $this->normalizeSql($sql),
             'params' => $paramsCount,
             'duration_ms' => $durationMs,
@@ -253,11 +280,7 @@ final class DevToolsContext
     public function toArray(): array
     {
         $memoryMb = $this->memoryPeak > 0 ? ($this->memoryPeak / 1048576) : 0.0;
-        $topSlow = $this->dbQueries;
-        usort($topSlow, static function (array $a, array $b): int {
-            return ($b['duration_ms'] ?? 0) <=> ($a['duration_ms'] ?? 0);
-        });
-        $topSlow = array_slice($topSlow, 0, 5);
+        $topSlow = $this->buildTopSlow();
         $grouped = array_values($this->dbDuplicates);
         usort($grouped, static function (array $a, array $b): int {
             return ($b['count'] ?? 0) <=> ($a['count'] ?? 0);
@@ -277,10 +300,9 @@ final class DevToolsContext
         $external = $this->buildExternalStats();
         $cache = $this->buildCacheStats();
 
-        if (!$this->storeSql) {
+        if (!$this->rawSqlAllowed) {
             $grouped = $this->stripSqlDetails($grouped);
             $duplicates = $this->stripSqlDetails($duplicates);
-            $topSlow = [];
             $this->dbQueries = [];
         }
 
@@ -318,12 +340,12 @@ final class DevToolsContext
     private function trackDuplicate(string $sql, int $paramsCount, float $durationMs): void
     {
         $fingerprint = $this->fingerprint($sql, $paramsCount);
-        $key = $this->storeSql ? $fingerprint : sha1($fingerprint);
+        $key = $fingerprint;
         if (!isset($this->dbDuplicates[$key])) {
             $this->dbDuplicates[$key] = [
-                'fingerprint' => $key,
+                'fingerprint' => $fingerprint,
                 'hash' => sha1($fingerprint),
-                'sql' => $this->storeSql ? $this->normalizeFingerprintSql($sql) : '',
+                'sql' => $this->rawSqlAllowed ? $this->normalizeSql($sql) : '',
                 'params' => $paramsCount,
                 'count' => 0,
                 'total_ms' => 0.0,
@@ -338,27 +360,43 @@ final class DevToolsContext
         $entry['total_ms'] += $durationMs;
         $entry['avg_ms'] = $entry['count'] > 0 ? round($entry['total_ms'] / $entry['count'], 2) : 0.0;
 
-        if ($this->storeSql && count($entry['samples']) < 3) {
+        if ($this->rawSqlAllowed && count($entry['samples']) < 3) {
             $entry['samples'][] = $this->normalizeSql($sql);
         }
 
         $isDev = (bool) ($this->flags['is_dev'] ?? (strtolower((string) ($this->flags['env'] ?? '')) !== 'prod'));
-        if ($this->storeSql && $isDev && $entry['count'] === 2 && $entry['trace'] === []) {
+        if ($this->rawSqlAllowed && $isDev && $entry['count'] === 2 && $entry['trace'] === []) {
             $entry['trace'] = $this->buildTrace();
         }
 
         $this->dbDuplicates[$key] = $entry;
     }
 
+    private function recordTopSlow(string $sql, int $paramsCount, float $durationMs): void
+    {
+        $this->dbTopSlow[] = [
+            'fingerprint' => $this->fingerprint($sql, $paramsCount),
+            'duration_ms' => $durationMs,
+        ];
+
+        if (count($this->dbTopSlow) <= 8) {
+            return;
+        }
+
+        usort($this->dbTopSlow, static function (array $a, array $b): int {
+            return ($b['duration_ms'] ?? 0) <=> ($a['duration_ms'] ?? 0);
+        });
+        $this->dbTopSlow = array_slice($this->dbTopSlow, 0, 5);
+    }
+
     private function fingerprint(string $sql, int $paramsCount): string
     {
-        $normalized = $this->normalizeFingerprintSql($sql);
-        return $normalized . '|params:' . $paramsCount;
+        return DbSqlFingerprint::fingerprint($sql, $paramsCount);
     }
 
     private function normalizeFingerprintSql(string $sql): string
     {
-        return preg_replace('/\s+/', ' ', trim($sql)) ?? trim($sql);
+        return DbSqlFingerprint::normalize($sql);
     }
 
     /**
@@ -379,6 +417,23 @@ final class DevToolsContext
             ];
         }
         return $out;
+    }
+
+    /** @return array<int, array{duration_ms: float, fingerprint: string}> */
+    private function buildTopSlow(): array
+    {
+        $rows = $this->dbTopSlow;
+        usort($rows, static function (array $a, array $b): int {
+            return ($b['duration_ms'] ?? 0) <=> ($a['duration_ms'] ?? 0);
+        });
+        $rows = array_slice($rows, 0, 5);
+
+        return array_map(static function (array $row): array {
+            return [
+                'duration_ms' => round((float) ($row['duration_ms'] ?? 0), 2),
+                'fingerprint' => (string) ($row['fingerprint'] ?? ''),
+            ];
+        }, $rows);
     }
 
     private function buildProfile(int $duplicateCount, array $grouped, array $duplicates, float $memoryMb): array
@@ -837,7 +892,7 @@ final class DevToolsContext
         foreach ($duplicates as $row) {
             $fingerprint = (string) ($row['fingerprint'] ?? '');
             $count = (int) ($row['count'] ?? 0);
-            $sql = (string) ($row['sql'] ?? '');
+            $sql = $this->displaySql($row);
             $sqlPreview = $this->previewSql($sql);
             $avg = (float) ($row['avg_ms'] ?? 0);
             $value = sprintf('x%d %.2fms avg', $count, $avg);
@@ -985,7 +1040,7 @@ final class DevToolsContext
                 'is_http' => false,
                 'is_oth' => false,
                 'detail' => [
-                    'sql' => (string) ($full['sql'] ?? $sqlPreview),
+                    'sql' => $this->displaySql($full) !== '' ? $this->displaySql($full) : $sqlPreview,
                     'count' => $count,
                     'trace' => $full['trace'] ?? [],
                 ],
@@ -1009,7 +1064,7 @@ final class DevToolsContext
                 'is_http' => false,
                 'is_oth' => false,
                 'detail' => [
-                    'sql' => (string) ($full['sql'] ?? $sqlPreview),
+                    'sql' => $this->displaySql($full) !== '' ? $this->displaySql($full) : $sqlPreview,
                     'total_ms' => $total,
                 ],
             ];
@@ -1131,7 +1186,7 @@ final class DevToolsContext
             }
             $rows[] = [
                 'fingerprint' => (string) ($row['fingerprint'] ?? ''),
-                'sql_preview' => $this->previewSql((string) ($row['sql'] ?? '')),
+                'sql_preview' => $this->previewSql($this->displaySql($row)),
                 'total_ms' => $totalMs,
                 'count' => (int) ($row['count'] ?? 0),
             ];
@@ -1149,7 +1204,7 @@ final class DevToolsContext
         foreach ($duplicates as $row) {
             $rows[] = [
                 'fingerprint' => (string) ($row['fingerprint'] ?? ''),
-                'sql_preview' => $this->previewSql((string) ($row['sql'] ?? '')),
+                'sql_preview' => $this->previewSql($this->displaySql($row)),
                 'count' => (int) ($row['count'] ?? 0),
             ];
         }
@@ -1167,6 +1222,15 @@ final class DevToolsContext
             return $sql;
         }
         return substr($sql, 0, 117) . '...';
+    }
+
+    private function displaySql(array $row): string
+    {
+        $sql = (string) ($row['sql'] ?? '');
+        if ($sql === '') {
+            $sql = (string) ($row['fingerprint'] ?? '');
+        }
+        return $sql;
     }
 
     private function buildSegments(float $totalMs, float $sqlMs, float $externalMs): array

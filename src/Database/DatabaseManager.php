@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Laas\Database;
 
+use Laas\Database\DbProfileCollector;
 use Laas\DevTools\DevToolsContext;
 use Laas\DevTools\Db\ProxyPDO;
 use Laas\Support\RequestScope;
@@ -13,6 +14,7 @@ final class DatabaseManager
     private ?PDO $pdo = null;
     private ?DevToolsContext $devtoolsContext = null;
     private array $devtoolsConfig = [];
+    private ?DbProfileCollector $dbProfileCollector = null;
 
     public function __construct(private array $config)
     {
@@ -23,6 +25,11 @@ final class DatabaseManager
     {
         $this->devtoolsContext = $context;
         $this->devtoolsConfig = $config;
+    }
+
+    public function enableDbProfiling(DbProfileCollector $collector): void
+    {
+        $this->dbProfileCollector = $collector;
     }
 
     public function getDevToolsContext(): ?DevToolsContext
@@ -37,6 +44,9 @@ final class DatabaseManager
         }
 
         $driver = $this->config['driver'] ?? 'mysql';
+        $collectDb = (bool) ($this->devtoolsConfig['collect_db'] ?? false);
+        $useProxy = $collectDb || $this->dbProfileCollector !== null;
+
         if ($driver === 'sqlite') {
             $db = $this->config['database'] ?? ':memory:';
             $this->ensureSqliteDir($db);
@@ -45,6 +55,19 @@ final class DatabaseManager
             $options[PDO::ATTR_ERRMODE] = PDO::ERRMODE_EXCEPTION;
             $options[PDO::ATTR_DEFAULT_FETCH_MODE] = PDO::FETCH_ASSOC;
             $options[PDO::ATTR_EMULATE_PREPARES] = false;
+
+            if ($useProxy && class_exists(ProxyPDO::class)) {
+                $this->pdo = new ProxyPDO(
+                    $dsn,
+                    '',
+                    '',
+                    $options,
+                    $this->devtoolsContext,
+                    $collectDb,
+                    $this->dbProfileCollector
+                );
+                return $this->pdo;
+            }
 
             $this->pdo = new PDO($dsn, null, null, $options);
             return $this->pdo;
@@ -62,15 +85,15 @@ final class DatabaseManager
         $options[PDO::ATTR_DEFAULT_FETCH_MODE] = PDO::FETCH_ASSOC;
         $options[PDO::ATTR_EMULATE_PREPARES] = false;
 
-        $collectDb = (bool) ($this->devtoolsConfig['collect_db'] ?? false);
-        if ($collectDb && class_exists(ProxyPDO::class)) {
+        if ($useProxy && class_exists(ProxyPDO::class)) {
             $this->pdo = new ProxyPDO(
                 $dsn,
                 (string) ($this->config['username'] ?? ''),
                 (string) ($this->config['password'] ?? ''),
                 $options,
                 $this->devtoolsContext,
-                $collectDb
+                $collectDb,
+                $this->dbProfileCollector
             );
             return $this->pdo;
         }

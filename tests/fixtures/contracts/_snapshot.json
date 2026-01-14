@@ -975,7 +975,7 @@
                     },
                     "meta": {
                         "error": {
-                            "key": "error.service_unavailable",
+                            "key": "service_unavailable",
                             "message": "Service Unavailable."
                         },
                         "format": "json",

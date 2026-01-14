@@ -335,7 +335,7 @@ ContractRegistry::register('service_unavailable', [
                 'format' => 'json',
                 'ok' => false,
                 'error' => [
-                    'key' => 'error.service_unavailable',
+                    'key' => 'service_unavailable',
                     'message' => 'Service Unavailable.',
                 ],
                 'route' => '/api/v1/me',

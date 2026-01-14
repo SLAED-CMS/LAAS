@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Laas\DevTools\Db;
 
 use Laas\DevTools\DevToolsContext;
+use Laas\Database\DbProfileCollector;
 use PDO;
 use PDOStatement;
 
@@ -15,13 +16,14 @@ final class ProxyPDO extends PDO
         string $password,
         array $options,
         private ?DevToolsContext $context,
-        private bool $collectDb
+        private bool $collectDb,
+        private ?DbProfileCollector $profileCollector = null
     ) {
         parent::__construct($dsn, $username, $password, $options);
 
         $this->setAttribute(PDO::ATTR_STATEMENT_CLASS, [
             ProxyPDOStatement::class,
-            [$this->context, $this->collectDb],
+            [$this->context, $this->collectDb, $this->profileCollector],
         ]);
     }
 
@@ -50,11 +52,12 @@ final class ProxyPDO extends PDO
 
     private function recordQuery(string $sql, int $paramsCount, float $start): void
     {
-        if (!$this->collectDb || $this->context === null) {
-            return;
-        }
-
         $durationMs = (microtime(true) - $start) * 1000;
-        $this->context->addDbQuery($sql, $paramsCount, $durationMs);
+        if ($this->collectDb && $this->context !== null) {
+            $this->context->addDbQuery($sql, $paramsCount, $durationMs);
+        }
+        if ($this->profileCollector !== null) {
+            $this->profileCollector->addQuery($sql, $paramsCount, $durationMs);
+        }
     }
 }

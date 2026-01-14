@@ -25,7 +25,10 @@ final class DbProfileNoSqlLeakTest extends TestCase
 
         $this->assertSame(2, (int) ($db['count'] ?? 0));
         $this->assertSame([], $db['queries'] ?? []);
-        $this->assertSame([], $db['top_slow'] ?? []);
+        $this->assertNotEmpty($db['top_slow'] ?? []);
+        foreach ($db['top_slow'] ?? [] as $row) {
+            $this->assertArrayHasKey('fingerprint', $row);
+        }
 
         foreach (['grouped', 'duplicates'] as $key) {
             $rows = $db[$key] ?? [];
@@ -37,4 +40,3 @@ final class DbProfileNoSqlLeakTest extends TestCase
         }
     }
 }
-

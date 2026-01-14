@@ -16,6 +16,7 @@ final class DevToolsDuplicateDetectorTest extends TestCase
             'collect_request' => false,
             'collect_logs' => false,
             'request_id' => bin2hex(random_bytes(8)),
+            'raw_sql_allowed' => true,
         ]);
 
         $context->addDbQuery('SELECT * FROM users WHERE id = :id LIMIT 1', 1, 2.5);

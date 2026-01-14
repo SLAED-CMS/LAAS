@@ -2,7 +2,9 @@
 declare(strict_types=1);
 
 use Laas\Database\DatabaseManager;
+use Laas\Database\DbIndexInspector;
 use Laas\Database\Migrations\Migrator;
+use Laas\Database\Migrations\MigrationSafetyAnalyzer;
 use Laas\Database\Repositories\ModulesRepository;
 use Laas\Database\Repositories\PermissionsRepository;
 use Laas\Database\Repositories\RbacRepository;
@@ -244,6 +246,39 @@ $commands['db:check'] = function () use ($dbManager): int {
     }
 };
 
+$commands['db:indexes:audit'] = function () use ($dbManager, $args): int {
+    try {
+        if (!$dbManager->healthCheck()) {
+            echo "DB not available.\n";
+            return 1;
+        }
+        $inspector = new DbIndexInspector($dbManager->pdo());
+        $result = $inspector->auditRequired();
+        $json = hasFlag($args, 'json');
+
+        if ($json) {
+            echo json_encode($result, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n";
+            return $result['ok'] ? 0 : 2;
+        }
+
+        if ($result['ok']) {
+            echo "db.indexes.ok\n";
+            return 0;
+        }
+        echo "db.indexes.missing\n";
+        foreach ($result['missing'] as $item) {
+            $table = (string) ($item['table'] ?? '');
+            $column = (string) ($item['column'] ?? '');
+            $type = (string) ($item['type'] ?? '');
+            echo "- {$table} {$column} {$type}\n";
+        }
+        return 2;
+    } catch (Throwable $e) {
+        echo "DB index audit failed: " . $e->getMessage() . "\n";
+        return 1;
+    }
+};
+
 $commands['migrate:status'] = function () use ($migrator): int {
     try {
         $status = $migrator->status();
@@ -259,9 +294,60 @@ $commands['migrate:status'] = function () use ($migrator): int {
     }
 };
 
-$commands['migrate:up'] = function () use ($migrator, $args): int {
+$commands['db:migrations:analyze'] = function () use ($migrator, $dbConfig, $appConfig): int {
+    try {
+        $safeMode = resolveMigrationSafeMode($dbConfig, $appConfig);
+        $pending = resolvePendingMigrations($migrator, 0);
+        $analyzer = new MigrationSafetyAnalyzer();
+        $issues = $analyzer->analyzeAll($pending);
+
+        $payload = [
+            'safe' => $issues === [],
+            'mode' => $safeMode,
+            'issues' => $issues,
+        ];
+
+        echo json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n";
+        return 0;
+    } catch (Throwable $e) {
+        echo "Migrations analyze failed: " . $e->getMessage() . "\n";
+        return 1;
+    }
+};
+
+$commands['migrate:up'] = function () use ($migrator, $args, $dbConfig, $appConfig, $rootPath): int {
     try {
         $steps = (int) (getOption($args, 'steps') ?? 0);
+        $safeMode = resolveMigrationSafeMode($dbConfig, $appConfig);
+        $allowOverride = (bool) ($dbConfig['migrations']['allow_destructive'] ?? false)
+            && hasFlag($args, 'i-know-what-i-am-doing');
+
+        if ($safeMode !== 'off') {
+            $pending = resolvePendingMigrations($migrator, $steps);
+            if ($pending !== []) {
+                $analyzer = new MigrationSafetyAnalyzer();
+                $issues = $analyzer->analyzeAll($pending);
+                if ($issues !== []) {
+                    if ($safeMode === 'block' && !$allowOverride) {
+                        if (isProdEnv($appConfig)) {
+                            $translator = new Translator(
+                                $rootPath,
+                                (string) ($appConfig['theme'] ?? 'default'),
+                                (string) ($appConfig['default_locale'] ?? 'en')
+                            );
+                            echo $translator->trans('db.migrations.blocked') . "\n";
+                            return 2;
+                        }
+                        echo "Migrations blocked by safe mode.\n";
+                        return 2;
+                    }
+                    if ($safeMode === 'warn' && !$allowOverride) {
+                        echo "WARN: destructive migrations detected.\n";
+                    }
+                }
+            }
+        }
+
         $applied = $migrator->up($steps);
         if ($applied === []) {
             echo "No migrations to apply.\n";
@@ -1489,7 +1575,7 @@ $commands['doctor'] = function () use (&$commands, $rootPath, $appConfig, $stora
     return 0;
 };
 
-$commands['preflight'] = function () use (&$commands, $args, $rootPath, $securityConfig): int {
+$commands['preflight'] = function () use (&$commands, $args, $rootPath, $securityConfig, $dbManager, $appConfig): int {
     $noTests = hasFlag($args, 'no-tests');
     $noDb = hasFlag($args, 'no-db');
     $strict = hasFlag($args, 'strict');
@@ -1571,6 +1657,25 @@ $commands['preflight'] = function () use (&$commands, $args, $rootPath, $securit
             'enabled' => !$noDb,
             'run' => static function () use (&$commands): int {
                 return $commands['db:check']();
+            },
+        ],
+        [
+            'label' => 'db:indexes',
+            'enabled' => !$noDb,
+            'run' => static function () use ($dbManager, $appConfig): int {
+                if (!$dbManager->healthCheck()) {
+                    echo "DB not available.\n";
+                    return 1;
+                }
+                $inspector = new DbIndexInspector($dbManager->pdo());
+                $result = $inspector->auditRequired();
+                if (!empty($result['ok'])) {
+                    echo "db.indexes.ok\n";
+                    return 0;
+                }
+                $prefix = isProdEnv($appConfig) ? '' : 'WARN: ';
+                echo $prefix . "db.indexes.missing\n";
+                return isProdEnv($appConfig) ? 2 : 0;
             },
         ],
     ];
@@ -1743,6 +1848,41 @@ function dbEnvConfigured(): bool
     }
 
     return false;
+}
+
+function resolveMigrationSafeMode(array $dbConfig, array $appConfig): string
+{
+    $mode = strtolower((string) ($dbConfig['migrations']['safe_mode'] ?? ''));
+    if (!in_array($mode, ['off', 'warn', 'block'], true)) {
+        $mode = 'off';
+    }
+
+    return $mode;
+}
+
+function isProdEnv(array $appConfig): bool
+{
+    return strtolower((string) ($appConfig['env'] ?? '')) === 'prod';
+}
+
+/** @return array<string, string> */
+function resolvePendingMigrations(Migrator $migrator, int $steps): array
+{
+    $discovered = $migrator->discoverMigrations();
+    $applied = $migrator->appliedMigrations();
+
+    $pending = [];
+    foreach ($discovered as $name => $path) {
+        if (!array_key_exists($name, $applied)) {
+            $pending[$name] = $path;
+        }
+    }
+
+    if ($steps > 0) {
+        $pending = array_slice($pending, 0, $steps, true);
+    }
+
+    return $pending;
 }
 
 /** @return array<int, array{contract: string, fixture: string, payload: array}> */
