@@ -122,37 +122,41 @@ final class Response
         return new self($this->body, $this->status, $headers);
     }
 
-    public function withToastSuccess(string $messageKey, string $message, ?int $ttlMs = null, ?array $context = null): self
+    public function withToastSuccess(string $code, string $message, ?int $ttlMs = null, ?string $title = null, ?string $dedupeKey = null): self
     {
-        return $this->withToastPayload('success', $messageKey, $message, $ttlMs, $context);
+        if ($ttlMs === null) {
+            $ttlMs = 4000;
+        }
+
+        return $this->withToastPayload('success', $message, $title, $code, $ttlMs, $dedupeKey);
     }
 
-    public function withToastInfo(string $messageKey, string $message, ?int $ttlMs = null, ?array $context = null): self
+    public function withToastInfo(string $code, string $message, ?int $ttlMs = null, ?string $title = null, ?string $dedupeKey = null): self
     {
-        return $this->withToastPayload('info', $messageKey, $message, $ttlMs, $context);
+        return $this->withToastPayload('info', $message, $title, $code, $ttlMs, $dedupeKey);
     }
 
-    public function withToastWarning(string $messageKey, string $message, ?int $ttlMs = null, ?array $context = null): self
+    public function withToastWarning(string $code, string $message, ?int $ttlMs = null, ?string $title = null, ?string $dedupeKey = null): self
     {
-        return $this->withToastPayload('warning', $messageKey, $message, $ttlMs, $context);
+        return $this->withToastPayload('warning', $message, $title, $code, $ttlMs, $dedupeKey);
     }
 
-    public function withToastDanger(string $messageKey, string $message, ?int $ttlMs = null, ?array $context = null): self
+    public function withToastDanger(string $code, string $message, ?int $ttlMs = null, ?string $title = null, ?string $dedupeKey = null): self
     {
-        return $this->withToastPayload('danger', $messageKey, $message, $ttlMs, $context);
+        return $this->withToastPayload('danger', $message, $title, $code, $ttlMs, $dedupeKey);
     }
 
     /**
-     * @param array<string, mixed>|null $context
      */
     private function withToastPayload(
         string $type,
-        string $messageKey,
         string $message,
+        ?string $title,
+        ?string $code,
         ?int $ttlMs,
-        ?array $context
+        ?string $dedupeKey
     ): self {
-        $toast = UiToast::payload($type, $messageKey, $message, $context, $ttlMs);
+        $toast = UiToast::payload($type, $message, $title, $code, $ttlMs, $dedupeKey);
         UiEventRegistry::pushEvent($toast);
         return HtmxTrigger::addToast($this, $toast);
     }

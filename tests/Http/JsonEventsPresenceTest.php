@@ -15,7 +15,7 @@ final class JsonEventsPresenceTest extends TestCase
 
     public function testJsonResponseIncludesEvents(): void
     {
-        UiToast::registerSuccess('admin.pages.saved', 'Saved.');
+        UiToast::registerSuccess('Saved.', 'admin.pages.saved');
 
         $response = Response::json([
             'data' => [],
@@ -24,6 +24,6 @@ final class JsonEventsPresenceTest extends TestCase
         $payload = json_decode($response->getBody(), true);
         $this->assertArrayHasKey('events', $payload['meta']);
         $this->assertSame('success', $payload['meta']['events'][0]['type'] ?? null);
-        $this->assertSame('admin.pages.saved', $payload['meta']['events'][0]['message_key'] ?? null);
+        $this->assertSame('admin.pages.saved', $payload['meta']['events'][0]['code'] ?? null);
     }
 }

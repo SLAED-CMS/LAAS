@@ -8,13 +8,13 @@ final class NoSecretsInToastTest extends TestCase
 {
     public function testToastPayloadUsesAllowedKeysOnly(): void
     {
-        $response = (new Response())->withToastSuccess('admin.pages.saved', 'Saved.', 2500, ['area' => 'pages']);
+        $response = (new Response())->withToastSuccess('admin.pages.saved', 'Saved.', 2500);
         $header = $response->getHeader('HX-Trigger');
         $this->assertNotNull($header);
 
         $payload = json_decode($header, true);
         $toast = $payload['laas:toast'] ?? [];
-        $allowed = ['type', 'message_key', 'message', 'request_id', 'context', 'ttl_ms'];
+        $allowed = ['type', 'message', 'title', 'code', 'request_id', 'ttl_ms', 'dedupe_key'];
 
         foreach (array_keys($toast) as $key) {
             $this->assertContains($key, $allowed);

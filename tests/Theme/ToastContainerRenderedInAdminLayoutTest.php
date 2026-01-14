@@ -11,7 +11,8 @@ final class ToastContainerRenderedInAdminLayoutTest extends TestCase
         $layout = file_get_contents($root . '/themes/admin/layout.html');
         $partial = file_get_contents($root . '/themes/admin/partials/toasts.html');
 
-        $this->assertStringContainsString('<div id="laas-toasts" class="toast-container position-fixed bottom-0 end-0 p-3"></div>', $partial);
+        $this->assertStringContainsString('id="laas-toasts"', $partial);
+        $this->assertStringContainsString('id="laas-toast-template"', $partial);
         $this->assertStringContainsString('{% include "partials/toasts.html" %}', $layout);
         $this->assertStringContainsString('{% assets.admin_js %}', $layout);
     }

@@ -203,7 +203,10 @@ final class ErrorResponse
 
         $toastKey = $errorKey === 'error.validation_failed' ? 'toast.validation_failed' : $errorKey;
 
-        return UiToast::registerDanger($toastKey, $message);
+        $ttlMs = 8000;
+        $dedupeKey = $toastKey !== '' ? $toastKey : null;
+
+        return UiToast::registerDanger($message, $toastKey, $ttlMs, null, $dedupeKey);
     }
 
     private static function resolveBackUrl(Request $request): ?string

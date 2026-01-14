@@ -30,9 +30,9 @@
 
   var isAdminTheme = document.body && document.body.classList.contains('laas-theme-admin');
   if (!isAdminTheme) {
-    document.body.addEventListener('laas:toast', function (event) {
-      handleLaasToastPayload(event.detail);
-    });
+  document.body.addEventListener('laas:toast', function (event) {
+    handleLaasToastPayload(event.detail);
+  });
   }
 
   function parseTriggerHeader(xhr) {
@@ -40,6 +40,12 @@
       return null;
     }
     var raw = xhr.getResponseHeader('HX-Trigger');
+    if (!raw) {
+      raw = xhr.getResponseHeader('HX-Trigger-After-Settle');
+    }
+    if (!raw) {
+      raw = xhr.getResponseHeader('HX-Trigger-After-Swap');
+    }
     if (!raw) {
       return null;
     }
@@ -53,9 +59,6 @@
   function resolveToastMessage(payload, keyField) {
     if (!payload) {
       return '';
-    }
-    if (payload.message) {
-      return String(payload.message);
     }
     if (payload[keyField]) {
       return String(payload[keyField]);
@@ -84,7 +87,7 @@
     if (payload['laas:toast']) {
       payload = payload['laas:toast'];
     }
-    var message = resolveToastMessage(payload, 'message_key');
+    var message = resolveToastMessage(payload, 'message');
     if (!message) {
       return false;
     }

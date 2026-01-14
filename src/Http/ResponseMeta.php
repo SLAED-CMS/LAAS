@@ -74,6 +74,10 @@ final class ResponseMeta
             return $meta;
         }
 
+        if (count($events) > 3) {
+            $events = array_slice($events, 0, 3);
+        }
+
         $meta['events'] = $events;
         return $meta;
     }

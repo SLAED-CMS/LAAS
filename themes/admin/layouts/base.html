@@ -14,7 +14,7 @@
   {% if assets.devtools_css %}<link href="{% assets.devtools_css %}" rel="stylesheet">{% endif %}
   {% endif %}
 </head>
-<body class="bg-light laas-theme-admin" hx-headers='{"X-CSRF-Token":"{% csrf_token %}"}'>
+<body class="bg-light laas-theme-admin" hx-headers='{"X-CSRF-Token":"{% csrf_token %}"}' data-app-debug="{% if request.show_request_id %}1{% else %}0{% endif %}">
   <main class="container-fluid py-3">
     {% include "partials/header.html" %}
     <div id="admin-search-results">

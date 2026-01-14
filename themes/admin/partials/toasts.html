@@ -1,1 +1,21 @@
-<div id="laas-toasts" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+<div
+  id="laas-toasts"
+  class="toast-container position-fixed bottom-0 end-0 p-3"
+  data-title-success="{% t 'ui.toast.success' %}"
+  data-title-info="{% t 'ui.toast.info' %}"
+  data-title-warning="{% t 'ui.toast.warning' %}"
+  data-title-danger="{% t 'ui.toast.danger' %}"
+  data-copy-label="{% t 'ui.toast.copy_request_id' %}"
+  data-copied-label="{% t 'ui.toast.copied' %}"
+></div>
+<template id="laas-toast-template">
+  <div class="toast border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast-header border-0">
+      <strong class="me-auto" data-toast-title></strong>
+      <small class="text-body-secondary ms-2" data-toast-request-id></small>
+      <button type="button" class="btn btn-sm btn-outline-light ms-2" data-action="copy-request-id"></button>
+      <button type="button" class="btn-close btn-close-white ms-2" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+    <div class="toast-body" data-toast-message></div>
+  </div>
+</template>

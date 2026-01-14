@@ -32,7 +32,8 @@ final class HtmxErrorTriggerHeaderTest extends TestCase
 
         $toast = $payload['laas:toast'];
         $this->assertSame('danger', $toast['type'] ?? null);
-        $this->assertSame('security.csrf_failed', $toast['message_key'] ?? null);
+        $this->assertSame('security.csrf_failed', $toast['code'] ?? null);
+        $this->assertNotSame('', (string) ($toast['message'] ?? ''));
         $this->assertNotSame('', (string) ($toast['request_id'] ?? ''));
     }
 }

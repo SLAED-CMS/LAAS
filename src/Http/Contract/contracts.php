@@ -16,6 +16,59 @@ function contract_problem(string $key, int $status, string $title): array
     ];
 }
 
+/**
+ * @return array{type: string, message: string, title: string|null, code: string|null, request_id: string, ttl_ms: int|null, dedupe_key: string|null}
+ */
+function contract_toast(): array
+{
+    return [
+        'type' => 'string',
+        'message' => 'string',
+        'title' => 'string|null',
+        'code' => 'string|null',
+        'request_id' => 'string',
+        'ttl_ms' => 'int|null',
+        'dedupe_key' => 'string|null',
+    ];
+}
+
+ContractRegistry::register('ui.toast', [
+    'route' => 'ui.toast',
+    'methods' => ['EVENT'],
+    'responses' => [
+        '200' => [
+            'data' => [
+                'event' => contract_toast(),
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'ui.toast',
+            ],
+        ],
+    ],
+    'example_ok' => [
+        'payload' => [
+            'data' => [
+                'event' => [
+                    'type' => 'success',
+                    'message' => 'Saved.',
+                    'title' => null,
+                    'code' => 'admin.pages.saved',
+                    'request_id' => 'req-1',
+                    'ttl_ms' => 4000,
+                    'dedupe_key' => 'admin.pages.saved',
+                ],
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'ui.toast',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
 ContractRegistry::register('pages.show', [
     'route' => '/{slug}',
     'methods' => ['GET'],
@@ -407,7 +460,7 @@ ContractRegistry::register('admin.pages.save', [
                 'events' => [
                     [
                         'type' => 'danger',
-                        'message_key' => 'toast.validation_failed',
+                        'code' => 'toast.validation_failed',
                         'message' => 'Validation failed.',
                         'request_id' => 'req-1',
                     ],
@@ -1072,7 +1125,7 @@ ContractRegistry::register('admin.api_tokens.create', [
                 'events' => [
                     [
                         'type' => 'success',
-                        'message_key' => 'admin.api_tokens.created',
+                        'code' => 'admin.api_tokens.created',
                         'message' => 'Token created.',
                         'request_id' => 'req-1',
                     ],
@@ -1101,7 +1154,7 @@ ContractRegistry::register('admin.api_tokens.create', [
                 'events' => [
                     [
                         'type' => 'danger',
-                        'message_key' => 'toast.validation_failed',
+                        'code' => 'toast.validation_failed',
                         'message' => 'Validation failed.',
                         'request_id' => 'req-1',
                     ],
@@ -1154,7 +1207,7 @@ ContractRegistry::register('admin.api_tokens.revoke', [
         ],
     ],
     'example_ok' => [
-        'fixture' => 'admin.api_tokens.revoke',
+        'fixture' => 'admin.api_tokens.revoke.ok',
         'payload' => [
             'data' => [
                 'revoked' => true,
@@ -1165,7 +1218,7 @@ ContractRegistry::register('admin.api_tokens.revoke', [
                 'events' => [
                     [
                         'type' => 'info',
-                        'message_key' => 'admin.api_tokens.revoked',
+                        'code' => 'admin.api_tokens.revoked_ok',
                         'message' => 'Token revoked.',
                         'request_id' => 'req-1',
                     ],
@@ -1383,7 +1436,7 @@ ContractRegistry::register('admin.security_reports.triage', [
         ],
     ],
     'example_ok' => [
-        'fixture' => 'admin.security_reports.triage',
+        'fixture' => 'admin.security_reports.triage.ok',
         'payload' => [
             'data' => [
                 'report' => [
@@ -1408,7 +1461,7 @@ ContractRegistry::register('admin.security_reports.triage', [
                 'events' => [
                     [
                         'type' => 'info',
-                        'message_key' => 'admin.security_reports.updated',
+                        'code' => 'admin.security_reports.updated_ok',
                         'message' => 'Security report updated.',
                         'request_id' => 'req-1',
                     ],
@@ -1494,7 +1547,7 @@ ContractRegistry::register('admin.security_reports.ignore', [
                 'events' => [
                     [
                         'type' => 'info',
-                        'message_key' => 'admin.security_reports.updated',
+                        'code' => 'admin.security_reports.updated_ok',
                         'message' => 'Security report updated.',
                         'request_id' => 'req-1',
                     ],
@@ -1552,7 +1605,7 @@ ContractRegistry::register('admin.security_reports.delete', [
                 'events' => [
                     [
                         'type' => 'info',
-                        'message_key' => 'admin.security_reports.deleted',
+                        'code' => 'admin.security_reports.deleted',
                         'message' => 'Security report deleted.',
                         'request_id' => 'req-1',
                     ],
@@ -2045,4 +2098,6 @@ ContractRegistry::register('media.show', [
         ],
     ],
 ]);
+
+
 

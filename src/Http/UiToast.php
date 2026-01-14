@@ -14,33 +14,41 @@ final class UiToast
         'danger',
     ];
 
-    /**
-     * @param array<string, mixed>|null $context
-     */
     public static function payload(
         string $type,
-        string $messageKey,
         string $message,
-        ?array $context = null,
-        ?int $ttlMs = null
+        ?string $title = null,
+        ?string $code = null,
+        ?int $ttlMs = null,
+        ?string $dedupeKey = null
     ): array {
         if (!in_array($type, self::TYPES, true)) {
             $type = 'info';
         }
 
+        $message = self::sanitizeText($message);
+        $title = $title !== null ? self::sanitizeText($title) : null;
+
         $payload = [
             'type' => $type,
-            'message_key' => $messageKey,
-            'message' => $message !== '' ? $message : null,
+            'message' => $message,
             'request_id' => RequestContext::requestId(),
         ];
 
-        if ($context !== null && $context !== []) {
-            $payload['context'] = $context;
+        if ($title !== null && $title !== '') {
+            $payload['title'] = $title;
+        }
+
+        if ($code !== null && $code !== '') {
+            $payload['code'] = $code;
         }
 
         if ($ttlMs !== null) {
             $payload['ttl_ms'] = $ttlMs;
+        }
+
+        if ($dedupeKey !== null && $dedupeKey !== '') {
+            $payload['dedupe_key'] = $dedupeKey;
         }
 
         return $payload;
@@ -54,107 +62,102 @@ final class UiToast
         UiEventRegistry::pushEvent($payload);
     }
 
-    /**
-     * @param array<string, mixed>|null $context
-     */
     public static function success(
-        string $messageKey,
         string $message,
-        ?array $context = null,
-        ?int $ttlMs = null
+        ?string $code = null,
+        ?int $ttlMs = null,
+        ?string $title = null,
+        ?string $dedupeKey = null
     ): array {
-        return self::payload('success', $messageKey, $message, $context, $ttlMs);
+        if ($ttlMs === null) {
+            $ttlMs = 4000;
+        }
+
+        return self::payload('success', $message, $title, $code, $ttlMs, $dedupeKey);
     }
 
-    /**
-     * @param array<string, mixed>|null $context
-     */
     public static function info(
-        string $messageKey,
         string $message,
-        ?array $context = null,
-        ?int $ttlMs = null
+        ?string $code = null,
+        ?int $ttlMs = null,
+        ?string $title = null,
+        ?string $dedupeKey = null
     ): array {
-        return self::payload('info', $messageKey, $message, $context, $ttlMs);
+        return self::payload('info', $message, $title, $code, $ttlMs, $dedupeKey);
     }
 
-    /**
-     * @param array<string, mixed>|null $context
-     */
     public static function warning(
-        string $messageKey,
         string $message,
-        ?array $context = null,
-        ?int $ttlMs = null
+        ?string $code = null,
+        ?int $ttlMs = null,
+        ?string $title = null,
+        ?string $dedupeKey = null
     ): array {
-        return self::payload('warning', $messageKey, $message, $context, $ttlMs);
+        return self::payload('warning', $message, $title, $code, $ttlMs, $dedupeKey);
     }
 
-    /**
-     * @param array<string, mixed>|null $context
-     */
     public static function danger(
-        string $messageKey,
         string $message,
-        ?array $context = null,
-        ?int $ttlMs = null
+        ?string $code = null,
+        ?int $ttlMs = null,
+        ?string $title = null,
+        ?string $dedupeKey = null
     ): array {
-        return self::payload('danger', $messageKey, $message, $context, $ttlMs);
+        return self::payload('danger', $message, $title, $code, $ttlMs, $dedupeKey);
     }
 
-    /**
-     * @param array<string, mixed>|null $context
-     */
     public static function registerSuccess(
-        string $messageKey,
         string $message,
-        ?array $context = null,
-        ?int $ttlMs = null
+        ?string $code = null,
+        ?int $ttlMs = null,
+        ?string $title = null,
+        ?string $dedupeKey = null
     ): array {
-        $payload = self::success($messageKey, $message, $context, $ttlMs);
+        $payload = self::success($message, $code, $ttlMs, $title, $dedupeKey);
         self::register($payload);
         return $payload;
     }
 
-    /**
-     * @param array<string, mixed>|null $context
-     */
     public static function registerInfo(
-        string $messageKey,
         string $message,
-        ?array $context = null,
-        ?int $ttlMs = null
+        ?string $code = null,
+        ?int $ttlMs = null,
+        ?string $title = null,
+        ?string $dedupeKey = null
     ): array {
-        $payload = self::info($messageKey, $message, $context, $ttlMs);
+        $payload = self::info($message, $code, $ttlMs, $title, $dedupeKey);
         self::register($payload);
         return $payload;
     }
 
-    /**
-     * @param array<string, mixed>|null $context
-     */
     public static function registerWarning(
-        string $messageKey,
         string $message,
-        ?array $context = null,
-        ?int $ttlMs = null
+        ?string $code = null,
+        ?int $ttlMs = null,
+        ?string $title = null,
+        ?string $dedupeKey = null
     ): array {
-        $payload = self::warning($messageKey, $message, $context, $ttlMs);
+        $payload = self::warning($message, $code, $ttlMs, $title, $dedupeKey);
         self::register($payload);
         return $payload;
     }
 
-    /**
-     * @param array<string, mixed>|null $context
-     */
     public static function registerDanger(
-        string $messageKey,
         string $message,
-        ?array $context = null,
-        ?int $ttlMs = null
+        ?string $code = null,
+        ?int $ttlMs = null,
+        ?string $title = null,
+        ?string $dedupeKey = null
     ): array {
-        $payload = self::danger($messageKey, $message, $context, $ttlMs);
+        $payload = self::danger($message, $code, $ttlMs, $title, $dedupeKey);
         self::register($payload);
         return $payload;
+    }
+
+    private static function sanitizeText(string $value): string
+    {
+        $value = strip_tags($value);
+        $value = str_replace(['<', '>'], '', $value);
+        return trim($value);
     }
 }

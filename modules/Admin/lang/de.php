@@ -1,6 +1,5 @@
 <?php
 declare(strict_types=1);
-
 return array (
     'admin.audit.action' => 'Aktion',
     'admin.audit.context' => 'Kontext',
@@ -95,6 +94,7 @@ return array (
     'admin.api_tokens.token_notice' => 'Copy this token now. You will not be able to see it again.',
     'admin.api_tokens.created' => 'Token created.',
     'admin.api_tokens.revoked' => 'Token revoked.',
+    'admin.api_tokens.revoked_ok' => 'Token revoked.',
     'admin.api_tokens.rotated' => 'Token rotated.',
     'admin.api_tokens.rotate' => 'Rotate',
     'admin.api_tokens.rotate_revoke_old' => 'Revoke old token after rotation',
@@ -122,6 +122,7 @@ return array (
     'admin.security_reports.status.triaged' => 'Triaged',
     'admin.security_reports.status.ignored' => 'Ignored',
     'admin.security_reports.updated' => 'Security report updated.',
+    'admin.security_reports.updated_ok' => 'Security report updated.',
     'admin.security_reports.deleted' => 'Security report deleted.',
     'admin.nav.ops' => 'Ops',
     'admin.ops.title' => 'Ops',
@@ -133,3 +134,4 @@ return array (
     'admin.ops.section.security' => 'Security',
     'admin.ops.refresh' => 'Refresh',
 );
+

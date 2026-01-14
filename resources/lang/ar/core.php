@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 declare(strict_types=1);
 
 return [
@@ -8,6 +8,12 @@ return [
     'ui.home' => 'الرئيسية',
     'ui.ok' => 'OK',
     'ui.back' => 'Back',
+    'ui.toast.success' => 'نجاح',
+    'ui.toast.info' => 'معلومات',
+    'ui.toast.warning' => 'تحذير',
+    'ui.toast.danger' => 'خطأ',
+    'ui.toast.copy_request_id' => 'نسخ معرف الطلب',
+    'ui.toast.copied' => 'تم النسخ.',
     'validation.required' => 'حقل {field} مطلوب.',
     'validation.string' => 'يجب أن يكون {field} نصًا.',
     'validation.min' => 'يجب أن يحتوي {field} على {min} أحرف على الأقل.',

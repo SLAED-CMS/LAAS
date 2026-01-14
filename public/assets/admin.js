@@ -73,7 +73,7 @@
     initCopyButtons(e.target);
   });
 
-  document.body.addEventListener('laas:toast', function (event) {
+  document.addEventListener('laas:toast', function (event) {
     handleLaasToastPayload(event.detail);
   });
 
@@ -220,6 +220,12 @@
     }
     var raw = xhr.getResponseHeader('HX-Trigger');
     if (!raw) {
+      raw = xhr.getResponseHeader('HX-Trigger-After-Settle');
+    }
+    if (!raw) {
+      raw = xhr.getResponseHeader('HX-Trigger-After-Swap');
+    }
+    if (!raw) {
       return null;
     }
     try {
@@ -233,16 +239,19 @@
     if (!payload) {
       return '';
     }
-    if (payload.message) {
-      return String(payload.message);
-    }
     if (payload[keyField]) {
       return String(payload[keyField]);
     }
     return '';
   }
 
+  var toastContainer = document.getElementById('laas-toasts');
+  var toastTemplate = document.getElementById('laas-toast-template');
   var handledToastRequests = {};
+  var lastToastByKey = {};
+  var toastDedupeWindowMs = 2000;
+  var toastQueueLimit = 5;
+  var debugEnabled = document.body && document.body.getAttribute('data-app-debug') === '1';
 
   function resolveToastTone(kind) {
     var normalized = (kind || 'info').toLowerCase();
@@ -263,69 +272,132 @@
     if (payload['laas:toast']) {
       payload = payload['laas:toast'];
     }
-    var message = resolveToastMessage(payload, 'message_key');
+    if (Array.isArray(payload)) {
+      var handled = false;
+      payload.forEach(function (entry) {
+        handled = handleLaasToastPayload(entry) || handled;
+      });
+      return handled;
+    }
+
+    var message = resolveToastMessage(payload, 'message');
     if (!message) {
       return false;
     }
+
     var requestId = (payload.request_id || '').toString();
     if (requestId !== '' && handledToastRequests[requestId]) {
       return true;
     }
-    var ttl = null;
-    if (payload.ttl_ms !== undefined && payload.ttl_ms !== null) {
-      var parsed = parseInt(payload.ttl_ms, 10);
-      if (!isNaN(parsed) && parsed > 0) {
-        ttl = parsed;
-      }
+
+    var ttl = resolveToastTtl(payload.ttl_ms);
+    var tone = resolveToastTone(payload.type);
+    var title = resolveToastTitle(payload, tone);
+    var code = resolveToastMessage(payload, 'code');
+    var dedupeKey = resolveToastMessage(payload, 'dedupe_key') || code || message;
+
+    var sanitized = sanitizeToastMessage(message);
+    if (sanitized.redacted && debugEnabled) {
+      console.debug('Toast message redacted', { code: code });
     }
-    showToast(resolveToastTone(payload.type), message, ttl);
+
+    if (shouldSkipToast(dedupeKey)) {
+      return true;
+    }
+
+    showToast(tone, sanitized.message, title, requestId, ttl, dedupeKey);
+
     if (requestId !== '') {
       handledToastRequests[requestId] = true;
     }
     return true;
   }
 
-  function showToast(kind, message, ttl) {
+  function sanitizeToastMessage(message) {
+    var value = (message || '').toString();
+    value = value.replace(/[<>]/g, '');
+    var redacted = /password|secret|dsn|bearer\\s/i.test(value);
+    if (redacted) {
+      return { message: 'redacted', redacted: true };
+    }
+    return { message: value, redacted: false };
+  }
+
+  function resolveToastTitle(payload, tone) {
+    if (!toastContainer) {
+      return '';
+    }
+    var title = resolveToastMessage(payload, 'title');
+    if (title) {
+      return title.replace(/[<>]/g, '');
+    }
+    var fallback = toastContainer.getAttribute('data-title-' + tone);
+    return fallback ? String(fallback) : '';
+  }
+
+  function resolveToastTtl(ttlValue) {
+    if (ttlValue === undefined || ttlValue === null) {
+      return 5000;
+    }
+    var parsed = parseInt(ttlValue, 10);
+    return !isNaN(parsed) && parsed > 0 ? parsed : 5000;
+  }
+
+  function shouldSkipToast(dedupeKey) {
+    if (!dedupeKey) {
+      return false;
+    }
+    var now = Date.now();
+    var lastSeen = lastToastByKey[dedupeKey];
+    if (lastSeen && now - lastSeen < toastDedupeWindowMs) {
+      return true;
+    }
+    lastToastByKey[dedupeKey] = now;
+    return false;
+  }
+
+  function showToast(kind, message, title, requestId, ttl, dedupeKey) {
     if (!message) {
       return;
     }
     if (!window.bootstrap || !window.bootstrap.Toast) {
       return;
     }
-    var container = document.getElementById('laas-toasts');
-    if (!container) {
+    if (!toastContainer || !toastTemplate) {
       return;
     }
 
     var tone = resolveToastTone(kind);
-    var toast = document.createElement('div');
-    toast.className = 'toast align-items-center text-bg-' + tone + ' border-0';
-    toast.setAttribute('role', 'alert');
-    toast.setAttribute('aria-live', 'assertive');
-    toast.setAttribute('aria-atomic', 'true');
-
-    var body = document.createElement('div');
-    body.className = 'toast-body';
-    body.textContent = message;
-
-    var close = document.createElement('button');
-    close.type = 'button';
-    close.className = 'btn-close btn-close-white me-2 m-auto';
-    close.setAttribute('data-bs-dismiss', 'toast');
-    close.setAttribute('aria-label', 'Close');
-
-    var flex = document.createElement('div');
-    flex.className = 'd-flex';
-    flex.appendChild(body);
-    flex.appendChild(close);
-    toast.appendChild(flex);
-
-    container.appendChild(toast);
-    var delay = 2500;
-    if (typeof ttl === 'number' && !isNaN(ttl) && ttl > 0) {
-      delay = ttl;
+    var fragment = toastTemplate.content ? toastTemplate.content.cloneNode(true) : null;
+    if (!fragment) {
+      return;
     }
-    var instance = new window.bootstrap.Toast(toast, { delay: delay });
+
+    var toast = fragment.querySelector('.toast');
+    var header = fragment.querySelector('.toast-header');
+    var titleEl = fragment.querySelector('[data-toast-title]');
+    var messageEl = fragment.querySelector('[data-toast-message]');
+    var requestIdEl = fragment.querySelector('[data-toast-request-id]');
+    var copyButton = fragment.querySelector('[data-action=\"copy-request-id\"]');
+
+    if (!toast || !header || !messageEl || !titleEl || !requestIdEl || !copyButton) {
+      return;
+    }
+
+    toast.classList.add('text-bg-' + tone);
+    header.classList.add('text-bg-' + tone);
+    titleEl.textContent = title || '';
+    messageEl.textContent = message;
+    requestIdEl.textContent = requestId || '';
+    copyButton.textContent = toastContainer.getAttribute('data-copy-label') || 'Copy request id';
+    copyButton.setAttribute('data-request-id', requestId || '');
+
+    while (toastContainer.children.length >= toastQueueLimit) {
+      toastContainer.removeChild(toastContainer.firstElementChild);
+    }
+
+    toastContainer.appendChild(fragment);
+    var instance = new window.bootstrap.Toast(toast, { delay: ttl || 5000 });
     toast.addEventListener('hidden.bs.toast', function () {
       toast.remove();
     });
@@ -333,11 +405,37 @@
   }
 
   function handleHtmxTriggers(event) {
-    var trigger = parseTriggerHeader(event.detail && event.detail.xhr ? event.detail.xhr : null);
-    if (!trigger) {
+    var xhr = event.detail && event.detail.xhr ? event.detail.xhr : null;
+    var trigger = parseTriggerHeader(xhr);
+    if (trigger) {
+      handleLaasToastPayload(trigger);
+    }
+
+    if (!xhr) {
       return false;
     }
-    return handleLaasToastPayload(trigger);
+    var contentType = xhr.getResponseHeader ? (xhr.getResponseHeader('Content-Type') || '') : '';
+    var body = xhr.responseText || '';
+    if (contentType.indexOf('application/json') !== -1 || body.trim().charAt(0) === '{') {
+      var json = parseJsonBody(body);
+      if (json && json.meta && Array.isArray(json.meta.events)) {
+        json.meta.events.forEach(function (evt) {
+          handleLaasToastPayload(evt);
+        });
+      }
+    }
+    return true;
+  }
+
+  function parseJsonBody(raw) {
+    if (!raw) {
+      return null;
+    }
+    try {
+      return JSON.parse(raw);
+    } catch (err) {
+      return null;
+    }
   }
 
   document.body.addEventListener('htmx:responseError', function (e) {
@@ -347,14 +445,62 @@
     showAlert(extractErrorText(e));
   });
 
-  document.body.addEventListener('htmx:afterRequest', function (e) {
-    var handled = handleHtmxTriggers(e);
-    if (!e.detail || !e.detail.xhr) {
+  document.body.addEventListener('htmx:afterOnLoad', function (e) {
+    handleHtmxTriggers(e);
+  });
+
+  if (toastContainer) {
+    toastContainer.addEventListener('click', function (event) {
+      var target = event.target;
+      if (!target || !target.getAttribute) {
+        return;
+      }
+      if (target.getAttribute('data-action') !== 'copy-request-id') {
+        return;
+      }
+      var requestId = target.getAttribute('data-request-id') || '';
+      if (!requestId) {
+        return;
+      }
+      copyRequestId(requestId);
+    });
+  }
+
+  function copyRequestId(value) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(value).then(function () {
+        showCopiedToast();
+      }).catch(function () {
+        fallbackCopy(value);
+        showCopiedToast();
+      });
       return;
     }
-    var status = e.detail.xhr.status;
-    if (status >= 400 && !handled) {
-      showAlert(extractErrorText(e));
+
+    fallbackCopy(value);
+    showCopiedToast();
+  }
+
+  function fallbackCopy(value) {
+    var input = document.createElement('textarea');
+    input.value = value;
+    input.setAttribute('readonly', 'readonly');
+    input.style.position = 'absolute';
+    input.style.left = '-9999px';
+    document.body.appendChild(input);
+    input.select();
+    try {
+      document.execCommand('copy');
+    } catch (err) {
     }
-  });
+    document.body.removeChild(input);
+  }
+
+  function showCopiedToast() {
+    if (!toastContainer) {
+      return;
+    }
+    var label = toastContainer.getAttribute('data-copied-label') || 'Copied.';
+    showToast('info', label, resolveToastTitle({ title: '' }, 'info'), '', 2000, 'ui.toast.copied');
+  }
 })();

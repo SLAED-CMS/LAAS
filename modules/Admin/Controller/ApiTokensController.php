@@ -136,7 +136,7 @@ final class ApiTokensController
         ]);
 
         if ($request->wantsJson()) {
-            UiToast::registerSuccess('admin.api_tokens.created', $this->view->translate('admin.api_tokens.created'));
+            UiToast::registerSuccess($this->view->translate('admin.api_tokens.created'), 'admin.api_tokens.created');
             return ContractResponse::ok([
                 'token_id' => (int) ($created['token_id'] ?? 0),
                 'name' => $name,
@@ -260,7 +260,7 @@ final class ApiTokensController
         }
 
         if ($request->wantsJson()) {
-            UiToast::registerSuccess('admin.api_tokens.rotated', $this->view->translate('admin.api_tokens.rotated'));
+            UiToast::registerSuccess($this->view->translate('admin.api_tokens.rotated'), 'admin.api_tokens.rotated');
             return ContractResponse::ok([
                 'token_id' => (int) ($created['token_id'] ?? 0),
                 'name' => $name,
@@ -326,7 +326,7 @@ final class ApiTokensController
                 ], 404);
             }
 
-            UiToast::registerInfo('admin.api_tokens.revoked', $this->view->translate('admin.api_tokens.revoked'));
+            UiToast::registerInfo($this->view->translate('admin.api_tokens.revoked_ok'), 'admin.api_tokens.revoked_ok');
             return ContractResponse::ok([
                 'revoked' => true,
                 'token_id' => $id,
@@ -338,10 +338,10 @@ final class ApiTokensController
         $service = $this->service();
         $tokens = $this->mapTokensForView($service->listTokens($userId));
         $selectedScopes = $this->defaultScopesSelection();
-        $success = $ok ? $this->view->translate('api_tokens.revoked_ok') : null;
+        $success = $ok ? $this->view->translate('admin.api_tokens.revoked_ok') : null;
         $response = $this->renderPage($request, $tokens, null, null, $selectedScopes, $success, [], 200);
         if ($request->isHtmx() && $ok) {
-            return $this->withSuccessTrigger($response, 'admin.api_tokens.revoked');
+            return $this->withSuccessTrigger($response, 'admin.api_tokens.revoked_ok');
         }
         return $response;
     }

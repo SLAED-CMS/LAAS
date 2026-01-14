@@ -146,7 +146,7 @@ final class SecurityReportsController
             return $this->forbidden($request, 'admin.security_reports.triage');
         }
 
-        return $this->updateStatus($request, $params, 'triaged', 'admin.security_reports.triage', 'admin.security_reports.updated');
+        return $this->updateStatus($request, $params, 'triaged', 'admin.security_reports.triage', 'admin.security_reports.updated_ok');
     }
 
     public function ignore(Request $request, array $params = []): Response
@@ -155,7 +155,7 @@ final class SecurityReportsController
             return $this->forbidden($request, 'admin.security_reports.ignore');
         }
 
-        return $this->updateStatus($request, $params, 'ignored', 'admin.security_reports.ignore', 'admin.security_reports.updated');
+        return $this->updateStatus($request, $params, 'ignored', 'admin.security_reports.ignore', 'admin.security_reports.updated_ok');
     }
 
     public function delete(Request $request, array $params = []): Response
@@ -183,7 +183,7 @@ final class SecurityReportsController
         $this->logAudit($request, $id, 'deleted');
 
         if ($request->wantsJson()) {
-            UiToast::registerInfo('admin.security_reports.deleted', $this->view->translate('admin.security_reports.deleted'));
+            UiToast::registerInfo($this->view->translate('admin.security_reports.deleted'), 'admin.security_reports.deleted');
             return ContractResponse::ok([
                 'deleted' => true,
                 'id' => $id,
@@ -234,7 +234,7 @@ final class SecurityReportsController
         $fresh = $repo->findById($id) ?? $row;
 
         if ($request->wantsJson()) {
-            UiToast::registerInfo($toastKey, $this->view->translate($toastKey));
+            UiToast::registerInfo($this->view->translate($toastKey), $toastKey);
             return ContractResponse::ok([
                 'report' => $this->mapRowForJson($fresh),
             ], [

@@ -454,7 +454,7 @@ final class AdminPagesController
             ], 422, [], [
                 'theme' => 'admin',
             ]);
-            return $response->withToastDanger('toast.validation_failed', $this->view->translate('toast.validation_failed'));
+            return $response->withToastDanger('toast.validation_failed', $this->view->translate('toast.validation_failed'), 8000);
         }
 
         if ($request->wantsJson()) {

@@ -1,6 +1,5 @@
-<?php
+﻿<?php
 declare(strict_types=1);
-
 return [
     'app.name' => 'LAAS',
     'app.welcome' => 'Добро пожаловать',
@@ -8,6 +7,12 @@ return [
     'ui.home' => 'Главная',
     'ui.ok' => 'OK',
     'ui.back' => 'Back',
+    'ui.toast.success' => 'Успех',
+    'ui.toast.info' => 'Инфо',
+    'ui.toast.warning' => 'Предупреждение',
+    'ui.toast.danger' => 'Ошибка',
+    'ui.toast.copy_request_id' => 'Скопировать ID запроса',
+    'ui.toast.copied' => 'Скопировано.',
     'validation.required' => 'Поле {field} обязательно.',
     'validation.string' => 'Поле {field} должно быть строкой.',
     'validation.min' => 'Поле {field} должно быть не короче {min} символов.',
@@ -77,13 +82,11 @@ return [
     'db.migrations.analyze_ok' => 'Migrations safety check OK.',
     'db.indexes.missing' => 'Required database indexes are missing.',
     'db.indexes.ok' => 'Database indexes OK.',
-
     'http.payload_too_large' => 'Payload too large.',
     'http.uri_too_long' => 'URI too long.',
     'http.headers_too_large' => 'Request headers too large.',
     'http.invalid_json' => 'Invalid JSON payload.',
     'http.too_many_fields' => 'Too many form fields.',
-
     'auth.unauthorized' => 'Authentication required.',
     'rbac.forbidden' => 'Access denied.',
     'http.bad_request' => 'Invalid request.',
@@ -108,3 +111,4 @@ return [
     'toast.validation_failed' => 'Validation failed.',
     'toast.deleted' => 'Deleted.',
 ];
+

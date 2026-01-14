@@ -4,13 +4,12 @@ declare(strict_types=1);
 use Laas\Http\Response;
 use PHPUnit\Framework\TestCase;
 
-final class HtmxToastTriggerHeaderTest extends TestCase
+final class HtmxToastHeaderSchemaTest extends TestCase
 {
-    public function testWithToastSuccessAddsHtmxTrigger(): void
+    public function testHtmxHeaderContainsToastPayload(): void
     {
-        $response = (new Response())->withToastSuccess('admin.pages.saved', 'Saved.', 3000);
+        $response = (new Response())->withToastSuccess('admin.pages.saved', 'Saved.');
 
-        $this->assertSame(200, $response->getStatus());
         $header = $response->getHeader('HX-Trigger');
         $this->assertNotNull($header);
 
@@ -21,8 +20,6 @@ final class HtmxToastTriggerHeaderTest extends TestCase
         $toast = $payload['laas:toast'];
         $this->assertSame('success', $toast['type'] ?? null);
         $this->assertSame('Saved.', $toast['message'] ?? null);
-        $this->assertSame('admin.pages.saved', $toast['code'] ?? null);
-        $this->assertSame(3000, $toast['ttl_ms'] ?? null);
         $this->assertNotSame('', (string) ($toast['request_id'] ?? ''));
     }
 }

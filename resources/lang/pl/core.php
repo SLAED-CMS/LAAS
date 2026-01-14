@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 declare(strict_types=1);
 
 return [
@@ -103,4 +103,11 @@ return [
     'toast.updated' => 'Updated.',
     'toast.validation_failed' => 'Validation failed.',
     'toast.deleted' => 'Deleted.',
+    'ui.toast.success' => 'Sukces',
+    'ui.toast.info' => 'Informacja',
+    'ui.toast.warning' => 'Ostrzeżenie',
+    'ui.toast.danger' => 'Błąd',
+    'ui.toast.copy_request_id' => 'Kopiuj ID żądania',
+    'ui.toast.copied' => 'Skopiowano.',
 ];
+
