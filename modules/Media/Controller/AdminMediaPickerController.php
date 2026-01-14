@@ -26,7 +26,7 @@ final class AdminMediaPickerController
     public function index(Request $request, array $params = []): Response
     {
         if (!$this->canView($request)) {
-            return $this->forbidden();
+            return $this->forbidden($request);
         }
 
         $repo = $this->repository();
@@ -253,21 +253,13 @@ final class AdminMediaPickerController
         return round($bytes / (1024 * 1024 * 1024), 1) . ' GB';
     }
 
-    private function forbidden(): Response
+    private function forbidden(Request $request): Response
     {
-        return $this->view->render('pages/403.html', [], 403, [], [
-            'theme' => 'admin',
-        ]);
+        return ErrorResponse::respondForRequest($request, 'forbidden', [], 403, [], 'admin.media_picker');
     }
 
     private function errorResponse(Request $request, string $code, int $status): Response
     {
-        if ($request->isHtmx() || $request->wantsJson()) {
-            return ErrorResponse::respond($request, $code, [], $status, [], 'admin.media_picker');
-        }
-
-        return new Response('Error', $status, [
-            'Content-Type' => 'text/plain; charset=utf-8',
-        ]);
+        return ErrorResponse::respondForRequest($request, $code, [], $status, [], 'admin.media_picker');
     }
 }

@@ -39,25 +39,11 @@ final class ReadOnlyMiddleware implements MiddlewareInterface
             return $next($request);
         }
 
-        $message = $this->translator->trans('system.read_only');
         if (str_starts_with($path, '/api/')) {
             return ErrorResponse::respond($request, ErrorCode::READ_ONLY, [], 503, [], 'read_only.middleware');
         }
 
-        if ($request->isHtmx() && $this->view !== null) {
-            $theme = str_starts_with($path, '/admin') ? 'admin' : null;
-            return $this->view->render('partials/messages.html', [
-                'errors' => [$message],
-            ], 503, [], $theme !== null ? ['theme' => $theme] : []);
-        }
-
-        if ($request->wantsJson()) {
-            return ErrorResponse::respond($request, ErrorCode::READ_ONLY, [], 503, [], 'read_only.middleware');
-        }
-
-        return new Response($message, 503, [
-            'Content-Type' => 'text/plain; charset=utf-8',
-        ]);
+        return ErrorResponse::respondForRequest($request, ErrorCode::READ_ONLY, [], 503, [], 'read_only.middleware');
     }
 
     private function isAllowed(string $path): bool

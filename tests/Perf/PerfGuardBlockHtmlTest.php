@@ -59,6 +59,6 @@ final class PerfGuardBlockHtmlTest extends TestCase
 
         $this->assertSame(503, $response->getStatus());
         $this->assertSame('5', $response->getHeader('Retry-After'));
-        $this->assertStringContainsString('performance guard', strtolower($response->getBody()));
+        $this->assertStringContainsString('performance budget', strtolower($response->getBody()));
     }
 }

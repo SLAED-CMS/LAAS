@@ -77,4 +77,12 @@ return [
     'http.headers_too_large' => 'Request headers too large.',
     'http.invalid_json' => 'Invalid JSON payload.',
     'http.too_many_fields' => 'Too many form fields.',
+
+    'auth.unauthorized' => 'Authentication required.',
+    'rbac.forbidden' => 'Access denied.',
+    'http.bad_request' => 'Invalid request.',
+    'http.not_found' => 'Not Found.',
+    'http.rate_limited' => 'Rate limit exceeded.',
+    'service_unavailable' => 'Service Unavailable.',
+    'http.error_title' => 'Error.',
 ];

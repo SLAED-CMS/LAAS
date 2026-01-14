@@ -45,7 +45,7 @@ final class AdminPagesController
     public function index(Request $request): Response
     {
         if (!$this->canEdit($request)) {
-            return $this->forbidden();
+            return $this->forbidden($request);
         }
 
         $repo = $this->getRepository();
@@ -121,7 +121,7 @@ final class AdminPagesController
     public function createForm(Request $request): Response
     {
         if (!$this->canEdit($request)) {
-            return $this->forbidden();
+            return $this->forbidden($request);
         }
 
         return $this->view->render('pages/page_form.html', [
@@ -138,7 +138,7 @@ final class AdminPagesController
     public function editForm(Request $request, array $params = []): Response
     {
         if (!$this->canEdit($request)) {
-            return $this->forbidden();
+            return $this->forbidden($request);
         }
 
         $id = isset($params['id']) ? (int) $params['id'] : 0;
@@ -171,7 +171,7 @@ final class AdminPagesController
     public function save(Request $request): Response
     {
         if (!$this->canEdit($request)) {
-            return $this->forbidden();
+            return $this->forbidden($request);
         }
 
         $repo = $this->getRepository();
@@ -286,12 +286,12 @@ final class AdminPagesController
     public function delete(Request $request): Response
     {
         if (!$this->canEdit($request)) {
-            return $this->forbidden();
+            return $this->forbidden($request);
         }
 
         $id = $this->readId($request);
         if ($id === null) {
-            return $this->notFound();
+            return $this->notFound($request);
         }
 
         $repo = $this->getRepository();
@@ -490,29 +490,19 @@ final class AdminPagesController
         ]);
     }
 
-    private function forbidden(): Response
+    private function forbidden(Request $request): Response
     {
-        return $this->view->render('pages/403.html', [], 403, [], [
-            'theme' => 'admin',
-        ]);
+        return ErrorResponse::respondForRequest($request, 'forbidden', [], 403, [], 'pages.admin');
     }
 
-    private function notFound(): Response
+    private function notFound(Request $request): Response
     {
-        return new Response('Not Found', 404, [
-            'Content-Type' => 'text/plain; charset=utf-8',
-        ]);
+        return ErrorResponse::respondForRequest($request, 'not_found', [], 404, [], 'pages.admin');
     }
 
     private function errorResponse(Request $request, string $code, int $status): Response
     {
-        if ($request->isHtmx() || $request->wantsJson()) {
-            return ErrorResponse::respond($request, $code, [], $status, [], 'pages.admin');
-        }
-
-        return new Response('Error', $status, [
-            'Content-Type' => 'text/plain; charset=utf-8',
-        ]);
+        return ErrorResponse::respondForRequest($request, $code, [], $status, [], 'pages.admin');
     }
 
     /** @return array<int, string> */

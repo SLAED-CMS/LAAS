@@ -30,7 +30,7 @@ final class AdminMenusController
     public function index(Request $request): Response
     {
         if (!$this->canEdit($request)) {
-            return $this->forbidden();
+            return $this->forbidden($request);
         }
 
         $menu = $this->getMainMenu();
@@ -507,22 +507,14 @@ final class AdminMenusController
         ];
     }
 
-    private function forbidden(): Response
+    private function forbidden(Request $request): Response
     {
-        return $this->view->render('pages/403.html', [], 403, [], [
-            'theme' => 'admin',
-        ]);
+        return ErrorResponse::respondForRequest($request, 'forbidden', [], 403, [], 'admin.menus');
     }
 
     private function errorResponse(Request $request, string $code, int $status): Response
     {
-        if ($request->isHtmx() || $request->wantsJson()) {
-            return ErrorResponse::respond($request, $code, [], $status, [], 'admin.menus');
-        }
-
-        return new Response('Error', $status, [
-            'Content-Type' => 'text/plain; charset=utf-8',
-        ]);
+        return ErrorResponse::respondForRequest($request, $code, [], $status, [], 'admin.menus');
     }
 
     /** @return array<int, string> */

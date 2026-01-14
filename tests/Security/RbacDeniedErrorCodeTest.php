@@ -26,8 +26,8 @@ final class RbacDeniedErrorCodeTest extends TestCase
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
 
         $request = new Request('GET', '/admin', [], [], ['accept' => 'application/json'], '');
-        $view = SecurityTestHelper::createView($db, $request, 'admin');
-        $middleware = new RbacMiddleware($auth, $authorization, $view);
+        SecurityTestHelper::createView($db, $request, 'admin');
+        $middleware = new RbacMiddleware($auth, $authorization);
 
         $response = $middleware->process($request, static fn (Request $req): Response => new Response('OK', 200));
 

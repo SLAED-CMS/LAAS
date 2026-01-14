@@ -5,6 +5,8 @@ namespace Laas\Routing;
 
 use FastRoute\Dispatcher;
 use FastRoute\RouteCollector;
+use Laas\Http\ErrorCode;
+use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 
@@ -31,20 +33,12 @@ final class Router
 
         switch ($routeInfo[0]) {
             case Dispatcher::NOT_FOUND:
-                return new Response('Not Found', 404, [
-                    'Content-Type' => 'text/plain; charset=utf-8',
-                ]);
+                return ErrorResponse::respondForRequest($request, ErrorCode::NOT_FOUND, [], 404, [], 'router');
             case Dispatcher::METHOD_NOT_ALLOWED:
                 $allowed = $routeInfo[1] ?? [];
                 $allowHeader = is_array($allowed) ? implode(', ', $allowed) : '';
-                return new Response(
-                    'Method Not Allowed' . ($allowHeader !== '' ? ' (Allow: ' . $allowHeader . ')' : ''),
-                    405,
-                    array_filter([
-                        'Content-Type' => 'text/plain; charset=utf-8',
-                        $allowHeader !== '' ? 'Allow' : '' => $allowHeader,
-                    ])
-                );
+                $headers = $allowHeader !== '' ? ['Allow' => $allowHeader] : [];
+                return ErrorResponse::respondForRequest($request, ErrorCode::METHOD_NOT_ALLOWED, [], 405, [], 'router', $headers);
             case Dispatcher::FOUND:
                 $handler = $routeInfo[1];
                 $vars = $routeInfo[2];

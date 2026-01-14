@@ -521,13 +521,7 @@ final class UsersController
 
     private function forbidden(Request $request): Response
     {
-        if ($request->isHtmx() || $request->wantsJson()) {
-            return ErrorResponse::respond($request, 'forbidden', [], 403, [], 'admin.users');
-        }
-
-        return $this->view->render('pages/403.html', [], 403, [], [
-            'theme' => 'admin',
-        ]);
+        return ErrorResponse::respondForRequest($request, 'forbidden', [], 403, [], 'admin.users');
     }
 
     private function renderMessages(Request $request, array $data, int $status = 200, array $headers = []): Response
@@ -600,13 +594,7 @@ final class UsersController
 
     private function errorResponse(Request $request, string $code, int $status): Response
     {
-        if ($request->isHtmx() || $request->wantsJson()) {
-            return ErrorResponse::respond($request, $code, [], $status, [], 'admin.users');
-        }
-
-        return new Response('Error', $status, [
-            'Content-Type' => 'text/plain; charset=utf-8',
-        ]);
+        return ErrorResponse::respondForRequest($request, $code, [], $status, [], 'admin.users');
     }
 
     private function contractValidationError(string $route, array $fields = []): Response

@@ -169,24 +169,12 @@ final class AuditController
 
     private function forbidden(Request $request): Response
     {
-        if ($request->wantsJson()) {
-            return ErrorResponse::respond($request, 'forbidden', [], 403, [], 'admin.audit');
-        }
-
-        return $this->view->render('pages/403.html', [], 403, [], [
-            'theme' => 'admin',
-        ]);
+        return ErrorResponse::respondForRequest($request, 'forbidden', [], 403, [], 'admin.audit');
     }
 
     private function errorResponse(Request $request, string $code, int $status): Response
     {
-        if ($request->isHtmx() || $request->wantsJson()) {
-            return ErrorResponse::respond($request, $code, [], $status, [], 'admin.audit');
-        }
-
-        return new Response('Error', $status, [
-            'Content-Type' => 'text/plain; charset=utf-8',
-        ]);
+        return ErrorResponse::respondForRequest($request, $code, [], $status, [], 'admin.audit');
     }
 
     private function readPage(Request $request): int

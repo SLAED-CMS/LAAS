@@ -8,6 +8,7 @@ use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\ApiTokensRepository;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Http\Contract\ContractResponse;
+use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Support\Audit;
@@ -656,15 +657,13 @@ final class ApiTokensController
 
     private function errorResponse(Request $request, string $code, int $status, string $route): Response
     {
-        if ($request->isHtmx() || $request->wantsJson()) {
+        if ($request->wantsJson()) {
             return ContractResponse::error($code, [
                 'route' => $route,
             ], $status);
         }
 
-        return new Response('Error', $status, [
-            'Content-Type' => 'text/plain; charset=utf-8',
-        ]);
+        return ErrorResponse::respondForRequest($request, $code, [], $status, [], $route);
     }
 
     private function forbidden(Request $request): Response
@@ -675,9 +674,7 @@ final class ApiTokensController
             ], 403);
         }
 
-        return $this->view->render('pages/403.html', [], 403, [], [
-            'theme' => 'admin',
-        ]);
+        return ErrorResponse::respondForRequest($request, 'forbidden', [], 403, [], 'admin.api_tokens');
     }
 
     private function mapTokensForView(array $rows): array

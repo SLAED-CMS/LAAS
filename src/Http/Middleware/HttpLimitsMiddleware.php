@@ -278,45 +278,8 @@ final class HttpLimitsMiddleware implements MiddlewareInterface
 
     private function reject(Request $request, string $errorKey, int $status): Response
     {
-        if ($this->shouldReturnJson($request)) {
-            return ErrorResponse::respond($request, $errorKey, [], $status, [
-                'route' => HeadlessMode::resolveRoute($request),
-            ], 'http.limits');
-        }
-
-        $payload = ErrorResponse::buildPayload($request, $errorKey, [], $status, [
+        return ErrorResponse::respondForRequest($request, $errorKey, [], $status, [
             'route' => HeadlessMode::resolveRoute($request),
         ], 'http.limits');
-        $message = (string) (($payload['payload']['meta']['error']['message'] ?? '') ?: 'Error');
-
-        return $this->renderHtmlError($request, $status, $message);
-    }
-
-    private function shouldReturnJson(Request $request): bool
-    {
-        return $request->isHeadless() || $request->wantsJson() || $request->acceptsJson();
-    }
-
-    private function renderHtmlError(Request $request, int $status, string $message): Response
-    {
-        if ($this->view === null) {
-            return new Response($message, $status, [
-                'Content-Type' => 'text/plain; charset=utf-8',
-            ]);
-        }
-
-        $template = 'pages/' . $status . '.html';
-        $theme = str_starts_with($request->getPath(), '/admin') ? 'admin' : null;
-        $options = $theme !== null ? ['theme' => $theme] : [];
-
-        try {
-            return $this->view->render($template, [
-                'message' => $message,
-            ], $status, [], $options);
-        } catch (\Throwable) {
-            return new Response($message, $status, [
-                'Content-Type' => 'text/plain; charset=utf-8',
-            ]);
-        }
     }
 }

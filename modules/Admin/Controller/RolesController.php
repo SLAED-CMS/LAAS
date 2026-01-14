@@ -64,12 +64,12 @@ final class RolesController
 
         $id = (int) ($params['id'] ?? 0);
         if ($id <= 0) {
-            return $this->notFound();
+            return $this->notFound($request);
         }
 
         $role = $this->findRole($id);
         if ($role === null) {
-            return $this->notFound();
+            return $this->notFound($request);
         }
 
         $selected = $this->listRolePermissions($id) ?? [];
@@ -223,12 +223,12 @@ final class RolesController
 
         $id = (int) ($params['id'] ?? 0);
         if ($id <= 0) {
-            return $this->notFound();
+            return $this->notFound($request);
         }
 
         $role = $this->findRole($id);
         if ($role === null) {
-            return $this->notFound();
+            return $this->notFound($request);
         }
 
         $permissions = $this->listRolePermissions($id) ?? [];
@@ -535,30 +535,16 @@ final class RolesController
 
     private function forbidden(Request $request): Response
     {
-        if ($request->wantsJson()) {
-            return ErrorResponse::respond($request, 'forbidden', [], 403, [], 'admin.roles');
-        }
-
-        return $this->view->render('pages/403.html', [], 403, [], [
-            'theme' => 'admin',
-        ]);
+        return ErrorResponse::respondForRequest($request, 'forbidden', [], 403, [], 'admin.roles');
     }
 
     private function errorResponse(Request $request, string $code, int $status): Response
     {
-        if ($request->isHtmx() || $request->wantsJson()) {
-            return ErrorResponse::respond($request, $code, [], $status, [], 'admin.roles');
-        }
-
-        return new Response('Error', $status, [
-            'Content-Type' => 'text/plain; charset=utf-8',
-        ]);
+        return ErrorResponse::respondForRequest($request, $code, [], $status, [], 'admin.roles');
     }
 
-    private function notFound(): Response
+    private function notFound(Request $request): Response
     {
-        return new Response('Not Found', 404, [
-            'Content-Type' => 'text/plain; charset=utf-8',
-        ]);
+        return ErrorResponse::respondForRequest($request, 'not_found', [], 404, [], 'admin.roles');
     }
 }

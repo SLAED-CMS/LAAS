@@ -39,7 +39,7 @@ final class AdminMediaController
             if ($request->wantsJson()) {
                 return $this->contractForbidden('admin.media.index');
             }
-            return $this->forbidden();
+            return $this->forbidden($request);
         }
 
         $repo = $this->repository();
@@ -425,29 +425,29 @@ final class AdminMediaController
         }
 
         if (!in_array($purpose, $allowed, true)) {
-            return $this->signedErrorResponse($request, 'media.signed.invalid', 400);
+            return $this->signedErrorResponse($request, 400);
         }
 
         $url = '';
         $exp = null;
         if ($publicOnly) {
             if ($mode !== 'all') {
-                return $this->signedErrorResponse($request, 'media.signed.invalid', 403);
+                return $this->signedErrorResponse($request, 403);
             }
             $url = $this->publicUrl($row, $purpose);
         } else {
             if ($mode !== 'signed' || empty($row['is_public'])) {
-                return $this->signedErrorResponse($request, 'media.signed.invalid', 403);
+                return $this->signedErrorResponse($request, 403);
             }
             $signer = new MediaSignedUrlService($config);
             $path = $this->publicUrl($row, $purpose);
             if (!$signer->isEnabled() || $path === '') {
-                return $this->signedErrorResponse($request, 'media.signed.invalid', 400);
+                return $this->signedErrorResponse($request, 400);
             }
             $exp = time() + $signer->ttl();
             $url = $signer->buildSignedUrl($path, $row, $purpose, $exp) ?? '';
             if ($url === '') {
-                return $this->signedErrorResponse($request, 'media.signed.invalid', 400);
+                return $this->signedErrorResponse($request, 400);
             }
             (new AuditLogger($this->db, $request->session()))->log(
                 'media.signed.issued',
@@ -997,45 +997,25 @@ final class AdminMediaController
         return '/media/' . $id . '/' . $this->safeDownloadName($originalName, $mime);
     }
 
-    private function signedErrorResponse(Request $request, string $key, int $status): Response
+    private function signedErrorResponse(Request $request, int $status): Response
     {
-        $message = $this->view->translate($key);
-        if ($request->isHtmx()) {
-            return $this->view->render('partials/messages.html', [
-                'errors' => [$message],
-            ], $status, [], [
-                'theme' => 'admin',
-                'render_partial' => true,
-            ]);
-        }
-
         if ($request->wantsJson()) {
             return ContractResponse::error('signed_url', [
                 'route' => 'admin.media.signed',
             ], $status);
         }
 
-        return new Response($message, $status, [
-            'Content-Type' => 'text/plain; charset=utf-8',
-        ]);
+        return ErrorResponse::respondForRequest($request, 'signed_url', [], $status, [], 'admin.media');
     }
 
-    private function forbidden(): Response
+    private function forbidden(Request $request): Response
     {
-        return $this->view->render('pages/403.html', [], 403, [], [
-            'theme' => 'admin',
-        ]);
+        return ErrorResponse::respondForRequest($request, 'forbidden', [], 403, [], 'admin.media');
     }
 
     private function errorResponse(Request $request, string $code, int $status): Response
     {
-        if ($request->isHtmx() || $request->wantsJson()) {
-            return ErrorResponse::respond($request, $code, [], $status, [], 'admin.media');
-        }
-
-        return new Response('Error', $status, [
-            'Content-Type' => 'text/plain; charset=utf-8',
-        ]);
+        return ErrorResponse::respondForRequest($request, $code, [], $status, [], 'admin.media');
     }
 
     private function uploadContractErrorFromKeys(array $keys): Response

@@ -217,20 +217,14 @@ final class RateLimitMiddleware implements MiddlewareInterface
 
     private function rateLimitedResponse(Request $request, int $retryAfter): Response
     {
-        if ($request->wantsJson()) {
-            return ErrorResponse::respond(
-                $request,
-                ErrorCode::RATE_LIMITED,
-                ['retry_after' => $retryAfter],
-                429,
-                [],
-                'rate_limit.middleware',
-                ['Retry-After' => (string) $retryAfter]
-            );
-        }
-
-        return (new Response('Too Many Requests', 429, [
-            'Content-Type' => 'text/plain; charset=utf-8',
-        ]))->withHeader('Retry-After', (string) $retryAfter);
+        return ErrorResponse::respondForRequest(
+            $request,
+            ErrorCode::RATE_LIMITED,
+            ['retry_after' => $retryAfter],
+            429,
+            [],
+            'rate_limit.middleware',
+            ['Retry-After' => (string) $retryAfter]
+        );
     }
 }

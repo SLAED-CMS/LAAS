@@ -7,6 +7,7 @@ use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Database\Repositories\SettingsRepository;
 use Laas\Http\Contract\ContractResponse;
+use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Support\Audit;
@@ -462,12 +463,10 @@ final class SettingsController
 
     private function forbidden(Request $request, string $route): Response
     {
-        if ($request->isHtmx() || $request->wantsJson()) {
+        if ($request->wantsJson()) {
             return ContractResponse::error('forbidden', ['route' => $route], 403);
         }
 
-        return $this->view->render('pages/403.html', [], 403, [], [
-            'theme' => 'admin',
-        ]);
+        return ErrorResponse::respondForRequest($request, 'forbidden', [], 403, [], $route);
     }
 }

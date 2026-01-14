@@ -31,15 +31,7 @@ final class ErrorHandlerMiddleware implements MiddlewareInterface
                 'error_id' => $errorId,
             ]);
 
-            if ($request->expectsJson()) {
-                return ErrorResponse::respond($request, ErrorCode::INTERNAL, [], 500, [], 'error.handler');
-            }
-
-            $message = 'Internal Server Error';
-
-            return (new Response($message, 500, [
-                'Content-Type' => 'text/plain; charset=utf-8',
-            ]));
+            return ErrorResponse::respondForRequest($request, ErrorCode::INTERNAL, [], 500, [], 'error.handler');
         }
     }
 

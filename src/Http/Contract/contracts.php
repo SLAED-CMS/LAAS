@@ -24,7 +24,7 @@ ContractRegistry::register('pages.show', [
             ],
         ],
         '404' => [
-            'error' => 'not_found',
+            'error' => 'http.not_found',
             'meta' => [
                 'format' => 'json',
                 'route' => 'pages.show',
@@ -131,7 +131,7 @@ ContractRegistry::register('rbac.forbidden', [
     'rbac' => 'admin.modules.manage',
     'responses' => [
         '403' => [
-            'error' => 'forbidden',
+            'error' => 'rbac.forbidden',
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.modules.index',
@@ -150,10 +150,118 @@ ContractRegistry::register('rbac.forbidden', [
                 'format' => 'json',
                 'ok' => false,
                 'error' => [
-                    'key' => 'error.rbac_denied',
+                    'key' => 'rbac.forbidden',
                     'message' => 'Access denied.',
                 ],
                 'route' => 'admin.modules.index',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('auth.unauthorized', [
+    'route' => '/admin',
+    'methods' => ['GET'],
+    'rbac' => 'admin.access',
+    'responses' => [
+        '401' => [
+            'error' => 'auth.unauthorized',
+            'meta' => [
+                'format' => 'json',
+                'route' => '/admin',
+            ],
+        ],
+    ],
+    'example_error' => [
+        'fixture' => 'auth.unauthorized',
+        'payload' => [
+            'data' => null,
+            'error' => [
+                'code' => 'E_AUTH_REQUIRED',
+                'message' => 'Authentication required.',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'ok' => false,
+                'error' => [
+                    'key' => 'auth.unauthorized',
+                    'message' => 'Authentication required.',
+                ],
+                'route' => '/admin',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('http.bad_request', [
+    'route' => '/api/v1/pages',
+    'methods' => ['GET'],
+    'rbac' => 'public',
+    'responses' => [
+        '400' => [
+            'error' => 'http.bad_request',
+            'meta' => [
+                'format' => 'json',
+                'route' => '/api/v1/pages',
+            ],
+        ],
+    ],
+    'example_error' => [
+        'fixture' => 'http.bad_request',
+        'payload' => [
+            'data' => null,
+            'error' => [
+                'code' => 'E_INVALID_REQUEST',
+                'message' => 'Invalid request.',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'ok' => false,
+                'error' => [
+                    'key' => 'http.bad_request',
+                    'message' => 'Invalid request.',
+                ],
+                'route' => '/api/v1/pages',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('http.not_found', [
+    'route' => '/api/v1/pages/9999',
+    'methods' => ['GET'],
+    'rbac' => 'public',
+    'responses' => [
+        '404' => [
+            'error' => 'http.not_found',
+            'meta' => [
+                'format' => 'json',
+                'route' => '/api/v1/pages/9999',
+            ],
+        ],
+    ],
+    'example_error' => [
+        'fixture' => 'http.not_found',
+        'payload' => [
+            'data' => null,
+            'error' => [
+                'code' => 'E_NOT_FOUND',
+                'message' => 'Not Found.',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'ok' => false,
+                'error' => [
+                    'key' => 'http.not_found',
+                    'message' => 'Not Found.',
+                ],
+                'route' => '/api/v1/pages/9999',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
             ],
@@ -281,13 +389,13 @@ ContractRegistry::register('admin.pages.save', [
     ],
 ]);
 
-ContractRegistry::register('rate_limited', [
+ContractRegistry::register('http.rate_limited', [
     'route' => '/api/v1/pages',
     'methods' => ['GET'],
     'rbac' => 'public',
     'responses' => [
         '429' => [
-            'error' => 'rate_limited',
+            'error' => 'http.rate_limited',
             'meta' => [
                 'format' => 'json',
                 'route' => '/api/v1/pages',
@@ -295,7 +403,7 @@ ContractRegistry::register('rate_limited', [
         ],
     ],
     'example_error' => [
-        'fixture' => 'rate_limited',
+        'fixture' => 'http.rate_limited',
         'payload' => [
             'data' => null,
             'error' => [
@@ -306,7 +414,7 @@ ContractRegistry::register('rate_limited', [
                 'format' => 'json',
                 'ok' => false,
                 'error' => [
-                    'key' => 'rate_limit.exceeded',
+                    'key' => 'http.rate_limited',
                     'message' => 'Rate limit exceeded.',
                 ],
                 'route' => '/api/v1/pages',
@@ -637,7 +745,7 @@ ContractRegistry::register('admin.modules.index', [
             ],
         ],
         '403' => [
-            'error' => 'forbidden',
+            'error' => 'rbac.forbidden',
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.modules.index',
@@ -720,7 +828,7 @@ ContractRegistry::register('admin.settings.index', [
             ],
         ],
         '403' => [
-            'error' => 'forbidden',
+            'error' => 'rbac.forbidden',
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.settings.index',
@@ -816,7 +924,7 @@ ContractRegistry::register('admin.api_tokens.index', [
             ],
         ],
         '403' => [
-            'error' => 'forbidden',
+            'error' => 'rbac.forbidden',
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.api_tokens.index',
@@ -882,7 +990,7 @@ ContractRegistry::register('admin.api_tokens.create', [
             ],
         ],
         '403' => [
-            'error' => 'forbidden',
+            'error' => 'rbac.forbidden',
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.api_tokens.create',
@@ -952,14 +1060,14 @@ ContractRegistry::register('admin.api_tokens.revoke', [
             ],
         ],
         '404' => [
-            'error' => 'not_found',
+            'error' => 'http.not_found',
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.api_tokens.revoke',
             ],
         ],
         '403' => [
-            'error' => 'forbidden',
+            'error' => 'rbac.forbidden',
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.api_tokens.revoke',
@@ -1011,7 +1119,7 @@ ContractRegistry::register('admin.users.index', [
             ],
         ],
         '403' => [
-            'error' => 'forbidden',
+            'error' => 'rbac.forbidden',
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.users.index',
@@ -1071,7 +1179,7 @@ ContractRegistry::register('admin.users.toggle', [
             ],
         ],
         '403' => [
-            'error' => 'forbidden',
+            'error' => 'rbac.forbidden',
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.users.toggle',
@@ -1110,7 +1218,7 @@ ContractRegistry::register('admin.media.index', [
             ],
         ],
         '403' => [
-            'error' => 'forbidden',
+            'error' => 'rbac.forbidden',
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.media.index',
@@ -1189,7 +1297,7 @@ ContractRegistry::register('admin.media.upload', [
             ],
         ],
         '403' => [
-            'error' => 'forbidden',
+            'error' => 'rbac.forbidden',
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.media.upload',
@@ -1218,14 +1326,14 @@ ContractRegistry::register('media.show', [
             ],
         ],
         '404' => [
-            'error' => 'not_found',
+            'error' => 'http.not_found',
             'meta' => [
                 'format' => 'json',
                 'route' => 'media.show',
             ],
         ],
         '403' => [
-            'error' => 'forbidden',
+            'error' => 'rbac.forbidden',
             'meta' => [
                 'format' => 'json',
                 'route' => 'media.show',

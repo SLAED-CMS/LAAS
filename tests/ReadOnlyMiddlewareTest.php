@@ -61,7 +61,7 @@ final class ReadOnlyMiddlewareTest extends TestCase
         $this->assertSame(200, $response->getStatus());
     }
 
-    public function testReadOnlyHtmxReturnsMessagesPartial(): void
+    public function testReadOnlyHtmxReturnsErrorTemplate(): void
     {
         $root = dirname(__DIR__);
         $db = $this->createDatabase();
@@ -76,7 +76,8 @@ final class ReadOnlyMiddlewareTest extends TestCase
         $response = $middleware->process($request, static fn (Request $req): Response => new Response('OK', 200));
 
         $this->assertSame(503, $response->getStatus());
-        $this->assertStringContainsString('alert', $response->getBody());
+        $this->assertNotNull($response->getHeader('HX-Trigger'));
+        $this->assertStringContainsString('Service Unavailable', $response->getBody());
     }
 
     private function createDatabase(): DatabaseManager

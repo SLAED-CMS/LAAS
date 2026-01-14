@@ -9,14 +9,12 @@ use Laas\Http\ErrorCode;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\View\View;
 
 final class RbacMiddleware implements MiddlewareInterface
 {
     public function __construct(
         private AuthInterface $auth,
-        private AuthorizationService $authorization,
-        private View $view
+        private AuthorizationService $authorization
     ) {
     }
 
@@ -40,10 +38,7 @@ final class RbacMiddleware implements MiddlewareInterface
             if ($request->wantsJson()) {
                 return ErrorResponse::respond($request, ErrorCode::RBAC_DENIED, [], 403, [], 'rbac.guard');
             }
-
-            return $this->view->render('pages/403.html', [], 403, [], [
-                'theme' => 'admin',
-            ]);
+            return ErrorResponse::respondForRequest($request, ErrorCode::RBAC_DENIED, [], 403, [], 'rbac.guard');
         }
 
         return $next($request);

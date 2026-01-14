@@ -10,7 +10,6 @@ use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Support\Audit;
 use Laas\Support\RequestScope;
-use Laas\View\View;
 
 final class PerfBudgetEnforcer
 {
@@ -54,13 +53,7 @@ final class PerfBudgetEnforcer
 
     public function buildOverBudgetResponse(Request $request): Response
     {
-        if ($request->wantsJson()) {
-            return ErrorResponse::respond($request, 'system.over_budget', [], 503, [], 'perf.budget');
-        }
-
-        return new Response('system.over_budget', 503, [
-            'Content-Type' => 'text/plain; charset=utf-8',
-        ]);
+        return ErrorResponse::respondForRequest($request, 'system.over_budget', [], 503, [], 'perf.budget');
     }
 
     private function checkMetric(PerfBudgetResult $result, string $metric, float|int $value, float|int $warn, float|int $hard): void
@@ -215,35 +208,16 @@ final class PerfBudgetEnforcer
 
     private function buildGuardBlockResponse(Request $request, DevToolsContext $context, array $violations): Response
     {
-        if ($request->wantsJson()) {
-            $details = $this->isDebug($context) ? ['exceeded' => $violations] : [];
-            return ErrorResponse::respond(
-                $request,
-                ErrorCode::PERF_BUDGET_EXCEEDED,
-                $details,
-                503,
-                [],
-                'perf.guard',
-                ['Retry-After' => '5']
-            );
-        }
-
-        $message = $this->translateMessage($request, 'perf.guard_blocked');
-        $view = RequestScope::get('view');
-        if ($view instanceof View) {
-            $theme = str_starts_with($request->getPath(), '/admin') ? 'admin' : null;
-            $options = $theme !== null ? ['theme' => $theme] : [];
-            return $view->render('partials/messages.html', [
-                'errors' => [$message],
-            ], 503, [
-                'Retry-After' => '5',
-            ], $options);
-        }
-
-        return new Response($message, 503, [
-            'Content-Type' => 'text/plain; charset=utf-8',
-            'Retry-After' => '5',
-        ]);
+        $details = $this->isDebug($context) ? ['exceeded' => $violations] : [];
+        return ErrorResponse::respondForRequest(
+            $request,
+            ErrorCode::PERF_BUDGET_EXCEEDED,
+            $details,
+            503,
+            [],
+            'perf.guard',
+            ['Retry-After' => '5']
+        );
     }
 
     /** @param array<int, array{metric: string, value: float|int, limit: int}> $violations */

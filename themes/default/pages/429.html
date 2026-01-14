@@ -3,9 +3,9 @@
 {% block content %}
 <div class="card">
   <div class="card-body">
-    <h1 class="h4 mb-2">{% t 'http.bad_request' %}</h1>
+    <h1 class="h4 mb-2">{% t 'http.rate_limited' %}</h1>
     <p class="text-muted mb-0">
-      {% if message %}{% message %}{% else %}{% t 'http.bad_request' %}{% endif %}
+      {% if message %}{% message %}{% else %}{% t 'http.rate_limited' %}{% endif %}
     </p>
   </div>
 </div>

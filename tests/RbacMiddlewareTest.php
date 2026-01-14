@@ -7,7 +7,6 @@ use Laas\Database\Repositories\RbacRepository;
 use Laas\Http\Middleware\RbacMiddleware;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\View\View;
 use PHPUnit\Framework\TestCase;
 
 final class RbacMiddlewareTest extends TestCase
@@ -19,9 +18,7 @@ final class RbacMiddlewareTest extends TestCase
 
         $rbac = new RbacRepository($pdo);
         $auth = $this->fakeAuth(1, true);
-        $view = (new ReflectionClass(View::class))->newInstanceWithoutConstructor();
-
-        $middleware = new RbacMiddleware($auth, new AuthorizationService($rbac), $view);
+        $middleware = new RbacMiddleware($auth, new AuthorizationService($rbac));
         $request = new Request('GET', '/admin', [], [], ['accept' => 'application/json'], '');
 
         $response = $middleware->process($request, function (): Response {
@@ -44,9 +41,7 @@ final class RbacMiddlewareTest extends TestCase
 
         $rbac = new RbacRepository($pdo);
         $auth = $this->fakeAuth(1, true);
-        $view = (new ReflectionClass(View::class))->newInstanceWithoutConstructor();
-
-        $middleware = new RbacMiddleware($auth, new AuthorizationService($rbac), $view);
+        $middleware = new RbacMiddleware($auth, new AuthorizationService($rbac));
         $request = new Request('GET', '/admin', [], [], ['accept' => 'application/json'], '');
 
         $response = $middleware->process($request, function (): Response {

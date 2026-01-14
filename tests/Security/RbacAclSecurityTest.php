@@ -43,8 +43,7 @@ final class RbacAclSecurityTest extends TestCase
         };
 
         $request = new Request('GET', '/admin', [], [], [], '');
-        $view = SecurityTestHelper::createView($db, $request, 'admin');
-        $middleware = new RbacMiddleware($auth, new AuthorizationService(new RbacRepository($pdo)), $view);
+        $middleware = new RbacMiddleware($auth, new AuthorizationService(new RbacRepository($pdo)));
 
         $response = $middleware->process($request, static fn(): Response => new Response('ok', 200));
         $this->assertSame(403, $response->getStatus());

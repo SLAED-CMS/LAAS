@@ -75,7 +75,7 @@
                     }
                 },
                 "403": {
-                    "error": "forbidden",
+                    "error": "rbac.forbidden",
                     "meta": {
                         "format": "json",
                         "route": "admin.api_tokens.create"
@@ -159,7 +159,7 @@
                     }
                 },
                 "403": {
-                    "error": "forbidden",
+                    "error": "rbac.forbidden",
                     "meta": {
                         "format": "json",
                         "route": "admin.api_tokens.index"
@@ -202,14 +202,14 @@
                     }
                 },
                 "403": {
-                    "error": "forbidden",
+                    "error": "rbac.forbidden",
                     "meta": {
                         "format": "json",
                         "route": "admin.api_tokens.revoke"
                     }
                 },
                 "404": {
-                    "error": "not_found",
+                    "error": "http.not_found",
                     "meta": {
                         "format": "json",
                         "route": "admin.api_tokens.revoke"
@@ -327,7 +327,7 @@
                     }
                 },
                 "403": {
-                    "error": "forbidden",
+                    "error": "rbac.forbidden",
                     "meta": {
                         "format": "json",
                         "route": "admin.media.index"
@@ -365,7 +365,7 @@
                     }
                 },
                 "403": {
-                    "error": "forbidden",
+                    "error": "rbac.forbidden",
                     "meta": {
                         "format": "json",
                         "route": "admin.media.upload"
@@ -445,7 +445,7 @@
                     }
                 },
                 "403": {
-                    "error": "forbidden",
+                    "error": "rbac.forbidden",
                     "meta": {
                         "format": "json",
                         "route": "admin.modules.index"
@@ -555,7 +555,7 @@
                     }
                 },
                 "403": {
-                    "error": "forbidden",
+                    "error": "rbac.forbidden",
                     "meta": {
                         "format": "json",
                         "route": "admin.settings.index"
@@ -688,7 +688,7 @@
                     }
                 },
                 "403": {
-                    "error": "forbidden",
+                    "error": "rbac.forbidden",
                     "meta": {
                         "format": "json",
                         "route": "admin.users.index"
@@ -716,7 +716,7 @@
                     }
                 },
                 "403": {
-                    "error": "forbidden",
+                    "error": "rbac.forbidden",
                     "meta": {
                         "format": "json",
                         "route": "admin.users.toggle"
@@ -860,6 +860,84 @@
         },
         {
             "example_error": {
+                "fixture": "auth.unauthorized",
+                "payload": {
+                    "data": null,
+                    "error": {
+                        "code": "E_AUTH_REQUIRED",
+                        "message": "Authentication required."
+                    },
+                    "meta": {
+                        "error": {
+                            "key": "auth.unauthorized",
+                            "message": "Authentication required."
+                        },
+                        "format": "json",
+                        "ok": false,
+                        "request_id": "__REQ__",
+                        "route": "/admin",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "auth.unauthorized",
+            "rbac": "admin.access",
+            "responses": {
+                "401": {
+                    "error": "auth.unauthorized",
+                    "meta": {
+                        "format": "json",
+                        "route": "/admin"
+                    }
+                }
+            },
+            "route": "/admin",
+            "version": "3.18.0"
+        },
+        {
+            "example_error": {
+                "fixture": "http.bad_request",
+                "payload": {
+                    "data": null,
+                    "error": {
+                        "code": "E_INVALID_REQUEST",
+                        "message": "Invalid request."
+                    },
+                    "meta": {
+                        "error": {
+                            "key": "http.bad_request",
+                            "message": "Invalid request."
+                        },
+                        "format": "json",
+                        "ok": false,
+                        "request_id": "__REQ__",
+                        "route": "/api/v1/pages",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "http.bad_request",
+            "rbac": "public",
+            "responses": {
+                "400": {
+                    "error": "http.bad_request",
+                    "meta": {
+                        "format": "json",
+                        "route": "/api/v1/pages"
+                    }
+                }
+            },
+            "route": "/api/v1/pages",
+            "version": "3.18.0"
+        },
+        {
+            "example_error": {
                 "fixture": "http.headers_too_large",
                 "payload": {
                     "data": null,
@@ -938,6 +1016,45 @@
         },
         {
             "example_error": {
+                "fixture": "http.not_found",
+                "payload": {
+                    "data": null,
+                    "error": {
+                        "code": "E_NOT_FOUND",
+                        "message": "Not Found."
+                    },
+                    "meta": {
+                        "error": {
+                            "key": "http.not_found",
+                            "message": "Not Found."
+                        },
+                        "format": "json",
+                        "ok": false,
+                        "request_id": "__REQ__",
+                        "route": "/api/v1/pages/9999",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "http.not_found",
+            "rbac": "public",
+            "responses": {
+                "404": {
+                    "error": "http.not_found",
+                    "meta": {
+                        "format": "json",
+                        "route": "/api/v1/pages/9999"
+                    }
+                }
+            },
+            "route": "/api/v1/pages/9999",
+            "version": "3.18.0"
+        },
+        {
+            "example_error": {
                 "fixture": "http.payload_too_large",
                 "payload": {
                     "data": null,
@@ -973,6 +1090,45 @@
                 }
             },
             "route": "/api/v1/ping",
+            "version": "3.18.0"
+        },
+        {
+            "example_error": {
+                "fixture": "http.rate_limited",
+                "payload": {
+                    "data": null,
+                    "error": {
+                        "code": "E_RATE_LIMITED",
+                        "message": "Rate limit exceeded."
+                    },
+                    "meta": {
+                        "error": {
+                            "key": "http.rate_limited",
+                            "message": "Rate limit exceeded."
+                        },
+                        "format": "json",
+                        "ok": false,
+                        "request_id": "__REQ__",
+                        "route": "/api/v1/pages",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "http.rate_limited",
+            "rbac": "public",
+            "responses": {
+                "429": {
+                    "error": "http.rate_limited",
+                    "meta": {
+                        "format": "json",
+                        "route": "/api/v1/pages"
+                    }
+                }
+            },
+            "route": "/api/v1/pages",
             "version": "3.18.0"
         },
         {
@@ -1094,14 +1250,14 @@
                     }
                 },
                 "403": {
-                    "error": "forbidden",
+                    "error": "rbac.forbidden",
                     "meta": {
                         "format": "json",
                         "route": "media.show"
                     }
                 },
                 "404": {
-                    "error": "not_found",
+                    "error": "http.not_found",
                     "meta": {
                         "format": "json",
                         "route": "media.show"
@@ -1154,7 +1310,7 @@
                     }
                 },
                 "404": {
-                    "error": "not_found",
+                    "error": "http.not_found",
                     "meta": {
                         "format": "json",
                         "route": "pages.show"
@@ -1162,45 +1318,6 @@
                 }
             },
             "route": "/{slug}",
-            "version": "3.18.0"
-        },
-        {
-            "example_error": {
-                "fixture": "rate_limited",
-                "payload": {
-                    "data": null,
-                    "error": {
-                        "code": "E_RATE_LIMITED",
-                        "message": "Rate limit exceeded."
-                    },
-                    "meta": {
-                        "error": {
-                            "key": "rate_limit.exceeded",
-                            "message": "Rate limit exceeded."
-                        },
-                        "format": "json",
-                        "ok": false,
-                        "request_id": "__REQ__",
-                        "route": "/api/v1/pages",
-                        "ts": "__TIME__"
-                    }
-                }
-            },
-            "methods": [
-                "GET"
-            ],
-            "name": "rate_limited",
-            "rbac": "public",
-            "responses": {
-                "429": {
-                    "error": "rate_limited",
-                    "meta": {
-                        "format": "json",
-                        "route": "/api/v1/pages"
-                    }
-                }
-            },
-            "route": "/api/v1/pages",
             "version": "3.18.0"
         },
         {
@@ -1214,7 +1331,7 @@
                     },
                     "meta": {
                         "error": {
-                            "key": "error.rbac_denied",
+                            "key": "rbac.forbidden",
                             "message": "Access denied."
                         },
                         "format": "json",
@@ -1232,7 +1349,7 @@
             "rbac": "admin.modules.manage",
             "responses": {
                 "403": {
-                    "error": "forbidden",
+                    "error": "rbac.forbidden",
                     "meta": {
                         "format": "json",
                         "route": "admin.modules.index"

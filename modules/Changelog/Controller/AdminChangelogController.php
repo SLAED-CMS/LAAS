@@ -6,6 +6,7 @@ namespace Laas\Modules\Changelog\Controller;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Database\Repositories\SettingsRepository;
+use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Changelog\Service\ChangelogService;
@@ -28,7 +29,7 @@ final class AdminChangelogController
     public function index(Request $request): Response
     {
         if (!$this->canAdmin($request)) {
-            return $this->forbidden();
+            return $this->forbidden($request);
         }
 
         $settings = $this->loadSettings();
@@ -61,7 +62,7 @@ final class AdminChangelogController
     public function save(Request $request): Response
     {
         if (!$this->canAdmin($request)) {
-            return $this->forbidden();
+            return $this->forbidden($request);
         }
 
         $settings = $this->loadSettings();
@@ -119,7 +120,7 @@ final class AdminChangelogController
     public function test(Request $request): Response
     {
         if (!$this->canAdmin($request)) {
-            return $this->forbidden();
+            return $this->forbidden($request);
         }
 
         $baseSettings = $this->loadSettings();
@@ -171,7 +172,7 @@ final class AdminChangelogController
     public function preview(Request $request): Response
     {
         if (!$this->canAdmin($request)) {
-            return $this->forbidden();
+            return $this->forbidden($request);
         }
 
         $settings = $this->loadSettings();
@@ -205,7 +206,7 @@ final class AdminChangelogController
     public function clearCache(Request $request): Response
     {
         if (!$this->canClearCache($request)) {
-            return $this->forbidden();
+            return $this->forbidden($request);
         }
 
         $cache = new ChangelogCache($this->rootPath());
@@ -356,11 +357,9 @@ final class AdminChangelogController
         return null;
     }
 
-    private function forbidden(): Response
+    private function forbidden(Request $request): Response
     {
-        return $this->view->render('pages/403.html', [], 403, [], [
-            'theme' => 'admin',
-        ]);
+        return ErrorResponse::respondForRequest($request, 'forbidden', [], 403, [], 'admin.changelog');
     }
 
     private function rootPath(): string

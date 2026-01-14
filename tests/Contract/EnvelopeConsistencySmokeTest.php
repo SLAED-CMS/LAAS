@@ -46,7 +46,7 @@ final class EnvelopeConsistencySmokeTest extends TestCase
         $this->assertNull($payload['data'] ?? null);
         $this->assertSame('E_RBAC_DENIED', $payload['error']['code'] ?? null);
         $this->assertFalse($payload['meta']['ok'] ?? true);
-        $this->assertSame('error.rbac_denied', $payload['meta']['error']['key'] ?? null);
+        $this->assertSame('rbac.forbidden', $payload['meta']['error']['key'] ?? null);
 
         if ($prev === null) {
             unset($_ENV['APP_DEBUG']);

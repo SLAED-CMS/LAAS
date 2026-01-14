@@ -6,6 +6,7 @@ use Laas\Http\ErrorCode;
 use Laas\Http\Request;
 use Laas\Perf\PerfBudgetEnforcer;
 use PHPUnit\Framework\TestCase;
+use Tests\Security\Support\SecurityTestHelper;
 
 final class PerfBudgetHardFailTest extends TestCase
 {
@@ -46,7 +47,7 @@ final class PerfBudgetHardFailTest extends TestCase
         $this->assertSame(ErrorCode::SERVICE_UNAVAILABLE, $payload['error']['code'] ?? null);
     }
 
-    public function testHardFailReturnsPlainTextForHtml(): void
+    public function testHardFailReturnsHtmlTemplateForHtml(): void
     {
         $config = [
             'enabled' => true,
@@ -75,9 +76,11 @@ final class PerfBudgetHardFailTest extends TestCase
         $this->assertTrue($result->isHard());
 
         $request = new Request('GET', '/', [], [], ['accept' => 'text/html'], '');
+        $db = SecurityTestHelper::dbManagerFromPdo(SecurityTestHelper::createSqlitePdo());
+        SecurityTestHelper::createView($db, $request, 'default');
         $response = $enforcer->buildOverBudgetResponse($request);
 
         $this->assertSame(503, $response->getStatus());
-        $this->assertSame('system.over_budget', $response->getBody());
+        $this->assertStringContainsString('Service Unavailable', $response->getBody());
     }
 }

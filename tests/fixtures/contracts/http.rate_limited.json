@@ -1,18 +1,18 @@
 {
     "data": null,
     "error": {
-        "code": "E_RBAC_DENIED",
-        "message": "Access denied."
+        "code": "E_RATE_LIMITED",
+        "message": "Rate limit exceeded."
     },
     "meta": {
         "error": {
-            "key": "rbac.forbidden",
-            "message": "Access denied."
+            "key": "http.rate_limited",
+            "message": "Rate limit exceeded."
         },
         "format": "json",
         "ok": false,
         "request_id": "__REQ__",
-        "route": "admin.modules.index",
+        "route": "/api/v1/pages",
         "ts": "__TIME__"
     }
 }

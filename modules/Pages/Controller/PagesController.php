@@ -5,6 +5,7 @@ namespace Laas\Modules\Pages\Controller;
 
 use Laas\Database\DatabaseManager;
 use Laas\Http\Contract\ContractResponse;
+use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Pages\Repository\PagesRepository;
@@ -67,9 +68,7 @@ final class PagesController
     {
         $repo = $this->getRepository();
         if ($repo === null) {
-            return new Response('Service Unavailable', 503, [
-                'Content-Type' => 'text/plain; charset=utf-8',
-            ]);
+            return ErrorResponse::respondForRequest($request, 'service_unavailable', [], 503, [], 'pages.search');
         }
 
         $query = SearchNormalizer::normalize((string) ($request->query('q') ?? ''));
@@ -126,9 +125,7 @@ final class PagesController
             ], 404);
         }
 
-        return new Response('Not Found', 404, [
-            'Content-Type' => 'text/plain; charset=utf-8',
-        ]);
+        return ErrorResponse::respondForRequest($request, 'not_found', [], 404, [], 'pages.show');
     }
 
     private function shouldJson(Request $request): bool

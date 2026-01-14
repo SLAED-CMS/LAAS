@@ -244,7 +244,7 @@ final class Kernel
             new RateLimitMiddleware(new RateLimiter($this->rootPath), $securityConfig),
             new SecurityHeadersMiddleware(new SecurityHeaders($securityConfig)),
             new AuthMiddleware($authService),
-            new RbacMiddleware($authService, $authorization, $view),
+            new RbacMiddleware($authService, $authorization),
             new DevToolsMiddleware($devtoolsContext, $devtoolsConfig, $authService, $authorization, $view, $this->database(), $collectors),
         ]);
 

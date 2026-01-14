@@ -1,18 +1,18 @@
 {
     "data": null,
     "error": {
-        "code": "E_RATE_LIMITED",
-        "message": "Rate limit exceeded."
+        "code": "E_NOT_FOUND",
+        "message": "Not Found."
     },
     "meta": {
         "error": {
-            "key": "rate_limit.exceeded",
-            "message": "Rate limit exceeded."
+            "key": "http.not_found",
+            "message": "Not Found."
         },
         "format": "json",
         "ok": false,
         "request_id": "__REQ__",
-        "route": "/api/v1/pages",
+        "route": "/api/v1/pages/9999",
         "ts": "__TIME__"
     }
 }

@@ -6,6 +6,7 @@ namespace Laas\Http;
 use Laas\I18n\LocaleResolver;
 use Laas\I18n\Translator;
 use Laas\Support\RequestScope;
+use Laas\View\View;
 
 final class ErrorResponse
 {
@@ -91,7 +92,32 @@ final class ErrorResponse
             $response = $response->withHeader($name, $value);
         }
 
-        return $response;
+        return self::attachHtmxTrigger($request, $response, $built['payload'], $built['status']);
+    }
+
+    public static function respondForRequest(
+        Request $request,
+        string $codeOrAlias,
+        array $details = [],
+        ?int $status = null,
+        array $meta = [],
+        ?string $source = null,
+        array $headers = []
+    ): Response {
+        $built = self::buildPayload($request, $codeOrAlias, $details, $status, $meta, $source);
+        $resolvedStatus = $built['status'];
+
+        if ($request->wantsJson()) {
+            $response = Response::json($built['payload'], $resolvedStatus);
+        } else {
+            $response = self::renderHtmlError($request, $built['payload'], $resolvedStatus);
+        }
+
+        foreach ($headers as $name => $value) {
+            $response = $response->withHeader($name, $value);
+        }
+
+        return self::attachHtmxTrigger($request, $response, $built['payload'], $resolvedStatus);
     }
 
     private static function normalizeDetails(string $code, array $details): array
@@ -103,6 +129,67 @@ final class ErrorResponse
         }
 
         return $details;
+    }
+
+    private static function renderHtmlError(Request $request, array $payload, int $status): Response
+    {
+        $message = (string) (($payload['meta']['error']['message'] ?? '') ?: '');
+        $errorKey = (string) (($payload['meta']['error']['key'] ?? '') ?: '');
+
+        $view = RequestScope::get('view');
+        if ($view instanceof View) {
+            $template = 'pages/' . $status . '.html';
+            $theme = str_starts_with($request->getPath(), '/admin') ? 'admin' : null;
+            $options = $theme !== null ? ['theme' => $theme] : [];
+
+            try {
+                return $view->render($template, [
+                    'message' => $message,
+                    'error_key' => $errorKey,
+                    'status' => $status,
+                ], $status, [], $options);
+            } catch (\Throwable) {
+            }
+        }
+
+        $body = $message !== '' ? $message : 'Error';
+        return new Response($body, $status, [
+            'Content-Type' => 'text/plain; charset=utf-8',
+        ]);
+    }
+
+    private static function attachHtmxTrigger(?Request $request, Response $response, array $payload, int $status): Response
+    {
+        if ($request === null || !$request->isHtmx()) {
+            return $response;
+        }
+
+        $errorKey = (string) (($payload['meta']['error']['key'] ?? '') ?: '');
+        $requestId = (string) (($payload['meta']['request_id'] ?? '') ?: RequestContext::requestId());
+
+        $trigger = $response->getHeader('HX-Trigger');
+        $data = [];
+        if (is_string($trigger) && $trigger !== '') {
+            $decoded = json_decode($trigger, true);
+            if (is_array($decoded)) {
+                $data = $decoded;
+            } else {
+                $data[$trigger] = true;
+            }
+        }
+
+        $data['laas:error'] = [
+            'status' => $status,
+            'error_key' => $errorKey,
+            'request_id' => $requestId,
+        ];
+
+        $json = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        if ($json === false) {
+            return $response;
+        }
+
+        return $response->withHeader('HX-Trigger', $json);
     }
 
     private static function attachSource(array $details, ?string $source): array
