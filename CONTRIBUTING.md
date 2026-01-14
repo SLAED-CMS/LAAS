@@ -58,8 +58,8 @@ Please keep these principles in mind when contributing.
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/laas-cms.git
-   cd laas-cms
+   git clone https://github.com/SLAED-CMS/LAAS.git
+   cd LAAS
    ```
 
 2. **Install dependencies:**
@@ -745,6 +745,8 @@ php tools/cli.php migrate:up                  # Run migrations
 
 # Cache
 php tools/cli.php cache:clear                 # Clear all cache
+php tools/cli.php cache:status                # Show cache status
+php tools/cli.php cache:prune                 # Prune expired cache entries
 php tools/cli.php templates:clear             # Clear template cache
 php tools/cli.php templates:warmup            # Warmup templates
 
@@ -753,6 +755,10 @@ php tools/cli.php module:status               # List all modules
 php tools/cli.php module:sync                 # Sync to database
 php tools/cli.php module:enable ModuleName    # Enable module
 php tools/cli.php module:disable ModuleName   # Disable module
+
+# Media (v3.9.0+)
+php tools/cli.php media:gc                    # Garbage collect orphaned media
+php tools/cli.php media:verify                # Verify media integrity
 
 # RBAC
 php tools/cli.php rbac:status                 # Show RBAC status
@@ -766,11 +772,22 @@ php tools/cli.php settings:set key value      # Set setting value
 # Operations
 php tools/cli.php ops:check                   # Run smoke tests
 php tools/cli.php config:export               # Export config snapshot
+php tools/cli.php doctor                      # System diagnostics
+php tools/cli.php preflight                   # Pre-deployment checks
+php tools/cli.php session:smoke               # Session smoke test (Redis)
 
-# Backup
+# Backup (v3.6.0+)
 php tools/cli.php backup:create               # Create database backup
 php tools/cli.php backup:list                 # List backups
-php tools/cli.php backup:restore file.sql     # Restore backup
+php tools/cli.php backup:verify file.tar.gz   # Verify backup integrity
+php tools/cli.php backup:restore file.tar.gz  # Restore backup
+php tools/cli.php backup:prune                # Prune old backups
+
+# CI / Release
+php tools/cli.php policy:check                # Run policy checks
+php tools/cli.php contracts:check             # Check contracts
+php tools/cli.php contracts:fixtures:check    # Check contract fixtures
+php tools/cli.php release:check               # Pre-release validation
 ```
 
 ### Development Helpers
@@ -796,8 +813,8 @@ find . -name "*.php" -exec php -l {} \;
 ### Resources
 
 - **Documentation:** [docs/](docs/)
-- **Issues:** [GitHub Issues](https://github.com/eduardlaas/laas-cms/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/eduardlaas/laas-cms/discussions)
+- **Issues:** [GitHub Issues](https://github.com/SLAED-CMS/LAAS/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/SLAED-CMS/LAAS/discussions)
 - **Security:** See [SECURITY.md](SECURITY.md)
 
 ### Reporting Bugs
@@ -822,8 +839,8 @@ When requesting features:
 
 For questions:
 1. Check [documentation](docs/)
-2. Search [existing issues](https://github.com/eduardlaas/laas-cms/issues)
-3. Open a [discussion](https://github.com/eduardlaas/laas-cms/discussions)
+2. Search [existing issues](https://github.com/SLAED-CMS/LAAS/issues)
+3. Open a [discussion](https://github.com/SLAED-CMS/LAAS/discussions)
 
 ---
 

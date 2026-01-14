@@ -6,13 +6,28 @@ We release security updates for the following versions of LAAS CMS:
 
 | Version | Supported          | Status                  |
 | ------- | ------------------ | ----------------------- |
-| 3.0.x   | :white_check_mark: | Current stable release  |
-| 2.4.x   | :white_check_mark: | Security fixes only     |
-| 2.3.x   | :white_check_mark: | Security fixes only     |
-| 2.2.x   | :warning:          | Critical fixes only     |
-| < 2.2   | :x:                | No longer supported     |
+| 3.28.x  | :white_check_mark: | Current stable release  |
+| 3.x     | :white_check_mark: | Full support            |
+| 2.4.x   | :warning:          | Security fixes only     |
+| 2.3.x   | :warning:          | Critical fixes only     |
+| < 2.3   | :x:                | No longer supported     |
 
-**Recommendation:** Always use the latest stable release (v3.0.x) for the best security posture.
+**Recommendation:** Always use the latest stable release (v3.28.x) for the best security posture.
+
+**v3.20.0+ Security Hardening:**
+- ✅ HTTP limits middleware (body size, POST fields, header size, URL length, file count/size)
+- ✅ Host validation via `HTTP_TRUSTED_HOSTS` allowlist
+- ✅ CSRF failures return `403` with `security.csrf_failed` (standardized)
+- ✅ Form validation errors return `422` for HTML/HTMX
+- ✅ Standardized error keys for HTTP statuses (400/401/403/404/413/414/429/431/503)
+- ✅ Toast event system with deduplication and queue limits
+
+**v3.6.0+ Operations Security:**
+- ✅ Backup format v2 with integrity verification (`backup:verify`)
+- ✅ Backup pruning with retention policy (`backup:prune`)
+- ✅ Media garbage collection with safety guards (`media:gc`, `media:verify`)
+- ✅ Performance budgets (SQL count/time limits, optional hard fail)
+- ✅ Cache hygiene with TTL and pruning (`cache:prune`)
 
 **v3.0.0 - Frontend-agnostic Platform:**
 - ✅ RenderAdapter v1 (HTML/JSON content negotiation)
@@ -21,6 +36,9 @@ We release security updates for the following versions of LAAS CMS:
 - ✅ Problem Details (RFC 7807) for structured JSON error responses
 - ✅ Secure content-type handling and MIME sniffing protection
 - ✅ ViewModels for data normalization and presentation layer separation
+- ✅ Trust proxy configuration (`TRUST_PROXY_ENABLED`, `TRUST_PROXY_IPS`)
+- ✅ CSP configuration (`CSP_ALLOW_CDN`, `CSP_SCRIPT_SRC_EXTRA`, etc.)
+- ✅ Optional Redis sessions with safe fallback (`SESSION_DRIVER=redis`)
 
 **v2.4.2 - Asset Architecture & Frontend Separation:**
 - ✅ AssetManager with cache-busting (?v= query parameter)
@@ -47,7 +65,7 @@ We release security updates for the following versions of LAAS CMS:
 ### How to Report
 
 **Preferred Method:**
-- Use [GitHub Security Advisories](https://github.com/eduardlaas/laas-cms/security/advisories/new)
+- Use [GitHub Security Advisories](https://github.com/SLAED-CMS/LAAS/security/advisories/new)
 - This allows private disclosure and collaboration
 
 **Alternative Method:**
@@ -380,7 +398,7 @@ $resetRepo->deleteToken($token); // After successful reset
 ## Security Advisories
 
 Past security advisories are published at:
-- **GitHub:** [Security Advisories](https://github.com/eduardlaas/laas-cms/security/advisories)
+- **GitHub:** [Security Advisories](https://github.com/SLAED-CMS/LAAS/security/advisories)
 - **Website:** https://laas-cms.org/security
 
 Subscribe to notifications to stay informed about security updates.
@@ -415,7 +433,7 @@ We follow a coordinated disclosure policy. After we've patched a vulnerability:
 ## Security Contact
 
 - **Email:** info@laas-cms.org
-- **GitHub:** [Security Advisories](https://github.com/eduardlaas/laas-cms/security/advisories/new)
+- **GitHub:** [Security Advisories](https://github.com/SLAED-CMS/LAAS/security/advisories/new)
 - **Website:** https://laas-cms.org/security
 
 For general questions about security features, see [docs/SECURITY.md](docs/SECURITY.md).

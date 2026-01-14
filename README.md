@@ -5,14 +5,14 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-00758F.svg)](https://www.mysql.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)](#)
-[![Baseline](https://img.shields.io/badge/Baseline-v3.25.0-orange.svg)](docs/VERSIONS.md)
+[![Baseline](https://img.shields.io/badge/Baseline-v3.28.0-orange.svg)](docs/VERSIONS.md)
 [![Security](https://img.shields.io/badge/Security-99%2F100-brightgreen.svg)](docs/SECURITY.md)
 
-**Stable v3.1.2**
+**Stable v3.28.0**
 
-**Latest Release v3.1.2**
-- Versions: `docs/VERSIONS.md`
-- Contracts: `docs/CONTRACTS.md`
+**Latest Release v3.28.0**
+- Versions: [docs/VERSIONS.md](docs/VERSIONS.md)
+- Contracts: [docs/CONTRACTS.md](docs/CONTRACTS.md)
 
 **Modern, secure, HTML-first content management system.**
 
@@ -455,8 +455,8 @@ tools/                 # CLI utilities
 - `php tools/cli.php backup:prune --keep=10` — Prune old backups
 
 ### Media Ops
-- `php tools/cli.php media:gc [--disk=<name>] [--dry-run=1] [--mode=orphans|retention|all] [--limit=N]` ƒ?" Cleanup orphans/retention (dry-run by default)
-- `php tools/cli.php media:verify [--disk=<name>] [--limit=N]` ƒ?" Verify DB -> storage consistency
+- `php tools/cli.php media:gc [--disk=<name>] [--dry-run=1] [--mode=orphans|retention|all] [--limit=N]` — Cleanup orphans/retention (dry-run by default)
+- `php tools/cli.php media:verify [--disk=<name>] [--limit=N]` — Verify DB -> storage consistency
 
 ### RBAC
 - `php tools/cli.php rbac:status` — Show RBAC status

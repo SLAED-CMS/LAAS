@@ -55,9 +55,47 @@
   - contracts:check + snapshot guardrail
   - fixtures normalization & stability rules
 
-- v3.17.0 (WIP): API token scopes enforcement
+- v3.17.0: API token scopes enforcement
   - Route-level required scopes map in config
   - 403 api.auth.forbidden_scope for insufficient scope
+
+- v3.16.0: API hardening + token lifecycle polish
+  - Token parsing strictness (Bearer only, min/max length, no query string)
+  - Rate limit profiles for API routes
+  - X-Request-Id passthrough + contracts/fixtures coverage
+
+- v3.15.1: Redis sessions stabilization
+  - Fallback stability + WARN status in ops checks
+
+- v3.15.0: Redis session driver production-ready
+  - Opt-in via SESSION_DRIVER=redis with config validation
+  - Circuit breaker failover (SESSION_REDIS_FAILOVER=php)
+  - Health/preflight checks for Redis connectivity
+
+- v3.14.0: SessionInterface
+  - PhpSessionStore + SessionInterface abstraction
+  - No direct $_SESSION access in src/modules (policy W7)
+  - Container integration for session service
+
+- v3.13.0: DI-lite Container + Providers
+  - PSR-11 compatible Container with lazy singletons
+  - CoreServiceProvider + optional ModuleServiceProvider
+  - Admin controllers refactored to use container
+
+- v3.12.0: LTS Freeze + Release Discipline
+  - Version/build/channel metadata in config/app.php
+  - Release check (local, no network) + preflight gating
+  - Contract freeze mode (CONTRACTS_FROZEN=true)
+
+- v3.11.0: Platform Hardening (final)
+  - Emergency read-only hard mode (APP_READ_ONLY_HARD)
+  - Maintenance banner (soft, HTML+JSON)
+  - Graceful degradation + fail-closed ops
+
+- v3.10.0: DB Ops
+  - db:index:audit CLI for critical table indexes
+  - Migration safe mode (warn/block for dangerous ops)
+  - Preflight gating for missing indexes
 
 - v3.9.0: Media Ops/GC
   - media:gc (orphans/retention) with dry-run default and delete cap

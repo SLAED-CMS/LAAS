@@ -123,7 +123,7 @@
 4. `php tools/cli.php migrate:up` (if required)
 
 
-### v2.4.2 → v3.0.0 (Current Stable)
+### v2.4.2 → v3.0.0
 
 **Overview:** Frontend-agnostic platform with RenderAdapter v1, content negotiation, headless mode, and enhanced asset management.
 
