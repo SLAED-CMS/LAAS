@@ -37,7 +37,7 @@
                             "instance": "req-1",
                             "status": 422,
                             "title": "Error.",
-                            "type": "laas:error/error.validation_failed"
+                            "type": "laas:problem/error.validation_failed"
                         },
                         "request_id": "__REQ__",
                         "route": "admin.api_tokens.create",
@@ -282,7 +282,7 @@
                             "instance": "req-1",
                             "status": 422,
                             "title": "Error.",
-                            "type": "laas:error/error.validation_failed"
+                            "type": "laas:problem/error.validation_failed"
                         },
                         "request_id": "__REQ__",
                         "route": "/login",
@@ -785,7 +785,7 @@
                             "instance": "req-1",
                             "status": 422,
                             "title": "Error.",
-                            "type": "laas:error/error.validation_failed"
+                            "type": "laas:problem/error.validation_failed"
                         },
                         "request_id": "__REQ__",
                         "route": "admin.pages.save",
@@ -1275,7 +1275,7 @@
                             "instance": "req-1",
                             "status": 422,
                             "title": "Error.",
-                            "type": "laas:error/error.validation_failed"
+                            "type": "laas:problem/error.validation_failed"
                         },
                         "request_id": "__REQ__",
                         "route": "admin.settings.save",
@@ -1443,7 +1443,7 @@
                             "instance": "req-1",
                             "status": 401,
                             "title": "Error.",
-                            "type": "laas:error/auth.invalid_token"
+                            "type": "laas:problem/auth.invalid_token"
                         },
                         "request_id": "__REQ__",
                         "route": "/api/v1/me",
@@ -1488,7 +1488,7 @@
                             "instance": "req-1",
                             "status": 403,
                             "title": "Error.",
-                            "type": "laas:error/api.auth.forbidden_scope"
+                            "type": "laas:problem/api.auth.forbidden_scope"
                         },
                         "request_id": "__REQ__",
                         "route": "/api/v1/me",
@@ -1540,7 +1540,7 @@
                             "instance": "req-1",
                             "status": 422,
                             "title": "Error.",
-                            "type": "laas:error/error.validation_failed"
+                            "type": "laas:problem/error.validation_failed"
                         },
                         "request_id": "__REQ__",
                         "route": "/api/v1/pages",
@@ -1585,7 +1585,7 @@
                             "instance": "req-1",
                             "status": 401,
                             "title": "Error.",
-                            "type": "laas:error/error.auth_required"
+                            "type": "laas:problem/error.auth_required"
                         },
                         "request_id": "__REQ__",
                         "route": "/admin",
@@ -1630,7 +1630,7 @@
                             "instance": "req-1",
                             "status": 400,
                             "title": "Error.",
-                            "type": "laas:error/error.invalid_request"
+                            "type": "laas:problem/error.invalid_request"
                         },
                         "request_id": "__REQ__",
                         "route": "/api/v1/pages",
@@ -1675,7 +1675,7 @@
                             "instance": "req-1",
                             "status": 404,
                             "title": "Error.",
-                            "type": "laas:error/error.not_found"
+                            "type": "laas:problem/error.not_found"
                         },
                         "request_id": "__REQ__",
                         "route": "/api/v1/pages/9999",
@@ -1720,7 +1720,7 @@
                             "instance": "req-1",
                             "status": 403,
                             "title": "Access denied.",
-                            "type": "laas:error/error.rbac_denied"
+                            "type": "laas:problem/error.rbac_denied"
                         },
                         "request_id": "__REQ__",
                         "route": "admin.modules.index",
@@ -1765,7 +1765,7 @@
                             "instance": "req-1",
                             "status": 431,
                             "title": "Error.",
-                            "type": "laas:error/http.headers_too_large"
+                            "type": "laas:problem/http.headers_too_large"
                         },
                         "request_id": "__REQ__",
                         "route": "/api/v1/ping",
@@ -1810,7 +1810,7 @@
                             "instance": "req-1",
                             "status": 400,
                             "title": "Invalid JSON.",
-                            "type": "laas:error/http.invalid_json"
+                            "type": "laas:problem/http.invalid_json"
                         },
                         "request_id": "__REQ__",
                         "route": "/api/v1/ping",
@@ -1855,7 +1855,7 @@
                             "instance": "req-1",
                             "status": 413,
                             "title": "Payload too large.",
-                            "type": "laas:error/http.payload_too_large"
+                            "type": "laas:problem/http.payload_too_large"
                         },
                         "request_id": "__REQ__",
                         "route": "/api/v1/ping",
@@ -1900,7 +1900,7 @@
                             "instance": "req-1",
                             "status": 400,
                             "title": "Error.",
-                            "type": "laas:error/http.too_many_fields"
+                            "type": "laas:problem/http.too_many_fields"
                         },
                         "request_id": "__REQ__",
                         "route": "/api/v1/ping",
@@ -1945,7 +1945,7 @@
                             "instance": "req-1",
                             "status": 414,
                             "title": "Error.",
-                            "type": "laas:error/http.uri_too_long"
+                            "type": "laas:problem/http.uri_too_long"
                         },
                         "request_id": "__REQ__",
                         "route": "/api/v1/ping",
@@ -2101,7 +2101,7 @@
                             "instance": "req-1",
                             "status": 429,
                             "title": "Too many requests.",
-                            "type": "laas:error/rate_limited"
+                            "type": "laas:problem/rate_limited"
                         },
                         "request_id": "__REQ__",
                         "route": "/api/v1/pages",
@@ -2146,7 +2146,7 @@
                             "instance": "req-1",
                             "status": 403,
                             "title": "CSRF validation failed.",
-                            "type": "laas:error/security.csrf_failed"
+                            "type": "laas:problem/security.csrf_failed"
                         },
                         "request_id": "__REQ__",
                         "route": "admin.settings.save",
@@ -2191,7 +2191,7 @@
                             "instance": "req-1",
                             "status": 503,
                             "title": "Service unavailable.",
-                            "type": "laas:error/service_unavailable"
+                            "type": "laas:problem/service_unavailable"
                         },
                         "request_id": "__REQ__",
                         "route": "/api/v1/me",
@@ -2236,7 +2236,7 @@
                             "instance": "req-1",
                             "status": 503,
                             "title": "Error.",
-                            "type": "laas:error/system.read_only"
+                            "type": "laas:problem/system.read_only"
                         },
                         "request_id": "__REQ__",
                         "route": "admin.settings.save",
@@ -2263,3 +2263,4 @@
         }
     ]
 }
+

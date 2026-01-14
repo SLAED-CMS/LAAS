@@ -15,10 +15,11 @@
             "instance": "req-1",
             "status": 429,
             "title": "Too many requests.",
-            "type": "laas:error/rate_limited"
+            "type": "laas:problem/rate_limited"
         },
         "request_id": "__REQ__",
         "route": "/api/v1/pages",
         "ts": "__TIME__"
     }
 }
+

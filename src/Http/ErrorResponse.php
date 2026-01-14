@@ -107,7 +107,7 @@ final class ErrorResponse
             $response = $response->withHeader($name, $value);
         }
 
-        return self::attachHtmxTrigger($request, $response, $built['payload'], $built['status'], $built['toast']);
+        return self::attachHtmxTrigger($request, $response, $built['toast']);
     }
 
     public static function respondForRequest(
@@ -132,7 +132,7 @@ final class ErrorResponse
             $response = $response->withHeader($name, $value);
         }
 
-        return self::attachHtmxTrigger($request, $response, $built['payload'], $resolvedStatus, $built['toast']);
+        return self::attachHtmxTrigger($request, $response, $built['toast']);
     }
 
     private static function normalizeDetails(string $code, array $details): array
@@ -177,35 +177,17 @@ final class ErrorResponse
         ]);
     }
 
-    private static function attachHtmxTrigger(?Request $request, Response $response, array $payload, int $status, array $toast): Response
+    private static function attachHtmxTrigger(?Request $request, Response $response, array $toast): Response
     {
-        if ($request === null || !$request->isHtmx()) {
+        if ($request === null || !$request->isHtmx() || $request->wantsJson()) {
             return $response;
         }
-
-        $errorTrigger = self::buildHtmxErrorTriggerPayload($payload, $status);
-        $response = HtmxTrigger::add($response, 'laas:error', $errorTrigger);
 
         if ($toast === []) {
             return $response;
         }
 
         return HtmxTrigger::addToast($response, $toast);
-    }
-
-    /**
-     * @param array<string, mixed> $payload
-     */
-    private static function buildHtmxErrorTriggerPayload(array $payload, int $status): array
-    {
-        $errorKey = (string) ($payload['meta']['error']['key'] ?? '');
-        $requestId = (string) ($payload['meta']['request_id'] ?? RequestContext::requestId());
-
-        return [
-            'status' => $status,
-            'error_key' => $errorKey,
-            'request_id' => $requestId,
-        ];
     }
 
     /**
@@ -356,7 +338,7 @@ final class ErrorResponse
     ): array {
         $requestId = (string) ($meta['request_id'] ?? RequestContext::requestId());
         $problem = [
-            'type' => 'laas:error/' . $errorKey,
+            'type' => 'laas:problem/' . $errorKey,
             'title' => self::resolveProblemTitle($errorKey, $message, $request),
             'status' => $status,
             'instance' => $requestId,

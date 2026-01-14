@@ -17,7 +17,7 @@ final class ProblemDetailsPresentInJsonErrorTest extends TestCase
 
         $problem = $payload['meta']['problem'] ?? null;
         $this->assertIsArray($problem);
-        $this->assertSame('laas:error/http.invalid_json', $problem['type'] ?? null);
+        $this->assertSame('laas:problem/http.invalid_json', $problem['type'] ?? null);
         $this->assertSame(400, $problem['status'] ?? null);
         $this->assertSame($payload['meta']['request_id'] ?? null, $problem['instance'] ?? null);
         $this->assertNotSame('', (string) ($problem['title'] ?? ''));

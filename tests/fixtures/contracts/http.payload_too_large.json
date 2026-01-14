@@ -15,10 +15,11 @@
             "instance": "req-1",
             "status": 413,
             "title": "Payload too large.",
-            "type": "laas:error/http.payload_too_large"
+            "type": "laas:problem/http.payload_too_large"
         },
         "request_id": "__REQ__",
         "route": "/api/v1/ping",
         "ts": "__TIME__"
     }
 }
+

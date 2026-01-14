@@ -15,10 +15,11 @@
             "instance": "req-1",
             "status": 401,
             "title": "Error.",
-            "type": "laas:error/auth.invalid_token"
+            "type": "laas:problem/auth.invalid_token"
         },
         "request_id": "__REQ__",
         "route": "/api/v1/me",
         "ts": "__TIME__"
     }
 }
+

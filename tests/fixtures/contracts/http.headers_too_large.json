@@ -15,10 +15,11 @@
             "instance": "req-1",
             "status": 431,
             "title": "Error.",
-            "type": "laas:error/http.headers_too_large"
+            "type": "laas:problem/http.headers_too_large"
         },
         "request_id": "__REQ__",
         "route": "/api/v1/ping",
         "ts": "__TIME__"
     }
 }
+

@@ -15,10 +15,11 @@
             "instance": "req-1",
             "status": 404,
             "title": "Error.",
-            "type": "laas:error/error.not_found"
+            "type": "laas:problem/error.not_found"
         },
         "request_id": "__REQ__",
         "route": "/api/v1/pages/9999",
         "ts": "__TIME__"
     }
 }
+

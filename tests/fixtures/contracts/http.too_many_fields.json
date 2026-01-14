@@ -15,10 +15,11 @@
             "instance": "req-1",
             "status": 400,
             "title": "Error.",
-            "type": "laas:error/http.too_many_fields"
+            "type": "laas:problem/http.too_many_fields"
         },
         "request_id": "__REQ__",
         "route": "/api/v1/ping",
         "ts": "__TIME__"
     }
 }
+

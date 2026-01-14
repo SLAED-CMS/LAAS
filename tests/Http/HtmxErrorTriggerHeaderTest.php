@@ -28,8 +28,11 @@ final class HtmxErrorTriggerHeaderTest extends TestCase
 
         $payload = json_decode($header, true);
         $this->assertIsArray($payload);
-        $this->assertSame(403, $payload['laas:error']['status'] ?? null);
-        $this->assertSame('security.csrf_failed', $payload['laas:error']['error_key'] ?? null);
-        $this->assertNotSame('', (string) ($payload['laas:error']['request_id'] ?? ''));
+        $this->assertArrayHasKey('laas:toast', $payload);
+
+        $toast = $payload['laas:toast'];
+        $this->assertSame('danger', $toast['type'] ?? null);
+        $this->assertSame('security.csrf_failed', $toast['message_key'] ?? null);
+        $this->assertNotSame('', (string) ($toast['request_id'] ?? ''));
     }
 }

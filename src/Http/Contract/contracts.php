@@ -9,7 +9,7 @@ use Laas\Http\Contract\ContractRegistry;
 function contract_problem(string $key, int $status, string $title): array
 {
     return [
-        'type' => 'laas:error/' . $key,
+        'type' => 'laas:problem/' . $key,
         'title' => $title,
         'status' => $status,
         'instance' => 'req-1',
@@ -449,7 +449,7 @@ ContractRegistry::register('rate_limited', [
                     'message' => 'Rate limit exceeded.',
                 ],
                 'problem' => [
-                    'type' => 'laas:error/rate_limited',
+                    'type' => 'laas:problem/rate_limited',
                     'title' => 'Too many requests.',
                     'status' => 429,
                     'instance' => 'req-1',
@@ -570,7 +570,7 @@ ContractRegistry::register('service_unavailable', [
                     'message' => 'Service Unavailable.',
                 ],
                 'problem' => [
-                    'type' => 'laas:error/service_unavailable',
+                    'type' => 'laas:problem/service_unavailable',
                     'title' => 'Service unavailable.',
                     'status' => 503,
                     'instance' => 'req-1',
@@ -723,7 +723,7 @@ ContractRegistry::register('http.invalid_json', [
                     'message' => 'Invalid JSON payload.',
                 ],
                 'problem' => [
-                    'type' => 'laas:error/http.invalid_json',
+                    'type' => 'laas:problem/http.invalid_json',
                     'title' => 'Invalid JSON.',
                     'status' => 400,
                     'instance' => 'req-1',
@@ -2045,3 +2045,4 @@ ContractRegistry::register('media.show', [
         ],
     ],
 ]);
+

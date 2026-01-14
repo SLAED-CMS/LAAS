@@ -15,10 +15,11 @@
             "instance": "req-1",
             "status": 401,
             "title": "Error.",
-            "type": "laas:error/error.auth_required"
+            "type": "laas:problem/error.auth_required"
         },
         "request_id": "__REQ__",
         "route": "/admin",
         "ts": "__TIME__"
     }
 }
+

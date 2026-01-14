@@ -30,10 +30,11 @@
             "instance": "req-1",
             "status": 422,
             "title": "Error.",
-            "type": "laas:error/error.validation_failed"
+            "type": "laas:problem/error.validation_failed"
         },
         "request_id": "__REQ__",
         "route": "admin.api_tokens.create",
         "ts": "__TIME__"
     }
 }
+

@@ -15,10 +15,11 @@
             "instance": "req-1",
             "status": 403,
             "title": "Access denied.",
-            "type": "laas:error/error.rbac_denied"
+            "type": "laas:problem/error.rbac_denied"
         },
         "request_id": "__REQ__",
         "route": "admin.modules.index",
         "ts": "__TIME__"
     }
 }
+

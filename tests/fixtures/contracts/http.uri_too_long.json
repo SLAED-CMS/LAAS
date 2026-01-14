@@ -15,10 +15,11 @@
             "instance": "req-1",
             "status": 414,
             "title": "Error.",
-            "type": "laas:error/http.uri_too_long"
+            "type": "laas:problem/http.uri_too_long"
         },
         "request_id": "__REQ__",
         "route": "/api/v1/ping",
         "ts": "__TIME__"
     }
 }
+
