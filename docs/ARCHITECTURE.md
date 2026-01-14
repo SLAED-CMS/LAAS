@@ -445,10 +445,11 @@ return new JsonResponse(['status' => 'ok'], 200);
 return new RedirectResponse('/admin/pages');
 ```
 
-**Error envelope & request_id (v3.7):**
-- JSON errors use `{ error: { code, message, details? }, meta: { format, request_id, ts } }`.
+**Error envelope & request_id (v3.7+):**
+- JSON errors use `{ data: null, error: { code, message, details? }, meta: { format, ok, error, problem, request_id, ts } }`.
+- `meta.problem` follows Problem Details (`type`, `title`, `status`, `instance`); `detail` only when `APP_DEBUG=true`.
 - `X-Request-Id` header is always present; `meta.request_id` mirrors it for JSON.
-- HTML includes `<meta name="request-id">` only when `APP_DEBUG=true` or `DEVTOOLS_ENABLED=true`.
+- HTML includes `<meta name="request-id">` only when debug/devtools allow it; error templates render `Request ID` in body.
 - `error.details.source` is included only when `APP_DEBUG=true` (for safe diagnostics).
 
 ### Session Layer
@@ -971,12 +972,12 @@ public function render(string $template, array $data): string
 **HTMX:**
 - Validation errors return `422` + `partials/form_errors.html`
 - Error responses return HTML error templates (partial) and set `HX-Trigger: {"laas:error":{"status":<code>,"error_key":"...","request_id":"..."}}`
-- Successful form saves return `200` and may emit `HX-Trigger: {"laas:toast":"saved"}`
+- Successful form saves return `200` and emit `HX-Trigger: {"laas:success":{"message_key":"...","request_id":"..."}}`
 - No full layout rendering for partial responses
 
 **JSON:**
 - Errors use envelope `{data:null, meta.ok:false, meta.error:{key,message}, error:{code,message,details?}}`
-- Common HTTP errors map to keys: `http.bad_request`, `auth.unauthorized`, `rbac.forbidden`, `http.not_found`, `http.payload_too_large`, `http.uri_too_long`, `http.headers_too_large`, `http.rate_limited`, `service_unavailable`
+- Common HTTP errors map to keys: `error.invalid_request`, `error.auth_required`, `error.rbac_denied`, `error.not_found`, `http.payload_too_large`, `http.uri_too_long`, `http.headers_too_large`, `rate_limited`, `service_unavailable`
 - Validation errors return `422` + `error.details.fields`
 - CSRF failures return `403` + `meta.error.key=security.csrf_failed`
 - JSON errors include `meta.request_id` + `meta.ts`, no stacktrace
@@ -2027,7 +2028,7 @@ return $responder->respond($request, 'pages/page.html', $data, $data);
 
 **Standard envelope:**
 - OK: `{ "data": {...}, "meta": { "format": "json", "route": "...", "request_id": "...", "ts": "..." } }`
-- ERROR: `{ "error": { "code": "...", "message": "...", "details": {...} }, "meta": { "format": "json", "route": "...", "request_id": "...", "ts": "..." } }`
+- ERROR: `{ "data": null, "error": { "code": "...", "message": "...", "details": {...} }, "meta": { "format": "json", "ok": false, "error": { "key": "...", "message": "..." }, "problem": { "type": "...", "title": "...", "status": 400, "instance": "..." }, "route": "...", "request_id": "...", "ts": "..." } }`
 
 **Contract registry:**
 - Lightweight internal registry (not OpenAPI)

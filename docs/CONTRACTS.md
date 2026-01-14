@@ -17,6 +17,7 @@ This document defines the JSON response envelope and the internal contract regis
 **ERROR**
 ```json
 {
+  "data": null,
   "error": {
     "code": "E_SOME_ERROR",
     "message": "Human readable message",
@@ -28,6 +29,17 @@ This document defines the JSON response envelope and the internal contract regis
   },
   "meta": {
     "format": "json",
+    "ok": false,
+    "error": {
+      "key": "error.some_key",
+      "message": "Human readable message"
+    },
+    "problem": {
+      "type": "laas:error/error.some_key",
+      "title": "Human title",
+      "status": 400,
+      "instance": "req-1"
+    },
     "request_id": "req-1",
     "ts": "2026-01-01T00:00:00Z"
   }
@@ -49,11 +61,11 @@ This document defines the JSON response envelope and the internal contract regis
 
 ## HTTP error keys
 
-- `http.bad_request` (400)
-- `auth.unauthorized` (401)
-- `rbac.forbidden` (403)
-- `http.not_found` (404)
-- `http.rate_limited` (429)
+- `error.invalid_request` (400)
+- `error.auth_required` (401)
+- `error.rbac_denied` (403)
+- `error.not_found` (404)
+- `rate_limited` (429)
 - `service_unavailable` (503)
 
 ## HTTP hardening errors
@@ -71,7 +83,17 @@ This document defines the JSON response envelope and the internal contract regis
 - `request_id` is always included
 - `ts` is UTC ISO8601
 - `ok=false` and `meta.error` are present on error responses
-- `meta.error.key` uses registry error keys (e.g. `http.not_found`, `service_unavailable`)
+- `meta.error.key` uses registry error keys (e.g. `error.not_found`, `service_unavailable`)
+- `meta.problem` is present on JSON errors (`meta.problem.detail` only when `APP_DEBUG=true`)
+
+## Problem details
+
+`meta.problem` fields on JSON errors:
+- `type`: `laas:error/<error_key>`
+- `title`: localized, resolved from `error.title.<error_key>` or `error.title.default`
+- `status`: HTTP status code
+- `instance`: request id (`meta.request_id`)
+- `detail`: debug-only (omitted when `APP_DEBUG=false`)
 
 ## Headless mode
 
@@ -149,6 +171,12 @@ This document defines the JSON response envelope and the internal contract regis
     "error": {
       "key": "error.validation_failed",
       "message": "Validation failed."
+    },
+    "problem": {
+      "type": "laas:error/error.validation_failed",
+      "title": "Error.",
+      "status": 422,
+      "instance": "req-1"
     },
     "route": "admin.settings.save",
     "request_id": "req-1",
