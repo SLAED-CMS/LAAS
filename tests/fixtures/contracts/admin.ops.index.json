@@ -94,6 +94,7 @@
         }
     },
     "meta": {
+        "events": [],
         "format": "json",
         "request_id": "__REQ__",
         "route": "admin.ops.index",

@@ -378,6 +378,7 @@ ContractRegistry::register('admin.pages.save', [
             'fields' => 'object',
             'meta' => [
                 'format' => 'json',
+                'events' => 'array',
                 'route' => 'admin.pages.save',
             ],
         ],
@@ -403,6 +404,14 @@ ContractRegistry::register('admin.pages.save', [
                     'message' => 'Validation failed.',
                 ],
                 'problem' => contract_problem('error.validation_failed', 422, 'Error.'),
+                'events' => [
+                    [
+                        'type' => 'danger',
+                        'message_key' => 'toast.validation_failed',
+                        'message' => 'Validation failed.',
+                        'request_id' => 'req-1',
+                    ],
+                ],
                 'route' => 'admin.pages.save',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
@@ -1025,6 +1034,7 @@ ContractRegistry::register('admin.api_tokens.create', [
             ],
             'meta' => [
                 'format' => 'json',
+                'events' => 'array',
                 'route' => 'admin.api_tokens.create',
             ],
         ],
@@ -1033,6 +1043,7 @@ ContractRegistry::register('admin.api_tokens.create', [
             'fields' => 'object',
             'meta' => [
                 'format' => 'json',
+                'events' => 'array',
                 'route' => 'admin.api_tokens.create',
             ],
         ],
@@ -1040,6 +1051,7 @@ ContractRegistry::register('admin.api_tokens.create', [
             'error' => 'error.rbac_denied',
             'meta' => [
                 'format' => 'json',
+                'events' => 'array',
                 'route' => 'admin.api_tokens.create',
             ],
         ],
@@ -1057,6 +1069,14 @@ ContractRegistry::register('admin.api_tokens.create', [
             ],
             'meta' => [
                 'format' => 'json',
+                'events' => [
+                    [
+                        'type' => 'success',
+                        'message_key' => 'admin.api_tokens.created',
+                        'message' => 'Token created.',
+                        'request_id' => 'req-1',
+                    ],
+                ],
                 'route' => 'admin.api_tokens.create',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
@@ -1078,6 +1098,14 @@ ContractRegistry::register('admin.api_tokens.create', [
             ],
             'meta' => [
                 'format' => 'json',
+                'events' => [
+                    [
+                        'type' => 'danger',
+                        'message_key' => 'toast.validation_failed',
+                        'message' => 'Validation failed.',
+                        'request_id' => 'req-1',
+                    ],
+                ],
                 'ok' => false,
                 'error' => [
                     'key' => 'error.validation_failed',
@@ -1104,6 +1132,7 @@ ContractRegistry::register('admin.api_tokens.revoke', [
             ],
             'meta' => [
                 'format' => 'json',
+                'events' => 'array',
                 'route' => 'admin.api_tokens.revoke',
             ],
         ],
@@ -1111,6 +1140,7 @@ ContractRegistry::register('admin.api_tokens.revoke', [
             'error' => 'error.not_found',
             'meta' => [
                 'format' => 'json',
+                'events' => 'array',
                 'route' => 'admin.api_tokens.revoke',
             ],
         ],
@@ -1118,6 +1148,7 @@ ContractRegistry::register('admin.api_tokens.revoke', [
             'error' => 'error.rbac_denied',
             'meta' => [
                 'format' => 'json',
+                'events' => 'array',
                 'route' => 'admin.api_tokens.revoke',
             ],
         ],
@@ -1131,6 +1162,14 @@ ContractRegistry::register('admin.api_tokens.revoke', [
             ],
             'meta' => [
                 'format' => 'json',
+                'events' => [
+                    [
+                        'type' => 'info',
+                        'message_key' => 'admin.api_tokens.revoked',
+                        'message' => 'Token revoked.',
+                        'request_id' => 'req-1',
+                    ],
+                ],
                 'route' => 'admin.api_tokens.revoke',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
@@ -1322,6 +1361,7 @@ ContractRegistry::register('admin.security_reports.triage', [
             ],
             'meta' => [
                 'format' => 'json',
+                'events' => 'array',
                 'route' => 'admin.security_reports.triage',
             ],
         ],
@@ -1329,6 +1369,7 @@ ContractRegistry::register('admin.security_reports.triage', [
             'error' => 'error.not_found',
             'meta' => [
                 'format' => 'json',
+                'events' => 'array',
                 'route' => 'admin.security_reports.triage',
             ],
         ],
@@ -1336,6 +1377,7 @@ ContractRegistry::register('admin.security_reports.triage', [
             'error' => 'error.rbac_denied',
             'meta' => [
                 'format' => 'json',
+                'events' => 'array',
                 'route' => 'admin.security_reports.triage',
             ],
         ],
@@ -1363,6 +1405,14 @@ ContractRegistry::register('admin.security_reports.triage', [
             ],
             'meta' => [
                 'format' => 'json',
+                'events' => [
+                    [
+                        'type' => 'info',
+                        'message_key' => 'admin.security_reports.updated',
+                        'message' => 'Security report updated.',
+                        'request_id' => 'req-1',
+                    ],
+                ],
                 'route' => 'admin.security_reports.triage',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
@@ -1397,6 +1447,7 @@ ContractRegistry::register('admin.security_reports.ignore', [
             ],
             'meta' => [
                 'format' => 'json',
+                'events' => 'array',
                 'route' => 'admin.security_reports.ignore',
             ],
         ],
@@ -1404,6 +1455,7 @@ ContractRegistry::register('admin.security_reports.ignore', [
             'error' => 'error.not_found',
             'meta' => [
                 'format' => 'json',
+                'events' => 'array',
                 'route' => 'admin.security_reports.ignore',
             ],
         ],
@@ -1411,6 +1463,7 @@ ContractRegistry::register('admin.security_reports.ignore', [
             'error' => 'error.rbac_denied',
             'meta' => [
                 'format' => 'json',
+                'events' => 'array',
                 'route' => 'admin.security_reports.ignore',
             ],
         ],
@@ -1438,6 +1491,14 @@ ContractRegistry::register('admin.security_reports.ignore', [
             ],
             'meta' => [
                 'format' => 'json',
+                'events' => [
+                    [
+                        'type' => 'info',
+                        'message_key' => 'admin.security_reports.updated',
+                        'message' => 'Security report updated.',
+                        'request_id' => 'req-1',
+                    ],
+                ],
                 'route' => 'admin.security_reports.ignore',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
@@ -1458,6 +1519,7 @@ ContractRegistry::register('admin.security_reports.delete', [
             ],
             'meta' => [
                 'format' => 'json',
+                'events' => 'array',
                 'route' => 'admin.security_reports.delete',
             ],
         ],
@@ -1465,6 +1527,7 @@ ContractRegistry::register('admin.security_reports.delete', [
             'error' => 'error.not_found',
             'meta' => [
                 'format' => 'json',
+                'events' => 'array',
                 'route' => 'admin.security_reports.delete',
             ],
         ],
@@ -1472,6 +1535,7 @@ ContractRegistry::register('admin.security_reports.delete', [
             'error' => 'error.rbac_denied',
             'meta' => [
                 'format' => 'json',
+                'events' => 'array',
                 'route' => 'admin.security_reports.delete',
             ],
         ],
@@ -1485,6 +1549,14 @@ ContractRegistry::register('admin.security_reports.delete', [
             ],
             'meta' => [
                 'format' => 'json',
+                'events' => [
+                    [
+                        'type' => 'info',
+                        'message_key' => 'admin.security_reports.deleted',
+                        'message' => 'Security report deleted.',
+                        'request_id' => 'req-1',
+                    ],
+                ],
                 'route' => 'admin.security_reports.delete',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
@@ -1583,6 +1655,7 @@ ContractRegistry::register('admin.ops.index', [
             ],
             'meta' => [
                 'format' => 'json',
+                'events' => 'array',
                 'route' => 'admin.ops.index',
             ],
         ],
@@ -1590,6 +1663,7 @@ ContractRegistry::register('admin.ops.index', [
             'error' => 'error.rbac_denied',
             'meta' => [
                 'format' => 'json',
+                'events' => 'array',
                 'route' => 'admin.ops.index',
             ],
         ],
@@ -1693,6 +1767,7 @@ ContractRegistry::register('admin.ops.index', [
             ],
             'meta' => [
                 'format' => 'json',
+                'events' => [],
                 'route' => 'admin.ops.index',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',

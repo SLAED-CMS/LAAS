@@ -27,6 +27,13 @@
 
 ## Version-Specific Upgrade Paths
 
+### v3.26.0 notes
+
+- HTMX notifications now use `HX-Trigger: {"laas:toast": {...}}` and JSON responses append those payloads to `meta.events`.
+- Admin layouts include `#laas-toasts` and the admin JavaScript renders Bootstrap toasts from that payload (no inline scripts).
+- Update any custom JS that listened for `laas:success`/`laas:error` or parsed `HX-Trigger` manually to watch for `laas:toast` and inspect `meta.events`.
+- For `303` HTMX redirects, toast payloads are emitted via `HX-Trigger-After-Settle`.
+
 ### v3.22.0 notes
 
 - Standardized error keys for common HTTP statuses:

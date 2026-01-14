@@ -3,10 +3,18 @@
         "deleted": true,
         "id": "__ID__"
     },
-    "meta": {
-        "format": "json",
-        "request_id": "__REQ__",
-        "route": "admin.security_reports.delete",
-        "ts": "__TIME__"
-    }
+        "meta": {
+            "events": [
+                {
+                    "message": "Security report deleted.",
+                    "message_key": "admin.security_reports.deleted",
+                    "request_id": "__REQ__",
+                    "type": "info"
+                }
+            ],
+            "format": "json",
+            "request_id": "__REQ__",
+            "route": "admin.security_reports.delete",
+            "ts": "__TIME__"
+        }
 }

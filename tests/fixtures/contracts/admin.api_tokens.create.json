@@ -10,6 +10,14 @@
         "token_prefix": "ABCDEF123456"
     },
     "meta": {
+        "events": [
+            {
+                "message": "Token created.",
+                "message_key": "admin.api_tokens.created",
+                "request_id": "__REQ__",
+                "type": "success"
+            }
+        ],
         "format": "json",
         "request_id": "__REQ__",
         "route": "admin.api_tokens.create",

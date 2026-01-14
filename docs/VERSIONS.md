@@ -1,5 +1,10 @@
 # LAAS Versions
 
+- v3.26.0: Notifications / UI Events Standard
+  - Unified `laas:toast` event for HTMX responses and `meta.events` for JSON envelopes
+  - Admin layout now renders a toast container + Bootstrap toast helper handles HTMX events
+  - Contracts, fixtures, and translations describe the new toast payload (type/message/request_id/context/ttl)
+
 - v3.25.0: Admin Ops Dashboard (read-only)
   - Admin ops UI with HTMX refresh + JSON contract
   - RBAC permission `ops.view` for access

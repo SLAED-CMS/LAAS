@@ -16,6 +16,14 @@
             "key": "error.validation_failed",
             "message": "Validation failed."
         },
+        "events": [
+            {
+                "message": "Validation failed.",
+                "message_key": "toast.validation_failed",
+                "request_id": "__REQ__",
+                "type": "danger"
+            }
+        ],
         "format": "json",
         "ok": false,
         "problem": {

@@ -59,6 +59,12 @@ This document defines the JSON response envelope and the internal contract regis
 - 500: server error
 - 503: service unavailable
 
+## UI Events (toasts)
+
+- HTMX responses include `HX-Trigger: {"laas:toast": {...}}` when a notification is emitted (type, message_key, message, request_id plus optional `context` and `ttl_ms`).
+- JSON responses append the same payload to `meta.events` when notifications are emitted.
+- Toast payloads MUST adhere to the `laas:toast` contract (`type` is `success|info|warning|danger`, `message_key`, localized `message`, `request_id`, optional `context`, optional numeric `ttl_ms`); no secrets (tokens, SQL, stack traces) should leak inside these fields.
+
 ## HTTP error keys
 
 - `error.invalid_request` (400)
@@ -85,6 +91,7 @@ This document defines the JSON response envelope and the internal contract regis
 - `ok=false` and `meta.error` are present on error responses
 - `meta.error.key` uses registry error keys (e.g. `error.not_found`, `service_unavailable`)
 - `meta.problem` is present on JSON errors (`meta.problem.detail` only when `APP_DEBUG=true`)
+- `meta.events` may carry `laas:toast` payloads emitted during the request
 
 ## Problem details
 

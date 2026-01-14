@@ -971,13 +971,15 @@ public function render(string $template, array $data): string
 
 **HTMX:**
 - Validation errors return `422` + `partials/form_errors.html`
-- Error responses return HTML error templates (partial) and set `HX-Trigger: {"laas:error":{"status":<code>,"error_key":"...","request_id":"..."}}`
-- Successful form saves return `200` and emit `HX-Trigger: {"laas:success":{"message_key":"...","request_id":"..."}}`
+- Error and success notifications both emit `HX-Trigger: {"laas:toast":{"type":"danger","message_key":"error.xxx","message":"...","request_id":"..."}}` (payload variations depend on the outcome)
+- Successful form saves return `200` and include a `laas:toast` payload such as `{"type":"success","message_key":"admin.pages.saved","request_id":"..."}`
+- HTMX redirects (`303`) move the toast into `HX-Trigger-After-Settle` with the same `laas:toast` payload
 - No full layout rendering for partial responses
 
 **JSON:**
 - Errors use envelope `{data:null, meta.ok:false, meta.error:{key,message}, error:{code,message,details?}}`
 - Common HTTP errors map to keys: `error.invalid_request`, `error.auth_required`, `error.rbac_denied`, `error.not_found`, `http.payload_too_large`, `http.uri_too_long`, `http.headers_too_large`, `rate_limited`, `service_unavailable`
+- When the server emits a UI toast, the JSON envelope adds a matching entry to `meta.events` (payload matches the `laas:toast` contract)
 - Validation errors return `422` + `error.details.fields`
 - CSRF failures return `403` + `meta.error.key=security.csrf_failed`
 - JSON errors include `meta.request_id` + `meta.ts`, no stacktrace
