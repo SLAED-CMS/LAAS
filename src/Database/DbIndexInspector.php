@@ -181,9 +181,9 @@ final class DbIndexInspector
             return (bool) $stmt->fetchColumn();
         }
 
-        $stmt = $this->pdo->prepare('SHOW TABLES LIKE :name');
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = :name');
         $stmt->execute(['name' => $table]);
-        return (bool) $stmt->fetchColumn();
+        return (int) $stmt->fetchColumn() > 0;
     }
 
     private function columnExists(string $table, string $column): bool
