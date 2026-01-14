@@ -964,16 +964,19 @@ public function render(string $template, array $data): string
 ### Errors: HTML vs HTMX vs JSON
 
 **HTML:**
+- Validation errors return `422` with form error partials
 - Plain text error response for unhandled exceptions
 - Debug mode may include message/trace
 
 **HTMX:**
-- Validation errors return 422 + partial errors template
+- Validation errors return `422` + `partials/form_errors.html`
+- Successful form saves return `200` and may emit `HX-Trigger: {"laas:toast":"saved"}`
 - No full layout rendering for partial responses
 
 **JSON:**
 - Unhandled exceptions return error envelope with `error.code=E_INTERNAL`
-- Validation errors return 422 + `error.details.fields`
+- Validation errors return `422` + `error.details.fields`
+- CSRF failures return `403` + `meta.error.key=security.csrf_failed`
 - JSON errors include `meta.request_id` + `meta.ts`, no stacktrace
 
 ### RenderAdapter v1
@@ -1382,9 +1385,13 @@ if (str_starts_with($path, '/admin') && !$auth->hasPermission('admin.access')) {
 ```php
 // CSRFMiddleware
 if (!$this->csrf->validate($request->post('csrf_token'))) {
-    throw new CSRFException();
+    return ErrorResponse::respond($request, 'security.csrf_failed', [], 403);
 }
 ```
+
+**Responses:**
+- HTML: `403` error template when available
+- HTMX/JSON: error envelope with `meta.error.key=security.csrf_failed`
 
 ### Rate Limiting
 

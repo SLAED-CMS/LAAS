@@ -1,5 +1,10 @@
 # LAAS Versions
 
+- v3.21.0: CSRF + Forms Consistency + 422 Everywhere
+  - CSRF failures return 403 with `security.csrf_failed` envelope
+  - Unified form errors partial + 422 for HTML/HTMX validation errors
+  - HTMX form success toast trigger + 303 redirects for form POSTs
+
 - v3.20.0: HTTP Hardening Pack
   - Global request limits (body, headers, URL length, files, post fields)
   - X-Request-Id validation + invalid JSON rejection for JSON bodies

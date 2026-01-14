@@ -82,6 +82,10 @@ This document defines the JSON response envelope and the internal contract regis
 
 - `api.auth.forbidden_scope` (403): token does not have required scope
 
+## CSRF errors
+
+- `security.csrf_failed` (403): invalid or missing CSRF token
+
 ## Examples
 
 **Pages show (OK)**

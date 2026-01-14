@@ -27,6 +27,12 @@
 
 ## Version-Specific Upgrade Paths
 
+### v3.21.0 notes
+
+- CSRF failures now return `403` with `security.csrf_failed` (was `419` / `csrf_mismatch`)
+- Form validation errors return `422` for HTML and HTMX
+- Non-HTMX form POSTs redirect with `303`
+
 ### v3.20.0 notes
 
 - New HTTP limits env: `HTTP_MAX_BODY_BYTES`, `HTTP_MAX_POST_FIELDS`, `HTTP_MAX_HEADER_BYTES`, `HTTP_MAX_URL_LENGTH`, `HTTP_MAX_FILES`, `HTTP_MAX_FILE_BYTES`
