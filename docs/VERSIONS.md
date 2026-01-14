@@ -1,5 +1,10 @@
 # LAAS Versions
 
+- v3.22.0: HTTP Error UX Consistency + Contracts Completion
+  - Standard HTTP error keys for 400/401/403/404/429/503
+  - Error templates for 400/401/403/404/413/414/429/431/503 + HTMX `HX-Trigger` error payloads
+  - Contracts/fixtures coverage for standard HTTP errors
+
 - v3.21.0: CSRF + Forms Consistency + 422 Everywhere
   - CSRF failures return 403 with `security.csrf_failed` envelope
   - Unified form errors partial + 422 for HTML/HTMX validation errors

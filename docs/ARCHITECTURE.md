@@ -964,17 +964,19 @@ public function render(string $template, array $data): string
 ### Errors: HTML vs HTMX vs JSON
 
 **HTML:**
+- Status codes `400/401/403/404/413/414/429/431/503` render `themes/<theme>/pages/{code}.html` when available
 - Validation errors return `422` with form error partials
-- Plain text error response for unhandled exceptions
-- Debug mode may include message/trace
+- Fallback is plain text when template rendering fails or templates are missing
 
 **HTMX:**
 - Validation errors return `422` + `partials/form_errors.html`
+- Error responses return HTML error templates (partial) and set `HX-Trigger: {"laas:error":{"status":<code>,"error_key":"...","request_id":"..."}}`
 - Successful form saves return `200` and may emit `HX-Trigger: {"laas:toast":"saved"}`
 - No full layout rendering for partial responses
 
 **JSON:**
-- Unhandled exceptions return error envelope with `error.code=E_INTERNAL`
+- Errors use envelope `{data:null, meta.ok:false, meta.error:{key,message}, error:{code,message,details?}}`
+- Common HTTP errors map to keys: `http.bad_request`, `auth.unauthorized`, `rbac.forbidden`, `http.not_found`, `http.payload_too_large`, `http.uri_too_long`, `http.headers_too_large`, `http.rate_limited`, `service_unavailable`
 - Validation errors return `422` + `error.details.fields`
 - CSRF failures return `403` + `meta.error.key=security.csrf_failed`
 - JSON errors include `meta.request_id` + `meta.ts`, no stacktrace

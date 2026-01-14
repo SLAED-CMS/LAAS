@@ -47,6 +47,15 @@ This document defines the JSON response envelope and the internal contract regis
 - 500: server error
 - 503: service unavailable
 
+## HTTP error keys
+
+- `http.bad_request` (400)
+- `auth.unauthorized` (401)
+- `rbac.forbidden` (403)
+- `http.not_found` (404)
+- `http.rate_limited` (429)
+- `service_unavailable` (503)
+
 ## HTTP hardening errors
 
 - `http.payload_too_large` (413)
@@ -62,7 +71,7 @@ This document defines the JSON response envelope and the internal contract regis
 - `request_id` is always included
 - `ts` is UTC ISO8601
 - `ok=false` and `meta.error` are present on error responses
-- `meta.error.key` uses registry error keys (e.g. `service_unavailable`)
+- `meta.error.key` uses registry error keys (e.g. `http.not_found`, `service_unavailable`)
 
 ## Headless mode
 

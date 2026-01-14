@@ -27,6 +27,13 @@
 
 ## Version-Specific Upgrade Paths
 
+### v3.22.0 notes
+
+- Standardized error keys for common HTTP statuses:
+  - `http.bad_request`, `auth.unauthorized`, `rbac.forbidden`, `http.not_found`, `http.rate_limited`, `service_unavailable`
+- HTMX error responses now emit `HX-Trigger` with `laas:error` payload
+- Ensure custom themes include error templates for `400/401/403/404/413/414/429/431/503`
+
 ### v3.21.0 notes
 
 - CSRF failures now return `403` with `security.csrf_failed` (was `419` / `csrf_mismatch`)
