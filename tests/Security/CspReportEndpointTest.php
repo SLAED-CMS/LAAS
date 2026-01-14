@@ -23,13 +23,17 @@ final class CspReportEndpointTest extends TestCase
         $pdo->exec('CREATE TABLE security_reports (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             type TEXT NOT NULL,
+            status TEXT NOT NULL,
             created_at DATETIME NOT NULL,
+            updated_at DATETIME NULL,
             document_uri TEXT NOT NULL,
             violated_directive TEXT NOT NULL,
             blocked_uri TEXT NOT NULL,
             user_agent TEXT NOT NULL,
             ip TEXT NOT NULL,
-            request_id TEXT NULL
+            request_id TEXT NULL,
+            triaged_at DATETIME NULL,
+            ignored_at DATETIME NULL
         )');
 
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
@@ -60,6 +64,7 @@ final class CspReportEndpointTest extends TestCase
         $row = $pdo->query('SELECT * FROM security_reports')->fetch();
         $this->assertIsArray($row);
         $this->assertSame('csp', $row['type']);
+        $this->assertSame('new', $row['status']);
         $this->assertSame('https://example.test/page', $row['document_uri']);
         $this->assertSame('script-src', $row['violated_directive']);
         $this->assertSame('https://evil.test/blocked.js', $row['blocked_uri']);

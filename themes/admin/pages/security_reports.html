@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h1 class="h4 mb-0">{% t 'admin.security_reports.title' %}</h1>
+    </div>
+    <div id="page-messages">
+      {% include "partials/messages.html" %}
+    </div>
+    <form class="row g-2 align-items-end mb-3"
+          method="get"
+          action="/admin/security-reports"
+          hx-get="/admin/security-reports"
+          hx-target="#security-reports-table"
+          hx-swap="innerHTML"
+          hx-push-url="true"
+          hx-indicator="#loading"
+          hx-trigger="keyup changed delay:400ms from:#security-search, change from:#security-status, change from:#security-type">
+      <div class="col-md-6">
+        <label class="form-label">{% t 'admin.security_reports.filter.search' %}</label>
+        <input class="form-control"
+               id="security-search"
+               type="search"
+               name="search"
+               value="{% filters.search %}"
+               placeholder="{% t 'admin.search.placeholder' %}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">{% t 'admin.security_reports.filter.status' %}</label>
+        <select class="form-select" id="security-status" name="status">
+          {% foreach status_options as opt %}
+            <option value="{% opt.value %}" {% opt.selected %}>{% opt.label %}</option>
+          {% endforeach %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">{% t 'admin.modules.type' %}</label>
+        <select class="form-select" id="security-type" name="type">
+          {% foreach type_options as opt %}
+            <option value="{% opt.value %}" {% opt.selected %}>{% opt.label %}</option>
+          {% endforeach %}
+        </select>
+      </div>
+    </form>
+    <div id="loading" class="htmx-indicator text-center my-3">
+      <div class="spinner-border" role="status" aria-hidden="true"></div>
+    </div>
+    <div id="security-reports-table">
+      {% include "partials/security_reports_table.html" %}
+    </div>
+  </div>
+</div>
+{% endblock %}

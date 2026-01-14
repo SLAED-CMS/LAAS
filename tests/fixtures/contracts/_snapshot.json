@@ -550,6 +550,375 @@
             "version": "3.18.0"
         },
         {
+            "example_ok": {
+                "fixture": "admin.security_reports.delete",
+                "payload": {
+                    "data": {
+                        "deleted": true,
+                        "id": "__ID__"
+                    },
+                    "meta": {
+                        "format": "json",
+                        "request_id": "__REQ__",
+                        "route": "admin.security_reports.delete",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "POST"
+            ],
+            "name": "admin.security_reports.delete",
+            "rbac": "security_reports.manage",
+            "responses": {
+                "200": {
+                    "data": {
+                        "deleted": "bool",
+                        "id": "int"
+                    },
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.security_reports.delete"
+                    }
+                },
+                "403": {
+                    "error": "error.rbac_denied",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.security_reports.delete"
+                    }
+                },
+                "404": {
+                    "error": "error.not_found",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.security_reports.delete"
+                    }
+                }
+            },
+            "route": "/admin/security-reports/{id}/delete",
+            "version": "3.18.0"
+        },
+        {
+            "example_ok": {
+                "fixture": "admin.security_reports.ignore",
+                "payload": {
+                    "data": {
+                        "report": {
+                            "blocked_uri": "/script.js",
+                            "created_at": "__TIME__",
+                            "document_uri": "/",
+                            "id": "__ID__",
+                            "ignored_at": "2026-01-03 00:00:00",
+                            "ip": "203.0.113.10",
+                            "request_id": "__REQ__",
+                            "severity": "high",
+                            "status": "ignored",
+                            "triaged_at": null,
+                            "type": "csp",
+                            "updated_at": "__TIME__",
+                            "user_agent": "Mozilla/5.0",
+                            "violated_directive": "script-src"
+                        }
+                    },
+                    "meta": {
+                        "format": "json",
+                        "request_id": "__REQ__",
+                        "route": "admin.security_reports.ignore",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "POST"
+            ],
+            "name": "admin.security_reports.ignore",
+            "rbac": "security_reports.manage",
+            "responses": {
+                "200": {
+                    "data": {
+                        "report": {
+                            "blocked_uri": "string",
+                            "created_at": "__TIME__",
+                            "document_uri": "string",
+                            "id": "int",
+                            "ignored_at": "string|null",
+                            "ip": "string",
+                            "request_id": "__REQ__",
+                            "severity": "string",
+                            "status": "string",
+                            "triaged_at": "string|null",
+                            "type": "string",
+                            "updated_at": "__TIME__",
+                            "user_agent": "string",
+                            "violated_directive": "string"
+                        }
+                    },
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.security_reports.ignore"
+                    }
+                },
+                "403": {
+                    "error": "error.rbac_denied",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.security_reports.ignore"
+                    }
+                },
+                "404": {
+                    "error": "error.not_found",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.security_reports.ignore"
+                    }
+                }
+            },
+            "route": "/admin/security-reports/{id}/ignore",
+            "version": "3.18.0"
+        },
+        {
+            "example_ok": {
+                "fixture": "admin.security_reports.index",
+                "payload": {
+                    "data": {
+                        "counts": {
+                            "page": 1,
+                            "total": 1,
+                            "total_pages": 1
+                        },
+                        "items": [
+                            {
+                                "blocked_uri": "/script.js",
+                                "created_at": "__TIME__",
+                                "document_uri": "/",
+                                "id": "__ID__",
+                                "ignored_at": null,
+                                "ip": "203.0.113.10",
+                                "request_id": "__REQ__",
+                                "severity": "high",
+                                "status": "new",
+                                "triaged_at": null,
+                                "type": "csp",
+                                "updated_at": "__TIME__",
+                                "user_agent": "Mozilla/5.0",
+                                "violated_directive": "script-src"
+                            }
+                        ]
+                    },
+                    "meta": {
+                        "format": "json",
+                        "request_id": "__REQ__",
+                        "route": "admin.security_reports.index",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "admin.security_reports.index",
+            "rbac": "security_reports.view",
+            "responses": {
+                "200": {
+                    "data": {
+                        "counts": {
+                            "page": "int",
+                            "total": "int",
+                            "total_pages": "int"
+                        },
+                        "items": [
+                            {
+                                "blocked_uri": "string",
+                                "created_at": "__TIME__",
+                                "document_uri": "string",
+                                "id": "int",
+                                "ignored_at": "string|null",
+                                "ip": "string",
+                                "request_id": "__REQ__",
+                                "severity": "string",
+                                "status": "string",
+                                "triaged_at": "string|null",
+                                "type": "string",
+                                "updated_at": "__TIME__",
+                                "user_agent": "string",
+                                "violated_directive": "string"
+                            }
+                        ]
+                    },
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.security_reports.index"
+                    }
+                },
+                "403": {
+                    "error": "error.rbac_denied",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.security_reports.index"
+                    }
+                }
+            },
+            "route": "/admin/security-reports",
+            "version": "3.18.0"
+        },
+        {
+            "example_ok": {
+                "fixture": "admin.security_reports.show",
+                "payload": {
+                    "data": {
+                        "report": {
+                            "blocked_uri": "/script.js",
+                            "created_at": "__TIME__",
+                            "document_uri": "/",
+                            "id": "__ID__",
+                            "ignored_at": null,
+                            "ip": "203.0.113.10",
+                            "request_id": "__REQ__",
+                            "severity": "high",
+                            "status": "triaged",
+                            "triaged_at": "2026-01-02 00:00:00",
+                            "type": "csp",
+                            "updated_at": "__TIME__",
+                            "user_agent": "Mozilla/5.0",
+                            "violated_directive": "script-src"
+                        }
+                    },
+                    "meta": {
+                        "format": "json",
+                        "request_id": "__REQ__",
+                        "route": "admin.security_reports.show",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "admin.security_reports.show",
+            "rbac": "security_reports.view",
+            "responses": {
+                "200": {
+                    "data": {
+                        "report": {
+                            "blocked_uri": "string",
+                            "created_at": "__TIME__",
+                            "document_uri": "string",
+                            "id": "int",
+                            "ignored_at": "string|null",
+                            "ip": "string",
+                            "request_id": "__REQ__",
+                            "severity": "string",
+                            "status": "string",
+                            "triaged_at": "string|null",
+                            "type": "string",
+                            "updated_at": "__TIME__",
+                            "user_agent": "string",
+                            "violated_directive": "string"
+                        }
+                    },
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.security_reports.show"
+                    }
+                },
+                "403": {
+                    "error": "error.rbac_denied",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.security_reports.show"
+                    }
+                },
+                "404": {
+                    "error": "error.not_found",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.security_reports.show"
+                    }
+                }
+            },
+            "route": "/admin/security-reports/{id}",
+            "version": "3.18.0"
+        },
+        {
+            "example_ok": {
+                "fixture": "admin.security_reports.triage",
+                "payload": {
+                    "data": {
+                        "report": {
+                            "blocked_uri": "/script.js",
+                            "created_at": "__TIME__",
+                            "document_uri": "/",
+                            "id": "__ID__",
+                            "ignored_at": null,
+                            "ip": "203.0.113.10",
+                            "request_id": "__REQ__",
+                            "severity": "high",
+                            "status": "triaged",
+                            "triaged_at": "2026-01-02 00:00:00",
+                            "type": "csp",
+                            "updated_at": "__TIME__",
+                            "user_agent": "Mozilla/5.0",
+                            "violated_directive": "script-src"
+                        }
+                    },
+                    "meta": {
+                        "format": "json",
+                        "request_id": "__REQ__",
+                        "route": "admin.security_reports.triage",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "POST"
+            ],
+            "name": "admin.security_reports.triage",
+            "rbac": "security_reports.manage",
+            "responses": {
+                "200": {
+                    "data": {
+                        "report": {
+                            "blocked_uri": "string",
+                            "created_at": "__TIME__",
+                            "document_uri": "string",
+                            "id": "int",
+                            "ignored_at": "string|null",
+                            "ip": "string",
+                            "request_id": "__REQ__",
+                            "severity": "string",
+                            "status": "string",
+                            "triaged_at": "string|null",
+                            "type": "string",
+                            "updated_at": "__TIME__",
+                            "user_agent": "string",
+                            "violated_directive": "string"
+                        }
+                    },
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.security_reports.triage"
+                    }
+                },
+                "403": {
+                    "error": "error.rbac_denied",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.security_reports.triage"
+                    }
+                },
+                "404": {
+                    "error": "error.not_found",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.security_reports.triage"
+                    }
+                }
+            },
+            "route": "/admin/security-reports/{id}/triage",
+            "version": "3.18.0"
+        },
+        {
             "methods": [
                 "GET"
             ],

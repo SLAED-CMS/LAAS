@@ -110,4 +110,16 @@ return array (
     'admin.api_tokens.status.active' => 'Active',
     'admin.api_tokens.status.revoked' => 'Revoked',
     'admin.api_tokens.status.expired' => 'Expired',
+    'admin.nav.security_reports' => 'Security reports',
+    'admin.security_reports.title' => 'Security reports',
+    'admin.security_reports.filter.status' => 'Status',
+    'admin.security_reports.filter.search' => 'Search',
+    'admin.security_reports.filter.all' => 'All',
+    'admin.security_reports.action.triage' => 'Triage',
+    'admin.security_reports.action.ignore' => 'Ignore',
+    'admin.security_reports.action.delete' => 'Delete',
+    'admin.security_reports.status.new' => 'New',
+    'admin.security_reports.status.triaged' => 'Triaged',
+    'admin.security_reports.status.ignored' => 'Ignored',
 );
+

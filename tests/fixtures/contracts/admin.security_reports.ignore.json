@@ -1,0 +1,26 @@
+{
+    "data": {
+        "report": {
+            "blocked_uri": "/script.js",
+            "created_at": "__TIME__",
+            "document_uri": "/",
+            "id": "__ID__",
+            "ignored_at": "2026-01-03 00:00:00",
+            "ip": "203.0.113.10",
+            "request_id": "__REQ__",
+            "severity": "high",
+            "status": "ignored",
+            "triaged_at": null,
+            "type": "csp",
+            "updated_at": "__TIME__",
+            "user_agent": "Mozilla/5.0",
+            "violated_directive": "script-src"
+        }
+    },
+    "meta": {
+        "format": "json",
+        "request_id": "__REQ__",
+        "route": "admin.security_reports.ignore",
+        "ts": "__TIME__"
+    }
+}

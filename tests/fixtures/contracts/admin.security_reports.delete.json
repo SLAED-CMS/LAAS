@@ -1,0 +1,12 @@
+{
+    "data": {
+        "deleted": true,
+        "id": "__ID__"
+    },
+    "meta": {
+        "format": "json",
+        "request_id": "__REQ__",
+        "route": "admin.security_reports.delete",
+        "ts": "__TIME__"
+    }
+}

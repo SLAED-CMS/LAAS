@@ -113,4 +113,16 @@ return array (
     'api_tokens.created' => '??????',
     'api_tokens.token_once_notice' => '?????????? ????? ??????. ?????????? ??? ????? ????? ??????????.',
     'api_tokens.revoked_ok' => '????? ???????.',
+    'admin.nav.security_reports' => 'Security reports',
+    'admin.security_reports.title' => 'Security reports',
+    'admin.security_reports.filter.status' => 'Status',
+    'admin.security_reports.filter.search' => 'Search',
+    'admin.security_reports.filter.all' => 'All',
+    'admin.security_reports.action.triage' => 'Triage',
+    'admin.security_reports.action.ignore' => 'Ignore',
+    'admin.security_reports.action.delete' => 'Delete',
+    'admin.security_reports.status.new' => 'New',
+    'admin.security_reports.status.triaged' => 'Triaged',
+    'admin.security_reports.status.ignored' => 'Ignored',
 );
+

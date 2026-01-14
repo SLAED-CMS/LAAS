@@ -113,4 +113,7 @@ return [
     'error.title.http.invalid_json' => 'Invalid JSON.',
     'error.title.http.body_too_large' => 'Request body too large.',
     'error.title.http.payload_too_large' => 'Payload too large.',
+    'toast.saved' => 'Saved.',
+    'toast.deleted' => 'Deleted.',
 ];
+

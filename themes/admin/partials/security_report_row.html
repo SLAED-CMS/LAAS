@@ -1,0 +1,74 @@
+<tr id="security-report-{% report.id %}" class="{% if report.flash %}laas-flash{% endif %}">
+  <td>
+    <a href="/admin/security-reports/{% report.id %}">{% report.id %}</a>
+  </td>
+  <td>
+    {% if report.deleted %}
+      <span class="badge text-bg-secondary">{% t 'toast.deleted' %}</span>
+    {% else %}
+      <span class="badge text-bg-{% report.ui.badge %}">{% report.ui.severity %}</span>
+    {% endif %}
+  </td>
+  <td>
+    {% if report.deleted %}
+      <span class="text-muted">-</span>
+    {% else %}
+      {% if report.status == 'new' %}
+        <span class="badge text-bg-primary">{% report.status_label %}</span>
+      {% elseif report.status == 'triaged' %}
+        <span class="badge text-bg-success">{% report.status_label %}</span>
+      {% else %}
+        <span class="badge text-bg-warning">{% report.status_label %}</span>
+      {% endif %}
+    {% endif %}
+  </td>
+  <td>{% report.type_label %}</td>
+  <td><code>{% report.document_uri %}</code></td>
+  <td><code>{% report.violated_directive %}</code></td>
+  <td><code>{% report.blocked_uri %}</code></td>
+  <td>{% report.created_at %}</td>
+  <td>
+    {% if report.can_manage and report.deleted == 0 %}
+      <div class="btn-group btn-group-sm" role="group">
+        <form method="post"
+              action="/admin/security-reports/{% report.id %}/triage"
+              hx-post="/admin/security-reports/{% report.id %}/triage"
+              hx-target="#security-report-{% report.id %}"
+              hx-swap="outerHTML"
+              hx-indicator="#sr-triage-{% report.id %}">
+          <input type="hidden" name="_token" value="{% csrf_token %}">
+          <button class="btn btn-outline-secondary" type="submit" {% if report.status == 'triaged' %}disabled{% endif %}>
+            <span id="sr-triage-{% report.id %}" class="spinner-border spinner-border-sm me-1 htmx-indicator" role="status" aria-hidden="true"></span>
+            <span>{% t 'admin.security_reports.action.triage' %}</span>
+          </button>
+        </form>
+        <form method="post"
+              action="/admin/security-reports/{% report.id %}/ignore"
+              hx-post="/admin/security-reports/{% report.id %}/ignore"
+              hx-target="#security-report-{% report.id %}"
+              hx-swap="outerHTML"
+              hx-indicator="#sr-ignore-{% report.id %}">
+          <input type="hidden" name="_token" value="{% csrf_token %}">
+          <button class="btn btn-outline-warning" type="submit" {% if report.status == 'ignored' %}disabled{% endif %}>
+            <span id="sr-ignore-{% report.id %}" class="spinner-border spinner-border-sm me-1 htmx-indicator" role="status" aria-hidden="true"></span>
+            <span>{% t 'admin.security_reports.action.ignore' %}</span>
+          </button>
+        </form>
+        <form method="post"
+              action="/admin/security-reports/{% report.id %}/delete"
+              hx-post="/admin/security-reports/{% report.id %}/delete"
+              hx-target="#security-report-{% report.id %}"
+              hx-swap="outerHTML"
+              hx-indicator="#sr-delete-{% report.id %}">
+          <input type="hidden" name="_token" value="{% csrf_token %}">
+          <button class="btn btn-outline-danger" type="submit">
+            <span id="sr-delete-{% report.id %}" class="spinner-border spinner-border-sm me-1 htmx-indicator" role="status" aria-hidden="true"></span>
+            <span>{% t 'admin.security_reports.action.delete' %}</span>
+          </button>
+        </form>
+      </div>
+    {% else %}
+      <span class="text-muted">-</span>
+    {% endif %}
+  </td>
+</tr>

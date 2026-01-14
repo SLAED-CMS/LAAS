@@ -1,0 +1,57 @@
+<div class="d-flex flex-wrap gap-2 mb-3">
+  <span class="badge text-bg-secondary">Total {% stats.total %}</span>
+  <span class="badge text-bg-primary">{% t 'admin.security_reports.status.new' %}: {% stats.new %}</span>
+  <span class="badge text-bg-success">{% t 'admin.security_reports.status.triaged' %}: {% stats.triaged %}</span>
+  <span class="badge text-bg-warning">{% t 'admin.security_reports.status.ignored' %}: {% stats.ignored %}</span>
+  <span class="badge text-bg-info">CSP: {% stats.csp %}</span>
+  <span class="badge text-bg-dark">Other: {% stats.other %}</span>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-sm align-middle">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Severity</th>
+        <th>Status</th>
+        <th>Type</th>
+        <th>Document URI</th>
+        <th>Directive</th>
+        <th>Blocked URI</th>
+        <th>Created</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if reports %}
+        {% foreach reports as report %}
+          {% include "partials/security_report_row.html" %}
+        {% endforeach %}
+      {% else %}
+        <tr>
+          <td colspan="9" class="text-muted">{% t 'admin.search.empty' %}</td>
+        </tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+
+<div class="d-flex justify-content-between align-items-center">
+  <a class="btn btn-outline-secondary btn-sm {% if pagination.has_prev %}{% else %}disabled{% endif %}"
+     href="{% pagination.prev_url %}"
+     hx-get="{% pagination.prev_url %}"
+     hx-target="#security-reports-table"
+     hx-swap="innerHTML"
+     hx-push-url="true">
+    {% t 'admin.audit.prev' %}
+  </a>
+  <div class="text-muted small">{% t 'admin.audit.page' %} {% pagination.page %} / {% pagination.total_pages %}</div>
+  <a class="btn btn-outline-secondary btn-sm {% if pagination.has_next %}{% else %}disabled{% endif %}"
+     href="{% pagination.next_url %}"
+     hx-get="{% pagination.next_url %}"
+     hx-target="#security-reports-table"
+     hx-swap="innerHTML"
+     hx-push-url="true">
+    {% t 'admin.audit.next' %}
+  </a>
+</div>

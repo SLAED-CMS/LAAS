@@ -1,0 +1,84 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="card" id="security-report-card">
+  <div class="card-body">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <div>
+        <h1 class="h4 mb-1">{% t 'admin.security_reports.title' %} #{% report.id %}</h1>
+        <div class="text-muted small">{% report.created_at %}</div>
+      </div>
+      <a class="btn btn-outline-secondary btn-sm" href="/admin/security-reports">{% t 'ui.back' %}</a>
+    </div>
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      <span class="badge text-bg-{% report.ui.badge %}">{% report.ui.severity %}</span>
+      {% if report.status == 'new' %}
+        <span class="badge text-bg-primary">{% report.status_label %}</span>
+      {% elseif report.status == 'triaged' %}
+        <span class="badge text-bg-success">{% report.status_label %}</span>
+      {% else %}
+        <span class="badge text-bg-warning">{% report.status_label %}</span>
+      {% endif %}
+      <span class="badge text-bg-secondary">{% report.type_label %}</span>
+    </div>
+    <dl class="row mb-0">
+      <dt class="col-sm-3">Status</dt>
+      <dd class="col-sm-9">{% report.status_label %}</dd>
+
+      <dt class="col-sm-3">Type</dt>
+      <dd class="col-sm-9">{% report.type_label %}</dd>
+
+      <dt class="col-sm-3">Document URI</dt>
+      <dd class="col-sm-9"><code>{% report.document_uri %}</code></dd>
+
+      <dt class="col-sm-3">Directive</dt>
+      <dd class="col-sm-9"><code>{% report.violated_directive %}</code></dd>
+
+      <dt class="col-sm-3">Blocked URI</dt>
+      <dd class="col-sm-9"><code>{% report.blocked_uri %}</code></dd>
+
+      <dt class="col-sm-3">IP</dt>
+      <dd class="col-sm-9">{% report.ip %}</dd>
+
+      <dt class="col-sm-3">User Agent</dt>
+      <dd class="col-sm-9"><code>{% report.user_agent %}</code></dd>
+
+      <dt class="col-sm-3">Request ID</dt>
+      <dd class="col-sm-9">{% report.request_id %}</dd>
+
+      <dt class="col-sm-3">Updated</dt>
+      <dd class="col-sm-9">{% report.updated_at %}</dd>
+
+      <dt class="col-sm-3">Triaged at</dt>
+      <dd class="col-sm-9">{% report.triaged_at %}</dd>
+
+      <dt class="col-sm-3">Ignored at</dt>
+      <dd class="col-sm-9">{% report.ignored_at %}</dd>
+    </dl>
+    {% if report.can_manage %}
+      <div class="mt-4">
+        <div class="btn-group btn-group-sm" role="group">
+          <form method="post" action="/admin/security-reports/{% report.id %}/triage">
+            <input type="hidden" name="_token" value="{% csrf_token %}">
+            <button class="btn btn-outline-secondary" type="submit" {% if report.status == 'triaged' %}disabled{% endif %}>
+              {% t 'admin.security_reports.action.triage' %}
+            </button>
+          </form>
+          <form method="post" action="/admin/security-reports/{% report.id %}/ignore">
+            <input type="hidden" name="_token" value="{% csrf_token %}">
+            <button class="btn btn-outline-warning" type="submit" {% if report.status == 'ignored' %}disabled{% endif %}>
+              {% t 'admin.security_reports.action.ignore' %}
+            </button>
+          </form>
+          <form method="post" action="/admin/security-reports/{% report.id %}/delete">
+            <input type="hidden" name="_token" value="{% csrf_token %}">
+            <button class="btn btn-outline-danger" type="submit">
+              {% t 'admin.security_reports.action.delete' %}
+            </button>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

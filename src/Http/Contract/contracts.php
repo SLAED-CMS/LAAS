@@ -1139,6 +1139,360 @@ ContractRegistry::register('admin.api_tokens.revoke', [
     ],
 ]);
 
+ContractRegistry::register('admin.security_reports.index', [
+    'route' => '/admin/security-reports',
+    'methods' => ['GET'],
+    'rbac' => 'security_reports.view',
+    'responses' => [
+        '200' => [
+            'data' => [
+                'items' => [
+                    [
+                        'id' => 'int',
+                        'type' => 'string',
+                        'status' => 'string',
+                        'document_uri' => 'string',
+                        'violated_directive' => 'string',
+                        'blocked_uri' => 'string',
+                        'user_agent' => 'string',
+                        'ip' => 'string',
+                        'request_id' => 'string|null',
+                        'created_at' => 'string',
+                        'updated_at' => 'string',
+                        'triaged_at' => 'string|null',
+                        'ignored_at' => 'string|null',
+                        'severity' => 'string',
+                    ],
+                ],
+                'counts' => [
+                    'total' => 'int',
+                    'page' => 'int',
+                    'total_pages' => 'int',
+                ],
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.security_reports.index',
+            ],
+        ],
+        '403' => [
+            'error' => 'error.rbac_denied',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.security_reports.index',
+            ],
+        ],
+    ],
+    'example_ok' => [
+        'fixture' => 'admin.security_reports.index',
+        'payload' => [
+            'data' => [
+                'items' => [
+                    [
+                        'id' => 1,
+                        'type' => 'csp',
+                        'status' => 'new',
+                        'document_uri' => 'https://example.com',
+                        'violated_directive' => 'script-src',
+                        'blocked_uri' => 'https://evil.example/script.js',
+                        'user_agent' => 'Mozilla/5.0',
+                        'ip' => '203.0.113.10',
+                        'request_id' => 'req-1',
+                        'created_at' => '2026-01-01 00:00:00',
+                        'updated_at' => '2026-01-01 00:00:00',
+                        'triaged_at' => null,
+                        'ignored_at' => null,
+                        'severity' => 'high',
+                    ],
+                ],
+                'counts' => [
+                    'total' => 1,
+                    'page' => 1,
+                    'total_pages' => 1,
+                ],
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.security_reports.index',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('admin.security_reports.show', [
+    'route' => '/admin/security-reports/{id}',
+    'methods' => ['GET'],
+    'rbac' => 'security_reports.view',
+    'responses' => [
+        '200' => [
+            'data' => [
+                'report' => [
+                    'id' => 'int',
+                    'type' => 'string',
+                    'status' => 'string',
+                    'document_uri' => 'string',
+                    'violated_directive' => 'string',
+                    'blocked_uri' => 'string',
+                    'user_agent' => 'string',
+                    'ip' => 'string',
+                    'request_id' => 'string|null',
+                    'created_at' => 'string',
+                    'updated_at' => 'string',
+                    'triaged_at' => 'string|null',
+                    'ignored_at' => 'string|null',
+                    'severity' => 'string',
+                ],
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.security_reports.show',
+            ],
+        ],
+        '404' => [
+            'error' => 'error.not_found',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.security_reports.show',
+            ],
+        ],
+        '403' => [
+            'error' => 'error.rbac_denied',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.security_reports.show',
+            ],
+        ],
+    ],
+    'example_ok' => [
+        'fixture' => 'admin.security_reports.show',
+        'payload' => [
+            'data' => [
+                'report' => [
+                    'id' => 1,
+                    'type' => 'csp',
+                    'status' => 'triaged',
+                    'document_uri' => 'https://example.com',
+                    'violated_directive' => 'script-src',
+                    'blocked_uri' => 'https://evil.example/script.js',
+                    'user_agent' => 'Mozilla/5.0',
+                    'ip' => '203.0.113.10',
+                    'request_id' => 'req-1',
+                    'created_at' => '2026-01-01 00:00:00',
+                    'updated_at' => '2026-01-02 00:00:00',
+                    'triaged_at' => '2026-01-02 00:00:00',
+                    'ignored_at' => null,
+                    'severity' => 'high',
+                ],
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.security_reports.show',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('admin.security_reports.triage', [
+    'route' => '/admin/security-reports/{id}/triage',
+    'methods' => ['POST'],
+    'rbac' => 'security_reports.manage',
+    'responses' => [
+        '200' => [
+            'data' => [
+                'report' => [
+                    'id' => 'int',
+                    'type' => 'string',
+                    'status' => 'string',
+                    'document_uri' => 'string',
+                    'violated_directive' => 'string',
+                    'blocked_uri' => 'string',
+                    'user_agent' => 'string',
+                    'ip' => 'string',
+                    'request_id' => 'string|null',
+                    'created_at' => 'string',
+                    'updated_at' => 'string',
+                    'triaged_at' => 'string|null',
+                    'ignored_at' => 'string|null',
+                    'severity' => 'string',
+                ],
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.security_reports.triage',
+            ],
+        ],
+        '404' => [
+            'error' => 'error.not_found',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.security_reports.triage',
+            ],
+        ],
+        '403' => [
+            'error' => 'error.rbac_denied',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.security_reports.triage',
+            ],
+        ],
+    ],
+    'example_ok' => [
+        'fixture' => 'admin.security_reports.triage',
+        'payload' => [
+            'data' => [
+                'report' => [
+                    'id' => 1,
+                    'type' => 'csp',
+                    'status' => 'triaged',
+                    'document_uri' => 'https://example.com',
+                    'violated_directive' => 'script-src',
+                    'blocked_uri' => 'https://evil.example/script.js',
+                    'user_agent' => 'Mozilla/5.0',
+                    'ip' => '203.0.113.10',
+                    'request_id' => 'req-1',
+                    'created_at' => '2026-01-01 00:00:00',
+                    'updated_at' => '2026-01-02 00:00:00',
+                    'triaged_at' => '2026-01-02 00:00:00',
+                    'ignored_at' => null,
+                    'severity' => 'high',
+                ],
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.security_reports.triage',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('admin.security_reports.ignore', [
+    'route' => '/admin/security-reports/{id}/ignore',
+    'methods' => ['POST'],
+    'rbac' => 'security_reports.manage',
+    'responses' => [
+        '200' => [
+            'data' => [
+                'report' => [
+                    'id' => 'int',
+                    'type' => 'string',
+                    'status' => 'string',
+                    'document_uri' => 'string',
+                    'violated_directive' => 'string',
+                    'blocked_uri' => 'string',
+                    'user_agent' => 'string',
+                    'ip' => 'string',
+                    'request_id' => 'string|null',
+                    'created_at' => 'string',
+                    'updated_at' => 'string',
+                    'triaged_at' => 'string|null',
+                    'ignored_at' => 'string|null',
+                    'severity' => 'string',
+                ],
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.security_reports.ignore',
+            ],
+        ],
+        '404' => [
+            'error' => 'error.not_found',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.security_reports.ignore',
+            ],
+        ],
+        '403' => [
+            'error' => 'error.rbac_denied',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.security_reports.ignore',
+            ],
+        ],
+    ],
+    'example_ok' => [
+        'fixture' => 'admin.security_reports.ignore',
+        'payload' => [
+            'data' => [
+                'report' => [
+                    'id' => 1,
+                    'type' => 'csp',
+                    'status' => 'ignored',
+                    'document_uri' => 'https://example.com',
+                    'violated_directive' => 'script-src',
+                    'blocked_uri' => 'https://evil.example/script.js',
+                    'user_agent' => 'Mozilla/5.0',
+                    'ip' => '203.0.113.10',
+                    'request_id' => 'req-1',
+                    'created_at' => '2026-01-01 00:00:00',
+                    'updated_at' => '2026-01-03 00:00:00',
+                    'triaged_at' => null,
+                    'ignored_at' => '2026-01-03 00:00:00',
+                    'severity' => 'high',
+                ],
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.security_reports.ignore',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('admin.security_reports.delete', [
+    'route' => '/admin/security-reports/{id}/delete',
+    'methods' => ['POST'],
+    'rbac' => 'security_reports.manage',
+    'responses' => [
+        '200' => [
+            'data' => [
+                'deleted' => 'bool',
+                'id' => 'int',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.security_reports.delete',
+            ],
+        ],
+        '404' => [
+            'error' => 'error.not_found',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.security_reports.delete',
+            ],
+        ],
+        '403' => [
+            'error' => 'error.rbac_denied',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.security_reports.delete',
+            ],
+        ],
+    ],
+    'example_ok' => [
+        'fixture' => 'admin.security_reports.delete',
+        'payload' => [
+            'data' => [
+                'deleted' => true,
+                'id' => 1,
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.security_reports.delete',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
 ContractRegistry::register('admin.users.index', [
     'route' => '/admin/users',
     'methods' => ['GET'],
