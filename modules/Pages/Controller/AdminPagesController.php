@@ -11,8 +11,6 @@ use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Http\ErrorCode;
 use Laas\Http\ErrorResponse;
-use Laas\Http\HtmxTrigger;
-use Laas\Http\RequestContext;
 use Laas\Modules\Pages\Repository\PagesRepository;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Security\HtmlSanitizer;
@@ -451,11 +449,12 @@ final class AdminPagesController
         $messages = $this->resolveErrorMessages($errors);
 
         if ($request->isHtmx()) {
-            return $this->view->render('partials/form_errors.html', [
+            $response = $this->view->render('partials/form_errors.html', [
                 'errors' => $messages,
             ], 422, [], [
                 'theme' => 'admin',
             ]);
+            return $response->withToastDanger('toast.validation_failed', $this->view->translate('toast.validation_failed'));
         }
 
         if ($request->wantsJson()) {
@@ -564,10 +563,6 @@ final class AdminPagesController
 
     private function withSuccessTrigger(Response $response, string $messageKey): Response
     {
-        return HtmxTrigger::add($response, 'laas:success', [
-            'message_key' => $messageKey,
-            'message' => $this->view->translate($messageKey),
-            'request_id' => RequestContext::requestId(),
-        ]);
+        return $response->withToastSuccess($messageKey, $this->view->translate($messageKey));
     }
 }

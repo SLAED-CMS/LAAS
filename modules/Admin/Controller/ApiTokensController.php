@@ -9,10 +9,9 @@ use Laas\Database\Repositories\ApiTokensRepository;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
-use Laas\Http\HtmxTrigger;
 use Laas\Http\Request;
-use Laas\Http\RequestContext;
 use Laas\Http\Response;
+use Laas\Http\UiToast;
 use Laas\Support\Audit;
 use Laas\View\View;
 use Throwable;
@@ -137,6 +136,7 @@ final class ApiTokensController
         ]);
 
         if ($request->wantsJson()) {
+            UiToast::registerSuccess('admin.api_tokens.created', $this->view->translate('admin.api_tokens.created'));
             return ContractResponse::ok([
                 'token_id' => (int) ($created['token_id'] ?? 0),
                 'name' => $name,
@@ -260,6 +260,7 @@ final class ApiTokensController
         }
 
         if ($request->wantsJson()) {
+            UiToast::registerSuccess('admin.api_tokens.rotated', $this->view->translate('admin.api_tokens.rotated'));
             return ContractResponse::ok([
                 'token_id' => (int) ($created['token_id'] ?? 0),
                 'name' => $name,
@@ -325,6 +326,7 @@ final class ApiTokensController
                 ], 404);
             }
 
+            UiToast::registerInfo('admin.api_tokens.revoked', $this->view->translate('admin.api_tokens.revoked'));
             return ContractResponse::ok([
                 'revoked' => true,
                 'token_id' => $id,
@@ -418,11 +420,7 @@ final class ApiTokensController
 
     private function withSuccessTrigger(Response $response, string $messageKey): Response
     {
-        return HtmxTrigger::add($response, 'laas:success', [
-            'message_key' => $messageKey,
-            'message' => $this->view->translate($messageKey),
-            'request_id' => RequestContext::requestId(),
-        ]);
+        return $response->withToastSuccess($messageKey, $this->view->translate($messageKey));
     }
 
     private function repository(): ?ApiTokensRepository

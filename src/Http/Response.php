@@ -122,6 +122,41 @@ final class Response
         return new self($this->body, $this->status, $headers);
     }
 
+    public function withToastSuccess(string $messageKey, string $message, ?int $ttlMs = null, ?array $context = null): self
+    {
+        return $this->withToastPayload('success', $messageKey, $message, $ttlMs, $context);
+    }
+
+    public function withToastInfo(string $messageKey, string $message, ?int $ttlMs = null, ?array $context = null): self
+    {
+        return $this->withToastPayload('info', $messageKey, $message, $ttlMs, $context);
+    }
+
+    public function withToastWarning(string $messageKey, string $message, ?int $ttlMs = null, ?array $context = null): self
+    {
+        return $this->withToastPayload('warning', $messageKey, $message, $ttlMs, $context);
+    }
+
+    public function withToastDanger(string $messageKey, string $message, ?int $ttlMs = null, ?array $context = null): self
+    {
+        return $this->withToastPayload('danger', $messageKey, $message, $ttlMs, $context);
+    }
+
+    /**
+     * @param array<string, mixed>|null $context
+     */
+    private function withToastPayload(
+        string $type,
+        string $messageKey,
+        string $message,
+        ?int $ttlMs,
+        ?array $context
+    ): self {
+        $toast = UiToast::payload($type, $messageKey, $message, $context, $ttlMs);
+        UiEventRegistry::pushEvent($toast);
+        return HtmxTrigger::addToast($this, $toast);
+    }
+
     public function withBody(string $body): self
     {
         return new self($body, $this->status, $this->headers);

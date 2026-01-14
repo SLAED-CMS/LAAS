@@ -8,9 +8,7 @@ use Laas\Database\Repositories\ModulesRepository;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
-use Laas\Http\HtmxTrigger;
 use Laas\Http\Request;
-use Laas\Http\RequestContext;
 use Laas\Http\Response;
 use Laas\Support\Audit;
 use Laas\View\View;
@@ -346,11 +344,7 @@ final class ModulesController
 
     private function withSuccessTrigger(Response $response, string $messageKey): Response
     {
-        return HtmxTrigger::add($response, 'laas:success', [
-            'message_key' => $messageKey,
-            'message' => $this->view->translate($messageKey),
-            'request_id' => RequestContext::requestId(),
-        ]);
+        return $response->withToastSuccess($messageKey, $this->view->translate($messageKey));
     }
 
     /** @return array<int, array{name: string, enabled: bool, version: string|null, type: string, protected: bool}> */

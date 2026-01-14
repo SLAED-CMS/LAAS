@@ -73,6 +73,10 @@
     initCopyButtons(e.target);
   });
 
+  document.body.addEventListener('laas:toast', function (event) {
+    handleLaasToastPayload(event.detail);
+  });
+
   function laasTransliterateCyrillic(value) {
     var map = {
       '\u0430': 'a',  '\u0431': 'b',   '\u0432': 'v',   '\u0433': 'g',  '\u0434': 'd',
@@ -238,20 +242,64 @@
     return '';
   }
 
-  function showToast(kind, message) {
+  var handledToastRequests = {};
+
+  function resolveToastTone(kind) {
+    var normalized = (kind || 'info').toLowerCase();
+    if (normalized === 'error') {
+      normalized = 'danger';
+    }
+    var allowed = ['success', 'info', 'warning', 'danger'];
+    if (allowed.indexOf(normalized) === -1) {
+      normalized = 'info';
+    }
+    return normalized;
+  }
+
+  function handleLaasToastPayload(payload) {
+    if (!payload || typeof payload !== 'object') {
+      return false;
+    }
+    if (payload['laas:toast']) {
+      payload = payload['laas:toast'];
+    }
+    var message = resolveToastMessage(payload, 'message_key');
+    if (!message) {
+      return false;
+    }
+    var requestId = (payload.request_id || '').toString();
+    if (requestId !== '' && handledToastRequests[requestId]) {
+      return true;
+    }
+    var ttl = null;
+    if (payload.ttl_ms !== undefined && payload.ttl_ms !== null) {
+      var parsed = parseInt(payload.ttl_ms, 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        ttl = parsed;
+      }
+    }
+    showToast(resolveToastTone(payload.type), message, ttl);
+    if (requestId !== '') {
+      handledToastRequests[requestId] = true;
+    }
+    return true;
+  }
+
+  function showToast(kind, message, ttl) {
     if (!message) {
       return;
     }
     if (!window.bootstrap || !window.bootstrap.Toast) {
       return;
     }
-    var container = document.getElementById('laas-toast-container');
+    var container = document.getElementById('laas-toasts');
     if (!container) {
       return;
     }
 
+    var tone = resolveToastTone(kind);
     var toast = document.createElement('div');
-    toast.className = 'toast align-items-center text-bg-' + (kind === 'error' ? 'danger' : 'success') + ' border-0';
+    toast.className = 'toast align-items-center text-bg-' + tone + ' border-0';
     toast.setAttribute('role', 'alert');
     toast.setAttribute('aria-live', 'assertive');
     toast.setAttribute('aria-atomic', 'true');
@@ -273,7 +321,11 @@
     toast.appendChild(flex);
 
     container.appendChild(toast);
-    var instance = new window.bootstrap.Toast(toast, { delay: 3500 });
+    var delay = 2500;
+    if (typeof ttl === 'number' && !isNaN(ttl) && ttl > 0) {
+      delay = ttl;
+    }
+    var instance = new window.bootstrap.Toast(toast, { delay: delay });
     toast.addEventListener('hidden.bs.toast', function () {
       toast.remove();
     });
@@ -285,15 +337,7 @@
     if (!trigger) {
       return false;
     }
-    var success = trigger['laas:success'];
-    var error = trigger['laas:error'];
-    if (success) {
-      showToast('success', resolveToastMessage(success, 'message_key'));
-    }
-    if (error) {
-      showToast('error', resolveToastMessage(error, 'error_key'));
-    }
-    return !!(success || error);
+    return handleLaasToastPayload(trigger);
   }
 
   document.body.addEventListener('htmx:responseError', function (e) {

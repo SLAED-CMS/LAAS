@@ -9,10 +9,9 @@ use Laas\Database\Repositories\RbacRepository;
 use Laas\Database\Repositories\UsersRepository;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
-use Laas\Http\HtmxTrigger;
 use Laas\Http\Request;
-use Laas\Http\RequestContext;
 use Laas\Http\Response;
+use Laas\Http\UiToast;
 use Laas\Support\Audit;
 use Laas\View\View;
 use Throwable;
@@ -147,7 +146,7 @@ final class SecurityReportsController
             return $this->forbidden($request, 'admin.security_reports.triage');
         }
 
-        return $this->updateStatus($request, $params, 'triaged', 'admin.security_reports.triage');
+        return $this->updateStatus($request, $params, 'triaged', 'admin.security_reports.triage', 'admin.security_reports.updated');
     }
 
     public function ignore(Request $request, array $params = []): Response
@@ -156,7 +155,7 @@ final class SecurityReportsController
             return $this->forbidden($request, 'admin.security_reports.ignore');
         }
 
-        return $this->updateStatus($request, $params, 'ignored', 'admin.security_reports.ignore');
+        return $this->updateStatus($request, $params, 'ignored', 'admin.security_reports.ignore', 'admin.security_reports.updated');
     }
 
     public function delete(Request $request, array $params = []): Response
@@ -184,6 +183,7 @@ final class SecurityReportsController
         $this->logAudit($request, $id, 'deleted');
 
         if ($request->wantsJson()) {
+            UiToast::registerInfo('admin.security_reports.deleted', $this->view->translate('admin.security_reports.deleted'));
             return ContractResponse::ok([
                 'deleted' => true,
                 'id' => $id,
@@ -200,7 +200,7 @@ final class SecurityReportsController
                 'theme' => 'admin',
                 'render_partial' => true,
             ]);
-            return $this->withSuccessTrigger($response, 'toast.deleted');
+            return $this->withSuccessTrigger($response, 'admin.security_reports.deleted');
         }
 
         return new Response('', 303, [
@@ -208,7 +208,7 @@ final class SecurityReportsController
         ]);
     }
 
-    private function updateStatus(Request $request, array $params, string $status, string $route): Response
+    private function updateStatus(Request $request, array $params, string $status, string $route, string $toastKey): Response
     {
         $id = $this->readId($params);
         if ($id === null) {
@@ -234,6 +234,7 @@ final class SecurityReportsController
         $fresh = $repo->findById($id) ?? $row;
 
         if ($request->wantsJson()) {
+            UiToast::registerInfo($toastKey, $this->view->translate($toastKey));
             return ContractResponse::ok([
                 'report' => $this->mapRowForJson($fresh),
             ], [
@@ -249,7 +250,7 @@ final class SecurityReportsController
                 'theme' => 'admin',
                 'render_partial' => true,
             ]);
-            return $this->withSuccessTrigger($response, 'toast.saved');
+            return $this->withSuccessTrigger($response, $toastKey);
         }
 
         return new Response('', 303, [
@@ -541,11 +542,7 @@ final class SecurityReportsController
 
     private function withSuccessTrigger(Response $response, string $messageKey): Response
     {
-        return HtmxTrigger::add($response, 'laas:success', [
-            'message_key' => $messageKey,
-            'message' => $this->view->translate($messageKey),
-            'request_id' => RequestContext::requestId(),
-        ]);
+        return $response->withToastSuccess($messageKey, $this->view->translate($messageKey));
     }
 
     private function logAudit(Request $request, int $reportId, string $action): void

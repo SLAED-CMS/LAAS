@@ -23,7 +23,7 @@ final class ErrorResponse
     ];
 
     /**
-     * @return array{payload: array<string, mixed>, status: int}
+     * @return array{payload: array<string, mixed>, status: int, toast: array<string, mixed>}
      */
     public static function buildPayload(
         ?Request $request,
@@ -80,9 +80,15 @@ final class ErrorResponse
             $payload['error']['details'] = $details;
         }
 
+        $toast = self::registerErrorToast($payload);
+        if ($toast !== []) {
+            $payload['meta'] = ResponseMeta::enrich($payload['meta']);
+        }
+
         return [
             'payload' => $payload,
             'status' => $status,
+            'toast' => $toast,
         ];
     }
 
@@ -101,7 +107,7 @@ final class ErrorResponse
             $response = $response->withHeader($name, $value);
         }
 
-        return self::attachHtmxTrigger($request, $response, $built['payload'], $built['status']);
+        return self::attachHtmxTrigger($request, $response, $built['payload'], $built['status'], $built['toast']);
     }
 
     public static function respondForRequest(
@@ -126,7 +132,7 @@ final class ErrorResponse
             $response = $response->withHeader($name, $value);
         }
 
-        return self::attachHtmxTrigger($request, $response, $built['payload'], $resolvedStatus);
+        return self::attachHtmxTrigger($request, $response, $built['payload'], $resolvedStatus, $built['toast']);
     }
 
     private static function normalizeDetails(string $code, array $details): array
@@ -171,40 +177,51 @@ final class ErrorResponse
         ]);
     }
 
-    private static function attachHtmxTrigger(?Request $request, Response $response, array $payload, int $status): Response
+    private static function attachHtmxTrigger(?Request $request, Response $response, array $payload, int $status, array $toast): Response
     {
         if ($request === null || !$request->isHtmx()) {
             return $response;
         }
 
-        $errorKey = (string) (($payload['meta']['error']['key'] ?? '') ?: '');
-        $message = (string) (($payload['meta']['error']['message'] ?? '') ?: '');
-        $requestId = (string) (($payload['meta']['request_id'] ?? '') ?: RequestContext::requestId());
+        $errorTrigger = self::buildHtmxErrorTriggerPayload($payload, $status);
+        $response = HtmxTrigger::add($response, 'laas:error', $errorTrigger);
 
-        $trigger = $response->getHeader('HX-Trigger');
-        $data = [];
-        if (is_string($trigger) && $trigger !== '') {
-            $decoded = json_decode($trigger, true);
-            if (is_array($decoded)) {
-                $data = $decoded;
-            } else {
-                $data[$trigger] = true;
-            }
-        }
-
-        $data['laas:error'] = [
-            'status' => $status,
-            'error_key' => $errorKey,
-            'message' => $message,
-            'request_id' => $requestId,
-        ];
-
-        $json = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        if ($json === false) {
+        if ($toast === []) {
             return $response;
         }
 
-        return $response->withHeader('HX-Trigger', $json);
+        return HtmxTrigger::addToast($response, $toast);
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private static function buildHtmxErrorTriggerPayload(array $payload, int $status): array
+    {
+        $errorKey = (string) ($payload['meta']['error']['key'] ?? '');
+        $requestId = (string) ($payload['meta']['request_id'] ?? RequestContext::requestId());
+
+        return [
+            'status' => $status,
+            'error_key' => $errorKey,
+            'request_id' => $requestId,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function registerErrorToast(array $payload): array
+    {
+        $errorKey = (string) ($payload['meta']['error']['key'] ?? '');
+        $message = (string) ($payload['meta']['error']['message'] ?? '');
+        if ($errorKey === '' && $message === '') {
+            return [];
+        }
+
+        $toastKey = $errorKey === 'error.validation_failed' ? 'toast.validation_failed' : $errorKey;
+
+        return UiToast::registerDanger($toastKey, $message);
     }
 
     private static function resolveBackUrl(Request $request): ?string

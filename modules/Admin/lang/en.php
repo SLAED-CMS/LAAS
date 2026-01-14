@@ -157,6 +157,8 @@ return array (
     'admin.security_reports.status.new' => 'New',
     'admin.security_reports.status.triaged' => 'Triaged',
     'admin.security_reports.status.ignored' => 'Ignored',
+    'admin.security_reports.updated' => 'Security report updated.',
+    'admin.security_reports.deleted' => 'Security report deleted.',
     'admin.nav.ops' => 'Ops',
     'admin.ops.title' => 'Ops',
     'admin.ops.section.health' => 'Health',

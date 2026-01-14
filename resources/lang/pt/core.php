@@ -98,6 +98,9 @@ return [
     'error.title.http.body_too_large' => 'Request body too large.',
     'error.title.http.payload_too_large' => 'Payload too large.',
     'toast.saved' => 'Saved.',
+    'toast.created' => 'Created.',
+    'toast.revoked' => 'Revoked.',
+    'toast.updated' => 'Updated.',
+    'toast.validation_failed' => 'Validation failed.',
     'toast.deleted' => 'Deleted.',
 ];
-

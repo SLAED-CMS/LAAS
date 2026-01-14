@@ -8,9 +8,7 @@ use Laas\Database\Repositories\RbacRepository;
 use Laas\Database\Repositories\UsersRepository;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
-use Laas\Http\HtmxTrigger;
 use Laas\Http\Request;
-use Laas\Http\RequestContext;
 use Laas\Http\Response;
 use Laas\Support\AuditLogger;
 use Laas\Support\Search\Highlighter;
@@ -634,10 +632,6 @@ final class UsersController
 
     private function withSuccessTrigger(Response $response, string $messageKey): Response
     {
-        return HtmxTrigger::add($response, 'laas:success', [
-            'message_key' => $messageKey,
-            'message' => $this->view->translate($messageKey),
-            'request_id' => RequestContext::requestId(),
-        ]);
+        return $response->withToastSuccess($messageKey, $this->view->translate($messageKey));
     }
 }

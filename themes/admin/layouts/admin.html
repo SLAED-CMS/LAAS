@@ -24,7 +24,7 @@
     </div>
     {% block content %}{% endblock %}
   </main>
-  <div id="laas-toast-container" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+  {% include "partials/toasts.html" %}
   <script src="{% assets.htmx_js %}" defer></script>
   <script src="{% assets.bootstrap_js %}" defer></script>
   <script src="{% assets.app_js %}" defer></script>
@@ -34,4 +34,3 @@
   {% endif %}
 </body>
 </html>
-

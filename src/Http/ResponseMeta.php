@@ -31,6 +31,50 @@ final class ResponseMeta
             }
         }
 
+        return self::appendEvents($meta);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private static function normalizeEvents(mixed $events): array
+    {
+        if (!is_array($events)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($events as $event) {
+            if (is_array($event)) {
+                $out[] = $event;
+            }
+        }
+
+        return array_values($out);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private static function collectEvents(array $meta): array
+    {
+        $existing = self::normalizeEvents($meta['events'] ?? []);
+        $additional = self::normalizeEvents(UiEventRegistry::consumeEvents());
+        if ($existing === [] && $additional === []) {
+            return [];
+        }
+
+        return array_merge($existing, $additional);
+    }
+
+    private static function appendEvents(array $meta): array
+    {
+        $events = self::collectEvents($meta);
+        if ($events === []) {
+            return $meta;
+        }
+
+        $meta['events'] = $events;
         return $meta;
     }
 }
