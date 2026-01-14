@@ -35,6 +35,7 @@ final class ContractFixturesSmokeTest extends TestCase
             'admin.security_reports.triage',
             'admin.security_reports.ignore',
             'admin.security_reports.delete',
+            'admin.ops.index',
             'admin.users.index',
             'admin.media.index',
             'media.show',

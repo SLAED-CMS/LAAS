@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h1 class="h4 mb-0">{% t 'admin.ops.title' %}</h1>
+      <button class="btn btn-outline-secondary btn-sm"
+              type="button"
+              hx-get="/admin/ops/refresh"
+              hx-target="#ops-cards"
+              hx-swap="innerHTML"
+              hx-indicator="#ops-loading">
+        {% t 'admin.ops.refresh' %}
+      </button>
+    </div>
+    <div id="page-messages">
+      {% include "partials/messages.html" %}
+    </div>
+    <div id="ops-loading" class="htmx-indicator text-center my-3">
+      <div class="spinner-border" role="status" aria-hidden="true"></div>
+    </div>
+    <div id="ops-cards">
+      {% include "partials/ops_cards.html" %}
+    </div>
+  </div>
+</div>
+{% endblock %}

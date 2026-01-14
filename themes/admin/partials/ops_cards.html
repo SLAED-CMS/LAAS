@@ -1,0 +1,246 @@
+<div class="row g-3">
+  <div class="col-12 col-xl-6">
+    <div class="card h-100" data-ops-section="health">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <h2 class="h6 mb-0">{% t 'admin.ops.section.health' %}</h2>
+          <span class="badge text-bg-{% health.status_badge %}">{% health.status_label %}</span>
+        </div>
+        <table class="table table-sm mb-0">
+          <tbody>
+            {% foreach health.checks as row %}
+              <tr>
+                <th class="text-muted fw-normal">{% row.label %}</th>
+                <td><span class="badge text-bg-{% row.badge %}">{% row.status_label %}</span></td>
+              </tr>
+            {% endforeach %}
+            {% if health.warnings %}
+              <tr>
+                <th class="text-muted fw-normal">Warnings</th>
+                <td>
+                  <ul class="mb-0 small">
+                    {% foreach health.warnings as warn %}
+                      <li>{% warn %}</li>
+                    {% endforeach %}
+                  </ul>
+                </td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+        <div class="mt-3">
+          <div class="fw-semibold mb-1">Preflight / Doctor</div>
+          <div class="small text-muted mb-1">Commands</div>
+          <ul class="small mb-2">
+            {% foreach preflight.commands as cmd %}
+              <li><code class="text-break">{% cmd %}</code></li>
+            {% endforeach %}
+          </ul>
+          <div class="small text-muted mb-1">Environment</div>
+          <table class="table table-sm mb-0">
+            <tbody>
+              <tr>
+                <th class="text-muted fw-normal">APP_ENV</th>
+                <td>{% preflight.env.app_env %}</td>
+              </tr>
+              <tr>
+                <th class="text-muted fw-normal">APP_DEBUG</th>
+                <td>{% if preflight.env.app_debug %}true{% else %}false{% endif %}</td>
+              </tr>
+              <tr>
+                <th class="text-muted fw-normal">READ_ONLY</th>
+                <td>{% if preflight.env.read_only %}true{% else %}false{% endif %}</td>
+              </tr>
+              <tr>
+                <th class="text-muted fw-normal">HEADLESS</th>
+                <td>{% if preflight.env.headless %}true{% else %}false{% endif %}</td>
+              </tr>
+              <tr>
+                <th class="text-muted fw-normal">STORAGE_DISK</th>
+                <td>{% preflight.env.storage_disk %}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-xl-6">
+    <div class="card h-100" data-ops-section="sessions">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <h2 class="h6 mb-0">{% t 'admin.ops.section.sessions' %}</h2>
+          <span class="badge text-bg-{% sessions.status_badge %}">{% sessions.status_label %}</span>
+        </div>
+        <table class="table table-sm mb-0">
+          <tbody>
+            <tr>
+              <th class="text-muted fw-normal">Driver</th>
+              <td>{% sessions.driver %}</td>
+            </tr>
+            <tr>
+              <th class="text-muted fw-normal">Failover window</th>
+              <td>{% if sessions.failover_active %}active{% else %}idle{% endif %}</td>
+            </tr>
+            {% if sessions.details %}
+              <tr>
+                <th class="text-muted fw-normal">Details</th>
+                <td>
+                  <ul class="mb-0 small">
+                    {% foreach sessions.details as line %}
+                      <li>{% line %}</li>
+                    {% endforeach %}
+                  </ul>
+                </td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-xl-6">
+    <div class="card h-100" data-ops-section="backups">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <h2 class="h6 mb-0">{% t 'admin.ops.section.backups' %}</h2>
+          <span class="badge text-bg-{% backups.status_badge %}">{% backups.status_label %}</span>
+        </div>
+        <table class="table table-sm mb-0">
+          <tbody>
+            <tr>
+              <th class="text-muted fw-normal">Last backup</th>
+              <td>
+                {% if backups.last_backup.name %}{% backups.last_backup.name %}{% else %}n/a{% endif %}
+                {% if backups.last_backup.created_at %}
+                  <span class="text-muted">({% backups.last_backup.created_at %})</span>
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <th class="text-muted fw-normal">Retention</th>
+              <td>keep {% backups.retention.keep %} ({% backups.retention.policy %})</td>
+            </tr>
+            <tr>
+              <th class="text-muted fw-normal">Verify</th>
+              <td>{% if backups.verify_supported %}supported{% else %}n/a{% endif %}</td>
+            </tr>
+            {% if backups.details %}
+              <tr>
+                <th class="text-muted fw-normal">Writable</th>
+                <td>
+                  <ul class="mb-0 small">
+                    {% foreach backups.details as line %}
+                      <li>{% line %}</li>
+                    {% endforeach %}
+                  </ul>
+                </td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-xl-6">
+    <div class="card h-100" data-ops-section="performance">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <h2 class="h6 mb-0">{% t 'admin.ops.section.performance' %}</h2>
+          <span class="badge text-bg-secondary">{% performance.guard_mode %}</span>
+        </div>
+        <table class="table table-sm mb-0">
+          <tbody>
+            <tr>
+              <th class="text-muted fw-normal">Budgets</th>
+              <td class="small">
+                total {% performance.budgets.total_ms_warn %}/{% performance.budgets.total_ms_hard %} ms,
+                sql {% performance.budgets.sql_count_warn %}/{% performance.budgets.sql_count_hard %},
+                sql ms {% performance.budgets.sql_ms_warn %}/{% performance.budgets.sql_ms_hard %}
+              </td>
+            </tr>
+            <tr>
+              <th class="text-muted fw-normal">Guards</th>
+              <td class="small">
+                db {% performance.guard_limits.db_max_queries %}/{% performance.guard_limits.db_max_unique %}/{% performance.guard_limits.db_max_total_ms %} ms,
+                http {% performance.guard_limits.http_max_calls %}/{% performance.guard_limits.http_max_total_ms %} ms,
+                total {% performance.guard_limits.total_max_ms %} ms
+              </td>
+            </tr>
+            <tr>
+              <th class="text-muted fw-normal">Admin override</th>
+              <td>{% if performance.admin_override.enabled %}enabled{% else %}off{% endif %}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-xl-6">
+    <div class="card h-100" data-ops-section="cache">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <h2 class="h6 mb-0">{% t 'admin.ops.section.cache' %}</h2>
+          <span class="badge text-bg-{% if cache.enabled %}success{% else %}secondary{% endif %}">{% if cache.enabled %}ON{% else %}OFF{% endif %}</span>
+        </div>
+        <table class="table table-sm mb-0">
+          <tbody>
+            <tr>
+              <th class="text-muted fw-normal">Driver</th>
+              <td>{% cache.driver %}</td>
+            </tr>
+            <tr>
+              <th class="text-muted fw-normal">TTL</th>
+              <td>{% cache.default_ttl %}s (tag {% cache.tag_ttl %}s)</td>
+            </tr>
+            <tr>
+              <th class="text-muted fw-normal">Prune policy</th>
+              <td>{% cache.ttl_days %} days</td>
+            </tr>
+            <tr>
+              <th class="text-muted fw-normal">Last prune</th>
+              <td>{% if cache.last_prune %}{% cache.last_prune %}{% else %}n/a{% endif %}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-xl-6">
+    <div class="card h-100" data-ops-section="security">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <h2 class="h6 mb-0">{% t 'admin.ops.section.security' %}</h2>
+          <span class="badge text-bg-{% security.status_badge %}">{% security.status_label %}</span>
+        </div>
+        <table class="table table-sm mb-0">
+          <tbody>
+            <tr>
+              <th class="text-muted fw-normal">Security headers</th>
+              <td>
+                <ul class="mb-0 small">
+                  {% foreach security.details as line %}
+                    <li>{% line %}</li>
+                  {% endforeach %}
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <th class="text-muted fw-normal">Reports (24h)</th>
+              <td>{% security.reports.last_24h %}</td>
+            </tr>
+            <tr>
+              <th class="text-muted fw-normal">Reports total</th>
+              <td>{% security.reports.total %}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

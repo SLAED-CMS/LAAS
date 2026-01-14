@@ -1493,6 +1493,214 @@ ContractRegistry::register('admin.security_reports.delete', [
     ],
 ]);
 
+ContractRegistry::register('admin.ops.index', [
+    'route' => '/admin/ops',
+    'methods' => ['GET'],
+    'rbac' => 'ops.view',
+    'responses' => [
+        '200' => [
+            'data' => [
+                'health' => [
+                    'status' => 'string',
+                    'checks' => [
+                        'db' => 'string',
+                        'storage' => 'string',
+                        'fs' => 'string',
+                        'security_headers' => 'string',
+                        'session' => 'string',
+                        'backup' => 'string',
+                    ],
+                    'warnings' => ['string'],
+                    'updated_at' => 'string',
+                ],
+                'sessions' => [
+                    'driver' => 'string',
+                    'status' => 'string',
+                    'failover_active' => 'bool',
+                    'details' => ['string'],
+                ],
+                'backups' => [
+                    'writable' => 'string',
+                    'writable_details' => ['string'],
+                    'last_backup' => [
+                        'name' => 'string|null',
+                        'created_at' => 'string|null',
+                    ],
+                    'retention' => [
+                        'keep' => 'int',
+                        'policy' => 'string',
+                    ],
+                    'verify_supported' => 'bool',
+                ],
+                'performance' => [
+                    'guard_mode' => 'string',
+                    'budgets' => [
+                        'total_ms_warn' => 'int',
+                        'total_ms_hard' => 'int',
+                        'sql_count_warn' => 'int',
+                        'sql_count_hard' => 'int',
+                        'sql_ms_warn' => 'int',
+                        'sql_ms_hard' => 'int',
+                    ],
+                    'guard_limits' => [
+                        'db_max_queries' => 'int',
+                        'db_max_unique' => 'int',
+                        'db_max_total_ms' => 'int',
+                        'http_max_calls' => 'int',
+                        'http_max_total_ms' => 'int',
+                        'total_max_ms' => 'int',
+                    ],
+                    'admin_override' => [
+                        'enabled' => 'bool',
+                    ],
+                ],
+                'cache' => [
+                    'enabled' => 'bool',
+                    'driver' => 'string',
+                    'default_ttl' => 'int',
+                    'tag_ttl' => 'int',
+                    'ttl_days' => 'int',
+                    'last_prune' => 'string|null',
+                ],
+                'security' => [
+                    'headers_status' => 'string',
+                    'headers_details' => ['string'],
+                    'reports' => [
+                        'last_24h' => 'int|null',
+                        'total' => 'int|null',
+                    ],
+                ],
+                'preflight' => [
+                    'commands' => ['string'],
+                    'env' => [
+                        'app_env' => 'string',
+                        'app_debug' => 'bool',
+                        'read_only' => 'bool',
+                        'headless' => 'bool',
+                        'storage_disk' => 'string',
+                    ],
+                ],
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.ops.index',
+            ],
+        ],
+        '403' => [
+            'error' => 'error.rbac_denied',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.ops.index',
+            ],
+        ],
+    ],
+    'example_ok' => [
+        'fixture' => 'admin.ops.index',
+        'payload' => [
+            'data' => [
+                'health' => [
+                    'status' => 'ok',
+                    'checks' => [
+                        'db' => 'ok',
+                        'storage' => 'ok',
+                        'fs' => 'ok',
+                        'security_headers' => 'ok',
+                        'session' => 'ok',
+                        'backup' => 'ok',
+                    ],
+                    'warnings' => [],
+                    'updated_at' => '2026-01-01T00:00:00Z',
+                ],
+                'sessions' => [
+                    'driver' => 'redis',
+                    'status' => 'ok',
+                    'failover_active' => false,
+                    'details' => [
+                        'session storage: OK',
+                        'redis session: OK (127.0.0.1:6379/0)',
+                    ],
+                ],
+                'backups' => [
+                    'writable' => 'ok',
+                    'writable_details' => [
+                        'backups dir: OK',
+                        'tmp dir: OK',
+                    ],
+                    'last_backup' => [
+                        'name' => 'laas_backup_20260101_000000_v2.tar.gz',
+                        'created_at' => '2026-01-01 00:00:00',
+                    ],
+                    'retention' => [
+                        'keep' => 10,
+                        'policy' => 'manual',
+                    ],
+                    'verify_supported' => true,
+                ],
+                'performance' => [
+                    'guard_mode' => 'warn',
+                    'budgets' => [
+                        'total_ms_warn' => 400,
+                        'total_ms_hard' => 1200,
+                        'sql_count_warn' => 40,
+                        'sql_count_hard' => 120,
+                        'sql_ms_warn' => 150,
+                        'sql_ms_hard' => 600,
+                    ],
+                    'guard_limits' => [
+                        'db_max_queries' => 80,
+                        'db_max_unique' => 60,
+                        'db_max_total_ms' => 250,
+                        'http_max_calls' => 10,
+                        'http_max_total_ms' => 500,
+                        'total_max_ms' => 1200,
+                    ],
+                    'admin_override' => [
+                        'enabled' => true,
+                    ],
+                ],
+                'cache' => [
+                    'enabled' => true,
+                    'driver' => 'file',
+                    'default_ttl' => 60,
+                    'tag_ttl' => 60,
+                    'ttl_days' => 7,
+                    'last_prune' => '2026-01-01T00:00:00Z',
+                ],
+                'security' => [
+                    'headers_status' => 'ok',
+                    'headers_details' => [
+                        'security headers: OK',
+                    ],
+                    'reports' => [
+                        'last_24h' => 3,
+                        'total' => 12,
+                    ],
+                ],
+                'preflight' => [
+                    'commands' => [
+                        'php tools/cli.php preflight',
+                        'php tools/cli.php doctor',
+                        'php tools/cli.php ops:check',
+                    ],
+                    'env' => [
+                        'app_env' => 'prod',
+                        'app_debug' => false,
+                        'read_only' => false,
+                        'headless' => false,
+                        'storage_disk' => 'local',
+                    ],
+                ],
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.ops.index',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
 ContractRegistry::register('admin.users.index', [
     'route' => '/admin/users',
     'methods' => ['GET'],

@@ -157,5 +157,13 @@ return array (
     'admin.security_reports.status.new' => 'New',
     'admin.security_reports.status.triaged' => 'Triaged',
     'admin.security_reports.status.ignored' => 'Ignored',
+    'admin.nav.ops' => 'Ops',
+    'admin.ops.title' => 'Ops',
+    'admin.ops.section.health' => 'Health',
+    'admin.ops.section.sessions' => 'Sessions',
+    'admin.ops.section.backups' => 'Backups',
+    'admin.ops.section.performance' => 'Performance',
+    'admin.ops.section.cache' => 'Cache',
+    'admin.ops.section.security' => 'Security',
+    'admin.ops.refresh' => 'Refresh',
 );
-

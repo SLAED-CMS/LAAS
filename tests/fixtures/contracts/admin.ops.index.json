@@ -1,0 +1,102 @@
+{
+    "data": {
+        "backups": {
+            "last_backup": {
+                "created_at": "__TIME__",
+                "name": "laas_backup_20260101_000000_v2.tar.gz"
+            },
+            "retention": {
+                "keep": 10,
+                "policy": "manual"
+            },
+            "verify_supported": true,
+            "writable": "ok",
+            "writable_details": [
+                "backups dir: OK",
+                "tmp dir: OK"
+            ]
+        },
+        "cache": {
+            "default_ttl": 60,
+            "driver": "file",
+            "enabled": true,
+            "last_prune": "2026-01-01T00:00:00Z",
+            "tag_ttl": 60,
+            "ttl_days": 7
+        },
+        "health": {
+            "checks": {
+                "backup": "ok",
+                "db": "ok",
+                "fs": "ok",
+                "security_headers": "ok",
+                "session": "ok",
+                "storage": "ok"
+            },
+            "status": "ok",
+            "updated_at": "__TIME__",
+            "warnings": []
+        },
+        "performance": {
+            "admin_override": {
+                "enabled": true
+            },
+            "budgets": {
+                "sql_count_hard": 120,
+                "sql_count_warn": 40,
+                "sql_ms_hard": 600,
+                "sql_ms_warn": 150,
+                "total_ms_hard": 1200,
+                "total_ms_warn": 400
+            },
+            "guard_limits": {
+                "db_max_queries": 80,
+                "db_max_total_ms": 250,
+                "db_max_unique": 60,
+                "http_max_calls": 10,
+                "http_max_total_ms": 500,
+                "total_max_ms": 1200
+            },
+            "guard_mode": "warn"
+        },
+        "preflight": {
+            "commands": [
+                "php tools/cli.php preflight",
+                "php tools/cli.php doctor",
+                "php tools/cli.php ops:check"
+            ],
+            "env": {
+                "app_debug": false,
+                "app_env": "prod",
+                "headless": false,
+                "read_only": false,
+                "storage_disk": "local"
+            }
+        },
+        "security": {
+            "headers_details": [
+                "security headers: OK"
+            ],
+            "headers_status": "ok",
+            "reports": {
+                "last_24h": 3,
+                "total": 12
+            }
+        },
+        "sessions": {
+            "details": [
+                "session storage: OK",
+                "redis session: OK (127.0.0.1:6379/0)"
+            ],
+            "driver": "redis",
+            "failover_active": false,
+            "status": "ok"
+        }
+    },
+    "meta": {
+        "format": "json",
+        "request_id": "__REQ__",
+        "route": "admin.ops.index",
+        "ts": "__TIME__"
+    }
+}
