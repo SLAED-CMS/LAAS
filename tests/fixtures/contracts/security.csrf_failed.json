@@ -11,6 +11,12 @@
         },
         "format": "json",
         "ok": false,
+        "problem": {
+            "instance": "req-1",
+            "status": 403,
+            "title": "CSRF validation failed.",
+            "type": "laas:error/security.csrf_failed"
+        },
         "request_id": "__REQ__",
         "route": "admin.settings.save",
         "ts": "__TIME__"

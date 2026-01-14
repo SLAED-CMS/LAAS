@@ -3,6 +3,19 @@ declare(strict_types=1);
 
 use Laas\Http\Contract\ContractRegistry;
 
+/**
+ * @return array{type: string, title: string, status: int, instance: string}
+ */
+function contract_problem(string $key, int $status, string $title): array
+{
+    return [
+        'type' => 'laas:error/' . $key,
+        'title' => $title,
+        'status' => $status,
+        'instance' => 'req-1',
+    ];
+}
+
 ContractRegistry::register('pages.show', [
     'route' => '/{slug}',
     'methods' => ['GET'],
@@ -24,7 +37,7 @@ ContractRegistry::register('pages.show', [
             ],
         ],
         '404' => [
-            'error' => 'http.not_found',
+            'error' => 'error.not_found',
             'meta' => [
                 'format' => 'json',
                 'route' => 'pages.show',
@@ -81,6 +94,7 @@ ContractRegistry::register('api.auth.forbidden_scope', [
                     'key' => 'api.auth.forbidden_scope',
                     'message' => 'Insufficient token scope.',
                 ],
+                'problem' => contract_problem('api.auth.forbidden_scope', 403, 'Error.'),
                 'route' => '/api/v1/me',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
@@ -117,6 +131,7 @@ ContractRegistry::register('api.auth.failed', [
                     'key' => 'auth.invalid_token',
                     'message' => 'Invalid token',
                 ],
+                'problem' => contract_problem('auth.invalid_token', 401, 'Error.'),
                 'route' => '/api/v1/me',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
@@ -125,13 +140,13 @@ ContractRegistry::register('api.auth.failed', [
     ],
 ]);
 
-ContractRegistry::register('rbac.forbidden', [
+ContractRegistry::register('error.rbac_denied', [
     'route' => 'admin.modules.index',
     'methods' => ['GET'],
     'rbac' => 'admin.modules.manage',
     'responses' => [
         '403' => [
-            'error' => 'rbac.forbidden',
+            'error' => 'error.rbac_denied',
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.modules.index',
@@ -139,7 +154,7 @@ ContractRegistry::register('rbac.forbidden', [
         ],
     ],
     'example_error' => [
-        'fixture' => 'rbac.forbidden',
+        'fixture' => 'error.rbac_denied',
         'payload' => [
             'data' => null,
             'error' => [
@@ -150,9 +165,10 @@ ContractRegistry::register('rbac.forbidden', [
                 'format' => 'json',
                 'ok' => false,
                 'error' => [
-                    'key' => 'rbac.forbidden',
+                    'key' => 'error.rbac_denied',
                     'message' => 'Access denied.',
                 ],
+                'problem' => contract_problem('error.rbac_denied', 403, 'Access denied.'),
                 'route' => 'admin.modules.index',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
@@ -161,13 +177,13 @@ ContractRegistry::register('rbac.forbidden', [
     ],
 ]);
 
-ContractRegistry::register('auth.unauthorized', [
+ContractRegistry::register('error.auth_required', [
     'route' => '/admin',
     'methods' => ['GET'],
     'rbac' => 'admin.access',
     'responses' => [
         '401' => [
-            'error' => 'auth.unauthorized',
+            'error' => 'error.auth_required',
             'meta' => [
                 'format' => 'json',
                 'route' => '/admin',
@@ -175,7 +191,7 @@ ContractRegistry::register('auth.unauthorized', [
         ],
     ],
     'example_error' => [
-        'fixture' => 'auth.unauthorized',
+        'fixture' => 'error.auth_required',
         'payload' => [
             'data' => null,
             'error' => [
@@ -186,9 +202,10 @@ ContractRegistry::register('auth.unauthorized', [
                 'format' => 'json',
                 'ok' => false,
                 'error' => [
-                    'key' => 'auth.unauthorized',
+                    'key' => 'error.auth_required',
                     'message' => 'Authentication required.',
                 ],
+                'problem' => contract_problem('error.auth_required', 401, 'Error.'),
                 'route' => '/admin',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
@@ -197,13 +214,13 @@ ContractRegistry::register('auth.unauthorized', [
     ],
 ]);
 
-ContractRegistry::register('http.bad_request', [
+ContractRegistry::register('error.invalid_request', [
     'route' => '/api/v1/pages',
     'methods' => ['GET'],
     'rbac' => 'public',
     'responses' => [
         '400' => [
-            'error' => 'http.bad_request',
+            'error' => 'error.invalid_request',
             'meta' => [
                 'format' => 'json',
                 'route' => '/api/v1/pages',
@@ -211,7 +228,7 @@ ContractRegistry::register('http.bad_request', [
         ],
     ],
     'example_error' => [
-        'fixture' => 'http.bad_request',
+        'fixture' => 'error.invalid_request',
         'payload' => [
             'data' => null,
             'error' => [
@@ -222,9 +239,10 @@ ContractRegistry::register('http.bad_request', [
                 'format' => 'json',
                 'ok' => false,
                 'error' => [
-                    'key' => 'http.bad_request',
+                    'key' => 'error.invalid_request',
                     'message' => 'Invalid request.',
                 ],
+                'problem' => contract_problem('error.invalid_request', 400, 'Error.'),
                 'route' => '/api/v1/pages',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
@@ -233,13 +251,13 @@ ContractRegistry::register('http.bad_request', [
     ],
 ]);
 
-ContractRegistry::register('http.not_found', [
+ContractRegistry::register('error.not_found', [
     'route' => '/api/v1/pages/9999',
     'methods' => ['GET'],
     'rbac' => 'public',
     'responses' => [
         '404' => [
-            'error' => 'http.not_found',
+            'error' => 'error.not_found',
             'meta' => [
                 'format' => 'json',
                 'route' => '/api/v1/pages/9999',
@@ -247,7 +265,7 @@ ContractRegistry::register('http.not_found', [
         ],
     ],
     'example_error' => [
-        'fixture' => 'http.not_found',
+        'fixture' => 'error.not_found',
         'payload' => [
             'data' => null,
             'error' => [
@@ -258,9 +276,10 @@ ContractRegistry::register('http.not_found', [
                 'format' => 'json',
                 'ok' => false,
                 'error' => [
-                    'key' => 'http.not_found',
+                    'key' => 'error.not_found',
                     'message' => 'Not Found.',
                 ],
+                'problem' => contract_problem('error.not_found', 404, 'Error.'),
                 'route' => '/api/v1/pages/9999',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
@@ -297,6 +316,7 @@ ContractRegistry::register('security.csrf_failed', [
                     'key' => 'security.csrf_failed',
                     'message' => 'CSRF validation failed.',
                 ],
+                'problem' => contract_problem('security.csrf_failed', 403, 'CSRF validation failed.'),
                 'route' => 'admin.settings.save',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
@@ -339,6 +359,7 @@ ContractRegistry::register('admin.login.validation_failed', [
                     'key' => 'error.validation_failed',
                     'message' => 'Validation failed.',
                 ],
+                'problem' => contract_problem('error.validation_failed', 422, 'Error.'),
                 'route' => '/login',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
@@ -381,6 +402,7 @@ ContractRegistry::register('admin.pages.save', [
                     'key' => 'error.validation_failed',
                     'message' => 'Validation failed.',
                 ],
+                'problem' => contract_problem('error.validation_failed', 422, 'Error.'),
                 'route' => 'admin.pages.save',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
@@ -389,13 +411,13 @@ ContractRegistry::register('admin.pages.save', [
     ],
 ]);
 
-ContractRegistry::register('http.rate_limited', [
+ContractRegistry::register('rate_limited', [
     'route' => '/api/v1/pages',
     'methods' => ['GET'],
     'rbac' => 'public',
     'responses' => [
         '429' => [
-            'error' => 'http.rate_limited',
+            'error' => 'rate_limited',
             'meta' => [
                 'format' => 'json',
                 'route' => '/api/v1/pages',
@@ -403,7 +425,7 @@ ContractRegistry::register('http.rate_limited', [
         ],
     ],
     'example_error' => [
-        'fixture' => 'http.rate_limited',
+        'fixture' => 'rate_limited',
         'payload' => [
             'data' => null,
             'error' => [
@@ -414,8 +436,14 @@ ContractRegistry::register('http.rate_limited', [
                 'format' => 'json',
                 'ok' => false,
                 'error' => [
-                    'key' => 'http.rate_limited',
+                    'key' => 'rate_limited',
                     'message' => 'Rate limit exceeded.',
+                ],
+                'problem' => [
+                    'type' => 'laas:error/rate_limited',
+                    'title' => 'Too many requests.',
+                    'status' => 429,
+                    'instance' => 'req-1',
                 ],
                 'route' => '/api/v1/pages',
                 'request_id' => 'req-1',
@@ -458,6 +486,7 @@ ContractRegistry::register('api.validation_failed', [
                     'key' => 'error.validation_failed',
                     'message' => 'Validation failed.',
                 ],
+                'problem' => contract_problem('error.validation_failed', 422, 'Error.'),
                 'route' => '/api/v1/pages',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
@@ -494,6 +523,7 @@ ContractRegistry::register('system.read_only', [
                     'key' => 'system.read_only',
                     'message' => 'Read-only mode: write operations are disabled.',
                 ],
+                'problem' => contract_problem('system.read_only', 503, 'Error.'),
                 'route' => 'admin.settings.save',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
@@ -529,6 +559,12 @@ ContractRegistry::register('service_unavailable', [
                 'error' => [
                     'key' => 'service_unavailable',
                     'message' => 'Service Unavailable.',
+                ],
+                'problem' => [
+                    'type' => 'laas:error/service_unavailable',
+                    'title' => 'Service unavailable.',
+                    'status' => 503,
+                    'instance' => 'req-1',
                 ],
                 'route' => '/api/v1/me',
                 'request_id' => 'req-1',
@@ -566,6 +602,7 @@ ContractRegistry::register('http.payload_too_large', [
                     'key' => 'http.payload_too_large',
                     'message' => 'Payload too large.',
                 ],
+                'problem' => contract_problem('http.payload_too_large', 413, 'Payload too large.'),
                 'route' => '/api/v1/ping',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
@@ -602,6 +639,7 @@ ContractRegistry::register('http.uri_too_long', [
                     'key' => 'http.uri_too_long',
                     'message' => 'URI too long.',
                 ],
+                'problem' => contract_problem('http.uri_too_long', 414, 'Error.'),
                 'route' => '/api/v1/ping',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
@@ -638,6 +676,7 @@ ContractRegistry::register('http.headers_too_large', [
                     'key' => 'http.headers_too_large',
                     'message' => 'Request headers too large.',
                 ],
+                'problem' => contract_problem('http.headers_too_large', 431, 'Error.'),
                 'route' => '/api/v1/ping',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
@@ -673,6 +712,12 @@ ContractRegistry::register('http.invalid_json', [
                 'error' => [
                     'key' => 'http.invalid_json',
                     'message' => 'Invalid JSON payload.',
+                ],
+                'problem' => [
+                    'type' => 'laas:error/http.invalid_json',
+                    'title' => 'Invalid JSON.',
+                    'status' => 400,
+                    'instance' => 'req-1',
                 ],
                 'route' => '/api/v1/ping',
                 'request_id' => 'req-1',
@@ -710,6 +755,7 @@ ContractRegistry::register('http.too_many_fields', [
                     'key' => 'http.too_many_fields',
                     'message' => 'Too many form fields.',
                 ],
+                'problem' => contract_problem('http.too_many_fields', 400, 'Error.'),
                 'route' => '/api/v1/ping',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
@@ -745,7 +791,7 @@ ContractRegistry::register('admin.modules.index', [
             ],
         ],
         '403' => [
-            'error' => 'rbac.forbidden',
+            'error' => 'error.rbac_denied',
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.modules.index',
@@ -828,7 +874,7 @@ ContractRegistry::register('admin.settings.index', [
             ],
         ],
         '403' => [
-            'error' => 'rbac.forbidden',
+            'error' => 'error.rbac_denied',
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.settings.index',
@@ -886,6 +932,7 @@ ContractRegistry::register('admin.settings.save', [
                     'key' => 'error.validation_failed',
                     'message' => 'Validation failed.',
                 ],
+                'problem' => contract_problem('error.validation_failed', 422, 'Error.'),
                 'route' => 'admin.settings.save',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
@@ -924,7 +971,7 @@ ContractRegistry::register('admin.api_tokens.index', [
             ],
         ],
         '403' => [
-            'error' => 'rbac.forbidden',
+            'error' => 'error.rbac_denied',
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.api_tokens.index',
@@ -990,7 +1037,7 @@ ContractRegistry::register('admin.api_tokens.create', [
             ],
         ],
         '403' => [
-            'error' => 'rbac.forbidden',
+            'error' => 'error.rbac_denied',
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.api_tokens.create',
@@ -1036,6 +1083,7 @@ ContractRegistry::register('admin.api_tokens.create', [
                     'key' => 'error.validation_failed',
                     'message' => 'Validation failed.',
                 ],
+                'problem' => contract_problem('error.validation_failed', 422, 'Error.'),
                 'route' => 'admin.api_tokens.create',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
@@ -1060,14 +1108,14 @@ ContractRegistry::register('admin.api_tokens.revoke', [
             ],
         ],
         '404' => [
-            'error' => 'http.not_found',
+            'error' => 'error.not_found',
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.api_tokens.revoke',
             ],
         ],
         '403' => [
-            'error' => 'rbac.forbidden',
+            'error' => 'error.rbac_denied',
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.api_tokens.revoke',
@@ -1119,7 +1167,7 @@ ContractRegistry::register('admin.users.index', [
             ],
         ],
         '403' => [
-            'error' => 'rbac.forbidden',
+            'error' => 'error.rbac_denied',
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.users.index',
@@ -1179,7 +1227,7 @@ ContractRegistry::register('admin.users.toggle', [
             ],
         ],
         '403' => [
-            'error' => 'rbac.forbidden',
+            'error' => 'error.rbac_denied',
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.users.toggle',
@@ -1218,7 +1266,7 @@ ContractRegistry::register('admin.media.index', [
             ],
         ],
         '403' => [
-            'error' => 'rbac.forbidden',
+            'error' => 'error.rbac_denied',
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.media.index',
@@ -1297,7 +1345,7 @@ ContractRegistry::register('admin.media.upload', [
             ],
         ],
         '403' => [
-            'error' => 'rbac.forbidden',
+            'error' => 'error.rbac_denied',
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.media.upload',
@@ -1326,14 +1374,14 @@ ContractRegistry::register('media.show', [
             ],
         ],
         '404' => [
-            'error' => 'http.not_found',
+            'error' => 'error.not_found',
             'meta' => [
                 'format' => 'json',
                 'route' => 'media.show',
             ],
         ],
         '403' => [
-            'error' => 'rbac.forbidden',
+            'error' => 'error.rbac_denied',
             'meta' => [
                 'format' => 'json',
                 'route' => 'media.show',

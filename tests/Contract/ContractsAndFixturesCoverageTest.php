@@ -9,14 +9,14 @@ final class ContractsAndFixturesCoverageTest extends TestCase
     public function testErrorContractsHaveFixtures(): void
     {
         $required = [
-            'http.bad_request',
-            'auth.unauthorized',
-            'rbac.forbidden',
-            'http.not_found',
+            'error.invalid_request',
+            'error.auth_required',
+            'error.rbac_denied',
+            'error.not_found',
             'http.payload_too_large',
             'http.uri_too_long',
             'http.headers_too_large',
-            'http.rate_limited',
+            'rate_limited',
             'service_unavailable',
         ];
 

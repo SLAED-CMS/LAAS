@@ -8,7 +8,9 @@ use Laas\Database\Repositories\RbacRepository;
 use Laas\Database\Repositories\SettingsRepository;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
+use Laas\Http\HtmxTrigger;
 use Laas\Http\Request;
+use Laas\Http\RequestContext;
 use Laas\Http\Response;
 use Laas\Support\Audit;
 use Laas\View\View;
@@ -163,12 +165,13 @@ final class SettingsController
         }
 
         if ($request->isHtmx()) {
-            return $this->renderFormPartial($siteName, $defaultLocale, $theme, $apiTokenIssueMode, $locales, $themes, $tokenIssueModes, true, false, 200, [
+            $response = $this->renderFormPartial($siteName, $defaultLocale, $theme, $apiTokenIssueMode, $locales, $themes, $tokenIssueModes, true, false, 200, [
                 'site_name' => 'DB',
                 'default_locale' => 'DB',
                 'theme' => 'DB',
                 'api_token_issue_mode' => 'DB',
             ]);
+            return $this->withSuccessTrigger($response, 'admin.settings.saved');
         }
 
         return new Response('', 302, [
@@ -468,5 +471,14 @@ final class SettingsController
         }
 
         return ErrorResponse::respondForRequest($request, 'forbidden', [], 403, [], $route);
+    }
+
+    private function withSuccessTrigger(Response $response, string $messageKey): Response
+    {
+        return HtmxTrigger::add($response, 'laas:success', [
+            'message_key' => $messageKey,
+            'message' => $this->view->translate($messageKey),
+            'request_id' => RequestContext::requestId(),
+        ]);
     }
 }

@@ -11,6 +11,12 @@
         },
         "format": "json",
         "ok": false,
+        "problem": {
+            "instance": "req-1",
+            "status": 503,
+            "title": "Service unavailable.",
+            "type": "laas:error/service_unavailable"
+        },
         "request_id": "__REQ__",
         "route": "/api/v1/me",
         "ts": "__TIME__"

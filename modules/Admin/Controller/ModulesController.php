@@ -8,7 +8,9 @@ use Laas\Database\Repositories\ModulesRepository;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
+use Laas\Http\HtmxTrigger;
 use Laas\Http\Request;
+use Laas\Http\RequestContext;
 use Laas\Http\Response;
 use Laas\Support\Audit;
 use Laas\View\View;
@@ -173,11 +175,13 @@ final class ModulesController
         }
 
         if ($request->isHtmx()) {
-            return $this->view->render('partials/module_row.html', [
+            $response = $this->view->render('partials/module_row.html', [
                 'module' => $module,
             ], 200, [], [
                 'theme' => 'admin',
             ]);
+            $messageKey = $enabled ? 'admin.modules.disable' : 'admin.modules.enable';
+            return $this->withSuccessTrigger($response, $messageKey);
         }
 
         return new Response('', 302, [
@@ -338,6 +342,15 @@ final class ModulesController
             'api' => $this->view->translate('admin.modules.type_api'),
             default => $this->view->translate('admin.modules.type_feature'),
         };
+    }
+
+    private function withSuccessTrigger(Response $response, string $messageKey): Response
+    {
+        return HtmxTrigger::add($response, 'laas:success', [
+            'message_key' => $messageKey,
+            'message' => $this->view->translate($messageKey),
+            'request_id' => RequestContext::requestId(),
+        ]);
     }
 
     /** @return array<int, array{name: string, enabled: bool, version: string|null, type: string, protected: bool}> */

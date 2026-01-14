@@ -6,11 +6,17 @@
     },
     "meta": {
         "error": {
-            "key": "http.not_found",
+            "key": "error.not_found",
             "message": "Not Found."
         },
         "format": "json",
         "ok": false,
+        "problem": {
+            "instance": "req-1",
+            "status": 404,
+            "title": "Error.",
+            "type": "laas:error/error.not_found"
+        },
         "request_id": "__REQ__",
         "route": "/api/v1/pages/9999",
         "ts": "__TIME__"

@@ -9,7 +9,9 @@ use Laas\Database\Repositories\ApiTokensRepository;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
+use Laas\Http\HtmxTrigger;
 use Laas\Http\Request;
+use Laas\Http\RequestContext;
 use Laas\Http\Response;
 use Laas\Support\Audit;
 use Laas\View\View;
@@ -153,7 +155,7 @@ final class ApiTokensController
             $selectedScopes = $this->defaultScopesSelection();
             $success = $this->view->translate('admin.api_tokens.created');
             $response = $this->renderPage($request, $tokens, $plain, $name, $selectedScopes, $success, [], 200);
-            return $this->withToastTrigger($response, 'saved');
+            return $this->withSuccessTrigger($response, 'admin.api_tokens.created');
         }
 
         $this->storeFlashToken($request, (string) ($created['token'] ?? ''), 'admin.api_tokens.created');
@@ -276,7 +278,7 @@ final class ApiTokensController
             $selectedScopes = $this->defaultScopesSelection();
             $success = $this->view->translate('admin.api_tokens.rotated');
             $response = $this->renderPage($request, $tokens, $plain, $name, $selectedScopes, $success, [], 200);
-            return $this->withToastTrigger($response, 'saved');
+            return $this->withSuccessTrigger($response, 'admin.api_tokens.rotated');
         }
 
         $this->storeFlashToken($request, (string) ($created['token'] ?? ''), 'admin.api_tokens.rotated');
@@ -335,8 +337,11 @@ final class ApiTokensController
         $tokens = $this->mapTokensForView($service->listTokens($userId));
         $selectedScopes = $this->defaultScopesSelection();
         $success = $ok ? $this->view->translate('api_tokens.revoked_ok') : null;
-
-        return $this->renderPage($request, $tokens, null, null, $selectedScopes, $success, [], 200);
+        $response = $this->renderPage($request, $tokens, null, null, $selectedScopes, $success, [], 200);
+        if ($request->isHtmx() && $ok) {
+            return $this->withSuccessTrigger($response, 'admin.api_tokens.revoked');
+        }
+        return $response;
     }
 
     private function renderPage(
@@ -411,12 +416,13 @@ final class ApiTokensController
         return [$plain, is_string($key) && $key !== '' ? $key : null];
     }
 
-    private function withToastTrigger(Response $response, string $value): Response
+    private function withSuccessTrigger(Response $response, string $messageKey): Response
     {
-        $payload = [
-            'laas:toast' => $value,
-        ];
-        return $response->withHeader('HX-Trigger', json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        return HtmxTrigger::add($response, 'laas:success', [
+            'message_key' => $messageKey,
+            'message' => $this->view->translate($messageKey),
+            'request_id' => RequestContext::requestId(),
+        ]);
     }
 
     private function repository(): ?ApiTokensRepository

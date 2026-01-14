@@ -6,11 +6,17 @@
     },
     "meta": {
         "error": {
-            "key": "rbac.forbidden",
+            "key": "error.rbac_denied",
             "message": "Access denied."
         },
         "format": "json",
         "ok": false,
+        "problem": {
+            "instance": "req-1",
+            "status": 403,
+            "title": "Access denied.",
+            "type": "laas:error/error.rbac_denied"
+        },
         "request_id": "__REQ__",
         "route": "admin.modules.index",
         "ts": "__TIME__"

@@ -21,6 +21,7 @@ final class HtmlErrorTemplatesSmokeTest extends TestCase
 
         $response = $view->render('pages/' . $status . '.html', [
             'message' => 'Error',
+            'back_url' => '/previous',
         ], $status, [], $options);
 
         $this->assertSame($status, $response->getStatus());

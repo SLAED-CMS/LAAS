@@ -3,9 +3,13 @@
 {% block content %}
 <div class="card">
   <div class="card-body">
-    <h1 class="h5 mb-2">{% t 'http.bad_request' %}</h1>
-    <p class="mb-3">{% if message %}{% message %}{% else %}{% t 'http.bad_request' %}{% endif %}</p>
-    <a href="/" class="btn btn-primary btn-sm">{% t 'admin.nav.home' %}</a>
+    <h1 class="h5 mb-2">{% t 'error.invalid_request' %}</h1>
+    <p class="mb-3">{% if message %}{% message %}{% else %}{% t 'error.invalid_request' %}{% endif %}</p>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{% if back_url %}{% back_url %}{% else %}/{% endif %}" class="btn btn-outline-secondary btn-sm">{% t 'ui.back' %}</a>
+      <a href="/" class="btn btn-primary btn-sm">{% t 'admin.nav.home' %}</a>
+    </div>
+    <p class="text-muted small mt-3 mb-0">{% t 'http.request_id' %}: {% request.id %}</p>
   </div>
 </div>
 {% endblock %}

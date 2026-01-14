@@ -11,6 +11,12 @@
         },
         "format": "json",
         "ok": false,
+        "problem": {
+            "instance": "req-1",
+            "status": 400,
+            "title": "Invalid JSON.",
+            "type": "laas:error/http.invalid_json"
+        },
         "request_id": "__REQ__",
         "route": "/api/v1/ping",
         "ts": "__TIME__"

@@ -57,6 +57,15 @@ final class ErrorResponse
             'key' => $resolved['message_key'],
             'message' => $message,
         ];
+        $meta['problem'] = self::buildProblemDetails(
+            $request,
+            $resolved['message_key'],
+            $message,
+            $status,
+            $details,
+            $source,
+            $meta
+        );
 
         $payload = [
             'data' => null,
@@ -135,18 +144,22 @@ final class ErrorResponse
     {
         $message = (string) (($payload['meta']['error']['message'] ?? '') ?: '');
         $errorKey = (string) (($payload['meta']['error']['key'] ?? '') ?: '');
+        $requestId = (string) (($payload['meta']['request_id'] ?? '') ?: RequestContext::requestId());
 
         $view = RequestScope::get('view');
         if ($view instanceof View) {
             $template = 'pages/' . $status . '.html';
             $theme = str_starts_with($request->getPath(), '/admin') ? 'admin' : null;
             $options = $theme !== null ? ['theme' => $theme] : [];
+            $backUrl = self::resolveBackUrl($request);
 
             try {
                 return $view->render($template, [
                     'message' => $message,
                     'error_key' => $errorKey,
                     'status' => $status,
+                    'back_url' => $backUrl,
+                    'request_id' => $requestId,
                 ], $status, [], $options);
             } catch (\Throwable) {
             }
@@ -165,6 +178,7 @@ final class ErrorResponse
         }
 
         $errorKey = (string) (($payload['meta']['error']['key'] ?? '') ?: '');
+        $message = (string) (($payload['meta']['error']['message'] ?? '') ?: '');
         $requestId = (string) (($payload['meta']['request_id'] ?? '') ?: RequestContext::requestId());
 
         $trigger = $response->getHeader('HX-Trigger');
@@ -181,6 +195,7 @@ final class ErrorResponse
         $data['laas:error'] = [
             'status' => $status,
             'error_key' => $errorKey,
+            'message' => $message,
             'request_id' => $requestId,
         ];
 
@@ -190,6 +205,40 @@ final class ErrorResponse
         }
 
         return $response->withHeader('HX-Trigger', $json);
+    }
+
+    private static function resolveBackUrl(Request $request): ?string
+    {
+        $referer = (string) ($request->getHeader('referer') ?? '');
+        if ($referer === '') {
+            return null;
+        }
+
+        $parts = parse_url($referer);
+        if (!is_array($parts)) {
+            return null;
+        }
+
+        $path = $parts['path'] ?? '';
+        if (!is_string($path) || $path === '') {
+            return null;
+        }
+
+        $host = $parts['host'] ?? null;
+        if ($host !== null) {
+            $host = strtolower((string) $host);
+            $requestHost = strtolower((string) ($request->getHeader('host') ?? ''));
+            if ($requestHost !== '' && $host !== $requestHost) {
+                return null;
+            }
+        }
+
+        $query = $parts['query'] ?? null;
+        if (is_string($query) && $query !== '') {
+            return $path . '?' . $query;
+        }
+
+        return $path;
     }
 
     private static function attachSource(array $details, ?string $source): array
@@ -274,5 +323,63 @@ final class ErrorResponse
         self::$appConfig = is_array($config) ? $config : [];
 
         return self::$appConfig;
+    }
+
+    /**
+     * @return array{type: string, title: string, status: int, instance: string, detail?: string}
+     */
+    private static function buildProblemDetails(
+        ?Request $request,
+        string $errorKey,
+        string $message,
+        int $status,
+        array $details,
+        ?string $source,
+        array $meta
+    ): array {
+        $requestId = (string) ($meta['request_id'] ?? RequestContext::requestId());
+        $problem = [
+            'type' => 'laas:error/' . $errorKey,
+            'title' => self::resolveProblemTitle($errorKey, $message, $request),
+            'status' => $status,
+            'instance' => $requestId,
+        ];
+
+        if (self::isDebug()) {
+            $detail = self::resolveProblemDetail($source, $details);
+            if ($detail !== '') {
+                $problem['detail'] = $detail;
+            }
+        }
+
+        return $problem;
+    }
+
+    private static function resolveProblemTitle(string $errorKey, string $message, ?Request $request): string
+    {
+        $translator = self::translator();
+        $locale = self::resolveLocale($request);
+        $key = 'error.title.' . $errorKey;
+        if ($translator->has($key, $locale)) {
+            return $translator->trans($key, [], $locale);
+        }
+        if ($translator->has('error.title.default', $locale)) {
+            return $translator->trans('error.title.default', [], $locale);
+        }
+
+        return $message;
+    }
+
+    private static function resolveProblemDetail(?string $source, array $details): string
+    {
+        if ($source !== null && $source !== '') {
+            return $source;
+        }
+        if ($details === []) {
+            return '';
+        }
+
+        $json = json_encode($details, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        return $json !== false ? $json : '';
     }
 }

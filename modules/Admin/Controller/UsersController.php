@@ -8,7 +8,9 @@ use Laas\Database\Repositories\RbacRepository;
 use Laas\Database\Repositories\UsersRepository;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
+use Laas\Http\HtmxTrigger;
 use Laas\Http\Request;
+use Laas\Http\RequestContext;
 use Laas\Http\Response;
 use Laas\Support\AuditLogger;
 use Laas\Support\Search\Highlighter;
@@ -220,7 +222,12 @@ final class UsersController
             ]);
         }
 
-        return $this->renderRow($request, $row);
+        $response = $this->renderRow($request, $row);
+        if ($request->isHtmx()) {
+            $messageKey = $nextStatus === 1 ? 'admin.users.enable' : 'admin.users.disable';
+            return $this->withSuccessTrigger($response, $messageKey);
+        }
+        return $response;
     }
 
     public function toggleAdmin(Request $request): Response
@@ -267,7 +274,12 @@ final class UsersController
         ], $actorId, $request->ip());
 
         $row = $this->mapUserRow($user, !$isAdmin, $currentUserId);
-        return $this->renderRow($request, $row);
+        $response = $this->renderRow($request, $row);
+        if ($request->isHtmx()) {
+            $messageKey = $isAdmin ? 'admin.users.remove_admin' : 'admin.users.make_admin';
+            return $this->withSuccessTrigger($response, $messageKey);
+        }
+        return $response;
     }
 
     public function changePassword(Request $request): Response
@@ -325,9 +337,10 @@ final class UsersController
         );
 
         if ($request->isHtmx()) {
-            return $this->renderMessages($request, [
+            $response = $this->renderMessages($request, [
                 'success' => $this->view->translate('admin.users.password_changed'),
             ]);
+            return $this->withSuccessTrigger($response, 'admin.users.password_changed');
         }
 
         if ($request->wantsJson()) {
@@ -384,11 +397,12 @@ final class UsersController
         );
 
         if ($request->isHtmx()) {
-            return $this->renderMessages($request, [
+            $response = $this->renderMessages($request, [
                 'success' => $this->view->translate('admin.users.deleted'),
             ], 200, [
                 'HX-Trigger' => 'users:refresh',
             ]);
+            return $this->withSuccessTrigger($response, 'admin.users.deleted');
         }
 
         if ($request->wantsJson()) {
@@ -616,5 +630,14 @@ final class UsersController
         return ContractResponse::error('service_unavailable', [
             'route' => $route,
         ], 503);
+    }
+
+    private function withSuccessTrigger(Response $response, string $messageKey): Response
+    {
+        return HtmxTrigger::add($response, 'laas:success', [
+            'message_key' => $messageKey,
+            'message' => $this->view->translate($messageKey),
+            'request_id' => RequestContext::requestId(),
+        ]);
     }
 }

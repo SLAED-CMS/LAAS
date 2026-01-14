@@ -11,6 +11,8 @@ use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Http\ErrorCode;
 use Laas\Http\ErrorResponse;
+use Laas\Http\HtmxTrigger;
+use Laas\Http\RequestContext;
 use Laas\Modules\Pages\Repository\PagesRepository;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Security\HtmlSanitizer;
@@ -272,10 +274,7 @@ final class AdminPagesController
             ], 200, [], [
                 'theme' => 'admin',
             ]);
-            $payload = [
-                'laas:toast' => 'saved',
-            ];
-            return $response->withHeader('HX-Trigger', json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+            return $this->withSuccessTrigger($response, 'admin.pages.saved');
         }
 
         return new Response('', 303, [
@@ -360,11 +359,13 @@ final class AdminPagesController
         (new ApiCacheInvalidator())->bumpPages();
 
         if ($request->isHtmx()) {
-            return $this->view->render('partials/page_row.html', [
+            $response = $this->view->render('partials/page_row.html', [
                 'page' => $row,
             ], 200, [], [
                 'theme' => 'admin',
             ]);
+            $messageKey = $nextStatus === 'published' ? 'admin.pages.status.published' : 'admin.pages.status.draft';
+            return $this->withSuccessTrigger($response, $messageKey);
         }
 
         return new Response('', 302, [
@@ -559,5 +560,14 @@ final class AdminPagesController
     private function generateErrorId(): string
     {
         return 'ERR-' . strtoupper(bin2hex(random_bytes(6)));
+    }
+
+    private function withSuccessTrigger(Response $response, string $messageKey): Response
+    {
+        return HtmxTrigger::add($response, 'laas:success', [
+            'message_key' => $messageKey,
+            'message' => $this->view->translate($messageKey),
+            'request_id' => RequestContext::requestId(),
+        ]);
     }
 }

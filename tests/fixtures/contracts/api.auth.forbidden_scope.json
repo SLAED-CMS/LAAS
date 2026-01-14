@@ -11,6 +11,12 @@
         },
         "format": "json",
         "ok": false,
+        "problem": {
+            "instance": "req-1",
+            "status": 403,
+            "title": "Error.",
+            "type": "laas:error/api.auth.forbidden_scope"
+        },
         "request_id": "__REQ__",
         "route": "/api/v1/me",
         "ts": "__TIME__"

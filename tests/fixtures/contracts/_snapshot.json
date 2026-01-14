@@ -25,6 +25,12 @@
                         },
                         "format": "json",
                         "ok": false,
+                        "problem": {
+                            "instance": "req-1",
+                            "status": 422,
+                            "title": "Error.",
+                            "type": "laas:error/error.validation_failed"
+                        },
                         "request_id": "__REQ__",
                         "route": "admin.api_tokens.create",
                         "ts": "__TIME__"
@@ -75,7 +81,7 @@
                     }
                 },
                 "403": {
-                    "error": "rbac.forbidden",
+                    "error": "error.rbac_denied",
                     "meta": {
                         "format": "json",
                         "route": "admin.api_tokens.create"
@@ -159,7 +165,7 @@
                     }
                 },
                 "403": {
-                    "error": "rbac.forbidden",
+                    "error": "error.rbac_denied",
                     "meta": {
                         "format": "json",
                         "route": "admin.api_tokens.index"
@@ -202,14 +208,14 @@
                     }
                 },
                 "403": {
-                    "error": "rbac.forbidden",
+                    "error": "error.rbac_denied",
                     "meta": {
                         "format": "json",
                         "route": "admin.api_tokens.revoke"
                     }
                 },
                 "404": {
-                    "error": "http.not_found",
+                    "error": "error.not_found",
                     "meta": {
                         "format": "json",
                         "route": "admin.api_tokens.revoke"
@@ -242,6 +248,12 @@
                         },
                         "format": "json",
                         "ok": false,
+                        "problem": {
+                            "instance": "req-1",
+                            "status": 422,
+                            "title": "Error.",
+                            "type": "laas:error/error.validation_failed"
+                        },
                         "request_id": "__REQ__",
                         "route": "/login",
                         "ts": "__TIME__"
@@ -327,7 +339,7 @@
                     }
                 },
                 "403": {
-                    "error": "rbac.forbidden",
+                    "error": "error.rbac_denied",
                     "meta": {
                         "format": "json",
                         "route": "admin.media.index"
@@ -365,7 +377,7 @@
                     }
                 },
                 "403": {
-                    "error": "rbac.forbidden",
+                    "error": "error.rbac_denied",
                     "meta": {
                         "format": "json",
                         "route": "admin.media.upload"
@@ -445,7 +457,7 @@
                     }
                 },
                 "403": {
-                    "error": "rbac.forbidden",
+                    "error": "error.rbac_denied",
                     "meta": {
                         "format": "json",
                         "route": "admin.modules.index"
@@ -507,6 +519,12 @@
                         },
                         "format": "json",
                         "ok": false,
+                        "problem": {
+                            "instance": "req-1",
+                            "status": 422,
+                            "title": "Error.",
+                            "type": "laas:error/error.validation_failed"
+                        },
                         "request_id": "__REQ__",
                         "route": "admin.pages.save",
                         "ts": "__TIME__"
@@ -555,7 +573,7 @@
                     }
                 },
                 "403": {
-                    "error": "rbac.forbidden",
+                    "error": "error.rbac_denied",
                     "meta": {
                         "format": "json",
                         "route": "admin.settings.index"
@@ -588,6 +606,12 @@
                         },
                         "format": "json",
                         "ok": false,
+                        "problem": {
+                            "instance": "req-1",
+                            "status": 422,
+                            "title": "Error.",
+                            "type": "laas:error/error.validation_failed"
+                        },
                         "request_id": "__REQ__",
                         "route": "admin.settings.save",
                         "ts": "__TIME__"
@@ -688,7 +712,7 @@
                     }
                 },
                 "403": {
-                    "error": "rbac.forbidden",
+                    "error": "error.rbac_denied",
                     "meta": {
                         "format": "json",
                         "route": "admin.users.index"
@@ -716,7 +740,7 @@
                     }
                 },
                 "403": {
-                    "error": "rbac.forbidden",
+                    "error": "error.rbac_denied",
                     "meta": {
                         "format": "json",
                         "route": "admin.users.toggle"
@@ -750,6 +774,12 @@
                         },
                         "format": "json",
                         "ok": false,
+                        "problem": {
+                            "instance": "req-1",
+                            "status": 401,
+                            "title": "Error.",
+                            "type": "laas:error/auth.invalid_token"
+                        },
                         "request_id": "__REQ__",
                         "route": "/api/v1/me",
                         "ts": "__TIME__"
@@ -789,6 +819,12 @@
                         },
                         "format": "json",
                         "ok": false,
+                        "problem": {
+                            "instance": "req-1",
+                            "status": 403,
+                            "title": "Error.",
+                            "type": "laas:error/api.auth.forbidden_scope"
+                        },
                         "request_id": "__REQ__",
                         "route": "/api/v1/me",
                         "ts": "__TIME__"
@@ -835,6 +871,12 @@
                         },
                         "format": "json",
                         "ok": false,
+                        "problem": {
+                            "instance": "req-1",
+                            "status": 422,
+                            "title": "Error.",
+                            "type": "laas:error/error.validation_failed"
+                        },
                         "request_id": "__REQ__",
                         "route": "/api/v1/pages",
                         "ts": "__TIME__"
@@ -860,7 +902,7 @@
         },
         {
             "example_error": {
-                "fixture": "auth.unauthorized",
+                "fixture": "error.auth_required",
                 "payload": {
                     "data": null,
                     "error": {
@@ -869,11 +911,17 @@
                     },
                     "meta": {
                         "error": {
-                            "key": "auth.unauthorized",
+                            "key": "error.auth_required",
                             "message": "Authentication required."
                         },
                         "format": "json",
                         "ok": false,
+                        "problem": {
+                            "instance": "req-1",
+                            "status": 401,
+                            "title": "Error.",
+                            "type": "laas:error/error.auth_required"
+                        },
                         "request_id": "__REQ__",
                         "route": "/admin",
                         "ts": "__TIME__"
@@ -883,11 +931,11 @@
             "methods": [
                 "GET"
             ],
-            "name": "auth.unauthorized",
+            "name": "error.auth_required",
             "rbac": "admin.access",
             "responses": {
                 "401": {
-                    "error": "auth.unauthorized",
+                    "error": "error.auth_required",
                     "meta": {
                         "format": "json",
                         "route": "/admin"
@@ -899,7 +947,7 @@
         },
         {
             "example_error": {
-                "fixture": "http.bad_request",
+                "fixture": "error.invalid_request",
                 "payload": {
                     "data": null,
                     "error": {
@@ -908,11 +956,17 @@
                     },
                     "meta": {
                         "error": {
-                            "key": "http.bad_request",
+                            "key": "error.invalid_request",
                             "message": "Invalid request."
                         },
                         "format": "json",
                         "ok": false,
+                        "problem": {
+                            "instance": "req-1",
+                            "status": 400,
+                            "title": "Error.",
+                            "type": "laas:error/error.invalid_request"
+                        },
                         "request_id": "__REQ__",
                         "route": "/api/v1/pages",
                         "ts": "__TIME__"
@@ -922,11 +976,11 @@
             "methods": [
                 "GET"
             ],
-            "name": "http.bad_request",
+            "name": "error.invalid_request",
             "rbac": "public",
             "responses": {
                 "400": {
-                    "error": "http.bad_request",
+                    "error": "error.invalid_request",
                     "meta": {
                         "format": "json",
                         "route": "/api/v1/pages"
@@ -934,6 +988,96 @@
                 }
             },
             "route": "/api/v1/pages",
+            "version": "3.18.0"
+        },
+        {
+            "example_error": {
+                "fixture": "error.not_found",
+                "payload": {
+                    "data": null,
+                    "error": {
+                        "code": "E_NOT_FOUND",
+                        "message": "Not Found."
+                    },
+                    "meta": {
+                        "error": {
+                            "key": "error.not_found",
+                            "message": "Not Found."
+                        },
+                        "format": "json",
+                        "ok": false,
+                        "problem": {
+                            "instance": "req-1",
+                            "status": 404,
+                            "title": "Error.",
+                            "type": "laas:error/error.not_found"
+                        },
+                        "request_id": "__REQ__",
+                        "route": "/api/v1/pages/9999",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "error.not_found",
+            "rbac": "public",
+            "responses": {
+                "404": {
+                    "error": "error.not_found",
+                    "meta": {
+                        "format": "json",
+                        "route": "/api/v1/pages/9999"
+                    }
+                }
+            },
+            "route": "/api/v1/pages/9999",
+            "version": "3.18.0"
+        },
+        {
+            "example_error": {
+                "fixture": "error.rbac_denied",
+                "payload": {
+                    "data": null,
+                    "error": {
+                        "code": "E_RBAC_DENIED",
+                        "message": "Access denied."
+                    },
+                    "meta": {
+                        "error": {
+                            "key": "error.rbac_denied",
+                            "message": "Access denied."
+                        },
+                        "format": "json",
+                        "ok": false,
+                        "problem": {
+                            "instance": "req-1",
+                            "status": 403,
+                            "title": "Access denied.",
+                            "type": "laas:error/error.rbac_denied"
+                        },
+                        "request_id": "__REQ__",
+                        "route": "admin.modules.index",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "error.rbac_denied",
+            "rbac": "admin.modules.manage",
+            "responses": {
+                "403": {
+                    "error": "error.rbac_denied",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.modules.index"
+                    }
+                }
+            },
+            "route": "admin.modules.index",
             "version": "3.18.0"
         },
         {
@@ -952,6 +1096,12 @@
                         },
                         "format": "json",
                         "ok": false,
+                        "problem": {
+                            "instance": "req-1",
+                            "status": 431,
+                            "title": "Error.",
+                            "type": "laas:error/http.headers_too_large"
+                        },
                         "request_id": "__REQ__",
                         "route": "/api/v1/ping",
                         "ts": "__TIME__"
@@ -991,6 +1141,12 @@
                         },
                         "format": "json",
                         "ok": false,
+                        "problem": {
+                            "instance": "req-1",
+                            "status": 400,
+                            "title": "Invalid JSON.",
+                            "type": "laas:error/http.invalid_json"
+                        },
                         "request_id": "__REQ__",
                         "route": "/api/v1/ping",
                         "ts": "__TIME__"
@@ -1016,45 +1172,6 @@
         },
         {
             "example_error": {
-                "fixture": "http.not_found",
-                "payload": {
-                    "data": null,
-                    "error": {
-                        "code": "E_NOT_FOUND",
-                        "message": "Not Found."
-                    },
-                    "meta": {
-                        "error": {
-                            "key": "http.not_found",
-                            "message": "Not Found."
-                        },
-                        "format": "json",
-                        "ok": false,
-                        "request_id": "__REQ__",
-                        "route": "/api/v1/pages/9999",
-                        "ts": "__TIME__"
-                    }
-                }
-            },
-            "methods": [
-                "GET"
-            ],
-            "name": "http.not_found",
-            "rbac": "public",
-            "responses": {
-                "404": {
-                    "error": "http.not_found",
-                    "meta": {
-                        "format": "json",
-                        "route": "/api/v1/pages/9999"
-                    }
-                }
-            },
-            "route": "/api/v1/pages/9999",
-            "version": "3.18.0"
-        },
-        {
-            "example_error": {
                 "fixture": "http.payload_too_large",
                 "payload": {
                     "data": null,
@@ -1069,6 +1186,12 @@
                         },
                         "format": "json",
                         "ok": false,
+                        "problem": {
+                            "instance": "req-1",
+                            "status": 413,
+                            "title": "Payload too large.",
+                            "type": "laas:error/http.payload_too_large"
+                        },
                         "request_id": "__REQ__",
                         "route": "/api/v1/ping",
                         "ts": "__TIME__"
@@ -1094,45 +1217,6 @@
         },
         {
             "example_error": {
-                "fixture": "http.rate_limited",
-                "payload": {
-                    "data": null,
-                    "error": {
-                        "code": "E_RATE_LIMITED",
-                        "message": "Rate limit exceeded."
-                    },
-                    "meta": {
-                        "error": {
-                            "key": "http.rate_limited",
-                            "message": "Rate limit exceeded."
-                        },
-                        "format": "json",
-                        "ok": false,
-                        "request_id": "__REQ__",
-                        "route": "/api/v1/pages",
-                        "ts": "__TIME__"
-                    }
-                }
-            },
-            "methods": [
-                "GET"
-            ],
-            "name": "http.rate_limited",
-            "rbac": "public",
-            "responses": {
-                "429": {
-                    "error": "http.rate_limited",
-                    "meta": {
-                        "format": "json",
-                        "route": "/api/v1/pages"
-                    }
-                }
-            },
-            "route": "/api/v1/pages",
-            "version": "3.18.0"
-        },
-        {
-            "example_error": {
                 "fixture": "http.too_many_fields",
                 "payload": {
                     "data": null,
@@ -1147,6 +1231,12 @@
                         },
                         "format": "json",
                         "ok": false,
+                        "problem": {
+                            "instance": "req-1",
+                            "status": 400,
+                            "title": "Error.",
+                            "type": "laas:error/http.too_many_fields"
+                        },
                         "request_id": "__REQ__",
                         "route": "/api/v1/ping",
                         "ts": "__TIME__"
@@ -1186,6 +1276,12 @@
                         },
                         "format": "json",
                         "ok": false,
+                        "problem": {
+                            "instance": "req-1",
+                            "status": 414,
+                            "title": "Error.",
+                            "type": "laas:error/http.uri_too_long"
+                        },
                         "request_id": "__REQ__",
                         "route": "/api/v1/ping",
                         "ts": "__TIME__"
@@ -1250,14 +1346,14 @@
                     }
                 },
                 "403": {
-                    "error": "rbac.forbidden",
+                    "error": "error.rbac_denied",
                     "meta": {
                         "format": "json",
                         "route": "media.show"
                     }
                 },
                 "404": {
-                    "error": "http.not_found",
+                    "error": "error.not_found",
                     "meta": {
                         "format": "json",
                         "route": "media.show"
@@ -1310,7 +1406,7 @@
                     }
                 },
                 "404": {
-                    "error": "http.not_found",
+                    "error": "error.not_found",
                     "meta": {
                         "format": "json",
                         "route": "pages.show"
@@ -1322,22 +1418,28 @@
         },
         {
             "example_error": {
-                "fixture": "rbac.forbidden",
+                "fixture": "rate_limited",
                 "payload": {
                     "data": null,
                     "error": {
-                        "code": "E_RBAC_DENIED",
-                        "message": "Access denied."
+                        "code": "E_RATE_LIMITED",
+                        "message": "Rate limit exceeded."
                     },
                     "meta": {
                         "error": {
-                            "key": "rbac.forbidden",
-                            "message": "Access denied."
+                            "key": "rate_limited",
+                            "message": "Rate limit exceeded."
                         },
                         "format": "json",
                         "ok": false,
+                        "problem": {
+                            "instance": "req-1",
+                            "status": 429,
+                            "title": "Too many requests.",
+                            "type": "laas:error/rate_limited"
+                        },
                         "request_id": "__REQ__",
-                        "route": "admin.modules.index",
+                        "route": "/api/v1/pages",
                         "ts": "__TIME__"
                     }
                 }
@@ -1345,18 +1447,18 @@
             "methods": [
                 "GET"
             ],
-            "name": "rbac.forbidden",
-            "rbac": "admin.modules.manage",
+            "name": "rate_limited",
+            "rbac": "public",
             "responses": {
-                "403": {
-                    "error": "rbac.forbidden",
+                "429": {
+                    "error": "rate_limited",
                     "meta": {
                         "format": "json",
-                        "route": "admin.modules.index"
+                        "route": "/api/v1/pages"
                     }
                 }
             },
-            "route": "admin.modules.index",
+            "route": "/api/v1/pages",
             "version": "3.18.0"
         },
         {
@@ -1375,6 +1477,12 @@
                         },
                         "format": "json",
                         "ok": false,
+                        "problem": {
+                            "instance": "req-1",
+                            "status": 403,
+                            "title": "CSRF validation failed.",
+                            "type": "laas:error/security.csrf_failed"
+                        },
                         "request_id": "__REQ__",
                         "route": "admin.settings.save",
                         "ts": "__TIME__"
@@ -1414,6 +1522,12 @@
                         },
                         "format": "json",
                         "ok": false,
+                        "problem": {
+                            "instance": "req-1",
+                            "status": 503,
+                            "title": "Service unavailable.",
+                            "type": "laas:error/service_unavailable"
+                        },
                         "request_id": "__REQ__",
                         "route": "/api/v1/me",
                         "ts": "__TIME__"
@@ -1453,6 +1567,12 @@
                         },
                         "format": "json",
                         "ok": false,
+                        "problem": {
+                            "instance": "req-1",
+                            "status": 503,
+                            "title": "Error.",
+                            "type": "laas:error/system.read_only"
+                        },
                         "request_id": "__REQ__",
                         "route": "admin.settings.save",
                         "ts": "__TIME__"

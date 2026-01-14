@@ -6,11 +6,17 @@
     },
     "meta": {
         "error": {
-            "key": "http.bad_request",
+            "key": "error.invalid_request",
             "message": "Invalid request."
         },
         "format": "json",
         "ok": false,
+        "problem": {
+            "instance": "req-1",
+            "status": 400,
+            "title": "Error.",
+            "type": "laas:error/error.invalid_request"
+        },
         "request_id": "__REQ__",
         "route": "/api/v1/pages",
         "ts": "__TIME__"

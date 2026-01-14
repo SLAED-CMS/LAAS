@@ -13,13 +13,13 @@ final class ErrorEnvelopeConsistencyAllHttpCodesTest extends TestCase
         $request = new Request('GET', '/api/v1/ping', [], [], ['accept' => 'application/json'], '');
 
         $cases = [
-            ['code' => ErrorCode::INVALID_REQUEST, 'status' => 400, 'key' => 'http.bad_request'],
-            ['code' => ErrorCode::AUTH_REQUIRED, 'status' => 401, 'key' => 'auth.unauthorized'],
-            ['code' => ErrorCode::RBAC_DENIED, 'status' => 403, 'key' => 'rbac.forbidden'],
-            ['code' => ErrorCode::NOT_FOUND, 'status' => 404, 'key' => 'http.not_found'],
+            ['code' => ErrorCode::INVALID_REQUEST, 'status' => 400, 'key' => 'error.invalid_request'],
+            ['code' => ErrorCode::AUTH_REQUIRED, 'status' => 401, 'key' => 'error.auth_required'],
+            ['code' => ErrorCode::RBAC_DENIED, 'status' => 403, 'key' => 'error.rbac_denied'],
+            ['code' => ErrorCode::NOT_FOUND, 'status' => 404, 'key' => 'error.not_found'],
             ['code' => 'http.payload_too_large', 'status' => 413, 'key' => 'http.payload_too_large'],
             ['code' => 'http.uri_too_long', 'status' => 414, 'key' => 'http.uri_too_long'],
-            ['code' => ErrorCode::RATE_LIMITED, 'status' => 429, 'key' => 'http.rate_limited'],
+            ['code' => ErrorCode::RATE_LIMITED, 'status' => 429, 'key' => 'rate_limited'],
             ['code' => 'http.headers_too_large', 'status' => 431, 'key' => 'http.headers_too_large'],
             ['code' => ErrorCode::SERVICE_UNAVAILABLE, 'status' => 503, 'key' => 'service_unavailable'],
         ];

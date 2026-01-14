@@ -6,11 +6,17 @@
     },
     "meta": {
         "error": {
-            "key": "http.rate_limited",
+            "key": "rate_limited",
             "message": "Rate limit exceeded."
         },
         "format": "json",
         "ok": false,
+        "problem": {
+            "instance": "req-1",
+            "status": 429,
+            "title": "Too many requests.",
+            "type": "laas:error/rate_limited"
+        },
         "request_id": "__REQ__",
         "route": "/api/v1/pages",
         "ts": "__TIME__"
