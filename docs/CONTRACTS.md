@@ -35,7 +35,7 @@ This document defines the JSON response envelope and the internal contract regis
       "message": "Human readable message"
     },
     "problem": {
-      "type": "laas:error/error.some_key",
+      "type": "laas:problem/error.some_key",
       "title": "Human title",
       "status": 400,
       "instance": "req-1"
@@ -64,6 +64,7 @@ This document defines the JSON response envelope and the internal contract regis
 - HTMX responses include `HX-Trigger: {"laas:toast": {...}}` when a notification is emitted (type, message_key, message, request_id plus optional `context` and `ttl_ms`).
 - JSON responses append the same payload to `meta.events` when notifications are emitted.
 - Toast payloads MUST adhere to the `laas:toast` contract (`type` is `success|info|warning|danger`, `message_key`, localized `message`, `request_id`, optional `context`, optional numeric `ttl_ms`); no secrets (tokens, SQL, stack traces) should leak inside these fields.
+- `laas:error` is not used for UI events; all notifications use `laas:toast`.
 
 ## HTTP error keys
 
@@ -96,7 +97,7 @@ This document defines the JSON response envelope and the internal contract regis
 ## Problem details
 
 `meta.problem` fields on JSON errors:
-- `type`: `laas:error/<error_key>`
+- `type`: `laas:problem/<error_key>`
 - `title`: localized, resolved from `error.title.<error_key>` or `error.title.default`
 - `status`: HTTP status code
 - `instance`: request id (`meta.request_id`)
@@ -180,7 +181,7 @@ This document defines the JSON response envelope and the internal contract regis
       "message": "Validation failed."
     },
     "problem": {
-      "type": "laas:error/error.validation_failed",
+      "type": "laas:problem/error.validation_failed",
       "title": "Error.",
       "status": 422,
       "instance": "req-1"

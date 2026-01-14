@@ -18,7 +18,7 @@
 - v3.23.0: Problem Details + Request ID everywhere + HTMX toast UX
   - `meta.problem` added to JSON errors (debug-only `detail`)
   - Request ID propagated to error templates and HTMX error payloads
-  - Standard HTMX triggers: `laas:success` / `laas:error` with request_id
+  - Standard HTMX trigger: `laas:toast` with request_id
 
 - v3.22.0: HTTP Error UX Consistency + Contracts Completion
   - Standard HTTP error keys for 400/401/403/404/429/503

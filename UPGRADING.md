@@ -31,15 +31,14 @@
 
 - HTMX notifications now use `HX-Trigger: {"laas:toast": {...}}` and JSON responses append those payloads to `meta.events`.
 - Admin layouts include `#laas-toasts` and the admin JavaScript renders Bootstrap toasts from that payload (no inline scripts).
-- Update any custom JS that listened for `laas:success`/`laas:error` or parsed `HX-Trigger` manually to watch for `laas:toast` and inspect `meta.events`.
+- Update any custom JS that listened for `laas:success` or parsed `HX-Trigger` manually to watch for `laas:toast` and inspect `meta.events` (`laas:error` is no longer emitted).
 - For `303` HTMX redirects, toast payloads are emitted via `HX-Trigger-After-Settle`.
 
 ### v3.22.0 notes
 
 - Standardized error keys for common HTTP statuses:
   - `http.bad_request`, `auth.unauthorized`, `rbac.forbidden`, `http.not_found`, `http.rate_limited`, `service_unavailable`
-- HTMX error responses now emit `HX-Trigger` with `laas:error` payload
-- Ensure custom themes include error templates for `400/401/403/404/413/414/429/431/503`
+  - Ensure custom themes include error templates for `400/401/403/404/413/414/429/431/503`
 
 ### v3.21.0 notes
 
