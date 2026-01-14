@@ -227,3 +227,48 @@ This document defines the JSON response envelope and the internal contract regis
   }
 }
 ```
+
+## Admin security reports
+
+- `GET /admin/security-reports` -> `admin.security_reports.index`
+- `GET /admin/security-reports/{id}` -> `admin.security_reports.show`
+- `POST /admin/security-reports/{id}/triage` -> `admin.security_reports.triage`
+- `POST /admin/security-reports/{id}/ignore` -> `admin.security_reports.ignore`
+- `POST /admin/security-reports/{id}/delete` -> `admin.security_reports.delete`
+
+**Admin security reports index (OK)**
+```json
+{
+  "data": {
+    "items": [
+      {
+        "id": 1,
+        "type": "csp",
+        "status": "new",
+        "document_uri": "https://example.com",
+        "violated_directive": "script-src",
+        "blocked_uri": "https://evil.example/script.js",
+        "user_agent": "Mozilla/5.0",
+        "ip": "203.0.113.10",
+        "request_id": "req-1",
+        "created_at": "2026-01-01 00:00:00",
+        "updated_at": "2026-01-01 00:00:00",
+        "triaged_at": null,
+        "ignored_at": null,
+        "severity": "high"
+      }
+    ],
+    "counts": {
+      "total": 1,
+      "page": 1,
+      "total_pages": 1
+    }
+  },
+  "meta": {
+    "format": "json",
+    "route": "admin.security_reports.index",
+    "request_id": "req-1",
+    "ts": "2026-01-01T00:00:00Z"
+  }
+}
+```

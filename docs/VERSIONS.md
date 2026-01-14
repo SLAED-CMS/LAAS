@@ -1,5 +1,10 @@
 # LAAS Versions
 
+- v3.24.0: Security reports UX + Ops visibility
+  - Admin security reports UI with filters, triage/ignore/delete workflow
+  - RBAC permissions `security_reports.view`/`security_reports.manage` + audit events
+  - Admin JSON contracts + fixtures for security reports
+
 - v3.23.0: Problem Details + Request ID everywhere + HTMX toast UX
   - `meta.problem` added to JSON errors (debug-only `detail`)
   - Request ID propagated to error templates and HTMX error payloads

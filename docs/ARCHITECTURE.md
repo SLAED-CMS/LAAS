@@ -1431,6 +1431,9 @@ if (!$rateLimit->check($ip, 'login', 5, 60)) {
 - Payload is sanitized before logging and storage
 - Stored in `security_reports` with request ID when available
 - Rate-limited via the `csp_report` profile
+- Admin UX: `/admin/security-reports` for latest reports with filters (type/status/search)
+- Workflow: `new` -> `triaged` / `ignored` updates `triaged_at` / `ignored_at` and `updated_at`
+- Audit events: `security_report.triaged`, `security_report.ignored`, `security_report.deleted` with report + actor details
 
 ---
 
