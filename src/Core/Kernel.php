@@ -15,6 +15,7 @@ use Laas\Http\Middleware\RbacMiddleware;
 use Laas\Http\Middleware\ErrorHandlerMiddleware;
 use Laas\Http\Middleware\CsrfMiddleware;
 use Laas\Http\Middleware\DevToolsMiddleware;
+use Laas\Http\Middleware\HttpLimitsMiddleware;
 use Laas\Http\Middleware\MiddlewareQueue;
 use Laas\Http\Middleware\RateLimitMiddleware;
 use Laas\Http\Middleware\ReadOnlyMiddleware;
@@ -95,7 +96,7 @@ final class Kernel
             && (bool) ($devtoolsConfig['show_secrets'] ?? false)
             && (bool) ($appConfig['db_profile']['store_sql'] ?? false);
 
-        $requestId = bin2hex(random_bytes(16));
+        $requestId = $this->resolveRequestId($request);
         $devtoolsContext = new DevToolsContext([
             'enabled' => $devtoolsEnabled,
             'debug' => $appDebug,
@@ -231,8 +232,11 @@ final class Kernel
             }
         }
 
+        $httpConfig = $this->config['http'] ?? [];
+
         $middleware = new MiddlewareQueue([
             new ErrorHandlerMiddleware($logger, (bool) ($appConfig['debug'] ?? false), $requestId),
+            new HttpLimitsMiddleware($httpConfig, $view),
             new SessionMiddleware(new SessionManager($this->rootPath, $securityConfig, $sessionFactory), $securityConfig['session'] ?? null, $logger, $session, $this->rootPath),
             new ApiMiddleware($this->database(), $authorization, $this->config['api'] ?? [], $this->rootPath),
             new ReadOnlyMiddleware((bool) ($appConfig['read_only'] ?? false), $translator, $view),
@@ -327,6 +331,7 @@ final class Kernel
             'perf' => $configDir . '/perf.php',
             'cache' => $configDir . '/cache.php',
             'assets' => $configDir . '/assets.php',
+            'http' => $configDir . '/http.php',
         ];
 
         $config = [];
@@ -363,5 +368,24 @@ final class Kernel
                 mkdir($path, 0775, true);
             }
         }
+    }
+
+    private function resolveRequestId(Request $request): string
+    {
+        $candidate = (string) ($request->getHeader('x-request-id') ?? '');
+        if ($this->isValidRequestId($candidate)) {
+            return $candidate;
+        }
+
+        return bin2hex(random_bytes(16));
+    }
+
+    private function isValidRequestId(string $value): bool
+    {
+        if ($value === '') {
+            return false;
+        }
+
+        return preg_match('/^[a-zA-Z0-9._-]{8,64}$/', $value) === 1;
     }
 }

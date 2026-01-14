@@ -53,6 +53,11 @@ final class ErrorCatalog
         'empty body' => ['code' => ErrorCode::INVALID_REQUEST, 'message_key' => 'error.empty_body', 'status' => 400],
         'invalid json' => ['code' => ErrorCode::INVALID_REQUEST, 'message_key' => 'error.invalid_json', 'status' => 400],
         'type and message are required' => ['code' => ErrorCode::VALIDATION_FAILED, 'message_key' => 'error.validation_failed', 'status' => 422],
+        'http.payload_too_large' => ['code' => ErrorCode::INVALID_REQUEST, 'message_key' => 'http.payload_too_large', 'status' => 413],
+        'http.uri_too_long' => ['code' => ErrorCode::INVALID_REQUEST, 'message_key' => 'http.uri_too_long', 'status' => 414],
+        'http.headers_too_large' => ['code' => ErrorCode::INVALID_REQUEST, 'message_key' => 'http.headers_too_large', 'status' => 431],
+        'http.invalid_json' => ['code' => ErrorCode::INVALID_REQUEST, 'message_key' => 'http.invalid_json', 'status' => 400],
+        'http.too_many_fields' => ['code' => ErrorCode::INVALID_REQUEST, 'message_key' => 'http.too_many_fields', 'status' => 400],
     ];
 
     /** @return array{code: string, status: int, message_key: string} */

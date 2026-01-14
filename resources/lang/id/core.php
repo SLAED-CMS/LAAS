@@ -67,4 +67,10 @@ return [
     'db.migrations.analyze_ok' => 'Migrations safety check OK.',
     'db.indexes.missing' => 'Required database indexes are missing.',
     'db.indexes.ok' => 'Database indexes OK.',
+
+    'http.payload_too_large' => 'Payload too large.',
+    'http.uri_too_long' => 'URI too long.',
+    'http.headers_too_large' => 'Request headers too large.',
+    'http.invalid_json' => 'Invalid JSON payload.',
+    'http.too_many_fields' => 'Too many form fields.',
 ];

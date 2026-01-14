@@ -346,6 +346,186 @@ ContractRegistry::register('service_unavailable', [
     ],
 ]);
 
+ContractRegistry::register('http.payload_too_large', [
+    'route' => '/api/v1/ping',
+    'methods' => ['POST'],
+    'rbac' => 'public',
+    'responses' => [
+        '413' => [
+            'error' => 'http.payload_too_large',
+            'meta' => [
+                'format' => 'json',
+                'route' => '/api/v1/ping',
+            ],
+        ],
+    ],
+    'example_error' => [
+        'fixture' => 'http.payload_too_large',
+        'payload' => [
+            'data' => null,
+            'error' => [
+                'code' => 'E_INVALID_REQUEST',
+                'message' => 'Payload too large.',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'ok' => false,
+                'error' => [
+                    'key' => 'http.payload_too_large',
+                    'message' => 'Payload too large.',
+                ],
+                'route' => '/api/v1/ping',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('http.uri_too_long', [
+    'route' => '/api/v1/ping',
+    'methods' => ['GET'],
+    'rbac' => 'public',
+    'responses' => [
+        '414' => [
+            'error' => 'http.uri_too_long',
+            'meta' => [
+                'format' => 'json',
+                'route' => '/api/v1/ping',
+            ],
+        ],
+    ],
+    'example_error' => [
+        'fixture' => 'http.uri_too_long',
+        'payload' => [
+            'data' => null,
+            'error' => [
+                'code' => 'E_INVALID_REQUEST',
+                'message' => 'URI too long.',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'ok' => false,
+                'error' => [
+                    'key' => 'http.uri_too_long',
+                    'message' => 'URI too long.',
+                ],
+                'route' => '/api/v1/ping',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('http.headers_too_large', [
+    'route' => '/api/v1/ping',
+    'methods' => ['GET'],
+    'rbac' => 'public',
+    'responses' => [
+        '431' => [
+            'error' => 'http.headers_too_large',
+            'meta' => [
+                'format' => 'json',
+                'route' => '/api/v1/ping',
+            ],
+        ],
+    ],
+    'example_error' => [
+        'fixture' => 'http.headers_too_large',
+        'payload' => [
+            'data' => null,
+            'error' => [
+                'code' => 'E_INVALID_REQUEST',
+                'message' => 'Request headers too large.',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'ok' => false,
+                'error' => [
+                    'key' => 'http.headers_too_large',
+                    'message' => 'Request headers too large.',
+                ],
+                'route' => '/api/v1/ping',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('http.invalid_json', [
+    'route' => '/api/v1/ping',
+    'methods' => ['POST'],
+    'rbac' => 'public',
+    'responses' => [
+        '400' => [
+            'error' => 'http.invalid_json',
+            'meta' => [
+                'format' => 'json',
+                'route' => '/api/v1/ping',
+            ],
+        ],
+    ],
+    'example_error' => [
+        'fixture' => 'http.invalid_json',
+        'payload' => [
+            'data' => null,
+            'error' => [
+                'code' => 'E_INVALID_REQUEST',
+                'message' => 'Invalid JSON payload.',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'ok' => false,
+                'error' => [
+                    'key' => 'http.invalid_json',
+                    'message' => 'Invalid JSON payload.',
+                ],
+                'route' => '/api/v1/ping',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('http.too_many_fields', [
+    'route' => '/api/v1/ping',
+    'methods' => ['POST'],
+    'rbac' => 'public',
+    'responses' => [
+        '400' => [
+            'error' => 'http.too_many_fields',
+            'meta' => [
+                'format' => 'json',
+                'route' => '/api/v1/ping',
+            ],
+        ],
+    ],
+    'example_error' => [
+        'fixture' => 'http.too_many_fields',
+        'payload' => [
+            'data' => null,
+            'error' => [
+                'code' => 'E_INVALID_REQUEST',
+                'message' => 'Too many form fields.',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'ok' => false,
+                'error' => [
+                    'key' => 'http.too_many_fields',
+                    'message' => 'Too many form fields.',
+                ],
+                'route' => '/api/v1/ping',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
 ContractRegistry::register('admin.modules.index', [
     'route' => '/admin/modules',
     'methods' => ['GET'],

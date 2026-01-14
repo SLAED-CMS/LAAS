@@ -1,0 +1,18 @@
+{
+    "data": null,
+    "error": {
+        "code": "E_INVALID_REQUEST",
+        "message": "Request headers too large."
+    },
+    "meta": {
+        "error": {
+            "key": "http.headers_too_large",
+            "message": "Request headers too large."
+        },
+        "format": "json",
+        "ok": false,
+        "request_id": "__REQ__",
+        "route": "/api/v1/ping",
+        "ts": "__TIME__"
+    }
+}

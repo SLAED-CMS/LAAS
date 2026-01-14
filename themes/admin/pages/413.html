@@ -1,0 +1,11 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <h1 class="h5 mb-2">{% t 'http.payload_too_large' %}</h1>
+    <p class="mb-3">{% if message %}{% message %}{% else %}{% t 'http.payload_too_large' %}{% endif %}</p>
+    <a href="/" class="btn btn-primary btn-sm">{% t 'admin.nav.home' %}</a>
+  </div>
+</div>
+{% endblock %}

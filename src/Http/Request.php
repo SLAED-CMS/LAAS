@@ -45,6 +45,15 @@ final class Request
         foreach ($rawHeaders as $name => $value) {
             $headers[strtolower((string) $name)] = (string) $value;
         }
+        foreach ($_SERVER as $name => $value) {
+            if (!str_starts_with($name, 'HTTP_')) {
+                continue;
+            }
+            $header = strtolower(str_replace('_', '-', substr($name, 5)));
+            if (!isset($headers[$header]) && is_string($value)) {
+                $headers[$header] = $value;
+            }
+        }
         $contentType = $_SERVER['CONTENT_TYPE'] ?? ($_SERVER['HTTP_CONTENT_TYPE'] ?? null);
         if (!isset($headers['content-type']) && is_string($contentType) && $contentType !== '') {
             $headers['content-type'] = $contentType;
@@ -53,9 +62,41 @@ final class Request
         if (!isset($headers['content-length']) && is_string($contentLength) && $contentLength !== '') {
             $headers['content-length'] = $contentLength;
         }
-        $body = (string) file_get_contents('php://input');
+        if (!isset($headers['host']) && isset($_SERVER['HTTP_HOST']) && is_string($_SERVER['HTTP_HOST'])) {
+            $headers['host'] = (string) $_SERVER['HTTP_HOST'];
+        }
 
-        return new self($method, $path, $query, $post, $headers, $body);
+        $maxBodyBytes = self::envInt('HTTP_MAX_BODY_BYTES', 2_000_000);
+        $body = '';
+        $bodyOverflow = false;
+        if ($maxBodyBytes <= 0) {
+            $body = (string) file_get_contents('php://input');
+        } else {
+            $limit = $maxBodyBytes + 1;
+            $stream = fopen('php://input', 'rb');
+            if (is_resource($stream)) {
+                while (!feof($stream)) {
+                    $chunk = fread($stream, 8192);
+                    if ($chunk === false) {
+                        break;
+                    }
+                    $body .= $chunk;
+                    if (strlen($body) > $limit) {
+                        $bodyOverflow = true;
+                        $body = substr($body, 0, $limit);
+                        break;
+                    }
+                }
+                fclose($stream);
+            }
+        }
+
+        $request = new self($method, $path, $query, $post, $headers, $body);
+        if ($bodyOverflow) {
+            $request->setAttribute('http.body_overflow', true);
+        }
+
+        return $request;
     }
 
     public function getMethod(): string
@@ -103,6 +144,22 @@ final class Request
     public function getHeaders(): array
     {
         return $this->headers;
+    }
+
+    private static function envInt(string $key, int $default): int
+    {
+        $value = $_ENV[$key] ?? null;
+        if ($value === null || $value === '') {
+            $value = getenv($key) ?: null;
+        }
+        if ($value === null || $value === '') {
+            return $default;
+        }
+        if (!is_numeric($value)) {
+            return $default;
+        }
+
+        return (int) $value;
     }
 
     public function header(string $name): ?string

@@ -1,0 +1,18 @@
+{
+    "data": null,
+    "error": {
+        "code": "E_INVALID_REQUEST",
+        "message": "URI too long."
+    },
+    "meta": {
+        "error": {
+            "key": "http.uri_too_long",
+            "message": "URI too long."
+        },
+        "format": "json",
+        "ok": false,
+        "request_id": "__REQ__",
+        "route": "/api/v1/ping",
+        "ts": "__TIME__"
+    }
+}

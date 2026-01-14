@@ -1,0 +1,18 @@
+{
+    "data": null,
+    "error": {
+        "code": "E_INVALID_REQUEST",
+        "message": "Payload too large."
+    },
+    "meta": {
+        "error": {
+            "key": "http.payload_too_large",
+            "message": "Payload too large."
+        },
+        "format": "json",
+        "ok": false,
+        "request_id": "__REQ__",
+        "route": "/api/v1/ping",
+        "ts": "__TIME__"
+    }
+}

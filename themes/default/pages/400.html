@@ -1,0 +1,12 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <h1 class="h4 mb-2">{% t 'error.invalid_request' %}</h1>
+    <p class="text-muted mb-0">
+      {% if message %}{% message %}{% else %}{% t 'error.invalid_request' %}{% endif %}
+    </p>
+  </div>
+</div>
+{% endblock %}

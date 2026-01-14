@@ -1,0 +1,18 @@
+{
+    "data": null,
+    "error": {
+        "code": "E_INVALID_REQUEST",
+        "message": "Too many form fields."
+    },
+    "meta": {
+        "error": {
+            "key": "http.too_many_fields",
+            "message": "Too many form fields."
+        },
+        "format": "json",
+        "ok": false,
+        "request_id": "__REQ__",
+        "route": "/api/v1/ping",
+        "ts": "__TIME__"
+    }
+}

@@ -776,6 +776,201 @@
             "version": "3.18.0"
         },
         {
+            "example_error": {
+                "fixture": "http.headers_too_large",
+                "payload": {
+                    "data": null,
+                    "error": {
+                        "code": "E_INVALID_REQUEST",
+                        "message": "Request headers too large."
+                    },
+                    "meta": {
+                        "error": {
+                            "key": "http.headers_too_large",
+                            "message": "Request headers too large."
+                        },
+                        "format": "json",
+                        "ok": false,
+                        "request_id": "__REQ__",
+                        "route": "/api/v1/ping",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "http.headers_too_large",
+            "rbac": "public",
+            "responses": {
+                "431": {
+                    "error": "http.headers_too_large",
+                    "meta": {
+                        "format": "json",
+                        "route": "/api/v1/ping"
+                    }
+                }
+            },
+            "route": "/api/v1/ping",
+            "version": "3.18.0"
+        },
+        {
+            "example_error": {
+                "fixture": "http.invalid_json",
+                "payload": {
+                    "data": null,
+                    "error": {
+                        "code": "E_INVALID_REQUEST",
+                        "message": "Invalid JSON payload."
+                    },
+                    "meta": {
+                        "error": {
+                            "key": "http.invalid_json",
+                            "message": "Invalid JSON payload."
+                        },
+                        "format": "json",
+                        "ok": false,
+                        "request_id": "__REQ__",
+                        "route": "/api/v1/ping",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "POST"
+            ],
+            "name": "http.invalid_json",
+            "rbac": "public",
+            "responses": {
+                "400": {
+                    "error": "http.invalid_json",
+                    "meta": {
+                        "format": "json",
+                        "route": "/api/v1/ping"
+                    }
+                }
+            },
+            "route": "/api/v1/ping",
+            "version": "3.18.0"
+        },
+        {
+            "example_error": {
+                "fixture": "http.payload_too_large",
+                "payload": {
+                    "data": null,
+                    "error": {
+                        "code": "E_INVALID_REQUEST",
+                        "message": "Payload too large."
+                    },
+                    "meta": {
+                        "error": {
+                            "key": "http.payload_too_large",
+                            "message": "Payload too large."
+                        },
+                        "format": "json",
+                        "ok": false,
+                        "request_id": "__REQ__",
+                        "route": "/api/v1/ping",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "POST"
+            ],
+            "name": "http.payload_too_large",
+            "rbac": "public",
+            "responses": {
+                "413": {
+                    "error": "http.payload_too_large",
+                    "meta": {
+                        "format": "json",
+                        "route": "/api/v1/ping"
+                    }
+                }
+            },
+            "route": "/api/v1/ping",
+            "version": "3.18.0"
+        },
+        {
+            "example_error": {
+                "fixture": "http.too_many_fields",
+                "payload": {
+                    "data": null,
+                    "error": {
+                        "code": "E_INVALID_REQUEST",
+                        "message": "Too many form fields."
+                    },
+                    "meta": {
+                        "error": {
+                            "key": "http.too_many_fields",
+                            "message": "Too many form fields."
+                        },
+                        "format": "json",
+                        "ok": false,
+                        "request_id": "__REQ__",
+                        "route": "/api/v1/ping",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "POST"
+            ],
+            "name": "http.too_many_fields",
+            "rbac": "public",
+            "responses": {
+                "400": {
+                    "error": "http.too_many_fields",
+                    "meta": {
+                        "format": "json",
+                        "route": "/api/v1/ping"
+                    }
+                }
+            },
+            "route": "/api/v1/ping",
+            "version": "3.18.0"
+        },
+        {
+            "example_error": {
+                "fixture": "http.uri_too_long",
+                "payload": {
+                    "data": null,
+                    "error": {
+                        "code": "E_INVALID_REQUEST",
+                        "message": "URI too long."
+                    },
+                    "meta": {
+                        "error": {
+                            "key": "http.uri_too_long",
+                            "message": "URI too long."
+                        },
+                        "format": "json",
+                        "ok": false,
+                        "request_id": "__REQ__",
+                        "route": "/api/v1/ping",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "http.uri_too_long",
+            "rbac": "public",
+            "responses": {
+                "414": {
+                    "error": "http.uri_too_long",
+                    "meta": {
+                        "format": "json",
+                        "route": "/api/v1/ping"
+                    }
+                }
+            },
+            "route": "/api/v1/ping",
+            "version": "3.18.0"
+        },
+        {
             "example_ok": {
                 "fixture": "media.show",
                 "payload": {

@@ -1,0 +1,18 @@
+{
+    "data": null,
+    "error": {
+        "code": "E_INVALID_REQUEST",
+        "message": "Invalid JSON payload."
+    },
+    "meta": {
+        "error": {
+            "key": "http.invalid_json",
+            "message": "Invalid JSON payload."
+        },
+        "format": "json",
+        "ok": false,
+        "request_id": "__REQ__",
+        "route": "/api/v1/ping",
+        "ts": "__TIME__"
+    }
+}
