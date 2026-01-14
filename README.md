@@ -5,7 +5,7 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-00758F.svg)](https://www.mysql.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)](#)
-[![Baseline](https://img.shields.io/badge/Baseline-v3.1.2-orange.svg)](docs/VERSIONS.md)
+[![Baseline](https://img.shields.io/badge/Baseline-v3.25.0-orange.svg)](docs/VERSIONS.md)
 [![Security](https://img.shields.io/badge/Security-99%2F100-brightgreen.svg)](docs/SECURITY.md)
 
 **Stable v3.1.2**
@@ -389,6 +389,7 @@ tools/                 # CLI utilities
 - `/admin/users` — User management
 - `/admin/menus` — Menu management
 - `/admin/audit` — Audit log
+- `/admin/ops` — Ops dashboard (read-only, HTMX refresh)
 - `/admin/search` — Global admin search
 - `/admin/diagnostics` — RBAC diagnostics
 - `/admin/api-tokens` — API tokens (issue, rotate, revoke)
@@ -626,6 +627,7 @@ New install flow:
 
 ### System
 - `/admin/audit` — Audit log (read-only, filtered by user/action/date)
+- `/admin/ops` — Ops dashboard (read-only, HTMX refresh)
 - `/admin/menus` — Menu management
 
 ### API & Integrations

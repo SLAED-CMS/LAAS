@@ -1637,6 +1637,25 @@ $translator->t('welcome'); // "Welcome" or "Добро пожаловать"
 - Uptime monitoring
 - Kubernetes readiness probes
 
+### Admin Ops Dashboard
+
+**URL:** `/admin/ops` (HTML + JSON via Accept header)
+
+**Purpose:** Read-only operational overview without new data collection or secrets.
+
+**Sources:**
+- HealthService + SecurityHeadersCheck (status + warnings)
+- SessionCheck + RedisSessionFailover (session driver + failover window)
+- BackupWritableCheck + backup folder scan (writability + last backup name/time)
+- CacheFactory config + cache prune metadata (no file paths)
+- Perf config (guard mode + budgets + admin overrides)
+- SecurityReportsRepository (total + last 24h counts if available)
+
+**Notes:**
+- HTMX refresh uses partial rendering; no inline JS/CSS
+- RBAC gate `ops.view`, no audit logs on view
+- All outputs are sanitized: no DSNs, secrets, or absolute paths
+
 ### Read-Only Mode
 
 **Blocks all write operations:**

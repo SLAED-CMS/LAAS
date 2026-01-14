@@ -1,5 +1,10 @@
 # LAAS Versions
 
+- v3.25.0: Admin Ops Dashboard (read-only)
+  - Admin ops UI with HTMX refresh + JSON contract
+  - RBAC permission `ops.view` for access
+  - Ops snapshot from existing health/session/backup/perf/cache/security checks
+
 - v3.24.0: Security reports UX + Ops visibility
   - Admin security reports UI with filters, triage/ignore/delete workflow
   - RBAC permissions `security_reports.view`/`security_reports.manage` + audit events

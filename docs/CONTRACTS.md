@@ -272,3 +272,101 @@ This document defines the JSON response envelope and the internal contract regis
   }
 }
 ```
+
+## Admin ops
+
+- `GET /admin/ops` -> `admin.ops.index`
+
+**Admin ops index (OK)**
+```json
+{
+  "data": {
+    "health": {
+      "status": "ok",
+      "checks": {
+        "db": "ok",
+        "storage": "ok",
+        "fs": "ok",
+        "security_headers": "ok",
+        "session": "ok",
+        "backup": "ok"
+      },
+      "warnings": [],
+      "updated_at": "2026-01-01T00:00:00Z"
+    },
+    "sessions": {
+      "driver": "redis",
+      "status": "ok",
+      "failover_active": false,
+      "details": ["session storage: OK", "redis session: OK (127.0.0.1:6379/0)"]
+    },
+    "backups": {
+      "writable": "ok",
+      "writable_details": ["backups dir: OK", "tmp dir: OK"],
+      "last_backup": {
+        "name": "laas_backup_20260101_000000_v2.tar.gz",
+        "created_at": "2026-01-01 00:00:00"
+      },
+      "retention": {
+        "keep": 10,
+        "policy": "manual"
+      },
+      "verify_supported": true
+    },
+    "performance": {
+      "guard_mode": "warn",
+      "budgets": {
+        "total_ms_warn": 400,
+        "total_ms_hard": 1200,
+        "sql_count_warn": 40,
+        "sql_count_hard": 120,
+        "sql_ms_warn": 150,
+        "sql_ms_hard": 600
+      },
+      "guard_limits": {
+        "db_max_queries": 80,
+        "db_max_unique": 60,
+        "db_max_total_ms": 250,
+        "http_max_calls": 10,
+        "http_max_total_ms": 500,
+        "total_max_ms": 1200
+      },
+      "admin_override": {
+        "enabled": true
+      }
+    },
+    "cache": {
+      "enabled": true,
+      "driver": "file",
+      "default_ttl": 60,
+      "tag_ttl": 60,
+      "ttl_days": 7,
+      "last_prune": "2026-01-01T00:00:00Z"
+    },
+    "security": {
+      "headers_status": "ok",
+      "headers_details": ["security headers: OK"],
+      "reports": {
+        "last_24h": 3,
+        "total": 12
+      }
+    },
+    "preflight": {
+      "commands": ["php tools/cli.php preflight", "php tools/cli.php doctor", "php tools/cli.php ops:check"],
+      "env": {
+        "app_env": "prod",
+        "app_debug": false,
+        "read_only": false,
+        "headless": false,
+        "storage_disk": "local"
+      }
+    }
+  },
+  "meta": {
+    "format": "json",
+    "route": "admin.ops.index",
+    "request_id": "req-1",
+    "ts": "2026-01-01T00:00:00Z"
+  }
+}
+```
