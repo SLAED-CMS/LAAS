@@ -27,6 +27,11 @@
 
 ## Version-Specific Upgrade Paths
 
+### v3.20.0 notes
+
+- New HTTP limits env: `HTTP_MAX_BODY_BYTES`, `HTTP_MAX_POST_FIELDS`, `HTTP_MAX_HEADER_BYTES`, `HTTP_MAX_URL_LENGTH`, `HTTP_MAX_FILES`, `HTTP_MAX_FILE_BYTES`
+- Optional Host validation: `HTTP_TRUSTED_HOSTS` (CSV allowlist)
+
 ### v3.9.0 notes
 
 - Media ops: `media:gc` (dry-run by default), `media:verify`

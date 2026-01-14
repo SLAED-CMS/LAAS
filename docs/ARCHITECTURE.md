@@ -157,7 +157,7 @@ public/index.php (entry point)
     ↓
 Kernel::boot() (DI container, load modules)
     ↓
-Middleware Pipeline (ErrorHandler, Session, CSRF, RateLimit, Auth, RBAC)
+Middleware Pipeline (ErrorHandler, HttpLimits, Session, CSRF, RateLimit, Auth, RBAC)
     ↓
 Router::dispatch() (match route, load controller)
     ↓
@@ -215,6 +215,7 @@ public function boot(): void
 ```php
 $pipeline = [
     ErrorHandlerMiddleware::class,   // Catch exceptions
+    HttpLimitsMiddleware::class,     // Request limits
     SessionMiddleware::class,        // Start session
     CSRFMiddleware::class,           // CSRF validation
     RateLimitMiddleware::class,      // Rate limiting
@@ -738,23 +739,25 @@ if (preg_match($pattern, $path, $matches)) {
 
 ```
 Request
-    ↓
+    ->
 ErrorHandlerMiddleware      # Catch exceptions
-    ↓
+    ->
+HttpLimitsMiddleware        # Request size/header/body limits
+    ->
 SessionMiddleware           # Start session
-    ↓
+    ->
 CSRFMiddleware              # Validate CSRF token
-    ↓
+    ->
 RateLimitMiddleware         # Check rate limits
-    ↓
+    ->
 SecurityHeadersMiddleware   # Add security headers
-    ↓
+    ->
 AuthMiddleware              # Load user
-    ↓
+    ->
 RBACMiddleware              # Check permissions
-    ↓
+    ->
 Controller
-    ↓
+    ->
 Response
 ```
 

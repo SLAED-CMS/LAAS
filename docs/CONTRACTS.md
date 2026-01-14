@@ -47,6 +47,14 @@ This document defines the JSON response envelope and the internal contract regis
 - 500: server error
 - 503: service unavailable
 
+## HTTP hardening errors
+
+- `http.payload_too_large` (413)
+- `http.uri_too_long` (414)
+- `http.headers_too_large` (431)
+- `http.invalid_json` (400)
+- `http.too_many_fields` (400)
+
 ## Meta rules
 
 - `format` is always `json`

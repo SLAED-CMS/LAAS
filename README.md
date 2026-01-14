@@ -197,6 +197,7 @@ http://laas.loc/
 - **Audit Log** — Track all important actions (incl. API tokens/auth failures)
 - **CSRF Protection** — Token-based CSRF protection
 - **Rate Limiting** – Dedicated API bucket (token/IP) + login/media buckets
+- **HTTP Limits** - Global limits for body size, headers, URL length, and upload files
 - **API Tokens** – PAT format (LAAS_<prefix>.<secret>), SHA-256 hashes, scopes + expiry, rotation, audit trail
 - **CORS** – Default deny with strict allowlist for API v1
 - **Security Headers** – CSP, X-Frame-Options, etc.
@@ -538,6 +539,8 @@ Flags:
 - Configure `.env` and set `APP_ENV=production`
 - Set `APP_DEBUG=false` in production
 - Configure `APP_READ_ONLY=true` during maintenance windows
+- Configure HTTP limits (`HTTP_MAX_BODY_BYTES`, `HTTP_MAX_HEADER_BYTES`, `HTTP_MAX_URL_LENGTH`, `HTTP_MAX_POST_FIELDS`, `HTTP_MAX_FILES`, `HTTP_MAX_FILE_BYTES`)
+- Optional: set `HTTP_TRUSTED_HOSTS` for Host header validation
 
 ### Health & Monitoring
 - Verify `/health` endpoint returns HTTP 200

@@ -1,5 +1,10 @@
 # LAAS Versions
 
+- v3.20.0: HTTP Hardening Pack
+  - Global request limits (body, headers, URL length, files, post fields)
+  - X-Request-Id validation + invalid JSON rejection for JSON bodies
+  - New HTTP error envelopes + contracts/fixtures
+
 - v3.19.0: DB safety & performance hygiene
   - Safe DB profiling (fingerprints, redaction, meta.perf.db in debug)
   - Migration safe mode (warn/block) + db:migrations:analyze
