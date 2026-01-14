@@ -1,20 +1,33 @@
-{% if fieldErrors %}
+{% if flash.success %}
+<div class="alert alert-success mb-3">
+  {% flash.success %}
+</div>
+{% endif %}
+{% if flash.error %}
 <div class="alert alert-danger mb-3">
-  <ul class="mb-0">
-    {% foreach fieldErrors as group %}
-      {% foreach group as error %}
-      <li>{% error %}</li>
-      {% endforeach %}
-    {% endforeach %}
-  </ul>
+  {% flash.error %}
 </div>
 {% endif %}
 {% if errors %}
 <div class="alert alert-danger mb-3">
+  <div class="fw-semibold mb-1">{% t 'form.validation_failed_title' %}</div>
+  <div class="small text-muted mb-2">{% t 'form.validation_failed_hint' %}</div>
   <ul class="mb-0">
     {% foreach errors as error %}
     <li>{% error %}</li>
     {% endforeach %}
   </ul>
 </div>
+{% else %}
+  {% if form.errors %}
+  <div class="alert alert-danger mb-3">
+    <div class="fw-semibold mb-1">{% t 'form.validation_failed_title' %}</div>
+    <div class="small text-muted mb-2">{% t 'form.validation_failed_hint' %}</div>
+    <ul class="mb-0">
+      {% foreach form.errors as error %}
+      <li>{% error %}</li>
+      {% endforeach %}
+    </ul>
+  </div>
+  {% endif %}
 {% endif %}

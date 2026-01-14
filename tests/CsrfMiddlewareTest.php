@@ -46,7 +46,6 @@ final class CsrfMiddlewareTest extends TestCase
             return new Response('ok', 200);
         });
 
-        $this->assertSame(419, $response->getStatus());
-        $this->assertSame('419 CSRF Token Mismatch', $response->getBody());
+        $this->assertSame(403, $response->getStatus());
     }
 }

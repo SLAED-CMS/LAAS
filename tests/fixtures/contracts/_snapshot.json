@@ -3,6 +3,34 @@
     "contracts_version": "3.18.0",
     "items": [
         {
+            "example_error": {
+                "fixture": "admin.api_tokens.create.validation_failed",
+                "payload": {
+                    "data": null,
+                    "error": {
+                        "code": "E_VALIDATION_FAILED",
+                        "details": {
+                            "fields": {
+                                "name": [
+                                    "invalid"
+                                ]
+                            }
+                        },
+                        "message": "Validation failed."
+                    },
+                    "meta": {
+                        "error": {
+                            "key": "error.validation_failed",
+                            "message": "Validation failed."
+                        },
+                        "format": "json",
+                        "ok": false,
+                        "request_id": "__REQ__",
+                        "route": "admin.api_tokens.create",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
             "example_ok": {
                 "fixture": "admin.api_tokens.create",
                 "payload": {
@@ -189,6 +217,53 @@
                 }
             },
             "route": "/admin/api-tokens/revoke",
+            "version": "3.18.0"
+        },
+        {
+            "example_error": {
+                "fixture": "admin.login.validation_failed",
+                "payload": {
+                    "data": null,
+                    "error": {
+                        "code": "E_VALIDATION_FAILED",
+                        "details": {
+                            "fields": {
+                                "username": [
+                                    "invalid"
+                                ]
+                            }
+                        },
+                        "message": "Validation failed."
+                    },
+                    "meta": {
+                        "error": {
+                            "key": "error.validation_failed",
+                            "message": "Validation failed."
+                        },
+                        "format": "json",
+                        "ok": false,
+                        "request_id": "__REQ__",
+                        "route": "/login",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "POST"
+            ],
+            "name": "admin.login.validation_failed",
+            "rbac": "public",
+            "responses": {
+                "422": {
+                    "error": "validation_failed",
+                    "fields": "object",
+                    "meta": {
+                        "format": "json",
+                        "route": "/login"
+                    }
+                }
+            },
+            "route": "/login",
             "version": "3.18.0"
         },
         {
@@ -407,6 +482,53 @@
                 }
             },
             "route": "/admin/modules/toggle",
+            "version": "3.18.0"
+        },
+        {
+            "example_error": {
+                "fixture": "admin.pages.save.validation_failed",
+                "payload": {
+                    "data": null,
+                    "error": {
+                        "code": "E_VALIDATION_FAILED",
+                        "details": {
+                            "fields": {
+                                "title": [
+                                    "invalid"
+                                ]
+                            }
+                        },
+                        "message": "Validation failed."
+                    },
+                    "meta": {
+                        "error": {
+                            "key": "error.validation_failed",
+                            "message": "Validation failed."
+                        },
+                        "format": "json",
+                        "ok": false,
+                        "request_id": "__REQ__",
+                        "route": "admin.pages.save",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "POST"
+            ],
+            "name": "admin.pages.save",
+            "rbac": "pages.edit",
+            "responses": {
+                "422": {
+                    "error": "validation_failed",
+                    "fields": "object",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.pages.save"
+                    }
+                }
+            },
+            "route": "/admin/pages/save",
             "version": "3.18.0"
         },
         {
@@ -734,45 +856,6 @@
                 }
             },
             "route": "/api/v1/pages",
-            "version": "3.18.0"
-        },
-        {
-            "example_error": {
-                "fixture": "csrf.failed",
-                "payload": {
-                    "data": null,
-                    "error": {
-                        "code": "E_CSRF_INVALID",
-                        "message": "Invalid CSRF token."
-                    },
-                    "meta": {
-                        "error": {
-                            "key": "error.csrf_invalid",
-                            "message": "Invalid CSRF token."
-                        },
-                        "format": "json",
-                        "ok": false,
-                        "request_id": "__REQ__",
-                        "route": "admin.settings.save",
-                        "ts": "__TIME__"
-                    }
-                }
-            },
-            "methods": [
-                "POST"
-            ],
-            "name": "csrf.failed",
-            "rbac": "admin.settings.manage",
-            "responses": {
-                "419": {
-                    "error": "csrf_mismatch",
-                    "meta": {
-                        "format": "json",
-                        "route": "admin.settings.save"
-                    }
-                }
-            },
-            "route": "admin.settings.save",
             "version": "3.18.0"
         },
         {
@@ -1157,6 +1240,45 @@
                 }
             },
             "route": "admin.modules.index",
+            "version": "3.18.0"
+        },
+        {
+            "example_error": {
+                "fixture": "security.csrf_failed",
+                "payload": {
+                    "data": null,
+                    "error": {
+                        "code": "E_CSRF_INVALID",
+                        "message": "CSRF validation failed."
+                    },
+                    "meta": {
+                        "error": {
+                            "key": "security.csrf_failed",
+                            "message": "CSRF validation failed."
+                        },
+                        "format": "json",
+                        "ok": false,
+                        "request_id": "__REQ__",
+                        "route": "admin.settings.save",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "POST"
+            ],
+            "name": "security.csrf_failed",
+            "rbac": "admin.settings.manage",
+            "responses": {
+                "403": {
+                    "error": "security.csrf_failed",
+                    "meta": {
+                        "format": "json",
+                        "route": "admin.settings.save"
+                    }
+                }
+            },
+            "route": "admin.settings.save",
             "version": "3.18.0"
         },
         {

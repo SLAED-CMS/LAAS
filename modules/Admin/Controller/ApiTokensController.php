@@ -55,7 +55,10 @@ final class ApiTokensController
         $tokens = $this->mapTokensForView($rows);
         $selectedScopes = $this->defaultScopesSelection();
 
-        return $this->renderPage($request, $tokens, null, null, $selectedScopes, null, []);
+        [$flashToken, $flashMessageKey] = $this->consumeFlashToken($request);
+        $success = $flashMessageKey !== null ? $this->view->translate($flashMessageKey) : null;
+
+        return $this->renderPage($request, $tokens, $flashToken, null, $selectedScopes, $success, []);
     }
 
     public function create(Request $request): Response
@@ -143,12 +146,19 @@ final class ApiTokensController
             ], 201);
         }
 
-        $tokens = $this->mapTokensForView($service->listTokens($userId));
-        $plain = (string) ($created['token'] ?? '');
-        $selectedScopes = $this->defaultScopesSelection();
+        if ($request->isHtmx()) {
+            $tokens = $this->mapTokensForView($service->listTokens($userId));
+            $plain = (string) ($created['token'] ?? '');
+            $selectedScopes = $this->defaultScopesSelection();
+            $success = $this->view->translate('admin.api_tokens.created');
+            $response = $this->renderPage($request, $tokens, $plain, $name, $selectedScopes, $success, [], 200);
+            return $this->withToastTrigger($response, 'saved');
+        }
 
-        $success = $this->view->translate('admin.api_tokens.created');
-        return $this->renderPage($request, $tokens, $plain, $name, $selectedScopes, $success, [], 201);
+        $this->storeFlashToken($request, (string) ($created['token'] ?? ''), 'admin.api_tokens.created');
+        return new Response('', 303, [
+            'Location' => '/admin/api-tokens',
+        ]);
     }
 
     public function rotate(Request $request): Response
@@ -259,12 +269,19 @@ final class ApiTokensController
             ], 201);
         }
 
-        $tokens = $this->mapTokensForView($service->listTokens($userId));
-        $plain = (string) ($created['token'] ?? '');
-        $selectedScopes = $this->defaultScopesSelection();
+        if ($request->isHtmx()) {
+            $tokens = $this->mapTokensForView($service->listTokens($userId));
+            $plain = (string) ($created['token'] ?? '');
+            $selectedScopes = $this->defaultScopesSelection();
+            $success = $this->view->translate('admin.api_tokens.rotated');
+            $response = $this->renderPage($request, $tokens, $plain, $name, $selectedScopes, $success, [], 200);
+            return $this->withToastTrigger($response, 'saved');
+        }
 
-        $success = $this->view->translate('admin.api_tokens.rotated');
-        return $this->renderPage($request, $tokens, $plain, $name, $selectedScopes, $success, [], 201);
+        $this->storeFlashToken($request, (string) ($created['token'] ?? ''), 'admin.api_tokens.rotated');
+        return new Response('', 303, [
+            'Location' => '/admin/api-tokens',
+        ]);
     }
 
     public function revoke(Request $request): Response
@@ -339,6 +356,11 @@ final class ApiTokensController
             'success' => $success,
             'errors' => $errors,
         ];
+        if (!$request->isHtmx() && $success !== null && $success !== '') {
+            $viewData['flash'] = [
+                'success' => $success,
+            ];
+        }
 
         if ($request->isHtmx()) {
             return $this->view->render('partials/api_tokens_response.html', $viewData, $status, [], [
@@ -350,6 +372,50 @@ final class ApiTokensController
         return $this->view->render('pages/api_tokens.html', $viewData, $status, [], [
             'theme' => 'admin',
         ]);
+    }
+
+    private function storeFlashToken(Request $request, string $plainToken, string $messageKey): void
+    {
+        if ($plainToken === '') {
+            return;
+        }
+        $session = $request->session();
+        if (!$session->isStarted()) {
+            return;
+        }
+
+        $session->set('flash.api_tokens.plain', $plainToken);
+        $session->set('flash.api_tokens.message_key', $messageKey);
+    }
+
+    /** @return array{0: string|null, 1: string|null} */
+    private function consumeFlashToken(Request $request): array
+    {
+        $session = $request->session();
+        if (!$session->isStarted()) {
+            return [null, null];
+        }
+
+        $plain = $session->get('flash.api_tokens.plain');
+        $key = $session->get('flash.api_tokens.message_key');
+        if (!is_string($plain) || $plain === '') {
+            $session->delete('flash.api_tokens.plain');
+            $session->delete('flash.api_tokens.message_key');
+            return [null, null];
+        }
+
+        $session->delete('flash.api_tokens.plain');
+        $session->delete('flash.api_tokens.message_key');
+
+        return [$plain, is_string($key) && $key !== '' ? $key : null];
+    }
+
+    private function withToastTrigger(Response $response, string $value): Response
+    {
+        $payload = [
+            'laas:toast' => $value,
+        ];
+        return $response->withHeader('HX-Trigger', json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
     }
 
     private function repository(): ?ApiTokensRepository

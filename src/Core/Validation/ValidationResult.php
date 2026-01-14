@@ -21,6 +21,11 @@ final class ValidationResult
         return $this->errors === [];
     }
 
+    public function hasErrors(): bool
+    {
+        return $this->errors !== [];
+    }
+
     /** @return array<string, array<int, array{key: string, params: array<string, mixed>}>> */
     public function errors(): array
     {
@@ -34,6 +39,37 @@ final class ValidationResult
         }
 
         return (string) $this->errors[$field][0]['key'];
+    }
+
+    public function firstKey(): ?string
+    {
+        foreach ($this->errors as $fieldErrors) {
+            foreach ($fieldErrors as $error) {
+                $key = (string) ($error['key'] ?? '');
+                if ($key !== '') {
+                    return $key;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /** @return array<int, string> */
+    public function toArray(): array
+    {
+        $out = [];
+        foreach ($this->errors as $fieldErrors) {
+            foreach ($fieldErrors as $error) {
+                $key = (string) ($error['key'] ?? '');
+                if ($key === '') {
+                    continue;
+                }
+                $out[] = $key;
+            }
+        }
+
+        return $out;
     }
 
     /** @return array<string, array<int, string>> */

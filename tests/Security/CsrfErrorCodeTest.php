@@ -15,8 +15,9 @@ final class CsrfErrorCodeTest extends TestCase
 
         $response = $middleware->process($request, static fn (Request $req): Response => new Response('OK', 200));
 
-        $this->assertSame(419, $response->getStatus());
+        $this->assertSame(403, $response->getStatus());
         $payload = json_decode($response->getBody(), true);
         $this->assertSame('E_CSRF_INVALID', $payload['error']['code'] ?? null);
+        $this->assertSame('security.csrf_failed', $payload['meta']['error']['key'] ?? null);
     }
 }

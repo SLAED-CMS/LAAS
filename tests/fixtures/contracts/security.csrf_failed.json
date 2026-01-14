@@ -2,12 +2,12 @@
     "data": null,
     "error": {
         "code": "E_CSRF_INVALID",
-        "message": "Invalid CSRF token."
+        "message": "CSRF validation failed."
     },
     "meta": {
         "error": {
-            "key": "error.csrf_invalid",
-            "message": "Invalid CSRF token."
+            "key": "security.csrf_failed",
+            "message": "CSRF validation failed."
         },
         "format": "json",
         "ok": false,

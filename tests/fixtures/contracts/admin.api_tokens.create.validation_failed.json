@@ -1,0 +1,25 @@
+{
+    "data": null,
+    "error": {
+        "code": "E_VALIDATION_FAILED",
+        "details": {
+            "fields": {
+                "name": [
+                    "invalid"
+                ]
+            }
+        },
+        "message": "Validation failed."
+    },
+    "meta": {
+        "error": {
+            "key": "error.validation_failed",
+            "message": "Validation failed."
+        },
+        "format": "json",
+        "ok": false,
+        "request_id": "__REQ__",
+        "route": "admin.api_tokens.create",
+        "ts": "__TIME__"
+    }
+}

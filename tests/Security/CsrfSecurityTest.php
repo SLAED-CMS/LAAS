@@ -33,7 +33,7 @@ final class CsrfSecurityTest extends TestCase
         $request->setSession($session);
 
         $response = $middleware->process($request, static fn(): Response => new Response('ok', 200));
-        $this->assertSame(419, $response->getStatus());
+        $this->assertSame(403, $response->getStatus());
     }
 
     public function testInvalidCsrfRejected(): void
@@ -48,7 +48,7 @@ final class CsrfSecurityTest extends TestCase
         ], [], '');
         $request->setSession($session);
         $response = $middleware->process($request, static fn(): Response => new Response('ok', 200));
-        $this->assertSame(419, $response->getStatus());
+        $this->assertSame(403, $response->getStatus());
     }
 
     public function testReadOnlyAllowsCsrfEndpoint(): void

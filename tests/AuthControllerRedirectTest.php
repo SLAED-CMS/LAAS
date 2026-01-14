@@ -51,7 +51,7 @@ final class AuthControllerRedirectTest extends TestCase
         $controller = new AuthController($view, $auth, $usersRepo, new TotpService());
         $response = $controller->doLogin($request);
 
-        $this->assertSame(302, $response->getStatus());
+        $this->assertSame(303, $response->getStatus());
         $this->assertSame('/admin', $response->getHeader('Location'));
     }
 
@@ -71,7 +71,7 @@ final class AuthControllerRedirectTest extends TestCase
         $controller = new AuthController($view, $auth, $usersRepo, new TotpService());
         $response = $controller->doLogout($request);
 
-        $this->assertSame(302, $response->getStatus());
+        $this->assertSame(303, $response->getStatus());
         $this->assertSame('/', $response->getHeader('Location'));
     }
 

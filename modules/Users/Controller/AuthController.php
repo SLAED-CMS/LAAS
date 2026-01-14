@@ -69,7 +69,7 @@ final class AuthController
 
             return $this->view->render('pages/login.html', [
                 'errors' => $errors,
-            ]);
+            ], 422);
         }
 
         $hash = (string) ($user['password_hash'] ?? '');
@@ -84,7 +84,7 @@ final class AuthController
 
             return $this->view->render('pages/login.html', [
                 'errors' => $errors,
-            ]);
+            ], 422);
         }
 
         $totpData = $this->users->getTotpData((int) $user['id']);
@@ -95,13 +95,13 @@ final class AuthController
             $session->set('_2fa_pending_user_id', (int) $user['id']);
             $session->set('_2fa_pending_ip', $request->ip());
 
-            return new Response('', 302, [
+            return new Response('', 303, [
                 'Location' => '/2fa/verify',
             ]);
         }
 
         if ($this->auth->attempt($username, $password, $request->ip())) {
-            return new Response('', 302, [
+            return new Response('', 303, [
                 'Location' => '/admin',
             ]);
         }
@@ -116,7 +116,7 @@ final class AuthController
 
         return $this->view->render('pages/login.html', [
             'errors' => $errors,
-        ]);
+        ], 422);
     }
 
     public function show2faVerify(Request $request): Response
@@ -202,7 +202,7 @@ final class AuthController
         $session->set('user_id', $pendingUserId);
         $this->users->updateLoginMeta($pendingUserId, $pendingIp);
 
-        return new Response('', 302, [
+        return new Response('', 303, [
             'Location' => '/admin',
         ]);
     }
@@ -211,7 +211,7 @@ final class AuthController
     {
         $this->auth->logout();
 
-        return new Response('', 302, [
+        return new Response('', 303, [
             'Location' => '/',
         ]);
     }

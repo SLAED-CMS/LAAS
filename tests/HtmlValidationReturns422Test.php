@@ -1,0 +1,33 @@
+<?php
+declare(strict_types=1);
+
+require_once __DIR__ . '/Security/Support/SecurityTestHelper.php';
+
+use Laas\Auth\NullAuthService;
+use Laas\Auth\TotpService;
+use Laas\Database\DatabaseManager;
+use Laas\Database\Repositories\UsersRepository;
+use Laas\Http\Request;
+use Laas\Modules\Users\Controller\AuthController;
+use PHPUnit\Framework\TestCase;
+use Tests\Security\Support\SecurityTestHelper;
+
+final class HtmlValidationReturns422Test extends TestCase
+{
+    public function testHtmlValidationReturns422(): void
+    {
+        $request = new Request('POST', '/login', [], [
+            'username' => 'admin',
+            'password' => 'wrong',
+        ], [], '');
+
+        $db = new DatabaseManager(['driver' => 'sqlite', 'database' => ':memory:']);
+        $db->pdo()->exec('CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, status INTEGER, password_hash TEXT)');
+        $view = SecurityTestHelper::createView($db, $request, 'default');
+        $controller = new AuthController($view, new NullAuthService(), new UsersRepository($db->pdo()), new TotpService());
+
+        $response = $controller->doLogin($request);
+
+        $this->assertSame(422, $response->getStatus());
+    }
+}

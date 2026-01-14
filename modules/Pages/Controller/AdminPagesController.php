@@ -267,15 +267,18 @@ final class AdminPagesController
         (new ApiCacheInvalidator())->bumpPages();
 
         if ($request->isHtmx()) {
-            return $this->view->render('partials/page_form_messages.html', [
-                'success' => $this->view->translate('admin.pages.saved'),
+            $response = $this->view->render('partials/form_errors.html', [
                 'errors' => [],
             ], 200, [], [
                 'theme' => 'admin',
             ]);
+            $payload = [
+                'laas:toast' => 'saved',
+            ];
+            return $response->withHeader('HX-Trigger', json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
         }
 
-        return new Response('', 302, [
+        return new Response('', 303, [
             'Location' => '/admin/pages',
         ]);
     }
@@ -447,7 +450,7 @@ final class AdminPagesController
         $messages = $this->resolveErrorMessages($errors);
 
         if ($request->isHtmx()) {
-            return $this->view->render('partials/page_form_messages.html', [
+            return $this->view->render('partials/form_errors.html', [
                 'errors' => $messages,
             ], 422, [], [
                 'theme' => 'admin',

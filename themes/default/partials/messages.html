@@ -8,12 +8,4 @@
   {% info %}
 </div>
 {% endif %}
-{% if errors %}
-<div class="alert alert-danger mb-3">
-  <ul class="mb-0">
-    {% foreach errors as err %}
-    <li>{% err %}</li>
-    {% endforeach %}
-  </ul>
-</div>
-{% endif %}
+{% include "partials/form_errors.html" %}

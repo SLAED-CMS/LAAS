@@ -161,13 +161,13 @@ ContractRegistry::register('rbac.forbidden', [
     ],
 ]);
 
-ContractRegistry::register('csrf.failed', [
+ContractRegistry::register('security.csrf_failed', [
     'route' => 'admin.settings.save',
     'methods' => ['POST'],
     'rbac' => 'admin.settings.manage',
     'responses' => [
-        '419' => [
-            'error' => 'csrf_mismatch',
+        '403' => [
+            'error' => 'security.csrf_failed',
             'meta' => [
                 'format' => 'json',
                 'route' => 'admin.settings.save',
@@ -175,21 +175,105 @@ ContractRegistry::register('csrf.failed', [
         ],
     ],
     'example_error' => [
-        'fixture' => 'csrf.failed',
+        'fixture' => 'security.csrf_failed',
         'payload' => [
             'data' => null,
             'error' => [
                 'code' => 'E_CSRF_INVALID',
-                'message' => 'Invalid CSRF token.',
+                'message' => 'CSRF validation failed.',
             ],
             'meta' => [
                 'format' => 'json',
                 'ok' => false,
                 'error' => [
-                    'key' => 'error.csrf_invalid',
-                    'message' => 'Invalid CSRF token.',
+                    'key' => 'security.csrf_failed',
+                    'message' => 'CSRF validation failed.',
                 ],
                 'route' => 'admin.settings.save',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('admin.login.validation_failed', [
+    'route' => '/login',
+    'methods' => ['POST'],
+    'rbac' => 'public',
+    'responses' => [
+        '422' => [
+            'error' => 'validation_failed',
+            'fields' => 'object',
+            'meta' => [
+                'format' => 'json',
+                'route' => '/login',
+            ],
+        ],
+    ],
+    'example_error' => [
+        'fixture' => 'admin.login.validation_failed',
+        'payload' => [
+            'data' => null,
+            'error' => [
+                'code' => 'E_VALIDATION_FAILED',
+                'message' => 'Validation failed.',
+                'details' => [
+                    'fields' => [
+                        'username' => ['invalid'],
+                    ],
+                ],
+            ],
+            'meta' => [
+                'format' => 'json',
+                'ok' => false,
+                'error' => [
+                    'key' => 'error.validation_failed',
+                    'message' => 'Validation failed.',
+                ],
+                'route' => '/login',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('admin.pages.save', [
+    'route' => '/admin/pages/save',
+    'methods' => ['POST'],
+    'rbac' => 'pages.edit',
+    'responses' => [
+        '422' => [
+            'error' => 'validation_failed',
+            'fields' => 'object',
+            'meta' => [
+                'format' => 'json',
+                'route' => 'admin.pages.save',
+            ],
+        ],
+    ],
+    'example_error' => [
+        'fixture' => 'admin.pages.save.validation_failed',
+        'payload' => [
+            'data' => null,
+            'error' => [
+                'code' => 'E_VALIDATION_FAILED',
+                'message' => 'Validation failed.',
+                'details' => [
+                    'fields' => [
+                        'title' => ['invalid'],
+                    ],
+                ],
+            ],
+            'meta' => [
+                'format' => 'json',
+                'ok' => false,
+                'error' => [
+                    'key' => 'error.validation_failed',
+                    'message' => 'Validation failed.',
+                ],
+                'route' => 'admin.pages.save',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
             ],
@@ -818,6 +902,32 @@ ContractRegistry::register('admin.api_tokens.create', [
             ],
             'meta' => [
                 'format' => 'json',
+                'route' => 'admin.api_tokens.create',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+    'example_error' => [
+        'fixture' => 'admin.api_tokens.create.validation_failed',
+        'payload' => [
+            'data' => null,
+            'error' => [
+                'code' => 'E_VALIDATION_FAILED',
+                'message' => 'Validation failed.',
+                'details' => [
+                    'fields' => [
+                        'name' => ['invalid'],
+                    ],
+                ],
+            ],
+            'meta' => [
+                'format' => 'json',
+                'ok' => false,
+                'error' => [
+                    'key' => 'error.validation_failed',
+                    'message' => 'Validation failed.',
+                ],
                 'route' => 'admin.api_tokens.create',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',

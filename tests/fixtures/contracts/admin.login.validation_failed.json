@@ -1,0 +1,25 @@
+{
+    "data": null,
+    "error": {
+        "code": "E_VALIDATION_FAILED",
+        "details": {
+            "fields": {
+                "username": [
+                    "invalid"
+                ]
+            }
+        },
+        "message": "Validation failed."
+    },
+    "meta": {
+        "error": {
+            "key": "error.validation_failed",
+            "message": "Validation failed."
+        },
+        "format": "json",
+        "ok": false,
+        "request_id": "__REQ__",
+        "route": "/login",
+        "ts": "__TIME__"
+    }
+}
