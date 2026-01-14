@@ -1,5 +1,10 @@
 # LAAS Versions
 
+- v3.19.0: DB safety & performance hygiene
+  - Safe DB profiling (fingerprints, redaction, meta.perf.db in debug)
+  - Migration safe mode (warn/block) + db:migrations:analyze
+  - Required index audit + preflight gating
+
 - v3.18.0: Contracts & fixtures hardening
   - contracts_version + app_version in contracts:dump
   - contracts:check + snapshot guardrail

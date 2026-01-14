@@ -45,6 +45,7 @@ This document defines the JSON response envelope and the internal contract regis
 - 422: validation failed
 - 429: rate limited
 - 500: server error
+- 503: service unavailable
 
 ## Meta rules
 
@@ -53,6 +54,7 @@ This document defines the JSON response envelope and the internal contract regis
 - `request_id` is always included
 - `ts` is UTC ISO8601
 - `ok=false` and `meta.error` are present on error responses
+- `meta.error.key` uses registry error keys (e.g. `service_unavailable`)
 
 ## Headless mode
 

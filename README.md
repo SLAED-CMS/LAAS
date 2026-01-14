@@ -422,6 +422,8 @@ tools/                 # CLI utilities
 - `php tools/cli.php db:check` — Check database connection
 - `php tools/cli.php migrate:status` — Show migration status
 - `php tools/cli.php migrate:up` — Run pending migrations
+- `php tools/cli.php db:migrations:analyze` - Analyze pending migrations (JSON)
+- `php tools/cli.php db:indexes:audit --json` - Audit required indexes
 
 ### Settings
 - `php tools/cli.php settings:get KEY` — Get setting value
@@ -566,6 +568,12 @@ Flags:
 - Run `php tools/cli.php templates:warmup`
 - Verify cache is configured: [docs/CACHE.md](docs/CACHE.md)
 - Test search indexing
+
+### Database Safety
+- Set `DB_MIGRATIONS_SAFE_MODE=block` in production
+- Keep `ALLOW_DESTRUCTIVE_MIGRATIONS=false` (override only with CLI flag)
+- Run `php tools/cli.php db:migrations:analyze` and `php tools/cli.php db:indexes:audit --json`
+- Verify profiling redaction (raw SQL only with debug + secrets + admin)
 
 ### Operations
 - Run smoke tests: `php tools/cli.php ops:check`

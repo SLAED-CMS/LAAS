@@ -1121,6 +1121,13 @@ class PageRepository
 }
 ```
 
+### DB profiling (safe)
+
+- Per-request metrics: `total_count`, `total_ms`, `unique_count`, `duplicates_count`, top slow fingerprints (max 5).
+- Fingerprint rules: normalize whitespace, replace string/number literals with `?`.
+- Raw SQL is stored only when `APP_DEBUG=true` + `DEVTOOLS_SHOW_SECRETS=true` + admin; otherwise fingerprints only.
+- JSON meta adds `meta.perf.db` only when `APP_DEBUG=true`, without raw SQL.
+
 ### Migrations
 
 **Migration file:**
