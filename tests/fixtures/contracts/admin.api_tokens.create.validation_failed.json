@@ -18,8 +18,8 @@
         },
         "events": [
             {
+                "code": "toast.validation_failed",
                 "message": "Validation failed.",
-                "message_key": "toast.validation_failed",
                 "request_id": "__REQ__",
                 "type": "danger"
             }
@@ -37,4 +37,3 @@
         "ts": "__TIME__"
     }
 }
-

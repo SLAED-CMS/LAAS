@@ -12,8 +12,8 @@
     "meta": {
         "events": [
             {
+                "code": "admin.api_tokens.created",
                 "message": "Token created.",
-                "message_key": "admin.api_tokens.created",
                 "request_id": "__REQ__",
                 "type": "success"
             }
@@ -24,4 +24,3 @@
         "ts": "__TIME__"
     }
 }
-

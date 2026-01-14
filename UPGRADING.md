@@ -27,6 +27,12 @@
 
 ## Version-Specific Upgrade Paths
 
+### v3.27.0 notes
+
+- Toast payload schema is now `message` + optional `title`/`code`/`dedupe_key`; `message_key` is no longer emitted.
+- JSON `meta.events` is capped at 3 items per response; HTMX still emits only `laas:toast`.
+- Admin toasts add dedupe/queue limits and a copy request-id action (no inline JS).
+
 ### v3.26.0 notes
 
 - HTMX notifications now use `HX-Trigger: {"laas:toast": {...}}` and JSON responses append those payloads to `meta.events`.

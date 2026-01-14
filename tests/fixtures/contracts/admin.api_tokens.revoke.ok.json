@@ -1,20 +1,20 @@
 {
     "data": {
-        "deleted": true,
-        "id": "__ID__"
+        "revoked": true,
+        "token_id": "__ID__"
     },
     "meta": {
         "events": [
             {
-                "code": "admin.security_reports.deleted",
-                "message": "Security report deleted.",
+                "code": "admin.api_tokens.revoked_ok",
+                "message": "Token revoked.",
                 "request_id": "__REQ__",
                 "type": "info"
             }
         ],
         "format": "json",
         "request_id": "__REQ__",
-        "route": "admin.security_reports.delete",
+        "route": "admin.api_tokens.revoke",
         "ts": "__TIME__"
     }
 }

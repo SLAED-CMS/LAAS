@@ -25,8 +25,8 @@
                         },
                         "events": [
                             {
+                                "code": "toast.validation_failed",
                                 "message": "Validation failed.",
-                                "message_key": "toast.validation_failed",
                                 "request_id": "__REQ__",
                                 "type": "danger"
                             }
@@ -61,8 +61,8 @@
                     "meta": {
                         "events": [
                             {
+                                "code": "admin.api_tokens.created",
                                 "message": "Token created.",
-                                "message_key": "admin.api_tokens.created",
                                 "request_id": "__REQ__",
                                 "type": "success"
                             }
@@ -196,7 +196,7 @@
         },
         {
             "example_ok": {
-                "fixture": "admin.api_tokens.revoke",
+                "fixture": "admin.api_tokens.revoke.ok",
                 "payload": {
                     "data": {
                         "revoked": true,
@@ -205,8 +205,8 @@
                     "meta": {
                         "events": [
                             {
+                                "code": "admin.api_tokens.revoked_ok",
                                 "message": "Token revoked.",
-                                "message_key": "admin.api_tokens.revoked",
                                 "request_id": "__REQ__",
                                 "type": "info"
                             }
@@ -624,7 +624,7 @@
                             "status": "ok"
                         }
                     },
-                "meta": {
+                    "meta": {
                         "events": [],
                         "format": "json",
                         "request_id": "__REQ__",
@@ -773,8 +773,8 @@
                         },
                         "events": [
                             {
+                                "code": "toast.validation_failed",
                                 "message": "Validation failed.",
-                                "message_key": "toast.validation_failed",
                                 "request_id": "__REQ__",
                                 "type": "danger"
                             }
@@ -823,8 +823,8 @@
                     "meta": {
                         "events": [
                             {
+                                "code": "admin.security_reports.deleted",
                                 "message": "Security report deleted.",
-                                "message_key": "admin.security_reports.deleted",
                                 "request_id": "__REQ__",
                                 "type": "info"
                             }
@@ -898,8 +898,8 @@
                     "meta": {
                         "events": [
                             {
+                                "code": "admin.security_reports.updated_ok",
                                 "message": "Security report updated.",
-                                "message_key": "admin.security_reports.updated",
                                 "request_id": "__REQ__",
                                 "type": "info"
                             }
@@ -1127,7 +1127,7 @@
         },
         {
             "example_ok": {
-                "fixture": "admin.security_reports.triage",
+                "fixture": "admin.security_reports.triage.ok",
                 "payload": {
                     "data": {
                         "report": {
@@ -1150,8 +1150,8 @@
                     "meta": {
                         "events": [
                             {
+                                "code": "admin.security_reports.updated_ok",
                                 "message": "Security report updated.",
-                                "message_key": "admin.security_reports.updated",
                                 "request_id": "__REQ__",
                                 "type": "info"
                             }
@@ -2260,7 +2260,54 @@
             },
             "route": "admin.settings.save",
             "version": "3.18.0"
+        },
+        {
+            "example_ok": {
+                "payload": {
+                    "data": {
+                        "event": {
+                            "code": "admin.pages.saved",
+                            "dedupe_key": "admin.pages.saved",
+                            "message": "Saved.",
+                            "request_id": "__REQ__",
+                            "title": null,
+                            "ttl_ms": 4000,
+                            "type": "success"
+                        }
+                    },
+                    "meta": {
+                        "format": "json",
+                        "request_id": "__REQ__",
+                        "route": "ui.toast",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "EVENT"
+            ],
+            "name": "ui.toast",
+            "responses": {
+                "200": {
+                    "data": {
+                        "event": {
+                            "code": "string|null",
+                            "dedupe_key": "string|null",
+                            "message": "string",
+                            "request_id": "__REQ__",
+                            "title": "string|null",
+                            "ttl_ms": "int|null",
+                            "type": "string"
+                        }
+                    },
+                    "meta": {
+                        "format": "json",
+                        "route": "ui.toast"
+                    }
+                }
+            },
+            "route": "ui.toast",
+            "version": "3.18.0"
         }
     ]
 }
-

@@ -1,5 +1,10 @@
 # LAAS Versions
 
+- v3.27.0: Toast UX polish + Events hygiene + Admin JS robustness
+  - Toast payload schema tightened (`message`, optional `title`/`code`/`dedupe_key`, required `request_id`)
+  - JSON `meta.events` capped at 3 items; HTMX uses only `laas:toast`
+  - Admin toast renderer adds dedupe, queue limit, and request-id copy
+
 - v3.26.0: Notifications / UI Events Standard
   - Unified `laas:toast` event for HTMX responses and `meta.events` for JSON envelopes
   - Admin layout now renders a toast container + Bootstrap toast helper handles HTMX events

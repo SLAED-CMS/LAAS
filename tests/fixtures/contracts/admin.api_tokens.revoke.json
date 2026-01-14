@@ -7,7 +7,7 @@
         "events": [
             {
                 "message": "Token revoked.",
-                "message_key": "admin.api_tokens.revoked",
+                "code": "admin.api_tokens.revoked_ok",
                 "request_id": "__REQ__",
                 "type": "info"
             }
@@ -18,4 +18,6 @@
         "ts": "__TIME__"
     }
 }
+
+
 

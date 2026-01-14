@@ -61,10 +61,25 @@ This document defines the JSON response envelope and the internal contract regis
 
 ## UI Events (toasts)
 
-- HTMX responses include `HX-Trigger: {"laas:toast": {...}}` when a notification is emitted (type, message_key, message, request_id plus optional `context` and `ttl_ms`).
+- HTMX responses include `HX-Trigger: {"laas:toast": {...}}` when a notification is emitted (type, message, request_id plus optional `title`, `code`, `ttl_ms`, and `dedupe_key`).
 - JSON responses append the same payload to `meta.events` when notifications are emitted.
-- Toast payloads MUST adhere to the `laas:toast` contract (`type` is `success|info|warning|danger`, `message_key`, localized `message`, `request_id`, optional `context`, optional numeric `ttl_ms`); no secrets (tokens, SQL, stack traces) should leak inside these fields.
+- Toast payloads MUST adhere to the `laas:toast` contract (`type` is `success|info|warning|danger`, localized `message`, `request_id`, optional `title`, optional `code`, optional numeric `ttl_ms`, optional `dedupe_key`); no secrets (tokens, SQL, stack traces) should leak inside these fields.
 - `laas:error` is not used for UI events; all notifications use `laas:toast`.
+- `meta.events` is capped at 3 items per response.
+
+Example toast payload:
+
+```json
+{
+  "type": "success",
+  "message": "Saved.",
+  "title": "Success",
+  "code": "admin.pages.saved",
+  "request_id": "req-1",
+  "ttl_ms": 4000,
+  "dedupe_key": "admin.pages.saved"
+}
+```
 
 ## HTTP error keys
 

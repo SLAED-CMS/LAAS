@@ -1,0 +1,19 @@
+{
+    "data": {
+        "event": {
+            "code": "admin.pages.saved",
+            "dedupe_key": "admin.pages.saved",
+            "message": "Saved.",
+            "request_id": "__REQ__",
+            "title": null,
+            "ttl_ms": 4000,
+            "type": "success"
+        }
+    },
+    "meta": {
+        "format": "json",
+        "request_id": "__REQ__",
+        "route": "ui.toast",
+        "ts": "__TIME__"
+    }
+}
