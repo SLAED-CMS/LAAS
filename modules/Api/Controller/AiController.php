@@ -9,6 +9,9 @@ use Laas\Ai\Context\Redactor;
 use Laas\Ai\Provider\AiProviderInterface;
 use Laas\Ai\Provider\LocalDemoProvider;
 use Laas\Ai\Provider\RemoteHttpProvider;
+use Laas\Ai\Plan;
+use Laas\Ai\PlanRunner;
+use Laas\Ai\Tools\ToolRegistry;
 use Laas\Database\DatabaseManager;
 use Laas\Http\ErrorCode;
 use Laas\Http\Request;
@@ -94,6 +97,122 @@ final class AiController
         ]);
     }
 
+    public function tools(Request $request): Response
+    {
+        $user = $request->getAttribute('api.user');
+        if (!is_array($user)) {
+            return ApiResponse::error(ErrorCode::AUTH_REQUIRED, 'Unauthorized', [], 401);
+        }
+
+        $registry = new ToolRegistry($this->securityConfig());
+        return ApiResponse::ok([
+            'tools' => $registry->list(),
+        ], [], 200, [
+            'Cache-Control' => 'no-store',
+        ]);
+    }
+
+    public function runTools(Request $request): Response
+    {
+        $user = $request->getAttribute('api.user');
+        if (!is_array($user)) {
+            return ApiResponse::error(ErrorCode::AUTH_REQUIRED, 'Unauthorized', [], 401);
+        }
+
+        $input = $this->readJson($request);
+        $planInput = is_array($input['plan'] ?? null) ? $input['plan'] : [];
+        $stepsInput = is_array($planInput['steps'] ?? null) ? $planInput['steps'] : [];
+
+        $registry = new ToolRegistry($this->securityConfig());
+        $tools = $registry->list();
+        $allowMap = $this->buildAllowMap($tools);
+
+        $steps = [];
+        foreach ($stepsInput as $index => $step) {
+            if (!is_array($step)) {
+                return ApiResponse::error(ErrorCode::INVALID_REQUEST, 'Invalid request', [
+                    'step' => $index,
+                ], 400);
+            }
+            $command = (string) ($step['command'] ?? '');
+            $args = $step['args'] ?? [];
+            if ($command === '' || !is_array($args)) {
+                return ApiResponse::error(ErrorCode::INVALID_REQUEST, 'Invalid request', [
+                    'step' => $index,
+                ], 400);
+            }
+            if (!isset($allowMap[$command])) {
+                return ApiResponse::error(ErrorCode::RBAC_DENIED, 'Forbidden', [
+                    'command' => $command,
+                ], 403);
+            }
+            $allowedArgs = $allowMap[$command];
+            foreach ($args as $arg) {
+                if (!is_string($arg)) {
+                    return ApiResponse::error(ErrorCode::INVALID_REQUEST, 'Invalid request', [
+                        'command' => $command,
+                    ], 400);
+                }
+                if (!$this->isArgAllowed($arg, $allowedArgs)) {
+                    return ApiResponse::error(ErrorCode::RBAC_DENIED, 'Forbidden', [
+                        'command' => $command,
+                    ], 403);
+                }
+            }
+
+            $steps[] = [
+                'id' => 's' . ($index + 1),
+                'title' => $command,
+                'command' => $command,
+                'args' => array_values(array_map('strval', $args)),
+            ];
+        }
+
+        if ($steps === []) {
+            return ApiResponse::error(ErrorCode::INVALID_REQUEST, 'Invalid request', [
+                'steps' => 'empty',
+            ], 400);
+        }
+
+        $plan = new Plan([
+            'id' => bin2hex(random_bytes(16)),
+            'created_at' => gmdate(DATE_ATOM),
+            'kind' => 'tools.run',
+            'summary' => 'AI tools dry-run',
+            'steps' => $steps,
+            'confidence' => 0.0,
+            'risk' => 'low',
+        ]);
+
+        $started = microtime(true);
+        $runner = new PlanRunner(dirname(__DIR__, 3));
+        $result = $runner->run($plan, true, false);
+        $durationMs = (microtime(true) - $started) * 1000;
+
+        (new AuditLogger($this->db, $request->session()))->log(
+            'ai.tools_run',
+            'ai',
+            null,
+            [
+                'steps_total' => (int) ($result['steps_total'] ?? 0),
+                'steps_run' => (int) ($result['steps_run'] ?? 0),
+                'failed' => (int) ($result['failed'] ?? 0),
+                'duration_ms' => (int) $durationMs,
+            ],
+            (int) ($user['id'] ?? 0),
+            $request->ip()
+        );
+
+        return ApiResponse::ok([
+            'steps_total' => (int) ($result['steps_total'] ?? 0),
+            'steps_run' => (int) ($result['steps_run'] ?? 0),
+            'failed' => (int) ($result['failed'] ?? 0),
+            'outputs' => $result['outputs'] ?? [],
+        ], [], 200, [
+            'Cache-Control' => 'no-store',
+        ]);
+    }
+
     private function resolveProvider(array $securityConfig, Request $request): AiProviderInterface
     {
         $name = strtolower((string) ($securityConfig['ai_provider'] ?? 'local_demo'));
@@ -127,6 +246,61 @@ final class AiController
         }
 
         return $config;
+    }
+
+    /**
+     * @return array<string, array<int, string>>
+     */
+    private function buildAllowMap(array $tools): array
+    {
+        $map = [];
+        foreach ($tools as $tool) {
+            if (!is_array($tool)) {
+                continue;
+            }
+            $name = (string) ($tool['name'] ?? '');
+            $args = $tool['args'] ?? [];
+            if ($name === '' || !is_array($args)) {
+                continue;
+            }
+            $map[$name] = array_values(array_map('strval', $args));
+        }
+
+        return $map;
+    }
+
+    /**
+     * @param array<int, string> $allowedArgs
+     */
+    private function isArgAllowed(string $arg, array $allowedArgs): bool
+    {
+        if (str_starts_with($arg, '--')) {
+            $key = $arg;
+            $valuePos = strpos($arg, '=');
+            if ($valuePos !== false) {
+                $key = substr($arg, 0, $valuePos);
+            }
+            return in_array($key, $allowedArgs, true);
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function readJson(Request $request): array
+    {
+        $contentType = strtolower((string) ($request->getHeader('content-type') ?? ''));
+        if (!str_contains($contentType, 'application/json')) {
+            return [];
+        }
+        $raw = trim($request->getBody());
+        if ($raw === '') {
+            return [];
+        }
+        $data = json_decode($raw, true);
+        return is_array($data) ? $data : [];
     }
 
     /**

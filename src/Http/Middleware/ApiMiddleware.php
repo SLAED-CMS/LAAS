@@ -68,6 +68,16 @@ final class ApiMiddleware implements MiddlewareInterface
             $authReason = 'ok';
         }
 
+        if ($request->getAttribute('api.user') === null && $this->isAiEndpoint($request)) {
+            $sessionUserId = $this->sessionUserId($request);
+            if ($sessionUserId !== null) {
+                $request->setAttribute('api.user', [
+                    'id' => $sessionUserId,
+                ]);
+                $authReason = 'session';
+            }
+        }
+
         if ($this->requiresAuth($request)) {
             $user = $request->getAttribute('api.user');
             if (!is_array($user)) {
@@ -138,6 +148,12 @@ final class ApiMiddleware implements MiddlewareInterface
         }
 
         return false;
+    }
+
+    private function isAiEndpoint(Request $request): bool
+    {
+        $path = $request->getPath();
+        return str_starts_with($path, '/api/v1/ai/');
     }
 
     private function isCorsPreflight(Request $request): bool
@@ -383,5 +399,23 @@ final class ApiMiddleware implements MiddlewareInterface
         }
 
         return $token;
+    }
+
+    private function sessionUserId(Request $request): ?int
+    {
+        $session = $request->session();
+        if (!$session->isStarted()) {
+            return null;
+        }
+
+        $raw = $session->get('user_id');
+        if (is_int($raw)) {
+            return $raw;
+        }
+        if (is_string($raw) && ctype_digit($raw)) {
+            return (int) $raw;
+        }
+
+        return null;
     }
 }
