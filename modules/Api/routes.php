@@ -15,4 +15,5 @@ return [
     ['GET', '/api/v1/menus/{name:[^/]+}', [\Laas\Modules\Api\Controller\MenusController::class, 'show']],
     ['GET', '/api/v1/users', [\Laas\Modules\Api\Controller\UsersController::class, 'index']],
     ['GET', '/api/v1/users/{id:\d+}', [\Laas\Modules\Api\Controller\UsersController::class, 'show']],
+    ['POST', '/api/v1/ai/propose', [\Laas\Modules\Api\Controller\AiController::class, 'propose']],
 ];

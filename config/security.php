@@ -143,6 +143,7 @@ return [
         'contracts:check',
         'preflight',
     ],
+    'ai_provider' => 'local_demo',
     'rate_limit' => [
         'api' => [
             'window' => 60,
