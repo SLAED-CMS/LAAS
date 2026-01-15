@@ -67,6 +67,7 @@
 - AI propose endpoint (`/api/v1/ai/propose`) is read-only; prompts are redacted and audit logs store metadata only.
 - Remote AI provider is disabled by default; enable via `config/security.php` allowlist and limits (no body logging).
 - AI tools endpoints (`/api/v1/ai/tools`, `/api/v1/ai/run`) are dry-run only with allowlisted commands and no writes.
+- Admin AI UI (`/admin/ai`) is read-only; save stores proposals only; apply requires CLI with `--yes`.
 
 ## Proposals (AI foundation)
 - Proposals are local artifacts for planning only; no secrets, no network use.

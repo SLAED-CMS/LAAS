@@ -76,6 +76,10 @@ final class AiController
             ], 502);
         }
 
+        if ($this->isHtmx($request)) {
+            return Response::html($this->renderProposeHtml($result), 200);
+        }
+
         (new AuditLogger($this->db, $request->session()))->log(
             'ai.propose_called',
             'ai',
@@ -203,6 +207,10 @@ final class AiController
             $request->ip()
         );
 
+        if ($this->isHtmx($request)) {
+            return Response::html($this->renderRunHtml($result), 200);
+        }
+
         return ApiResponse::ok([
             'steps_total' => (int) ($result['steps_total'] ?? 0),
             'steps_run' => (int) ($result['steps_run'] ?? 0),
@@ -293,6 +301,13 @@ final class AiController
     {
         $contentType = strtolower((string) ($request->getHeader('content-type') ?? ''));
         if (!str_contains($contentType, 'application/json')) {
+            $rawPlan = $request->post('plan_json');
+            if (is_string($rawPlan) && $rawPlan !== '') {
+                $decoded = json_decode($rawPlan, true);
+                if (is_array($decoded)) {
+                    return ['plan' => $decoded];
+                }
+            }
             return [];
         }
         $raw = trim($request->getBody());
@@ -301,6 +316,59 @@ final class AiController
         }
         $data = json_decode($raw, true);
         return is_array($data) ? $data : [];
+    }
+
+    private function isHtmx(Request $request): bool
+    {
+        return strtolower((string) ($request->getHeader('hx-request') ?? '')) === 'true';
+    }
+
+    private function renderProposeHtml(array $result): string
+    {
+        $proposal = is_array($result['proposal'] ?? null) ? $result['proposal'] : [];
+        $plan = is_array($result['plan'] ?? null) ? $result['plan'] : [];
+        $proposalJson = json_encode($proposal, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
+        $planJson = json_encode($plan, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
+
+        $proposalEsc = htmlspecialchars($proposalJson, ENT_QUOTES);
+        $planEsc = htmlspecialchars($planJson, ENT_QUOTES);
+        $summary = htmlspecialchars((string) ($proposal['summary'] ?? ''), ENT_QUOTES);
+        $risk = htmlspecialchars((string) ($proposal['risk'] ?? ''), ENT_QUOTES);
+        $confidence = htmlspecialchars((string) ($proposal['confidence'] ?? ''), ENT_QUOTES);
+
+        return '<div class="card mt-3">'
+            . '<div class="card-body">'
+            . '<h5 class="card-title mb-2">Proposal + Plan</h5>'
+            . '<div class="text-muted small mb-2">summary=' . $summary
+            . ' risk=' . $risk . ' confidence=' . $confidence . '</div>'
+            . '<div class="row g-3">'
+            . '<div class="col-lg-6"><div class="fw-semibold mb-1">Proposal</div><pre class="small mb-0">'
+            . $proposalEsc . '</pre></div>'
+            . '<div class="col-lg-6"><div class="fw-semibold mb-1">Plan</div><pre class="small mb-0">'
+            . $planEsc . '</pre></div>'
+            . '</div>'
+            . '<textarea id="proposal_json" name="proposal_json" class="d-none">' . $proposalEsc . '</textarea>'
+            . '<textarea id="plan_json" name="plan_json" class="d-none">' . $planEsc . '</textarea>'
+            . '</div></div>';
+    }
+
+    private function renderRunHtml(array $result): string
+    {
+        $outputs = $result['outputs'] ?? [];
+        $payload = [
+            'steps_total' => (int) ($result['steps_total'] ?? 0),
+            'steps_run' => (int) ($result['steps_run'] ?? 0),
+            'failed' => (int) ($result['failed'] ?? 0),
+            'outputs' => $outputs,
+        ];
+        $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
+        $jsonEsc = htmlspecialchars($json, ENT_QUOTES);
+
+        return '<div class="card mt-3">'
+            . '<div class="card-body">'
+            . '<h5 class="card-title mb-2">Dry-run results</h5>'
+            . '<pre class="small mb-0">' . $jsonEsc . '</pre>'
+            . '</div></div>';
     }
 
     /**
