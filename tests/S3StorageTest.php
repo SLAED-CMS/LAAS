@@ -45,6 +45,9 @@ final class S3StorageTest extends TestCase
             'prefix' => 'laas',
             'timeout_seconds' => 5,
             'verify_tls' => false,
+            'allow_private_ips' => true,
+            'allow_ip_literal' => true,
+            'allow_http' => true,
         ], $client);
 
         $diskPath = 'uploads/2026/01/test.txt';
@@ -94,6 +97,8 @@ final class S3StorageTest extends TestCase
             'prefix' => '',
             'timeout_seconds' => 5,
             'verify_tls' => false,
+            'allowed_host_suffixes' => ['s3.local'],
+            'resolver' => static fn(string $host): array => ['93.184.216.34'],
         ], $client);
 
         $storage->exists('http://evil.example/steal');

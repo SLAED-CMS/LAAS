@@ -24,6 +24,7 @@ final class S3StorageSsrfTest extends TestCase
             'bucket' => 'test',
             'access_key' => 'key',
             'secret_key' => 'secret',
+            'allow_ip_literal' => true,
         ]);
     }
 
@@ -38,6 +39,7 @@ final class S3StorageSsrfTest extends TestCase
             'bucket' => 'test',
             'access_key' => 'key',
             'secret_key' => 'secret',
+            'allow_ip_literal' => true,
         ]);
     }
 
@@ -52,6 +54,7 @@ final class S3StorageSsrfTest extends TestCase
             'bucket' => 'test',
             'access_key' => 'key',
             'secret_key' => 'secret',
+            'allow_ip_literal' => true,
         ]);
     }
 
@@ -66,6 +69,7 @@ final class S3StorageSsrfTest extends TestCase
             'bucket' => 'test',
             'access_key' => 'key',
             'secret_key' => 'secret',
+            'resolver' => static fn(string $host): array => ['93.184.216.34'],
         ]);
     }
 
@@ -105,6 +109,7 @@ final class S3StorageSsrfTest extends TestCase
             'bucket' => 'test',
             'access_key' => 'key',
             'secret_key' => 'secret',
+            'resolver' => static fn(string $host): array => ['93.184.216.34'],
         ]);
 
         $this->assertSame('s3', $storage->name());
@@ -118,6 +123,10 @@ final class S3StorageSsrfTest extends TestCase
             'bucket' => 'test',
             'access_key' => 'key',
             'secret_key' => 'secret',
+            'allowed_host_suffixes' => ['localhost'],
+            'allow_private_ips' => true,
+            'allow_http' => true,
+            'resolver' => static fn(string $host): array => ['127.0.0.1'],
         ]);
 
         $this->assertSame('s3', $storage->name());

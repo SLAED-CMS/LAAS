@@ -3,8 +3,10 @@ declare(strict_types=1);
 
 namespace Laas\Modules\Media\Service;
 
+use Laas\Support\SafeHttpClient;
+use Laas\Support\UrlPolicy;
+use Laas\Support\UrlValidator;
 use RuntimeException;
-use Laas\Support\RequestScope;
 
 final class S3Storage implements StorageDriverInterface
 {
@@ -19,6 +21,20 @@ final class S3Storage implements StorageDriverInterface
     private bool $verifyTls;
     private int $requests = 0;
     private float $totalMs = 0.0;
+    /** @var array<int, string> */
+    private array $allowedHostSuffixes = [];
+    /** @var array<int, string> */
+    private array $blockedHostSuffixes = [];
+    private bool $allowPrivateIps = false;
+    private bool $allowIpLiteral = false;
+    private bool $allowHttp = false;
+    /** @var null|callable */
+    private $resolver;
+
+    private ?SafeHttpClient $safeClient = null;
+    private ?UrlPolicy $s3Policy = null;
+    /** @var null|array<string, mixed> */
+    private ?array $httpConfig = null;
 
     /** @var null|callable */
     private $client;
@@ -34,6 +50,14 @@ final class S3Storage implements StorageDriverInterface
         $this->prefix = trim((string) ($config['prefix'] ?? ''), '/');
         $this->timeout = (int) ($config['timeout_seconds'] ?? 10);
         $this->verifyTls = (bool) ($config['verify_tls'] ?? true);
+        $this->allowedHostSuffixes = $this->normalizeHostList($config['allowed_host_suffixes'] ?? []);
+        $this->blockedHostSuffixes = $this->normalizeHostList(
+            $config['blocked_host_suffixes'] ?? ['localhost', '.local', '.internal']
+        );
+        $this->allowPrivateIps = (bool) ($config['allow_private_ips'] ?? false);
+        $this->allowIpLiteral = (bool) ($config['allow_ip_literal'] ?? false);
+        $this->allowHttp = (bool) ($config['allow_http'] ?? false);
+        $this->resolver = is_callable($config['resolver'] ?? null) ? $config['resolver'] : null;
         $this->client = $client;
 
         if ($this->endpoint !== '') {
@@ -205,7 +229,7 @@ final class S3Storage implements StorageDriverInterface
 
         $result = $this->client !== null
             ? ($this->client)($method, $url, $headers, $body, $this->timeout, $this->verifyTls)
-            : $this->curlRequest($method, $url, $headers, $body);
+            : $this->safeRequest($method, $url, $headers, $body);
 
         $this->totalMs += (microtime(true) - $started) * 1000;
 
@@ -227,7 +251,7 @@ final class S3Storage implements StorageDriverInterface
 
         $result = $this->client !== null
             ? ($this->client)($method, $url, $headers, $body, $this->timeout, $this->verifyTls)
-            : $this->curlRequest($method, $url, $headers, $body);
+            : $this->safeRequest($method, $url, $headers, $body);
 
         $this->totalMs += (microtime(true) - $started) * 1000;
 
@@ -334,60 +358,19 @@ final class S3Storage implements StorageDriverInterface
     }
 
     /** @return array{status: int, headers: array<string, string>, body: string} */
-    private function curlRequest(string $method, string $url, array $headers, ?string $body): array
+    private function safeRequest(string $method, string $url, array $headers, ?string $body): array
     {
-        $started = microtime(true);
-        $ch = curl_init($url);
-        if ($ch === false) {
+        try {
+            $client = $this->safeClient();
+            return $client->request($method, $url, $headers, $body, [
+                'timeout' => $this->timeout,
+                'connect_timeout' => min(3, $this->timeout),
+                'max_redirects' => 0,
+                'verify_tls' => $this->verifyTls,
+            ]);
+        } catch (RuntimeException $e) {
             throw new RuntimeException('s3_request_failed');
         }
-
-        $headerLines = [];
-        foreach ($headers as $name => $value) {
-            $headerLines[] = $name . ': ' . $value;
-        }
-
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HEADER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, $this->timeout);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $this->verifyTls);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, $this->verifyTls ? 2 : 0);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headerLines);
-        if ($body !== null) {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
-        }
-
-        $raw = curl_exec($ch);
-        if ($raw === false) {
-            curl_close($ch);
-            throw new RuntimeException('s3_request_failed');
-        }
-
-        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $headerSize = (int) curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-        curl_close($ch);
-        $durationMs = (microtime(true) - $started) * 1000;
-        $context = RequestScope::get('devtools.context');
-        if ($context instanceof \Laas\DevTools\DevToolsContext) {
-            $context->addExternalCall($method, $url, $status, $durationMs);
-        }
-
-        $rawHeaders = substr($raw, 0, $headerSize);
-        $body = substr($raw, $headerSize);
-        $parsedHeaders = [];
-        foreach (explode("\r\n", (string) $rawHeaders) as $line) {
-            if (str_contains($line, ':')) {
-                [$name, $value] = explode(':', $line, 2);
-                $parsedHeaders[strtolower(trim($name))] = trim($value);
-            }
-        }
-
-        return [
-            'status' => $status,
-            'headers' => $parsedHeaders,
-            'body' => (string) $body,
-        ];
     }
 
     private function emptyHash(): string
@@ -397,40 +380,111 @@ final class S3Storage implements StorageDriverInterface
 
     private function validateEndpoint(string $endpoint): void
     {
+        $policy = $this->s3Policy();
         $parts = parse_url($endpoint);
-        if (!is_array($parts)) {
-            throw new RuntimeException('s3_endpoint_invalid_url');
+        $result = UrlValidator::validateHttpUrlWithPolicy($endpoint, $policy);
+        if (!$result->ok()) {
+            $parts = is_array($parts) ? $parts : null;
+            throw new RuntimeException($this->mapEndpointError($result->reason(), $parts));
         }
 
-        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        if (!$this->allowHttp) {
+            $parts = is_array($parts) ? $parts : [];
+            $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+            if ($scheme !== 'https') {
+                throw new RuntimeException('s3_endpoint_must_use_https');
+            }
+        }
+    }
+
+    /** @param null|array<string, mixed> $parts */
+    private function mapEndpointError(string $reason, ?array $parts): string
+    {
+        return match ($reason) {
+            UrlValidator::REASON_MISSING_HOST => 's3_endpoint_missing_host',
+            UrlValidator::REASON_IP_BLOCKED => 's3_endpoint_resolves_to_private_ip',
+            UrlValidator::REASON_HOST_NOT_ALLOWED,
+            UrlValidator::REASON_HOST_BLOCKED => 's3_endpoint_host_not_allowed',
+            UrlValidator::REASON_IP_LITERAL_NOT_ALLOWED => 's3_endpoint_ip_literal_not_allowed',
+            UrlValidator::REASON_SCHEME_NOT_ALLOWED => $this->schemeError($parts),
+            UrlValidator::REASON_PORT_NOT_ALLOWED => 's3_endpoint_invalid_url',
+            UrlValidator::REASON_USERINFO_NOT_ALLOWED => 's3_endpoint_invalid_url',
+            UrlValidator::REASON_DNS_LOOKUP_FAILED => 's3_endpoint_invalid_url',
+            default => 's3_endpoint_invalid_url',
+        };
+    }
+
+    /** @param null|array<string, mixed> $parts */
+    private function schemeError(?array $parts): string
+    {
         $host = strtolower((string) ($parts['host'] ?? ''));
-
         if ($host === '') {
-            throw new RuntimeException('s3_endpoint_missing_host');
+            return 's3_endpoint_missing_host';
+        }
+        return 's3_endpoint_invalid_url';
+    }
+
+    private function safeClient(): SafeHttpClient
+    {
+        if ($this->safeClient !== null) {
+            return $this->safeClient;
         }
 
-        // Block private IPs (DNS rebinding protection) - check this first
-        if ($host !== 'localhost' && $host !== '127.0.0.1') {
-            // Check if host is already an IP address
-            if (filter_var($host, FILTER_VALIDATE_IP) !== false) {
-                $ip = $host;
-            } else {
-                // Resolve hostname to IP
-                $ip = gethostbyname($host);
+        $this->safeClient = SafeHttpClient::fromConfig($this->httpConfig(), $this->s3Policy());
+        return $this->safeClient;
+    }
+
+    private function s3Policy(): UrlPolicy
+    {
+        if ($this->s3Policy !== null) {
+            return $this->s3Policy;
+        }
+
+        $this->s3Policy = new UrlPolicy(
+            allowedSchemes: ['http', 'https'],
+            allowedHostSuffixes: $this->allowedHostSuffixes,
+            allowPrivateIps: $this->allowPrivateIps,
+            allowIpLiteral: $this->allowIpLiteral,
+            blockLocalHostnames: true,
+            blockedHostSuffixes: $this->blockedHostSuffixes,
+            resolver: $this->resolver
+        );
+
+        return $this->s3Policy;
+    }
+
+    /** @return array<string, mixed> */
+    private function httpConfig(): array
+    {
+        if ($this->httpConfig !== null) {
+            return $this->httpConfig;
+        }
+
+        $path = dirname(__DIR__, 3) . '/config/http.php';
+        if (!is_file($path)) {
+            $this->httpConfig = [];
+            return $this->httpConfig;
+        }
+
+        $config = require $path;
+        $this->httpConfig = is_array($config) ? $config : [];
+        return $this->httpConfig;
+    }
+
+    /** @param array<int, string> $values */
+    private function normalizeHostList(array $values): array
+    {
+        $out = [];
+        $seen = [];
+        foreach ($values as $value) {
+            $value = strtolower(trim((string) $value));
+            $value = trim($value, ". \t\n\r\0\x0B");
+            if ($value === '' || isset($seen[$value])) {
+                continue;
             }
-
-            // Check if resolved IP is private
-            if (filter_var($ip, FILTER_VALIDATE_IP) !== false) {
-                $flags = FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE;
-                if (filter_var($ip, FILTER_VALIDATE_IP, $flags) === false) {
-                    throw new RuntimeException('s3_endpoint_resolves_to_private_ip');
-                }
-            }
+            $seen[$value] = true;
+            $out[] = $value;
         }
-
-        // Only HTTPS allowed (except localhost for dev)
-        if ($scheme !== 'https' && $host !== 'localhost' && $host !== '127.0.0.1') {
-            throw new RuntimeException('s3_endpoint_must_use_https');
-        }
+        return $out;
     }
 }

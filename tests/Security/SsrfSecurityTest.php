@@ -25,6 +25,7 @@ final class SsrfSecurityTest extends TestCase
             'use_path_style' => true,
             'timeout_seconds' => 1,
             'verify_tls' => true,
+            'resolver' => static fn(string $host): array => ['93.184.216.34'],
         ], $client);
 
         $storage->exists('uploads/2026/01/http://evil.tld/payload.txt');
