@@ -1,6 +1,10 @@
 # LAAS Versions
 
-- v4.0.0 (Unreleased)
+- v4.0.0 (Released 2026-01-15)
+  - Highlights:
+    - Safe AI runtime (proposal/plan + allowlists + --yes)
+    - Admin AI UI + Diff Viewer + Dev Autopilot Preview
+    - Tools API (read-only) + Remote provider (disabled by default)
   - SanitizedHtml Trust-Marker + Raw-Guard/Audit (template.raw_used/template.raw_blocked)
   - NEU: CLI content:sanitize-pages fuer Legacy-Inhalte
   - content:sanitize-pages unterstuetzt --offset und erfordert --yes fuer Anwendung

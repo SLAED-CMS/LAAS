@@ -53,7 +53,7 @@ $envListAllowEmpty = static function (string $key, array $default) use ($env): a
 
 return [
     'name' => 'LAAS',
-    'version' => $envString('APP_VERSION', '4.0.0-dev'),
+    'version' => $envString('APP_VERSION', '4.0.0'),
     'key' => $envString('APP_KEY', ''),
     'env' => $envString('APP_ENV', 'dev'),
     'debug' => $envBool('APP_DEBUG', true),
