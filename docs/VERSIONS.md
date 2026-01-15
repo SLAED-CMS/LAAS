@@ -19,6 +19,7 @@
   - NEU: ai:dev:module:scaffold-and-check (deterministic dev autopilot via Proposal+Plan)
   - Security: allowlists centralized in config/security.php (raw allowlist path, file apply prefixes, plan command allowlist)
   - NEU: AI Provider abstraction + /api/v1/ai/propose (read-only, demo provider, redaction + audit)
+  - NEU: RemoteHttpProvider (disabled by default, allowlist + limits) for external AI agents
   - ai:dev:module:scaffold: Ping nutzt standard API-Envelope (konfigurierbar via --api-envelope=0)
   - Dev: ai:dev:module:scaffold default sandbox (storage/sandbox/), --sandbox=0 fuer direktes modules/
 

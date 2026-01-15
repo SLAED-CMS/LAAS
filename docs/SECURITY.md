@@ -65,6 +65,7 @@
 - Allowlist stored in `config/template_raw_allowlist.php` (versioned PHP array).
 - Allowlists live in `config/security.php` and can be overridden via `config/security.local.php`.
 - AI propose endpoint (`/api/v1/ai/propose`) is read-only; prompts are redacted and audit logs store metadata only.
+- Remote AI provider is disabled by default; enable via `config/security.php` allowlist and limits (no body logging).
 
 ## Proposals (AI foundation)
 - Proposals are local artifacts for planning only; no secrets, no network use.

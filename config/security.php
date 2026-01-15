@@ -144,6 +144,13 @@ return [
         'preflight',
     ],
     'ai_provider' => 'local_demo',
+    'ai_remote_enabled' => false,
+    'ai_remote_allowlist' => [],
+    'ai_remote_timeout_ms' => 8000,
+    'ai_remote_max_request_bytes' => 200000,
+    'ai_remote_max_response_bytes' => 300000,
+    'ai_remote_endpoint' => '/v1/propose',
+    'ai_remote_auth_header' => '',
     'rate_limit' => [
         'api' => [
             'window' => 60,
