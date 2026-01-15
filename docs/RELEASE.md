@@ -1,5 +1,18 @@
 # Release Checklist (v4.0.0)
 
+## Highlights
+- Safe AI runtime with Proposal → Plan → Diff → explicit CLI apply (`--yes`)
+- Admin AI Assistant UI with HTMX, Diff Viewer, and Dev Autopilot Preview
+- Cursor-aware AI panel in page editor
+- Tools API (read-only) and Remote AI provider (disabled by default)
+
+## Safety model
+- No apply over HTTP
+- Allowlisted commands and file paths
+- Dry-run by default
+- Sandbox-first scaffolding
+- Full auditability via proposals and plans
+
 ## Preconditions
 - `vendor/bin/phpunit` is green
 - `php tools/cli.php policy:check` is green
