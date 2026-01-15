@@ -29,4 +29,15 @@ return [
     'max_files' => $envInt('HTTP_MAX_FILES', 10),
     'max_file_bytes' => $envInt('HTTP_MAX_FILE_BYTES', 10_000_000),
     'trusted_hosts' => $envList('HTTP_TRUSTED_HOSTS', []),
+    'client' => [
+        'timeout_seconds' => $envInt('HTTP_CLIENT_TIMEOUT', 8),
+        'connect_timeout_seconds' => $envInt('HTTP_CLIENT_CONNECT_TIMEOUT', 3),
+        'max_redirects' => $envInt('HTTP_CLIENT_MAX_REDIRECTS', 3),
+        'max_bytes' => $envInt('HTTP_CLIENT_MAX_BYTES', 2_000_000),
+    ],
+    'ssrf' => [
+        'allowed_github_hosts' => $envList('HTTP_SSRF_ALLOWED_GITHUB_HOSTS', ['api.github.com', 'github.com']),
+        'allowed_s3_host_suffixes' => $envList('HTTP_SSRF_ALLOWED_S3_HOST_SUFFIXES', ['amazonaws.com']),
+        'blocked_host_suffixes' => $envList('HTTP_SSRF_BLOCKED_HOST_SUFFIXES', ['localhost', '.local', '.internal']),
+    ],
 ];
