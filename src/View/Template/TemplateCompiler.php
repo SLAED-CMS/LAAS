@@ -118,7 +118,7 @@ final class TemplateCompiler
 
         if (preg_match('/^raw\s+([A-Za-z0-9_.]+)$/', $tag, $matches)) {
             $key = $matches[1];
-            return "<?php echo \$this->raw(\$this->value(\$ctx, '{$key}')); ?>";
+            return "<?php echo \$this->raw(\$this->value(\$ctx, '{$key}'), '{$key}', \$ctx, \$options); ?>";
         }
 
         if ($tag === 'csrf') {

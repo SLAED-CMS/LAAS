@@ -119,6 +119,35 @@ final class StorageService
         ];
     }
 
+    public function moveQuarantineToDiskPath(string $quarantinePath, string $diskPath): string
+    {
+        if ($this->misconfigured) {
+            throw new RuntimeException('s3_misconfigured');
+        }
+
+        $absolutePath = $this->absolutePath($diskPath);
+
+        if ($this->driver->name() === 'local') {
+            $dir = dirname($absolutePath);
+            if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
+                throw new RuntimeException('Failed to create upload directory');
+            }
+
+            if (!rename($quarantinePath, $absolutePath)) {
+                throw new RuntimeException('Failed to move uploaded file');
+            }
+
+            return $absolutePath;
+        }
+
+        if (!$this->driver->put($diskPath, $quarantinePath)) {
+            throw new RuntimeException('s3_upload_failed');
+        }
+        $this->deleteAbsolute($quarantinePath);
+
+        return $absolutePath;
+    }
+
     public function delete(string $diskPath): void
     {
         if ($this->misconfigured) {

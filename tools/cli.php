@@ -1,6 +1,11 @@
 <?php
 declare(strict_types=1);
 
+use Laas\Ai\FileChangeApplier;
+use Laas\Ai\Proposal;
+use Laas\Ai\ProposalStore;
+use Laas\Ai\ProposalValidator;
+use Laas\Ai\Dev\ModuleScaffolder;
 use Laas\Database\DatabaseManager;
 use Laas\Database\DbIndexInspector;
 use Laas\Database\Migrations\Migrator;
@@ -16,10 +21,12 @@ use Laas\Modules\Media\Repository\MediaRepository;
 use Laas\Modules\Media\Service\LocalStorageDriver;
 use Laas\Modules\Media\Service\MediaGcService;
 use Laas\Modules\Media\Service\MediaThumbnailService;
+use Laas\Modules\Media\Service\MediaUploadReaper;
 use Laas\Modules\Media\Service\MediaVerifyService;
 use Laas\Modules\Media\Service\S3Storage;
 use Laas\Modules\Media\Service\StorageService;
 use Laas\Modules\Media\Service\StorageWalker;
+use Laas\Security\HtmlSanitizer;
 use Laas\Support\AuditLogger;
 use Laas\Support\BackupManager;
 use Laas\Support\ConfigSanityChecker;
@@ -235,6 +242,374 @@ $commands['templates:warmup'] = function () use ($rootPath, $appConfig): int {
     return 0;
 };
 
+$commands['templates:raw:scan'] = function () use ($rootPath, $args): int {
+    $pathArg = (string) (getOption($args, 'path') ?? 'themes');
+    $json = hasFlag($args, 'json');
+
+    $scan = scanTemplateRaw($rootPath, $pathArg, ['html', 'tpl']);
+    if ($scan === null) {
+        echo "Path not found: {$pathArg}\n";
+        return 1;
+    }
+
+    $filesScanned = (int) ($scan['files_scanned'] ?? 0);
+    $items = $scan['items'] ?? [];
+    $hits = is_array($items) ? count($items) : 0;
+
+    if ($json) {
+        echo json_encode([
+            'files_scanned' => $filesScanned,
+            'hits' => $hits,
+            'items' => $items,
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n";
+        return 0;
+    }
+
+    if ($items !== []) {
+        $grouped = [];
+        foreach ($items as $item) {
+            $grouped[$item['file']][] = $item;
+        }
+        foreach ($grouped as $file => $fileItems) {
+            echo $file . "\n";
+            foreach ($fileItems as $item) {
+                echo '  line ' . $item['line'] . ' ' . $item['kind'] . ': ' . $item['excerpt'] . "\n";
+            }
+        }
+    }
+    echo 'files_scanned=' . $filesScanned . ' hits=' . $hits . "\n";
+    return 0;
+};
+
+$commands['templates:raw:check'] = function () use ($rootPath, $args): int {
+    $pathArg = (string) (getOption($args, 'path') ?? 'themes');
+    $allowlistArg = (string) (getOption($args, 'allowlist') ?? 'docs/template_raw_allowlist.json');
+    $update = hasFlag($args, 'update');
+
+    $scan = scanTemplateRaw($rootPath, $pathArg, ['html', 'tpl']);
+    if ($scan === null) {
+        echo "Path not found: {$pathArg}\n";
+        return 1;
+    }
+
+    $scanItems = [];
+    foreach ($scan['items'] ?? [] as $item) {
+        $file = (string) ($item['file'] ?? '');
+        $line = (int) ($item['line'] ?? 0);
+        $kind = (string) ($item['kind'] ?? '');
+        if ($file === '' || $line <= 0 || $kind === '') {
+            continue;
+        }
+        $scanItems[] = [
+            'file' => $file,
+            'line' => $line,
+            'kind' => $kind,
+        ];
+    }
+
+    $allowlistPath = isAbsolutePath($allowlistArg)
+        ? $allowlistArg
+        : $rootPath . '/' . ltrim($allowlistArg, '/\\');
+
+    if ($update) {
+        $dir = dirname($allowlistPath);
+        if (!is_dir($dir)) {
+            echo "Allowlist directory not found: {$dir}\n";
+            return 1;
+        }
+        usort($scanItems, static function (array $a, array $b): int {
+            $cmp = strcmp($a['file'], $b['file']);
+            if ($cmp !== 0) {
+                return $cmp;
+            }
+            $cmp = $a['line'] <=> $b['line'];
+            if ($cmp !== 0) {
+                return $cmp;
+            }
+            return strcmp($a['kind'], $b['kind']);
+        });
+
+        $payload = [
+            'version' => 1,
+            'notes' => 'Approved raw usages in themes. Update intentionally.',
+            'items' => $scanItems,
+        ];
+        file_put_contents($allowlistPath, json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+        echo 'allowlist updated: items=' . count($scanItems) . "\n";
+        return 0;
+    }
+
+    if (!is_file($allowlistPath)) {
+        echo "Allowlist not found: {$allowlistArg}\n";
+        return 1;
+    }
+
+    $allowlistRaw = (string) file_get_contents($allowlistPath);
+    $allowlistData = json_decode($allowlistRaw, true);
+    if (!is_array($allowlistData)) {
+        echo "Allowlist invalid JSON: {$allowlistArg}\n";
+        return 1;
+    }
+    $allowlistItems = is_array($allowlistData['items'] ?? null) ? $allowlistData['items'] : [];
+
+    $scanCounts = [];
+    $scanTotal = 0;
+    foreach ($scanItems as $item) {
+        $key = $item['file'] . '|' . $item['line'] . '|' . $item['kind'];
+        if (!isset($scanCounts[$key])) {
+            $scanCounts[$key] = [
+                'item' => $item,
+                'count' => 0,
+            ];
+        }
+        $scanCounts[$key]['count']++;
+        $scanTotal++;
+    }
+
+    $allowCounts = [];
+    $allowTotal = 0;
+    foreach ($allowlistItems as $item) {
+        if (!is_array($item)) {
+            continue;
+        }
+        $file = (string) ($item['file'] ?? '');
+        $line = (int) ($item['line'] ?? 0);
+        $kind = (string) ($item['kind'] ?? '');
+        if ($file === '' || $line <= 0 || $kind === '') {
+            continue;
+        }
+        $key = $file . '|' . $line . '|' . $kind;
+        if (!isset($allowCounts[$key])) {
+            $allowCounts[$key] = [
+                'item' => [
+                    'file' => $file,
+                    'line' => $line,
+                    'kind' => $kind,
+                ],
+                'count' => 0,
+            ];
+        }
+        $allowCounts[$key]['count']++;
+        $allowTotal++;
+    }
+
+    $newItems = [];
+    $missingItems = [];
+    $newTotal = 0;
+    $missingTotal = 0;
+
+    foreach ($scanCounts as $key => $data) {
+        $allowCount = $allowCounts[$key]['count'] ?? 0;
+        if ($data['count'] > $allowCount) {
+            $extra = $data['count'] - $allowCount;
+            $newItems[] = [
+                'item' => $data['item'],
+                'count' => $extra,
+            ];
+            $newTotal += $extra;
+        }
+    }
+
+    foreach ($allowCounts as $key => $data) {
+        $scanCount = $scanCounts[$key]['count'] ?? 0;
+        if ($data['count'] > $scanCount) {
+            $missing = $data['count'] - $scanCount;
+            $missingItems[] = [
+                'item' => $data['item'],
+                'count' => $missing,
+            ];
+            $missingTotal += $missing;
+        }
+    }
+
+    echo 'hits=' . $scanTotal . ' allowlist=' . $allowTotal . ' new=' . $newTotal . ' missing=' . $missingTotal . "\n";
+    foreach ($newItems as $entry) {
+        $item = $entry['item'];
+        $count = (int) ($entry['count'] ?? 0);
+        $suffix = $count > 1 ? ' x' . $count : '';
+        echo 'new: ' . $item['file'] . ':' . $item['line'] . ' ' . $item['kind'] . $suffix . "\n";
+    }
+    foreach ($missingItems as $entry) {
+        $item = $entry['item'];
+        $count = (int) ($entry['count'] ?? 0);
+        $suffix = $count > 1 ? ' x' . $count : '';
+        echo 'missing: ' . $item['file'] . ':' . $item['line'] . ' ' . $item['kind'] . $suffix . "\n";
+    }
+
+    return $newTotal > 0 ? 3 : 0;
+};
+
+$commands['ai:proposal:demo'] = function () use ($rootPath): int {
+    $id = bin2hex(random_bytes(16));
+    $proposal = new Proposal([
+        'id' => $id,
+        'created_at' => gmdate(DATE_ATOM),
+        'kind' => 'demo',
+        'summary' => 'Demo proposal scaffold',
+        'file_changes' => [
+            [
+                'op' => 'create',
+                'path' => 'modules/Demo/README.md',
+                'content' => "# Demo\n",
+            ],
+        ],
+        'entity_changes' => [],
+        'warnings' => ['demo only'],
+        'confidence' => 0.5,
+        'risk' => 'low',
+    ]);
+
+    $store = new ProposalStore($rootPath);
+    $path = $store->save($proposal);
+
+    $relative = normalizePath($path);
+    $rootNorm = rtrim(normalizePath($rootPath), '/');
+    if (str_starts_with(strtolower($relative), strtolower($rootNorm . '/'))) {
+        $relative = substr($relative, strlen($rootNorm) + 1);
+    }
+
+    echo 'proposal_saved=' . $relative . ' id=' . $id . "\n";
+    return 0;
+};
+
+$commands['ai:proposal:apply'] = function () use ($rootPath, $args): int {
+    $id = (string) ($args[0] ?? '');
+    if ($id === '') {
+        echo "Usage: ai:proposal:apply <id> [--dry-run] [--yes] [--base-dir=<path>]\n";
+        return 1;
+    }
+
+    $dryRun = parseBoolOption($args, 'dry-run', true);
+    $dryRunExplicit = getOption($args, 'dry-run') !== null || hasFlag($args, 'dry-run');
+    $confirmed = hasFlag($args, 'yes');
+    if ($confirmed && !$dryRunExplicit) {
+        $dryRun = false;
+    }
+    $baseDir = getOption($args, 'base-dir');
+    if (is_string($baseDir)) {
+        $baseDir = trim($baseDir);
+        if ($baseDir === '') {
+            $baseDir = null;
+        }
+    }
+    if (is_string($baseDir) && $baseDir !== '' && !isAbsolutePath($baseDir)) {
+        $baseDir = $rootPath . '/' . ltrim($baseDir, '/\\');
+    }
+
+    if (!$dryRun && !$confirmed) {
+        echo "refusing to apply changes without --yes\n";
+        echo 'id=' . $id . ' mode=apply would_apply=0 applied=0 errors=0' . "\n";
+        return 2;
+    }
+
+    try {
+        $proposal = (new ProposalStore($rootPath))->load($id);
+    } catch (Throwable $e) {
+        echo "Proposal not found or invalid: {$id}\n";
+        return 1;
+    }
+
+    $data = $proposal->toArray();
+    $fileChanges = is_array($data['file_changes'] ?? null) ? $data['file_changes'] : [];
+    $applier = new FileChangeApplier($baseDir !== null ? $baseDir : $rootPath);
+    $summary = $applier->apply($fileChanges, $dryRun, $confirmed);
+
+    $mode = $dryRun ? 'dry-run' : 'apply';
+    $wouldApply = (int) ($summary['would_apply'] ?? 0);
+    $applied = (int) ($summary['applied'] ?? 0);
+    $errors = (int) ($summary['errors'] ?? 0);
+
+    echo 'id=' . $id . ' mode=' . $mode
+        . ' would_apply=' . $wouldApply
+        . ' applied=' . $applied
+        . ' errors=' . $errors . "\n";
+
+    return $errors > 0 ? 3 : 0;
+};
+
+$commands['ai:proposal:validate'] = function () use ($rootPath, $args): int {
+    $target = (string) ($args[0] ?? '');
+    if ($target === '') {
+        echo "Usage: ai:proposal:validate <id-or-path> [--json]\n";
+        return 1;
+    }
+
+    $json = hasFlag($args, 'json');
+    $path = $target;
+    if (!isAbsolutePath($path)) {
+        $path = $rootPath . '/' . ltrim($path, '/\\');
+    }
+
+    $data = null;
+    if (is_file($path)) {
+        $raw = (string) file_get_contents($path);
+        $decoded = json_decode($raw, true);
+        if (!is_array($decoded)) {
+            $errors = [
+                ['path' => 'json', 'message' => 'invalid JSON'],
+            ];
+            return outputProposalValidation($errors, $json);
+        }
+        $data = $decoded;
+    } else {
+        try {
+            $proposal = (new ProposalStore($rootPath))->load($target);
+            $data = $proposal->toArray();
+        } catch (Throwable $e) {
+            echo "Proposal not found or invalid: {$target}\n";
+            return 1;
+        }
+    }
+
+    $validator = new ProposalValidator();
+    $errors = $validator->validate($data);
+    return outputProposalValidation($errors, $json);
+};
+
+$commands['ai:dev:module:scaffold'] = function () use ($rootPath, $args): int {
+    $name = (string) ($args[0] ?? '');
+    if ($name === '') {
+        echo "Usage: ai:dev:module:scaffold <ModuleName> [--id=<id>] [--dry-run] [--api-envelope=1|0] [--sandbox=1|0]\n";
+        return 1;
+    }
+
+    $customId = getOption($args, 'id');
+    $dryRun = hasFlag($args, 'dry-run');
+    $apiEnvelope = parseBoolOption($args, 'api-envelope', true);
+    $sandbox = parseBoolOption($args, 'sandbox', true);
+
+    try {
+        $scaffolder = new ModuleScaffolder();
+        $proposal = $scaffolder->scaffold($name, $apiEnvelope, $sandbox);
+    } catch (Throwable $e) {
+        echo "Invalid module name.\n";
+        return 1;
+    }
+
+    if (is_string($customId) && $customId !== '') {
+        $payload = $proposal->toArray();
+        $payload['id'] = $customId;
+        $payload['created_at'] = gmdate(DATE_ATOM);
+        $proposal = Proposal::fromArray($payload);
+    }
+
+    $store = new ProposalStore($rootPath);
+    $path = $store->save($proposal);
+
+    $relative = normalizePath($path);
+    $rootNorm = rtrim(normalizePath($rootPath), '/');
+    if (str_starts_with(strtolower($relative), strtolower($rootNorm . '/'))) {
+        $relative = substr($relative, strlen($rootNorm) + 1);
+    }
+
+    $id = (string) ($proposal->toArray()['id'] ?? '');
+    $mode = $dryRun ? 'dry-run' : 'saved';
+    $envelope = $apiEnvelope ? 'on' : 'off';
+    $sandboxLabel = $sandbox ? 'on' : 'off';
+    echo 'proposal_saved=' . $relative . ' id=' . $id . ' module=' . $name . ' mode=' . $mode . ' envelope=' . $envelope . ' sandbox=' . $sandboxLabel . "\n";
+    return 0;
+};
+
 $commands['db:check'] = function () use ($dbManager): int {
     try {
         $ok = $dbManager->healthCheck();
@@ -244,6 +619,74 @@ $commands['db:check'] = function () use ($dbManager): int {
         echo "DB: FAIL - " . $e->getMessage() . "\n";
         return 1;
     }
+};
+
+$commands['content:sanitize-pages'] = function () use ($dbManager, $args): int {
+    if (!$dbManager->healthCheck()) {
+        echo "DB not available.\n";
+        return 1;
+    }
+
+    $dryRun = hasFlag($args, 'dry-run');
+    $confirmed = hasFlag($args, 'yes');
+    $limit = (int) (getOption($args, 'limit') ?? 0);
+    if ($limit < 0) {
+        $limit = 0;
+    }
+    $offset = (int) (getOption($args, 'offset') ?? 0);
+    if ($offset < 0) {
+        $offset = 0;
+    }
+
+    if (!$dryRun && !$confirmed) {
+        echo "refusing to apply updates without --yes\n";
+        echo "scanned=0 changed=0 updated=0\n";
+        return 2;
+    }
+
+    $pdo = $dbManager->pdo();
+    $sql = 'SELECT id, content FROM pages ORDER BY id ASC';
+    if ($limit > 0) {
+        $sql .= ' LIMIT :limit OFFSET :offset';
+    }
+    $stmt = $pdo->prepare($sql);
+    if ($limit > 0) {
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
+    }
+    $stmt->execute();
+
+    $updateStmt = $pdo->prepare('UPDATE pages SET content = :content WHERE id = :id');
+    $sanitizer = new HtmlSanitizer();
+
+    $scanned = 0;
+    $changed = 0;
+    $updated = 0;
+
+    while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+        $scanned++;
+        $id = (int) ($row['id'] ?? 0);
+        $content = (string) ($row['content'] ?? '');
+        $sanitized = $sanitizer->sanitize($content);
+        if ($sanitized === $content) {
+            continue;
+        }
+
+        $changed++;
+        if ($dryRun) {
+            continue;
+        }
+
+        $updateStmt->execute([
+            'content' => $sanitized,
+            'id' => $id,
+        ]);
+        $updated++;
+    }
+
+    $mode = $dryRun ? 'dry-run' : 'applied';
+    echo 'scanned=' . $scanned . ' changed=' . $changed . ' updated=' . $updated . ' mode=' . $mode . "\n";
+    return 0;
 };
 
 $commands['db:indexes:audit'] = function () use ($dbManager, $args): int {
@@ -737,6 +1180,152 @@ $commands['media:gc'] = function () use ($dbManager, $rootPath, $storageConfig, 
     }
 
     return ($result['ok'] ?? false) ? 0 : 2;
+};
+
+$commands['media:uploads:reap'] = function () use ($dbManager, $rootPath, $args): int {
+    if (!$dbManager->healthCheck()) {
+        echo "DB not available.\n";
+        return 1;
+    }
+
+    $olderThanRaw = (string) (getOption($args, 'older-than') ?? '30m');
+    $olderThanSeconds = parseDurationSeconds($olderThanRaw);
+    if ($olderThanSeconds === null) {
+        echo "Invalid --older-than value: {$olderThanRaw}\n";
+        echo "Use e.g. 30m, 1h, 1d, 3600\n";
+        return 1;
+    }
+
+    $limit = (int) (getOption($args, 'limit') ?? 0);
+    if ($limit < 0) {
+        $limit = 0;
+    }
+
+    $repo = new MediaRepository($dbManager);
+    $storage = new StorageService($rootPath);
+    $reaper = new MediaUploadReaper($repo, $storage);
+    $result = $reaper->reap($olderThanSeconds, $limit);
+
+    echo 'older_than: ' . $olderThanRaw . "\n";
+    echo 'cutoff: ' . (string) ($result['cutoff'] ?? '') . "\n";
+    echo 'limit: ' . (int) ($result['limit'] ?? 0) . "\n";
+    echo 'scanned: ' . (int) ($result['scanned'] ?? 0) . "\n";
+    echo 'deleted: ' . (int) ($result['deleted'] ?? 0) . "\n";
+    echo 'quarantine_deleted: ' . (int) ($result['quarantine_deleted'] ?? 0) . "\n";
+    echo 'disk_deleted: ' . (int) ($result['disk_deleted'] ?? 0) . "\n";
+    echo 'errors: ' . (int) ($result['errors'] ?? 0) . "\n";
+
+    return ($result['ok'] ?? false) ? 0 : 2;
+};
+
+$commands['media:sha256:dedup:report'] = function () use ($dbManager, $storageConfig, $args): int {
+    if (!$dbManager->healthCheck()) {
+        echo "DB not available.\n";
+        return 1;
+    }
+
+    $diskFilter = getOption($args, 'disk');
+    if (is_string($diskFilter)) {
+        $diskFilter = trim($diskFilter);
+        if ($diskFilter === '') {
+            $diskFilter = null;
+        }
+    }
+
+    $limit = (int) (getOption($args, 'limit') ?? 100);
+    if ($limit <= 0) {
+        $limit = 100;
+    }
+
+    $withPaths = hasFlag($args, 'with-paths');
+    $json = hasFlag($args, 'json');
+
+    $repo = new MediaRepository($dbManager);
+    $hasDisk = $repo->hasDiskColumn();
+    $diskRequested = $diskFilter !== null;
+    $diskFilterApplied = $diskRequested && $hasDisk;
+    $exitCode = 0;
+    if ($diskRequested && !$hasDisk) {
+        fwrite(STDERR, "Option --disk ignored: column media_files.disk not present\n");
+        $diskFilter = null;
+        $exitCode = 2;
+    }
+
+    $groups = $repo->listSha256DuplicatesReport($limit, $diskFilterApplied ? $diskFilter : null);
+    $defaultDisk = (string) ($storageConfig['default'] ?? $storageConfig['default_raw'] ?? '');
+
+    if ($json) {
+        $meta = [
+            'disk_supported' => $hasDisk,
+            'disk_filter_applied' => $diskFilterApplied,
+            'limit' => $limit,
+        ];
+        $payload = [];
+        foreach ($groups as $group) {
+            $items = [];
+            foreach ($group['items'] as $item) {
+                $disk = (string) ($item['disk'] ?? '');
+                if ($disk === '' && $defaultDisk !== '') {
+                    $disk = $defaultDisk;
+                }
+                $entry = [
+                    'id' => (int) ($item['id'] ?? 0),
+                    'disk' => $disk,
+                    'size' => (int) ($item['size_bytes'] ?? 0),
+                    'created_at' => (string) ($item['created_at'] ?? ''),
+                    'status' => (string) ($item['status'] ?? ''),
+                ];
+                if ($withPaths) {
+                    $entry['path'] = (string) ($item['disk_path'] ?? '');
+                }
+                $items[] = $entry;
+            }
+            $payload[] = [
+                'sha256' => (string) ($group['sha256'] ?? ''),
+                'count' => (int) ($group['count'] ?? 0),
+                'items' => $items,
+            ];
+        }
+
+        echo json_encode([
+            'meta' => $meta,
+            'groups' => $payload,
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n";
+        return $exitCode;
+    }
+
+    if ($groups === []) {
+        echo "No SHA256 duplicates found.\n";
+        echo "groups=0 rows=0\n";
+        return $exitCode;
+    }
+
+    $groupCount = 0;
+    $rowCount = 0;
+    foreach ($groups as $group) {
+        $groupCount++;
+        $sha256 = (string) ($group['sha256'] ?? '');
+        $count = (int) ($group['count'] ?? 0);
+        echo 'sha256: ' . $sha256 . "\n";
+        echo 'count: ' . $count . "\n";
+
+        foreach ($group['items'] as $item) {
+            $rowCount++;
+            $disk = (string) ($item['disk'] ?? '');
+            if ($disk === '') {
+                $disk = $defaultDisk !== '' ? $defaultDisk : '-';
+            }
+            $path = $withPaths ? (' ' . (string) ($item['disk_path'] ?? '')) : '';
+            $size = (int) ($item['size_bytes'] ?? 0);
+            $created = (string) ($item['created_at'] ?? '');
+            $status = (string) ($item['status'] ?? '');
+            $id = (int) ($item['id'] ?? 0);
+            echo '  [' . $id . '] ' . $disk . $path . ' ' . $size . ' ' . $created . ' ' . $status . "\n";
+        }
+    }
+
+    echo 'groups=' . $groupCount . ' rows=' . $rowCount . "\n";
+    return $exitCode;
 };
 
 $commands['media:verify'] = function () use ($dbManager, $rootPath, $storageConfig, $args): int {
@@ -1769,6 +2358,118 @@ function hasFlag(array $args, string $name): bool
     return in_array('--' . $name, $args, true);
 }
 
+function normalizePath(string $value): string
+{
+    return str_replace('\\', '/', $value);
+}
+
+function isAbsolutePath(string $value): bool
+{
+    if ($value === '') {
+        return false;
+    }
+    if (str_starts_with($value, '/') || str_starts_with($value, '\\')) {
+        return true;
+    }
+    return preg_match('/^[A-Za-z]:[\\\\\\/]/', $value) === 1;
+}
+
+/**
+ * @param array<int, string> $extensions
+ * @return array{files_scanned: int, items: array<int, array{file: string, line: int, kind: string, excerpt: string}>}|null
+ */
+function scanTemplateRaw(string $rootPath, string $pathArg, array $extensions): ?array
+{
+    $basePath = isAbsolutePath($pathArg) ? $pathArg : $rootPath . '/' . ltrim($pathArg, '/\\');
+    if (!is_dir($basePath) && !is_file($basePath)) {
+        return null;
+    }
+
+    $files = [];
+    if (is_file($basePath)) {
+        $files[] = $basePath;
+    } else {
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($basePath, FilesystemIterator::SKIP_DOTS)
+        );
+        foreach ($iterator as $fileInfo) {
+            if (!$fileInfo->isFile()) {
+                continue;
+            }
+            $ext = strtolower($fileInfo->getExtension());
+            if (!in_array($ext, $extensions, true)) {
+                continue;
+            }
+            $files[] = $fileInfo->getPathname();
+        }
+    }
+
+    $items = [];
+    $filesScanned = 0;
+    $rootNorm = rtrim(normalizePath($rootPath), '/');
+    $pattern = '/\\{%\\s*(raw|endraw)\\b([^%}]*)%\\}/';
+    $altPattern = '/\\{\\{\\s*raw\\b/';
+
+    foreach ($files as $filePath) {
+        $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+        if (!in_array($ext, $extensions, true)) {
+            continue;
+        }
+        $filesScanned++;
+        $lines = @file($filePath, FILE_IGNORE_NEW_LINES);
+        if (!is_array($lines)) {
+            continue;
+        }
+
+        $reportPath = normalizePath($filePath);
+        if (str_starts_with(strtolower($reportPath), strtolower($rootNorm . '/'))) {
+            $reportPath = substr($reportPath, strlen($rootNorm) + 1);
+        }
+
+        foreach ($lines as $index => $line) {
+            $lineNumber = $index + 1;
+            $excerpt = str_replace("\t", ' ', $line);
+            $excerpt = trim($excerpt);
+            if (strlen($excerpt) > 120) {
+                $excerpt = substr($excerpt, 0, 120);
+            }
+
+            if (preg_match_all($pattern, $line, $matches, PREG_SET_ORDER)) {
+                foreach ($matches as $match) {
+                    $tag = strtolower((string) ($match[1] ?? ''));
+                    $rest = trim((string) ($match[2] ?? ''));
+                    if ($tag === 'endraw') {
+                        continue;
+                    }
+                    $kind = $rest === '' ? 'raw_block' : 'raw_output';
+                    $items[] = [
+                        'file' => $reportPath,
+                        'line' => $lineNumber,
+                        'kind' => $kind,
+                        'excerpt' => $excerpt,
+                    ];
+                }
+            }
+
+            if (preg_match_all($altPattern, $line, $altMatches, PREG_SET_ORDER)) {
+                foreach ($altMatches as $match) {
+                    $items[] = [
+                        'file' => $reportPath,
+                        'line' => $lineNumber,
+                        'kind' => 'raw_output',
+                        'excerpt' => $excerpt,
+                    ];
+                }
+            }
+        }
+    }
+
+    return [
+        'files_scanned' => $filesScanned,
+        'items' => $items,
+    ];
+}
+
 function parseBoolOption(array $args, string $name, bool $default): bool
 {
     $value = getOption($args, $name);
@@ -1778,6 +2479,32 @@ function parseBoolOption(array $args, string $name, bool $default): bool
 
     $parsed = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
     return $parsed ?? $default;
+}
+
+function parseDurationSeconds(string $value): ?int
+{
+    $value = trim($value);
+    if ($value === '') {
+        return null;
+    }
+
+    if (ctype_digit($value)) {
+        return (int) $value;
+    }
+
+    if (!preg_match('/^(\d+)\s*([smhd])$/i', $value, $matches)) {
+        return null;
+    }
+
+    $amount = (int) $matches[1];
+    $unit = strtolower($matches[2]);
+    return match ($unit) {
+        's' => $amount,
+        'm' => $amount * 60,
+        'h' => $amount * 3600,
+        'd' => $amount * 86400,
+        default => null,
+    };
 }
 
 function buildStorageDriver(string $rootPath, array $storageConfig, string $disk, ?string &$error = null): ?object
@@ -1812,6 +2539,33 @@ function buildStorageDriver(string $rootPath, array $storageConfig, string $disk
         $error = 's3_init_failed';
         return null;
     }
+}
+
+/**
+ * @param array<int, array{path: string, message: string}> $errors
+ */
+function outputProposalValidation(array $errors, bool $json): int
+{
+    $valid = $errors === [];
+    if ($json) {
+        echo json_encode([
+            'valid' => $valid,
+            'errors' => $errors,
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n";
+    } else {
+        if ($valid) {
+            echo "valid=1 errors=0\n";
+        } else {
+            echo 'valid=0 errors=' . count($errors) . "\n";
+            foreach ($errors as $error) {
+                $path = (string) ($error['path'] ?? '');
+                $message = (string) ($error['message'] ?? '');
+                echo '- ' . $path . ': ' . $message . "\n";
+            }
+        }
+    }
+
+    return $valid ? 0 : 3;
 }
 
 function envValue(string $key): string

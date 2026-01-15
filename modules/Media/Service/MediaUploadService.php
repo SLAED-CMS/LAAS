@@ -3,8 +3,11 @@ declare(strict_types=1);
 
 namespace Laas\Modules\Media\Service;
 
+use DateTimeImmutable;
+use DateTimeZone;
 use Laas\Modules\Media\Repository\MediaRepository;
 use Laas\Support\AuditLogger;
+use PDOException;
 use Throwable;
 
 final class MediaUploadService
@@ -19,7 +22,11 @@ final class MediaUploadService
     ) {
     }
 
-    /** @return array{status: string, id?: int, errors?: array<int, array{key: string, params?: array}>, existing?: bool} */
+    /**
+     * @return array{status: string, id?: int, errors?: array<int, array{key: string, params?: array}>, existing?: bool}
+     * @throws MediaUploadPendingException
+     * @throws MediaUploadFailedException
+     */
     public function upload(array $file, string $originalName, array $config, ?int $userId): array
     {
         try {
@@ -96,41 +103,57 @@ final class MediaUploadService
             }
         }
 
-        $existing = $this->repository->findBySha256($hash);
-        if ($existing !== null) {
-            $this->storage->deleteAbsolute($tmpPath);
-            return [
-                'status' => 'deduped',
-                'id' => (int) ($existing['id'] ?? 0),
-                'existing' => true,
-            ];
-        }
+        $quarantineDiskPath = (string) ($quarantine['disk_path'] ?? '');
+        $uuid = bin2hex(random_bytes(16));
+        $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+        $diskPath = $this->storage->buildDiskPath($now, $uuid, $extension);
 
         try {
-            $stored = $this->storage->finalizeFromQuarantine($tmpPath, $extension);
-        } catch (Throwable $e) {
-            $this->storage->deleteAbsolute($tmpPath);
-            $key = $this->storageErrorKey($e);
-            return $this->error($key);
-        }
-
-        try {
-            $id = $this->repository->create([
-                'uuid' => $stored['uuid'],
-                'disk_path' => $stored['disk_path'],
+            $this->repository->beginTransaction();
+            $id = $this->repository->createUploading([
+                'uuid' => $uuid,
+                'disk_path' => $diskPath,
                 'original_name' => $originalName,
                 'mime_type' => $mime,
                 'size_bytes' => $size,
                 'sha256' => $hash,
                 'uploaded_by' => $userId,
+                'quarantine_path' => $quarantineDiskPath,
             ]);
-        } catch (Throwable) {
-            $this->storage->delete($stored['disk_path']);
+            $this->repository->commit();
+        } catch (Throwable $e) {
+            $this->repository->rollBack();
+            if ($this->isDuplicateKey($e)) {
+                $this->storage->deleteAbsolute($tmpPath);
+                $policy = MediaDedupeWaitPolicy::fromConfig($config);
+                $waiter = new MediaDedupeWaiter($this->repository);
+                $existing = $waiter->waitForReadyBySha256($hash, $policy);
+                return [
+                    'status' => 'deduped',
+                    'id' => (int) ($existing['id'] ?? 0),
+                    'existing' => true,
+                ];
+            }
+            $this->storage->deleteAbsolute($tmpPath);
             return $this->error('admin.media.error_upload_failed');
         }
 
-        if ($id <= 0) {
-            $this->storage->delete($stored['disk_path']);
+        try {
+            $this->storage->moveQuarantineToDiskPath($tmpPath, $diskPath);
+        } catch (Throwable $e) {
+            $this->storage->deleteAbsolute($tmpPath);
+            if (isset($id)) {
+                $this->repository->delete($id);
+            }
+            $key = $this->storageErrorKey($e);
+            return $this->error($key);
+        }
+
+        try {
+            $this->repository->markReady($id);
+        } catch (Throwable) {
+            $this->storage->delete($diskPath);
+            $this->repository->delete($id);
             return $this->error('admin.media.error_upload_failed');
         }
 
@@ -218,4 +241,25 @@ final class MediaUploadService
             $this->requestIp ?? ''
         );
     }
+
+    private function isDuplicateKey(Throwable $e): bool
+    {
+        if (!$e instanceof PDOException) {
+            return false;
+        }
+
+        $sqlState = (string) $e->getCode();
+        if ($sqlState === '23000' || $sqlState === '23505') {
+            return true;
+        }
+
+        $errorInfo = $e->errorInfo ?? [];
+        $driverCode = $errorInfo[1] ?? null;
+        if (is_int($driverCode) && in_array($driverCode, [19, 1062], true)) {
+            return true;
+        }
+
+        return false;
+    }
+
 }

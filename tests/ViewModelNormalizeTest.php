@@ -53,12 +53,12 @@ final class ViewModelNormalizeTest extends TestCase
         $request = new Request('GET', '/test', [], [], [], '', $session);
         $view->setRequest($request);
 
-        $vm = new PagePublicViewModel('test', 'Hello', 'Body');
+        $vm = new PagePublicViewModel('test', 'Hello', '<p>Body</p>');
         $response = $view->render('pages/page.html', [
             'page' => $vm,
         ]);
 
         $this->assertStringContainsString('Hello', $response->getBody());
-        $this->assertStringContainsString('Body', $response->getBody());
+        $this->assertStringContainsString('<p>Body</p>', $response->getBody());
     }
 }

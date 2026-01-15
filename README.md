@@ -9,14 +9,13 @@
 [![Security](https://img.shields.io/badge/Security-99%2F100-brightgreen.svg)](docs/SECURITY.md)
 
 **Stable v3.28.0**
-
 **Latest Release v3.28.0**
 - Versions: [docs/VERSIONS.md](docs/VERSIONS.md)
 - Contracts: [docs/CONTRACTS.md](docs/CONTRACTS.md)
 
-**Modern, secure, HTML-first content management system.**
+**Modern, secure, Headless content management system.**
 
-**v3.1.2** - Frontend-agnostic platform with optional Redis sessions: RenderAdapter v1 (HTML/JSON), content negotiation (Accept header, ?format parameter), headless mode (JSON by default), Problem Details (RFC 7807) for structured JSON errors. Session Management: Optional Redis sessions (SESSION_DRIVER=redis) with safe fallback, SessionInterface abstraction, ops checks and smoke diagnostics. Asset Architecture: AssetManager with cache-busting, UI Tokens (state/status/variant mapping), Theme API v1, ViewModels, policy checks (CI guardrails). Complete security stack: 2FA/TOTP, password reset with email tokens, session timeout enforcement, S3 SSRF protection (99/100 security score).
+Frontend-agnostic platform with optional Redis sessions: RenderAdapter v1 (HTML/JSON), content negotiation (Accept header, ?format parameter), headless mode (JSON by default), Problem Details (RFC 7807) for structured JSON errors. Session Management: Optional Redis sessions (SESSION_DRIVER=redis) with safe fallback, SessionInterface abstraction, ops checks and smoke diagnostics. Asset Architecture: AssetManager with cache-busting, UI Tokens (state/status/variant mapping), Theme API v1, ViewModels, policy checks (CI guardrails). Complete security stack: 2FA/TOTP, password reset with email tokens, session timeout enforcement, S3 SSRF protection (99/100 security score).
 
 LAAS CMS is a modular, security-first CMS built for PHP 8.4+ with a lightweight template engine, middleware pipeline, and i18n support. Bootstrap 5 + HTMX ready.
 

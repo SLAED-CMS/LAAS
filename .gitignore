@@ -1,5 +1,7 @@
 /vendor/
 /storage/*
+/storage/sandbox/
+/storage/proposals/
 !/storage/.gitkeep
 /coverage/
 /.env
@@ -8,9 +10,11 @@
 /.osp/
 *.log
 .phpunit.result.cache
+config/security.local.php
 
-docs/prompts/*
-docs/wiki/*
+docs/audits/
+docs/prompts/
+docs/wiki/
 
 # Apache (nicht benötigt für Nginx)
 .htaccess

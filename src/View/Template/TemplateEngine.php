@@ -3,19 +3,25 @@ declare(strict_types=1);
 
 namespace Laas\View\Template;
 
+use Laas\Support\Audit;
+use Laas\Support\RequestScope;
 use Laas\View\Theme\ThemeManager;
+use Laas\View\SanitizedHtml;
 use RuntimeException;
 
 final class TemplateEngine
 {
     private array $blocks = [];
+    private string $rawMode;
 
     public function __construct(
         private ThemeManager $themeManager,
         private TemplateCompiler $compiler,
         private string $cachePath,
-        private bool $debug
+        private bool $debug,
+        string $rawMode = 'escape'
     ) {
+        $this->rawMode = $this->normalizeRawMode($rawMode);
     }
 
     public function render(string $template, array $data, array $options = []): string
@@ -57,9 +63,23 @@ final class TemplateEngine
     {
         $templatePath = $this->themeManager->resolvePath($template);
         $cacheFile = $this->compile($templatePath);
+        $options['template'] = $template;
+        $options['template_path'] = $templatePath;
+
+        $hasTemplate = RequestScope::has('template.current');
+        $previousTemplate = $hasTemplate ? RequestScope::get('template.current') : null;
+        RequestScope::set('template.current', $template);
 
         ob_start();
-        include $cacheFile;
+        try {
+            include $cacheFile;
+        } finally {
+            if ($hasTemplate) {
+                RequestScope::set('template.current', $previousTemplate);
+            } else {
+                RequestScope::forget('template.current');
+            }
+        }
         $output = (string) ob_get_clean();
 
         return $output;
@@ -116,9 +136,29 @@ final class TemplateEngine
         return htmlspecialchars((string) ($value ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
 
-    public function raw(mixed $value): string
+    public function raw(mixed $value, string $expression = '', array $ctx = [], array $options = []): string
     {
-        return (string) ($value ?? '');
+        $template = $this->resolveTemplateName($options);
+
+        if ($value instanceof SanitizedHtml) {
+            $this->auditRaw('template.raw_used', $template, $expression, true);
+            return $value->toString();
+        }
+
+        if ($this->rawMode === 'allow') {
+            $this->auditRaw('template.raw_used', $template, $expression, false);
+            return (string) ($value ?? '');
+        }
+
+        $this->auditRaw('template.raw_blocked', $template, $expression, false);
+
+        if ($this->rawMode === 'strict' && $this->debug) {
+            $label = $expression !== '' ? $expression : 'unknown';
+            $templateLabel = $template !== '' ? ' in ' . $template : '';
+            throw new RuntimeException('Raw output requires SanitizedHtml: ' . $label . $templateLabel);
+        }
+
+        return $this->escape($value);
     }
 
     public function truthy(mixed $value): bool
@@ -238,5 +278,55 @@ final class TemplateEngine
         ob_start();
         $callback();
         return (string) ob_get_clean();
+    }
+
+    private function normalizeRawMode(string $mode): string
+    {
+        $mode = strtolower(trim($mode));
+        if (!in_array($mode, ['strict', 'escape', 'allow'], true)) {
+            return 'escape';
+        }
+        return $mode;
+    }
+
+    private function resolveTemplateName(array $options): string
+    {
+        $value = $options['template'] ?? '';
+        if (is_string($value) && $value !== '') {
+            return $value;
+        }
+        $current = RequestScope::get('template.current');
+        return is_string($current) ? $current : '';
+    }
+
+    private function auditRaw(string $action, string $template, string $expression, bool $sanitized): void
+    {
+        $key = $action === 'template.raw_used' ? 'template.raw.used_logged' : 'template.raw.blocked_logged';
+        if (RequestScope::has($key)) {
+            return;
+        }
+        $hook = RequestScope::get('template.raw_audit');
+        $request = RequestScope::getRequest();
+        if ($request === null && !is_callable($hook)) {
+            return;
+        }
+
+        RequestScope::set($key, true);
+
+        $context = [
+            'template' => $template,
+            'expression' => $expression,
+            'raw_mode' => $this->rawMode,
+            'sanitized' => $sanitized,
+        ];
+        if ($request !== null) {
+            $context['route'] = $request->getPath();
+        }
+        if (is_callable($hook)) {
+            $hook($action, $context);
+            return;
+        }
+
+        Audit::log($action, 'template', null, $context);
     }
 }

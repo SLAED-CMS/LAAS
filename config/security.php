@@ -57,6 +57,7 @@ $cdnSources = $allowCdn ? ['https://cdn.jsdelivr.net'] : [];
 $scriptExtra = $envList('CSP_SCRIPT_SRC_EXTRA', []);
 $styleExtra = $envList('CSP_STYLE_SRC_EXTRA', []);
 $connectExtra = $envList('CSP_CONNECT_SRC_EXTRA', []);
+$templateRawMode = $envEnum('TEMPLATE_RAW_MODE', ['strict', 'escape', 'allow'], 'escape');
 $unique = static function (array $values): array {
     $out = [];
     $seen = [];
@@ -121,6 +122,9 @@ return [
             'connect-src' => $unique(array_merge(["'self'"], $cdnSources, $connectExtra)),
             'frame-ancestors' => ["'none'"],
         ],
+    ],
+    'template' => [
+        'raw_mode' => $templateRawMode,
     ],
     'rate_limit' => [
         'api' => [

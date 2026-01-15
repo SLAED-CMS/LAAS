@@ -11,6 +11,7 @@ use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Support\Audit;
+use Laas\View\SanitizedHtml;
 use Laas\View\View;
 use Throwable;
 
@@ -351,7 +352,7 @@ final class SettingsController
             $options[] = [
                 'value' => $value,
                 'label' => $value,
-                'selected_attr' => $value === $selected ? 'selected' : '',
+                'selected_attr' => SanitizedHtml::fromSanitized($value === $selected ? 'selected' : ''),
             ];
         }
 
@@ -365,7 +366,7 @@ final class SettingsController
             $options[] = [
                 'value' => $value,
                 'label' => $label,
-                'selected_attr' => $value === $selected ? 'selected' : '',
+                'selected_attr' => SanitizedHtml::fromSanitized($value === $selected ? 'selected' : ''),
             ];
         }
 

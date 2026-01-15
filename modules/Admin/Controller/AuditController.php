@@ -9,6 +9,7 @@ use Laas\Database\Repositories\RbacRepository;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
+use Laas\View\SanitizedHtml;
 use Laas\View\View;
 use Throwable;
 
@@ -49,7 +50,7 @@ final class AuditController
                 $actionOptions = array_map(static function (string $action) use ($filters): array {
                     return [
                         'name' => $action,
-                        'selected' => $action === $filters['values']['action'] ? 'selected' : '',
+                        'selected' => SanitizedHtml::fromSanitized($action === $filters['values']['action'] ? 'selected' : ''),
                     ];
                 }, $actions);
 
@@ -75,7 +76,7 @@ final class AuditController
             $actionOptions = array_map(static function (string $action) use ($filters): array {
                 return [
                     'name' => $action,
-                    'selected' => $action === $filters['values']['action'] ? 'selected' : '',
+                    'selected' => SanitizedHtml::fromSanitized($action === $filters['values']['action'] ? 'selected' : ''),
                 ];
             }, $actions);
         } catch (Throwable) {
@@ -91,7 +92,7 @@ final class AuditController
                 'user_id' => $row['user_id'] ?? null,
                 'action' => (string) ($row['action'] ?? ''),
                 'entity' => (string) ($row['entity'] ?? ''),
-                'entity_id' => $row['entity_id'] ?? null,
+                'entity_id' => SanitizedHtml::fromSanitized((string) ($row['entity_id'] ?? '')),
                 'context_preview' => $contextPreview !== '' ? $contextPreview : '-',
             ];
         }, $rows);
@@ -110,8 +111,8 @@ final class AuditController
             'actions' => $actionOptions,
             'users' => $users,
             'pagination' => [
-                'page' => $page,
-                'total_pages' => $totalPages,
+                'page' => SanitizedHtml::fromSanitized((string) $page),
+                'total_pages' => SanitizedHtml::fromSanitized((string) $totalPages),
                 'has_prev' => $hasPrev,
                 'has_next' => $hasNext,
                 'prev_url' => $prevUrl,

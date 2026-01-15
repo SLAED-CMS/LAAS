@@ -44,7 +44,31 @@
 - Page content is sanitized server-side on save.
 - Allowlist: `p`, `h1-h6`, `ul`, `ol`, `li`, `strong`, `em`, `a[href]`, `img[src|alt]`, `br`, `blockquote`.
 - Blocked: `script`, `iframe`, `svg`, `on*` attributes, `javascript:` and `data:` URLs.
-- `{% raw %}` is only used for already sanitized content.
+- `{% raw %}` outputs only `SanitizedHtml`-marked content; other values are escaped or blocked (configurable).
+- Raw guard mode: `TEMPLATE_RAW_MODE=strict|escape|allow` (default: `escape`).
+- Raw usage is audit-logged as `template.raw_used` / `template.raw_blocked` (best-effort).
+- Legacy content (vor HtmlSanitizer) einmalig per CLI bereinigen:
+  - `php tools/cli.php content:sanitize-pages --dry-run --limit=100 --offset=0`
+  - `php tools/cli.php content:sanitize-pages --yes --limit=100 --offset=0`
+  - Hinweis: `--offset` wird nur angewendet, wenn `--limit` gesetzt ist.
+- Dev strict raw mode (optional, lokal):
+  - `copy config/security.local.php.dist config/security.local.php`
+  - set `template_raw_mode` to `strict` for immediate raw blocking
+  - file is local-only; production is unaffected
+- Raw scan (dev workflow):
+  - `php tools/cli.php templates:raw:scan --path=themes`
+  - scan -> fix -> enable strict mode
+- Raw check (CI/dev):
+  - `php tools/cli.php templates:raw:check --path=themes`
+  - `php tools/cli.php templates:raw:check --path=themes --update`
+  - exit code 3 if new raw usages are detected
+
+## Proposals (AI foundation)
+- Proposals are local artifacts for planning only; no secrets, no network use.
+- Stored under `storage/proposals/` and ignored by git.
+- `ai:proposal:apply` writes only under `modules/`, `themes/`, `docs/`, blocks traversal, and requires `--yes`.
+- Validate proposals before apply in CI: `php tools/cli.php ai:proposal:validate <id|path>`
+- Dev scaffolding defaults to `storage/sandbox/` (ignored by git); allowlist includes sandbox prefixes.
 
 ## Rate limit
 - Groups: `api`, `login`, `media_upload`.
@@ -67,6 +91,9 @@
 - Optional ClamAV scan in quarantine, fail-closed.
 - SHA-256 deduplication.
 - Image hardening: max pixels guard and deterministic thumbnail output.
+- Pre-migration dedupe report (read-only, ops):
+  - `php tools/cli.php media:sha256:dedup:report --with-paths`
+  - Exit codes: 0 ok, 2 if `--disk` was used but `media_files.disk` is missing, 1 on errors.
 
 ## Signed URLs (Media)
 - HMAC-SHA256 signatures with short TTL.

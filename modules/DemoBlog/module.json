@@ -1,0 +1,7 @@
+{
+    "name":  "DemoBlog",
+    "version":  "0.1.0",
+    "description":  "DemoBlog module scaffold",
+    "enabled":  true,
+    "type":  "feature"
+}

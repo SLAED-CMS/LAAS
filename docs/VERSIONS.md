@@ -1,5 +1,19 @@
 # LAAS Versions
 
+- v4.0.0 (Unreleased)
+  - SanitizedHtml Trust-Marker + Raw-Guard/Audit (template.raw_used/template.raw_blocked)
+  - NEU: CLI content:sanitize-pages fuer Legacy-Inhalte
+  - content:sanitize-pages unterstuetzt --offset und erfordert --yes fuer Anwendung
+  - Dev: optional config/security.local.php (template_raw_mode=strict) fuer sofortiges Raw-Blocking
+  - NEU: CLI templates:raw:scan listet Raw-Nutzung in themes/
+  - NEU: templates:raw:check + allowlist baseline verhindert neue Raw-Stellen ohne Review
+  - NEU: Proposal-Contract (foundation for AI) + CLI ai:proposal:demo (local, no network)
+  - NEU: ai:proposal:apply (safe file_changes apply, allowlist + dry-run + --yes)
+  - NEU: ai:proposal:validate + docs/ai/proposal.schema.json (machine-checkable contract)
+  - NEU: ai:dev:module:scaffold erzeugt Module-Skeleton als Proposal (dev-first, deterministic)
+  - ai:dev:module:scaffold: Ping nutzt standard API-Envelope (konfigurierbar via --api-envelope=0)
+  - Dev: ai:dev:module:scaffold default sandbox (storage/sandbox/), --sandbox=0 fuer direktes modules/
+
 - v3.28.0: Release closure polish
   - No new features; consistency, hygiene, and documentation sync
   - Toast events remain capped at 3 (server + admin renderer)

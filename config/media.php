@@ -105,4 +105,8 @@ return [
     'gc_max_delete_per_run' => $envInt('MEDIA_GC_MAX_DELETE_PER_RUN', 500),
     'gc_exempt_prefixes' => $envList('MEDIA_GC_EXEMPT_PREFIXES', ['quarantine/', '_cache/', 'thumbs/']),
     'gc_allow_delete_public' => $envBool('MEDIA_GC_ALLOW_DELETE_PUBLIC', false),
+    'dedupe_wait_max_ms' => $envInt('MEDIA_DEDUPE_WAIT_MAX_MS', 10000),
+    'dedupe_wait_initial_backoff_ms' => $envInt('MEDIA_DEDUPE_WAIT_INITIAL_BACKOFF_MS', 50),
+    'dedupe_wait_max_backoff_ms' => $envInt('MEDIA_DEDUPE_WAIT_MAX_BACKOFF_MS', 250),
+    'dedupe_wait_jitter_ms' => $envInt('MEDIA_DEDUPE_WAIT_JITTER_MS', 20),
 ];

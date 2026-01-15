@@ -1,0 +1,3 @@
+# DemoBlog
+
+Generated module scaffold.

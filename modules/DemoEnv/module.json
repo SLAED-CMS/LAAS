@@ -1,0 +1,7 @@
+{
+    "name":  "DemoEnv",
+    "version":  "0.1.0",
+    "description":  "DemoEnv module scaffold",
+    "enabled":  true,
+    "type":  "feature"
+}

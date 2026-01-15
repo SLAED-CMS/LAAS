@@ -124,7 +124,7 @@ final class DbIndexInspector
             return;
         }
 
-        $this->checkIndex('media_files', 'sha256', 'sha256', false, $missing, $notes);
+        $this->checkIndex('media_files', 'sha256', 'sha256', true, $missing, $notes);
     }
 
     private function checkPages(array &$missing, array &$notes): void

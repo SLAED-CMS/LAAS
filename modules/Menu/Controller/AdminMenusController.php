@@ -16,6 +16,7 @@ use Laas\Support\UrlValidator;
 use Laas\Modules\Menu\Repository\MenuItemsRepository;
 use Laas\Modules\Menu\Repository\MenusRepository;
 use Laas\Modules\Menu\Service\MenuCacheInvalidator;
+use Laas\View\SanitizedHtml;
 use Laas\View\View;
 use Throwable;
 
@@ -478,8 +479,8 @@ final class AdminMenusController
             'label' => '',
             'url' => '',
             'sort_order' => '0',
-            'enabled_checked' => 'checked',
-            'external_checked' => '',
+            'enabled_checked' => $this->checkedAttr(true),
+            'external_checked' => $this->checkedAttr(false),
         ];
     }
 
@@ -490,8 +491,8 @@ final class AdminMenusController
             'label' => (string) ($item['label'] ?? ''),
             'url' => (string) ($item['url'] ?? ''),
             'sort_order' => (string) ($item['sort_order'] ?? '0'),
-            'enabled_checked' => !empty($item['enabled']) ? 'checked' : '',
-            'external_checked' => !empty($item['is_external']) ? 'checked' : '',
+            'enabled_checked' => $this->checkedAttr(!empty($item['enabled'])),
+            'external_checked' => $this->checkedAttr(!empty($item['is_external'])),
         ];
     }
 
@@ -502,9 +503,14 @@ final class AdminMenusController
             'label' => (string) ($data['label'] ?? ''),
             'url' => (string) ($data['url'] ?? ''),
             'sort_order' => (string) ($data['sort_order'] ?? '0'),
-            'enabled_checked' => !empty($data['enabled']) && (string) $data['enabled'] === '1' ? 'checked' : '',
-            'external_checked' => !empty($data['is_external']) && (string) $data['is_external'] === '1' ? 'checked' : '',
+            'enabled_checked' => $this->checkedAttr(!empty($data['enabled']) && (string) $data['enabled'] === '1'),
+            'external_checked' => $this->checkedAttr(!empty($data['is_external']) && (string) $data['is_external'] === '1'),
         ];
+    }
+
+    private function checkedAttr(bool $checked): SanitizedHtml
+    {
+        return SanitizedHtml::fromSanitized($checked ? 'checked' : '');
     }
 
     private function forbidden(Request $request): Response

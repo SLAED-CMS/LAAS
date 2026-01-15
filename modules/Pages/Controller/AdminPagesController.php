@@ -19,6 +19,7 @@ use Laas\Support\Search\Highlighter;
 use Laas\Support\Search\SearchNormalizer;
 use Laas\Support\Search\SearchQuery;
 use Laas\Ui\UiTokenMapper;
+use Laas\View\SanitizedHtml;
 use Laas\View\View;
 use Throwable;
 
@@ -75,9 +76,9 @@ final class AdminPagesController
                 'pages' => [],
                 'q' => $query,
                 'errors' => [$message],
-                'status_selected_all' => $status === 'all' ? 'selected' : '',
-                'status_selected_draft' => $status === 'draft' ? 'selected' : '',
-                'status_selected_published' => $status === 'published' ? 'selected' : '',
+                'status_selected_all' => $this->selectedAttr($status === 'all'),
+                'status_selected_draft' => $this->selectedAttr($status === 'draft'),
+                'status_selected_published' => $this->selectedAttr($status === 'published'),
             ], 422, [], [
                 'theme' => 'admin',
             ]);
@@ -99,9 +100,9 @@ final class AdminPagesController
         $viewData = [
             'pages' => $rows,
             'q' => $query,
-            'status_selected_all' => $status === 'all' ? 'selected' : '',
-            'status_selected_draft' => $status === 'draft' ? 'selected' : '',
-            'status_selected_published' => $status === 'published' ? 'selected' : '',
+            'status_selected_all' => $this->selectedAttr($status === 'all'),
+            'status_selected_draft' => $this->selectedAttr($status === 'draft'),
+            'status_selected_published' => $this->selectedAttr($status === 'published'),
         ];
 
         if ($request->isHtmx()) {
@@ -128,8 +129,8 @@ final class AdminPagesController
             'mode' => 'create',
             'is_edit' => false,
             'page' => $this->emptyPage(),
-            'status_selected_draft' => 'selected',
-            'status_selected_published' => '',
+            'status_selected_draft' => $this->selectedAttr(true),
+            'status_selected_published' => $this->selectedAttr(false),
         ], 200, [], [
             'theme' => 'admin',
         ]);
@@ -161,8 +162,8 @@ final class AdminPagesController
             'mode' => 'edit',
             'is_edit' => true,
             'page' => $page,
-            'status_selected_draft' => $status === 'draft' ? 'selected' : '',
-            'status_selected_published' => $status === 'published' ? 'selected' : '',
+            'status_selected_draft' => $this->selectedAttr($status === 'draft'),
+            'status_selected_published' => $this->selectedAttr($status === 'published'),
         ], 200, [], [
             'theme' => 'admin',
         ]);
@@ -482,8 +483,8 @@ final class AdminPagesController
             'mode' => $isEdit ? 'edit' : 'create',
             'is_edit' => $isEdit,
             'page' => $page,
-            'status_selected_draft' => $status === 'draft' ? 'selected' : '',
-            'status_selected_published' => $status === 'published' ? 'selected' : '',
+            'status_selected_draft' => $this->selectedAttr($status === 'draft'),
+            'status_selected_published' => $this->selectedAttr($status === 'published'),
             'errors' => $messages,
         ], 422, [], [
             'theme' => 'admin',
@@ -559,6 +560,11 @@ final class AdminPagesController
     private function generateErrorId(): string
     {
         return 'ERR-' . strtoupper(bin2hex(random_bytes(6)));
+    }
+
+    private function selectedAttr(bool $selected): SanitizedHtml
+    {
+        return SanitizedHtml::fromSanitized($selected ? 'selected' : '');
     }
 
     private function withSuccessTrigger(Response $response, string $messageKey): Response

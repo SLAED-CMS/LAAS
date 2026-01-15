@@ -14,6 +14,8 @@ use Laas\Http\Response;
 use Laas\Modules\Media\Repository\MediaRepository;
 use Laas\Modules\Media\Service\ClamAvScanner;
 use Laas\Modules\Media\Service\MediaSignedUrlService;
+use Laas\Modules\Media\Service\MediaUploadFailedException;
+use Laas\Modules\Media\Service\MediaUploadPendingException;
 use Laas\Modules\Media\Service\MediaUploadService;
 use Laas\Modules\Media\Service\MimeSniffer;
 use Laas\Modules\Media\Service\StorageService;
@@ -212,7 +214,13 @@ final class AdminMediaController
             new AuditLogger($this->db, $request->session()),
             $request->ip()
         );
-        $result = $service->upload($file, $originalName, $config, $this->currentUserId($request));
+        try {
+            $result = $service->upload($file, $originalName, $config, $this->currentUserId($request));
+        } catch (MediaUploadPendingException $e) {
+            return $this->uploadPendingResponse($request, $e->getMessage());
+        } catch (MediaUploadFailedException) {
+            return $this->validationError($request, [['key' => 'admin.media.error_upload_failed']]);
+        }
         if (($result['status'] ?? '') === 'error') {
             return $this->validationError($request, $result['errors'] ?? []);
         }
@@ -603,6 +611,47 @@ final class AdminMediaController
             'next_page' => 1,
             'show_pagination' => 0,
         ], 422, [], [
+            'theme' => 'admin',
+        ]);
+    }
+
+    private function uploadPendingResponse(Request $request, string $message): Response
+    {
+        if ($request->wantsJson()) {
+            return ContractResponse::ok([
+                'status' => 'pending',
+                'message' => $message,
+            ], [
+                'route' => 'admin.media.upload',
+                'status' => 'pending',
+            ], 202);
+        }
+
+        $errors = [$message];
+        if ($request->isHtmx()) {
+            return $this->view->render('partials/messages.html', [
+                'errors' => $errors,
+            ], 202, [], [
+                'theme' => 'admin',
+                'render_partial' => true,
+            ]);
+        }
+
+        $repo = $this->repository();
+        $items = $repo !== null ? $this->mapRows($repo->list(20, 0, ''), $this->mediaConfig()) : [];
+        return $this->view->render('pages/media.html', [
+            'items' => $items,
+            'success' => null,
+            'errors' => $errors,
+            'q' => '',
+            'page' => 1,
+            'total_pages' => 1,
+            'has_prev' => false,
+            'has_next' => false,
+            'prev_page' => 1,
+            'next_page' => 1,
+            'show_pagination' => 0,
+        ], 202, [], [
             'theme' => 'admin',
         ]);
     }

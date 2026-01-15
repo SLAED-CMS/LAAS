@@ -41,7 +41,8 @@ final class View
         private SettingsProvider $settingsProvider,
         private string $cachePath,
         private ?DatabaseManager $db = null,
-        private array $assets = []
+        private array $assets = [],
+        private string $templateRawMode = 'escape'
     ) {
         $this->defaultTheme = $themeManager->getThemeName();
         $this->themesRoot = $themeManager->getThemesRoot();
@@ -49,6 +50,7 @@ final class View
         $this->debug = (bool) ($appConfig['debug'] ?? false);
         $this->enforceUiTokens = (bool) ($appConfig['enforce_ui_tokens'] ?? false);
         $this->env = (string) ($appConfig['env'] ?? '');
+        $this->templateRawMode = $templateRawMode;
     }
 
     private string $defaultTheme;
@@ -254,7 +256,8 @@ final class View
             $themeManager,
             new TemplateCompiler(),
             $this->cachePath,
-            $this->debug
+            $this->debug,
+            $this->templateRawMode
         );
     }
 

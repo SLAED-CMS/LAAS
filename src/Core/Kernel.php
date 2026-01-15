@@ -177,11 +177,15 @@ final class Kernel
         $authService = $this->createAuthService($logger, $session);
         $authorization = $this->createAuthorizationService();
 
+        $templateRawMode = (string) ($securityConfig['template']['raw_mode']
+            ?? $securityConfig['template_raw_mode']
+            ?? 'escape');
         $templateEngine = new TemplateEngine(
             $themeManager,
             new TemplateCompiler(),
             $this->rootPath . '/storage/cache/templates',
-            (bool) ($appConfig['debug'] ?? false)
+            (bool) ($appConfig['debug'] ?? false),
+            $templateRawMode
         );
         $assetManager = new AssetManager($this->config['assets'] ?? []);
         $assetsManager = new AssetsManager($this->config['assets'] ?? []);
@@ -197,7 +201,8 @@ final class Kernel
             $settingsProvider,
             $this->rootPath . '/storage/cache/templates',
             $this->database(),
-            $assets
+            $assets,
+            $templateRawMode
         );
         $view->setRequest($request);
 
@@ -346,6 +351,17 @@ final class Kernel
             if (!is_array($config[$key])) {
                 $this->configErrors[] = 'Config must return array: ' . $path;
                 $config[$key] = [];
+            }
+            if ($key === 'security') {
+                $localPath = $configDir . '/security.local.php';
+                if (is_file($localPath)) {
+                    $localConfig = require $localPath;
+                    if (is_array($localConfig)) {
+                        $config[$key] = array_replace($config[$key], $localConfig);
+                    } else {
+                        $this->configErrors[] = 'Config must return array: ' . $localPath;
+                    }
+                }
             }
         }
 
