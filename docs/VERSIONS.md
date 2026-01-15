@@ -11,6 +11,13 @@
   - NEU: ai:proposal:apply (safe file_changes apply, allowlist + dry-run + --yes)
   - NEU: ai:proposal:validate + docs/ai/proposal.schema.json (machine-checkable contract)
   - NEU: ai:dev:module:scaffold erzeugt Module-Skeleton als Proposal (dev-first, deterministic)
+  - NEU: Plan-Contract + ai:plan:demo/ai:plan:run (safe allowlisted workflow runner)
+  - NEU: ai:doctor (dev diagnostics incl. DB ping + artifact counts)
+  - CLI: lazy DB init - non-DB commands no longer require DB config
+  - ai:doctor --fix creates storage dirs (proposals/plans/sandbox)
+  - templates:raw:check allowlist moved to config/template_raw_allowlist.php (PHP, versioned)
+  - NEU: ai:dev:module:scaffold-and-check (deterministic dev autopilot via Proposal+Plan)
+  - Security: allowlists centralized in config/security.php (raw allowlist path, file apply prefixes, plan command allowlist)
   - ai:dev:module:scaffold: Ping nutzt standard API-Envelope (konfigurierbar via --api-envelope=0)
   - Dev: ai:dev:module:scaffold default sandbox (storage/sandbox/), --sandbox=0 fuer direktes modules/
 

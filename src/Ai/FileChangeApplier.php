@@ -14,19 +14,22 @@ final class FileChangeApplier
      */
     public function __construct(
         ?string $baseDir = null,
-        array $allowlistPrefixes = [
-            'modules/',
-            'themes/',
-            'docs/',
-            'storage/sandbox/modules/',
-            'storage/sandbox/themes/',
-            'storage/sandbox/docs/',
-        ]
-    )
-    {
+        ?array $allowlistPrefixes = null
+    ) {
         $root = $baseDir ?? dirname(__DIR__, 2);
         $this->baseDir = rtrim($root, '/\\');
-        $this->allowlist = $this->normalizeAllowlist($allowlistPrefixes);
+        $configAllowlist = $allowlistPrefixes ?? $this->loadAllowlistFromConfig($root);
+        if ($configAllowlist === null) {
+            $configAllowlist = [
+                'modules/',
+                'themes/',
+                'docs/',
+                'storage/sandbox/modules/',
+                'storage/sandbox/themes/',
+                'storage/sandbox/docs/',
+            ];
+        }
+        $this->allowlist = $this->normalizeAllowlist($configAllowlist);
     }
 
     /**
@@ -237,5 +240,23 @@ final class FileChangeApplier
         }
 
         return array_values(array_unique($result));
+    }
+
+    private function loadAllowlistFromConfig(string $root): ?array
+    {
+        $path = $root . '/config/security.php';
+        if (!is_file($path)) {
+            return null;
+        }
+        $config = require $path;
+        if (!is_array($config)) {
+            return null;
+        }
+        $prefixes = $config['ai_file_apply_allowlist_prefixes'] ?? null;
+        if (!is_array($prefixes)) {
+            return null;
+        }
+
+        return $prefixes;
     }
 }

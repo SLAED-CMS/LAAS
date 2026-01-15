@@ -2,9 +2,13 @@
 declare(strict_types=1);
 
 use Laas\Ai\FileChangeApplier;
+use Laas\Ai\Plan;
+use Laas\Ai\PlanRunner;
+use Laas\Ai\PlanStore;
 use Laas\Ai\Proposal;
 use Laas\Ai\ProposalStore;
 use Laas\Ai\ProposalValidator;
+use Laas\Ai\Dev\DevAutopilot;
 use Laas\Ai\Dev\ModuleScaffolder;
 use Laas\Database\DatabaseManager;
 use Laas\Database\DbIndexInspector;
@@ -72,32 +76,42 @@ $storageConfig = is_file($rootPath . '/config/storage.php') ? require $rootPath 
 
 $logger = (new LoggerFactory($rootPath))->create($appConfig);
 $dbManager = new DatabaseManager($dbConfig);
-$migrator = new Migrator($dbManager, $rootPath, $modulesConfig, [
-    'app' => $appConfig,
-    'logger' => $logger,
-    'is_cli' => true,
-], $logger);
-$modulesRepo = null;
-$rbacRepo = null;
-$rolesRepo = null;
-$permissionsRepo = null;
-$usersRepo = null;
-
-try {
-    if ($dbManager->healthCheck()) {
-        $modulesRepo = new ModulesRepository($dbManager->pdo());
-        $rbacRepo = new RbacRepository($dbManager->pdo());
-        $rolesRepo = new RolesRepository($dbManager->pdo());
-        $permissionsRepo = new PermissionsRepository($dbManager->pdo());
-        $usersRepo = new UsersRepository($dbManager->pdo());
+$migrator = null;
+$getMigrator = static function () use (&$migrator, $dbManager, $rootPath, $modulesConfig, $appConfig, $logger): Migrator {
+    if ($migrator !== null) {
+        return $migrator;
     }
-} catch (Throwable) {
-    $modulesRepo = null;
-    $rbacRepo = null;
-    $rolesRepo = null;
-    $permissionsRepo = null;
-    $usersRepo = null;
-}
+    $migrator = new Migrator($dbManager, $rootPath, $modulesConfig, [
+        'app' => $appConfig,
+        'logger' => $logger,
+        'is_cli' => true,
+    ], $logger);
+
+    return $migrator;
+};
+
+$dbRepos = null;
+$getDbRepos = static function () use (&$dbRepos, $dbManager): ?array {
+    if ($dbRepos !== null) {
+        return $dbRepos;
+    }
+    try {
+        if (!$dbManager->healthCheck()) {
+            return null;
+        }
+        $pdo = $dbManager->pdo();
+        $dbRepos = [
+            'modules' => new ModulesRepository($pdo),
+            'rbac' => new RbacRepository($pdo),
+            'roles' => new RolesRepository($pdo),
+            'permissions' => new PermissionsRepository($pdo),
+            'users' => new UsersRepository($pdo),
+        ];
+        return $dbRepos;
+    } catch (Throwable) {
+        return null;
+    }
+};
 
 $commands = [];
 
@@ -281,9 +295,10 @@ $commands['templates:raw:scan'] = function () use ($rootPath, $args): int {
     return 0;
 };
 
-$commands['templates:raw:check'] = function () use ($rootPath, $args): int {
+$commands['templates:raw:check'] = function () use ($rootPath, $args, $securityConfig): int {
     $pathArg = (string) (getOption($args, 'path') ?? 'themes');
-    $allowlistArg = (string) (getOption($args, 'allowlist') ?? 'docs/template_raw_allowlist.json');
+    $defaultAllowlist = (string) ($securityConfig['template_raw_allowlist_path'] ?? 'config/template_raw_allowlist.php');
+    $allowlistArg = (string) (getOption($args, 'allowlist') ?? $defaultAllowlist);
     $update = hasFlag($args, 'update');
 
     $scan = scanTemplateRaw($rootPath, $pathArg, ['html', 'tpl']);
@@ -329,12 +344,35 @@ $commands['templates:raw:check'] = function () use ($rootPath, $args): int {
             return strcmp($a['kind'], $b['kind']);
         });
 
-        $payload = [
-            'version' => 1,
-            'notes' => 'Approved raw usages in themes. Update intentionally.',
-            'items' => $scanItems,
+        $lines = [
+            '<?php',
+            '',
+            'declare(strict_types=1);',
+            '',
+            '/**',
+            ' * Approved raw usages in themes.',
+            ' *',
+            ' * This allowlist documents intentionally unescaped template outputs.',
+            ' * Each entry represents a {% raw %} usage that has been security-reviewed.',
+            ' *',
+            ' * Update via: php tools/cli.php templates:raw:check --update',
+            ' */',
+            'return [',
+            "    'version' => 1,",
+            "    'items' => [",
         ];
-        file_put_contents($allowlistPath, json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+        foreach ($scanItems as $item) {
+            $lines[] = sprintf(
+                "        ['file' => %s, 'line' => %d, 'kind' => %s],",
+                var_export($item['file'], true),
+                $item['line'],
+                var_export($item['kind'], true)
+            );
+        }
+        $lines[] = '    ],';
+        $lines[] = '];';
+        $lines[] = '';
+        file_put_contents($allowlistPath, implode("\n", $lines));
         echo 'allowlist updated: items=' . count($scanItems) . "\n";
         return 0;
     }
@@ -344,10 +382,9 @@ $commands['templates:raw:check'] = function () use ($rootPath, $args): int {
         return 1;
     }
 
-    $allowlistRaw = (string) file_get_contents($allowlistPath);
-    $allowlistData = json_decode($allowlistRaw, true);
+    $allowlistData = require $allowlistPath;
     if (!is_array($allowlistData)) {
-        echo "Allowlist invalid JSON: {$allowlistArg}\n";
+        echo "Allowlist invalid: {$allowlistArg}\n";
         return 1;
     }
     $allowlistItems = is_array($allowlistData['items'] ?? null) ? $allowlistData['items'] : [];
@@ -472,6 +509,199 @@ $commands['ai:proposal:demo'] = function () use ($rootPath): int {
     return 0;
 };
 
+$commands['ai:doctor'] = function () use ($rootPath, $dbConfig, $dbManager, $args): int {
+    $fix = hasFlag($args, 'fix');
+    echo "Runtime:\n";
+    echo '- php_version=' . PHP_VERSION . "\n";
+    echo '- os=' . PHP_OS_FAMILY . "\n";
+    echo '- cwd=' . $rootPath . "\n";
+
+    echo "Storage:\n";
+    $storageDirs = [
+        'storage/proposals' => $rootPath . '/storage/proposals',
+        'storage/plans' => $rootPath . '/storage/plans',
+        'storage/sandbox' => $rootPath . '/storage/sandbox',
+    ];
+    $created = [];
+    if ($fix) {
+        foreach ($storageDirs as $label => $path) {
+            if (!is_dir($path)) {
+                if (@mkdir($path, 0775, true) || is_dir($path)) {
+                    $created[] = $label;
+                }
+            }
+        }
+    }
+
+    $storageDirs = ['storage' => $rootPath . '/storage'] + $storageDirs;
+    foreach ($storageDirs as $label => $path) {
+        $exists = is_dir($path);
+        $writable = $exists && is_writable($path);
+        echo '- ' . $label . ' exists=' . ($exists ? 'yes' : 'no') . ' writable=' . ($writable ? 'yes' : 'no') . "\n";
+    }
+    if ($fix) {
+        if ($created === []) {
+            echo "fix: created=0\n";
+        } else {
+            foreach ($created as $label) {
+                echo 'fix: created=' . $label . "\n";
+            }
+        }
+    }
+
+    echo "DB:\n";
+    $driver = strtolower((string) ($dbConfig['driver'] ?? ''));
+    $dbName = (string) ($dbConfig['database'] ?? '');
+    echo 'db_driver=' . ($driver !== '' ? $driver : 'unknown') . "\n";
+
+    if (in_array($driver, ['mysql', 'mariadb'], true)) {
+        $host = trim((string) ($dbConfig['host'] ?? ''));
+        $dbName = trim((string) ($dbConfig['database'] ?? ''));
+        $configPresent = $host !== '' && $dbName !== '' && $dbName !== ':memory:';
+
+        if (!$configPresent) {
+            echo "db_ping=skip reason=missing_config\n";
+        } else {
+            $ping = 'fail';
+            $error = '';
+            try {
+                $stmt = $dbManager->pdo()->query('SELECT 1');
+                if ($stmt !== false) {
+                    $ping = 'ok';
+                }
+            } catch (Throwable $e) {
+                $error = trim(str_replace(["\r", "\n"], ' ', $e->getMessage()));
+                if (strlen($error) > 200) {
+                    $error = substr($error, 0, 200);
+                }
+            }
+
+            echo 'db_ping=' . $ping;
+            if ($ping !== 'ok' && $error !== '') {
+                echo ' error=' . $error;
+            }
+            echo "\n";
+        }
+    } elseif ($driver === 'sqlite' && $dbName === ':memory:') {
+        echo "db_hint=sqlite_memory\n";
+    }
+
+    echo "AI artifacts:\n";
+    $proposalFiles = glob($rootPath . '/storage/proposals/*.json') ?: [];
+    $planFiles = glob($rootPath . '/storage/plans/*.json') ?: [];
+    echo 'proposals=' . count($proposalFiles) . "\n";
+    echo 'plans=' . count($planFiles) . "\n";
+
+    return 0;
+};
+
+$commands['ai:plan:demo'] = function () use ($rootPath): int {
+    $id = bin2hex(random_bytes(16));
+    $plan = new Plan([
+        'id' => $id,
+        'created_at' => gmdate(DATE_ATOM),
+        'kind' => 'demo',
+        'summary' => 'Demo safety plan',
+        'steps' => [
+            [
+                'id' => 's1',
+                'title' => 'Templates raw check',
+                'command' => 'templates:raw:check',
+                'args' => ['--path=themes'],
+            ],
+            [
+                'id' => 's2',
+                'title' => 'Policy check',
+                'command' => 'policy:check',
+                'args' => [],
+            ],
+        ],
+        'confidence' => 0.6,
+        'risk' => 'low',
+    ]);
+
+    $store = new PlanStore($rootPath);
+    $path = $store->save($plan);
+
+    $relative = normalizePath($path);
+    $rootNorm = rtrim(normalizePath($rootPath), '/');
+    if (str_starts_with(strtolower($relative), strtolower($rootNorm . '/'))) {
+        $relative = substr($relative, strlen($rootNorm) + 1);
+    }
+
+    echo 'plan_saved=' . $relative . ' id=' . $id . "\n";
+    return 0;
+};
+
+$commands['ai:plan:run'] = function () use ($rootPath, $args): int {
+    $id = (string) ($args[0] ?? '');
+    if ($id === '') {
+        echo "Usage: ai:plan:run <id> [--dry-run] [--yes]\n";
+        return 1;
+    }
+
+    $dryRun = parseBoolOption($args, 'dry-run', true);
+    $dryRunExplicit = getOption($args, 'dry-run') !== null || hasFlag($args, 'dry-run');
+    $confirmed = hasFlag($args, 'yes');
+    if ($confirmed && !$dryRunExplicit) {
+        $dryRun = false;
+    }
+
+    try {
+        $plan = (new PlanStore($rootPath))->load($id);
+    } catch (Throwable $e) {
+        echo "Plan not found or invalid: {$id}\n";
+        return 1;
+    }
+
+    $runner = new PlanRunner($rootPath);
+    $result = $runner->run($plan, $dryRun, $confirmed);
+
+    $mode = $dryRun ? 'dry-run' : 'execute';
+    if (!empty($result['refused'])) {
+        echo "refusing to run plan without --yes\n";
+        echo 'id=' . $id . ' mode=' . $mode
+            . ' steps_total=' . (int) ($result['steps_total'] ?? 0)
+            . ' steps_run=' . (int) ($result['steps_run'] ?? 0)
+            . ' failed=' . (int) ($result['failed'] ?? 0) . "\n";
+        return 2;
+    }
+
+    echo 'id=' . $id . ' mode=' . $mode
+        . ' steps_total=' . (int) ($result['steps_total'] ?? 0)
+        . ' steps_run=' . (int) ($result['steps_run'] ?? 0)
+        . ' failed=' . (int) ($result['failed'] ?? 0) . "\n";
+
+    foreach ($result['outputs'] ?? [] as $output) {
+        if (!is_array($output)) {
+            continue;
+        }
+        $stepId = (string) ($output['id'] ?? '');
+        $status = (string) ($output['status'] ?? '');
+        $command = (string) ($output['command'] ?? '');
+        $exit = $output['exit_code'] ?? null;
+        $argsList = $output['args'] ?? [];
+        $argsText = is_array($argsList) ? json_encode($argsList, JSON_UNESCAPED_SLASHES) : '[]';
+
+        echo 'step=' . $stepId . ' status=' . $status . ' command=' . $command . ' args=' . $argsText;
+        if (is_int($exit)) {
+            echo ' exit=' . $exit;
+        }
+        echo "\n";
+
+        $stdout = (string) ($output['stdout'] ?? '');
+        $stderr = (string) ($output['stderr'] ?? '');
+        if ($stdout !== '') {
+            echo "stdout: " . $stdout . "\n";
+        }
+        if ($stderr !== '') {
+            echo "stderr: " . $stderr . "\n";
+        }
+    }
+
+    return ((int) ($result['failed'] ?? 0)) > 0 ? 3 : 0;
+};
+
 $commands['ai:proposal:apply'] = function () use ($rootPath, $args): int {
     $id = (string) ($args[0] ?? '');
     if ($id === '') {
@@ -564,6 +794,42 @@ $commands['ai:proposal:validate'] = function () use ($rootPath, $args): int {
     $validator = new ProposalValidator();
     $errors = $validator->validate($data);
     return outputProposalValidation($errors, $json);
+};
+
+$commands['ai:dev:module:scaffold-and-check'] = function () use ($rootPath, $args): int {
+    $name = (string) ($args[0] ?? '');
+    if ($name === '') {
+        echo "Usage: ai:dev:module:scaffold-and-check <ModuleName> [--sandbox=1|0] [--api-envelope=1|0] [--yes]\n";
+        return 1;
+    }
+
+    $sandbox = parseBoolOption($args, 'sandbox', true);
+    $apiEnvelope = parseBoolOption($args, 'api-envelope', true);
+    $yes = hasFlag($args, 'yes');
+
+    $autopilot = new DevAutopilot($rootPath);
+    $result = $autopilot->run($name, $sandbox, $apiEnvelope, $yes);
+
+    echo 'mode=' . (string) ($result['mode'] ?? '') . "\n";
+    echo 'module=' . $name . "\n";
+    echo 'module_path=' . (string) ($result['module_path'] ?? '') . "\n";
+    echo 'sandbox=' . ($sandbox ? 'on' : 'off') . ' envelope=' . ($apiEnvelope ? 'on' : 'off') . "\n";
+    echo 'proposal_id=' . (string) ($result['proposal_id'] ?? '') . ' proposal_valid=' . (int) ($result['proposal_valid'] ?? 0) . "\n";
+    echo 'applied=' . (int) ($result['applied'] ?? 0) . ' errors=' . (int) ($result['errors'] ?? 0) . "\n";
+    echo 'plan_id=' . (string) ($result['plan_id'] ?? '') . ' plan_failed=' . (int) ($result['plan_failed'] ?? 0) . "\n";
+
+    if (!$yes) {
+        echo 'hint=use --yes to apply scaffold and run checks' . "\n";
+    }
+
+    if ((int) ($result['proposal_valid'] ?? 0) !== 1) {
+        return 3;
+    }
+    if ((int) ($result['errors'] ?? 0) > 0 || (int) ($result['plan_failed'] ?? 0) > 0) {
+        return 3;
+    }
+
+    return 0;
 };
 
 $commands['ai:dev:module:scaffold'] = function () use ($rootPath, $args): int {
@@ -722,8 +988,9 @@ $commands['db:indexes:audit'] = function () use ($dbManager, $args): int {
     }
 };
 
-$commands['migrate:status'] = function () use ($migrator): int {
+$commands['migrate:status'] = function () use ($getMigrator): int {
     try {
+        $migrator = $getMigrator();
         $status = $migrator->status();
         foreach ($status as $row) {
             $mark = $row['applied'] ? '[x]' : '[ ]';
@@ -737,9 +1004,10 @@ $commands['migrate:status'] = function () use ($migrator): int {
     }
 };
 
-$commands['db:migrations:analyze'] = function () use ($migrator, $dbConfig, $appConfig): int {
+$commands['db:migrations:analyze'] = function () use ($getMigrator, $dbConfig, $appConfig): int {
     try {
         $safeMode = resolveMigrationSafeMode($dbConfig, $appConfig);
+        $migrator = $getMigrator();
         $pending = resolvePendingMigrations($migrator, 0);
         $analyzer = new MigrationSafetyAnalyzer();
         $issues = $analyzer->analyzeAll($pending);
@@ -758,7 +1026,7 @@ $commands['db:migrations:analyze'] = function () use ($migrator, $dbConfig, $app
     }
 };
 
-$commands['migrate:up'] = function () use ($migrator, $args, $dbConfig, $appConfig, $rootPath): int {
+$commands['migrate:up'] = function () use ($getMigrator, $args, $dbConfig, $appConfig, $rootPath): int {
     try {
         $steps = (int) (getOption($args, 'steps') ?? 0);
         $safeMode = resolveMigrationSafeMode($dbConfig, $appConfig);
@@ -766,6 +1034,7 @@ $commands['migrate:up'] = function () use ($migrator, $args, $dbConfig, $appConf
             && hasFlag($args, 'i-know-what-i-am-doing');
 
         if ($safeMode !== 'off') {
+            $migrator = $getMigrator();
             $pending = resolvePendingMigrations($migrator, $steps);
             if ($pending !== []) {
                 $analyzer = new MigrationSafetyAnalyzer();
@@ -791,6 +1060,7 @@ $commands['migrate:up'] = function () use ($migrator, $args, $dbConfig, $appConf
             }
         }
 
+        $migrator = $getMigrator();
         $applied = $migrator->up($steps);
         if ($applied === []) {
             echo "No migrations to apply.\n";
@@ -806,9 +1076,10 @@ $commands['migrate:up'] = function () use ($migrator, $args, $dbConfig, $appConf
     }
 };
 
-$commands['migrate:down'] = function () use ($migrator, $args): int {
+$commands['migrate:down'] = function () use ($getMigrator, $args): int {
     try {
         $steps = (int) (getOption($args, 'steps') ?? 1);
+        $migrator = $getMigrator();
         $rolled = $migrator->down($steps);
         if ($rolled === []) {
             echo "No migrations to rollback.\n";
@@ -824,8 +1095,9 @@ $commands['migrate:down'] = function () use ($migrator, $args): int {
     }
 };
 
-$commands['migrate:refresh'] = function () use ($migrator): int {
+$commands['migrate:refresh'] = function () use ($getMigrator): int {
     try {
+        $migrator = $getMigrator();
         $result = $migrator->refresh();
         foreach ($result as $name) {
             echo "Processed: {$name}\n";
@@ -837,7 +1109,7 @@ $commands['migrate:refresh'] = function () use ($migrator): int {
     }
 };
 
-$commands['module:status'] = function () use ($modulesRepo, $modulesConfig, $rootPath): int {
+$commands['module:status'] = function () use ($getDbRepos, $modulesConfig, $rootPath): int {
     $discovered = discoverModules($rootPath);
     $enabledConfig = [];
     foreach ($modulesConfig as $class) {
@@ -848,6 +1120,8 @@ $commands['module:status'] = function () use ($modulesRepo, $modulesConfig, $roo
     $source = 'CONFIG';
     $enabled = $enabledConfig;
 
+    $repos = $getDbRepos();
+    $modulesRepo = $repos['modules'] ?? null;
     if ($modulesRepo !== null) {
         try {
             $modulesRepo->sync($discovered, $enabledConfig);
@@ -883,7 +1157,9 @@ $commands['module:status'] = function () use ($modulesRepo, $modulesConfig, $roo
     return 0;
 };
 
-$commands['module:sync'] = function () use ($modulesRepo, $modulesConfig, $rootPath): int {
+$commands['module:sync'] = function () use ($getDbRepos, $modulesConfig, $rootPath): int {
+    $repos = $getDbRepos();
+    $modulesRepo = $repos['modules'] ?? null;
     if ($modulesRepo === null) {
         echo "DB not available. Enable modules via config/modules.php\n";
         return 1;
@@ -901,7 +1177,9 @@ $commands['module:sync'] = function () use ($modulesRepo, $modulesConfig, $rootP
     return 0;
 };
 
-$commands['module:enable'] = function () use ($modulesRepo, $args, $rootPath): int {
+$commands['module:enable'] = function () use ($getDbRepos, $args, $rootPath): int {
+    $repos = $getDbRepos();
+    $modulesRepo = $repos['modules'] ?? null;
     if ($modulesRepo === null) {
         echo "DB not available. Enable modules via config/modules.php\n";
         return 1;
@@ -926,7 +1204,9 @@ $commands['module:enable'] = function () use ($modulesRepo, $args, $rootPath): i
     return 0;
 };
 
-$commands['module:disable'] = function () use ($modulesRepo, $args, $rootPath): int {
+$commands['module:disable'] = function () use ($getDbRepos, $args, $rootPath): int {
+    $repos = $getDbRepos();
+    $modulesRepo = $repos['modules'] ?? null;
     if ($modulesRepo === null) {
         echo "DB not available. Disable modules via config/modules.php\n";
         return 1;
@@ -995,7 +1275,12 @@ $commands['settings:set'] = function () use ($dbManager, $args): int {
     return 0;
 };
 
-$commands['rbac:status'] = function () use ($rolesRepo, $permissionsRepo, $usersRepo, $rbacRepo): int {
+$commands['rbac:status'] = function () use ($getDbRepos): int {
+    $repos = $getDbRepos();
+    $rolesRepo = $repos['roles'] ?? null;
+    $permissionsRepo = $repos['permissions'] ?? null;
+    $usersRepo = $repos['users'] ?? null;
+    $rbacRepo = $repos['rbac'] ?? null;
     if ($rolesRepo === null || $permissionsRepo === null || $usersRepo === null || $rbacRepo === null) {
         echo "DB not available.\n";
         return 1;
@@ -1017,7 +1302,12 @@ $commands['rbac:status'] = function () use ($rolesRepo, $permissionsRepo, $users
     return 0;
 };
 
-$commands['rbac:grant'] = function () use ($rolesRepo, $permissionsRepo, $usersRepo, $rbacRepo, $args): int {
+$commands['rbac:grant'] = function () use ($getDbRepos, $args): int {
+    $repos = $getDbRepos();
+    $rolesRepo = $repos['roles'] ?? null;
+    $permissionsRepo = $repos['permissions'] ?? null;
+    $usersRepo = $repos['users'] ?? null;
+    $rbacRepo = $repos['rbac'] ?? null;
     if ($rolesRepo === null || $permissionsRepo === null || $usersRepo === null || $rbacRepo === null) {
         echo "DB not available.\n";
         return 1;
@@ -1044,7 +1334,10 @@ $commands['rbac:grant'] = function () use ($rolesRepo, $permissionsRepo, $usersR
     return 0;
 };
 
-$commands['rbac:revoke'] = function () use ($usersRepo, $rbacRepo, $args): int {
+$commands['rbac:revoke'] = function () use ($getDbRepos, $args): int {
+    $repos = $getDbRepos();
+    $usersRepo = $repos['users'] ?? null;
+    $rbacRepo = $repos['rbac'] ?? null;
     if ($usersRepo === null || $rbacRepo === null) {
         echo "DB not available.\n";
         return 1;
@@ -1567,11 +1860,12 @@ $commands['ops:check'] = function () use ($rootPath, $dbManager, $appConfig, $st
     return $result['code'];
 };
 
-$commands['release:check'] = function () use ($rootPath, $dbManager, $appConfig, $storageConfig, $migrator): int {
+$commands['release:check'] = function () use ($rootPath, $dbManager, $appConfig, $storageConfig, $getMigrator): int {
     $mediaConfig = is_file($rootPath . '/config/media.php') ? require $rootPath . '/config/media.php' : [];
     $dbConfig = is_file($rootPath . '/config/database.php') ? require $rootPath . '/config/database.php' : [];
     $storage = new StorageService($rootPath);
     $backup = new BackupManager($rootPath, $dbManager, $storage, $appConfig, $storageConfig);
+    $migrator = $getMigrator();
 
     $checker = new ReleaseChecker(
         $rootPath,

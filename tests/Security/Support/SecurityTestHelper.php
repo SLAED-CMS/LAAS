@@ -109,9 +109,12 @@ final class SecurityTestHelper
             sha256 TEXT NULL,
             uploaded_by INTEGER NULL,
             created_at TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT \'ready\',
+            quarantine_path TEXT NULL,
             is_public INTEGER NOT NULL DEFAULT 0,
             public_token TEXT NULL
         )');
+        $pdo->exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_media_files_sha256 ON media_files (sha256)');
     }
 
     public static function seedMenusTables(PDO $pdo): void

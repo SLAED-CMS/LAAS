@@ -9,7 +9,7 @@ final class TemplateRawCheckCommandTest extends TestCase
     {
         $root = dirname(__DIR__);
         $fixturePath = $root . '/tests/fixtures/templates_raw_check';
-        $allowlistSource = $fixturePath . '/allowlist.json';
+        $allowlistSource = $fixturePath . '/allowlist.php';
         $allowlistPath = $this->copyAllowlist($allowlistSource);
 
         try {
@@ -30,7 +30,7 @@ final class TemplateRawCheckCommandTest extends TestCase
     {
         $root = dirname(__DIR__);
         $fixturePath = $root . '/tests/fixtures/templates_raw_check';
-        $allowlistSource = $fixturePath . '/allowlist.json';
+        $allowlistSource = $fixturePath . '/allowlist.php';
         $allowlistPath = $this->copyAllowlist($allowlistSource);
 
         try {
@@ -43,7 +43,7 @@ final class TemplateRawCheckCommandTest extends TestCase
 
             $this->assertSame(0, $code, $output);
 
-            $data = json_decode((string) file_get_contents($allowlistPath), true);
+            $data = require $allowlistPath;
             $this->assertIsArray($data);
             $items = $data['items'] ?? null;
             $this->assertIsArray($items);

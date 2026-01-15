@@ -62,6 +62,8 @@
   - `php tools/cli.php templates:raw:check --path=themes`
   - `php tools/cli.php templates:raw:check --path=themes --update`
   - exit code 3 if new raw usages are detected
+- Allowlist stored in `config/template_raw_allowlist.php` (versioned PHP array).
+- Allowlists live in `config/security.php` and can be overridden via `config/security.local.php`.
 
 ## Proposals (AI foundation)
 - Proposals are local artifacts for planning only; no secrets, no network use.
@@ -69,6 +71,11 @@
 - `ai:proposal:apply` writes only under `modules/`, `themes/`, `docs/`, blocks traversal, and requires `--yes`.
 - Validate proposals before apply in CI: `php tools/cli.php ai:proposal:validate <id|path>`
 - Dev scaffolding defaults to `storage/sandbox/` (ignored by git); allowlist includes sandbox prefixes.
+
+## Plans (safe runner)
+- Plan runner executes only allowlisted internal CLI commands; no shell execution or arbitrary commands.
+- `ai:doctor --fix` only creates local storage directories (proposals/plans/sandbox); no network access.
+- Dev autopilot (`ai:dev:module:scaffold-and-check`) is dry-run by default and requires `--yes` to apply scaffolds and run checks.
 
 ## Rate limit
 - Groups: `api`, `login`, `media_upload`.

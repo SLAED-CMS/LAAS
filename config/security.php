@@ -126,6 +126,23 @@ return [
     'template' => [
         'raw_mode' => $templateRawMode,
     ],
+    'template_raw_allowlist_path' => 'config/template_raw_allowlist.php',
+    'ai_file_apply_allowlist_prefixes' => [
+        'modules/',
+        'themes/',
+        'docs/',
+        'storage/sandbox/modules/',
+        'storage/sandbox/themes/',
+        'storage/sandbox/docs/',
+    ],
+    'ai_plan_command_allowlist' => [
+        'policy:check',
+        'templates:raw:check',
+        'templates:raw:scan',
+        'theme:validate',
+        'contracts:check',
+        'preflight',
+    ],
     'rate_limit' => [
         'api' => [
             'window' => 60,

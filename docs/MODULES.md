@@ -4,7 +4,7 @@ LAAS CMS uses a modular architecture where features are organized into self-cont
 
 ---
 
-## Installed Modules (v2.4.0)
+## Installed Modules
 
 ### Core Modules (Always Enabled)
 
@@ -13,7 +13,7 @@ LAAS CMS uses a modular architecture where features are organized into self-cont
 | **System** | `internal` | Core system functionality (health, backup, home, CSRF) |
 | **Api** | `api` | REST API v1 endpoints with Bearer token authentication |
 | **Admin** | `admin` | Admin panel UI (dashboard, settings, RBAC, search) |
-| **Users** | `internal` | User authentication, RBAC, 2FA/TOTP, password reset (v2.4.0) |
+| **Users** | `internal` | User authentication, RBAC, 2FA/TOTP, password reset |
 
 ### Feature Modules (Manageable)
 
@@ -24,8 +24,11 @@ LAAS CMS uses a modular architecture where features are organized into self-cont
 | **Menu** | `feature` | Navigation menu management with hierarchies |
 | **Changelog** | `feature` | Git-based changelog (GitHub API or local git provider) |
 | **DevTools** | `internal` | Debug toolbar, query logger (dev-only) |
+| **Demo** | `feature` | Demo module |
+| **DemoBlog** | `feature` | Demo blog module |
+| **DemoEnv** | `feature` | Demo env module |
 
-**Module Count:** 9 modules total
+**Module Count:** 12 modules total
 
 ---
 

@@ -299,21 +299,39 @@ laas/
 │   ├── assets/            # Static files (CSS, JS, images)
 │   └── .htaccess          # Apache config
 ├── src/                   # Core framework
-│   ├── Kernel.php         # Application bootstrap
-│   ├── Container.php      # DI container
-│   ├── Http/              # HTTP layer
-│   ├── Security/          # Auth, RBAC, CSRF
-│   ├── View/              # Template engine
-│   ├── Database/          # Database layer
-│   ├── Cache/             # Cache layer
-│   └── Middleware/        # Core middleware
+│   ├── Core/              # Kernel, Container, bootstrap
+│   ├── Http/              # Request, Response, Router
+│   ├── Routing/           # Route matching, middleware pipeline
+│   ├── Security/          # CSRF, rate limiting, headers
+│   ├── Auth/              # Authentication logic
+│   ├── Session/           # Session management
+│   ├── Database/          # PDO wrapper, migrations
+│   ├── View/              # Template engine, rendering
+│   ├── Theme/             # Theme resolution
+│   ├── Assets/            # Asset management
+│   ├── Ui/                # UI components, toasts
+│   ├── I18n/              # Translations
+│   ├── Modules/           # Module loader
+│   ├── Settings/          # Settings service
+│   ├── Ops/               # Health checks, backup
+│   ├── Perf/              # Performance guard
+│   ├── DevTools/          # Debug toolbar (dev-only)
+│   ├── Api/               # API utilities
+│   ├── Ai/                # AI proposal system
+│   └── Support/           # URL validation, HTTP client
 ├── modules/               # Feature modules
 │   ├── System/            # Core system module
 │   ├── Admin/             # Admin panel
+│   ├── Api/               # REST API v1
+│   ├── Users/             # User management
 │   ├── Pages/             # Page management
 │   ├── Media/             # Media library
-│   ├── Users/             # User management
-│   └── ...
+│   ├── Menu/              # Navigation menus
+│   ├── Changelog/         # Git-based changelog
+│   ├── DevTools/          # Debug toolbar
+│   ├── Demo/              # Demo module
+│   ├── DemoBlog/          # Demo blog module
+│   └── DemoEnv/           # Demo env module
 ├── themes/                # Themes and templates
 │   ├── default/           # Default public theme
 │   └── admin/             # Admin theme
@@ -560,7 +578,7 @@ $html = $view->render('pages/show.html', [
 - `feature` modules can be enabled/disabled via `/admin/modules`
 - Other types are always enabled and not shown in admin UI
 
-### Installed Modules (v2.3.10)
+### Installed Modules
 
 **Core Modules (Always Enabled):**
 
@@ -580,8 +598,11 @@ $html = $view->render('pages/show.html', [
 | Menu | `feature` | Navigation menu management |
 | Changelog | `feature` | Git-based changelog (GitHub/local git) |
 | DevTools | `internal` | Debug toolbar (dev-only) |
+| Demo | `feature` | Demo module |
+| DemoBlog | `feature` | Demo blog module |
+| DemoEnv | `feature` | Demo env module |
 
-**Total:** 9 modules
+**Total:** 12 modules
 
 ### Module Bootstrap
 
@@ -1213,6 +1234,17 @@ php tools/cli.php migrate:down
 5. **Rate limiting** (Middleware)
 6. **RBAC** (Middleware)
 7. **Security headers** (Middleware)
+
+### AI Safety Model
+
+**Local-only automation with explicit approvals:**
+
+- **Proposal**: produce a diff-like plan, validate schema, then apply only with `--yes`.
+- **Apply guardrails**: file writes limited by allowlist prefixes in `config/security.php`.
+- **Plan**: workflow steps are internal CLI commands, never arbitrary shell.
+- **Runner**: allowlisted commands only, args are validated, and `--yes` required to execute.
+- **Dev sandbox**: default outputs go under `storage/sandbox/`.
+- **Audit**: template raw usage is logged (`template.raw_used`/`template.raw_blocked`).
 
 ### Authentication
 
