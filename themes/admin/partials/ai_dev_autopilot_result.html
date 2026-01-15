@@ -1,0 +1,31 @@
+<div class="card mt-3" data-ai-dev-autopilot="1">
+  <div class="card-body">
+    <h5 class="card-title mb-2">Dev Autopilot Preview</h5>
+    {% if error %}
+    <div class="alert alert-danger mb-2">{% error %}</div>
+    {% else %}
+    <div class="text-muted small mb-2">
+      module={% module_name %} path={% module_path %}
+    </div>
+    <div class="small mb-2">
+      proposal_id={% proposal_id %} plan_id={% plan_id %}
+    </div>
+    {% if plan_steps %}
+    <div class="mb-3">
+      <div class="fw-semibold mb-2">Plan Steps</div>
+      <ol class="small mb-0">
+        {% foreach plan_steps as step %}
+        <li class="mb-1">
+          <span class="fw-semibold">{% step.title %}</span>
+          <span class="text-muted">({% step.command %}{% if step.args_text %} {% step.args_text %}{% endif %})</span>
+        </li>
+        {% endforeach %}
+      </ol>
+    </div>
+    {% endif %}
+    {% include "partials/ai_diff_blocks.html" %}
+    <textarea id="proposal_json" name="proposal_json" hidden>{% proposal_json %}</textarea>
+    <textarea id="plan_json" name="plan_json" hidden>{% plan_json %}</textarea>
+    {% endif %}
+  </div>
+</div>

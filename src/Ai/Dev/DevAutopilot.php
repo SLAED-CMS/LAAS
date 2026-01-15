@@ -30,10 +30,19 @@ final class DevAutopilot
      *   errors:int,
      *   plan_id:string,
      *   plan_failed:int,
-     *   module_path:string
+     *   module_path:string,
+     *   proposal?:array<string, mixed>,
+     *   plan?:array<string, mixed>
      * }
      */
-    public function run(string $name, bool $sandbox, bool $apiEnvelope, bool $yes): array
+    public function run(
+        string $name,
+        bool $sandbox,
+        bool $apiEnvelope,
+        bool $yes,
+        bool $includePayload = false,
+        bool $persist = true
+    ): array
     {
         $mode = $yes ? 'execute' : 'dry-run';
         $summary = [
@@ -70,7 +79,12 @@ final class DevAutopilot
         }
 
         $summary['proposal_valid'] = 1;
-        (new ProposalStore($this->rootPath))->save($proposal);
+        if ($persist) {
+            (new ProposalStore($this->rootPath))->save($proposal);
+        }
+        if ($includePayload) {
+            $summary['proposal'] = $proposalData;
+        }
 
         $planId = bin2hex(random_bytes(16));
         $plan = new Plan([
@@ -95,8 +109,13 @@ final class DevAutopilot
             'confidence' => 0.7,
             'risk' => 'low',
         ]);
-        (new PlanStore($this->rootPath))->save($plan);
+        if ($persist) {
+            (new PlanStore($this->rootPath))->save($plan);
+        }
         $summary['plan_id'] = $planId;
+        if ($includePayload) {
+            $summary['plan'] = $plan->toArray();
+        }
 
         if (!$yes) {
             return $summary;

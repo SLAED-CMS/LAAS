@@ -188,6 +188,92 @@
   window.laasSlugify = laasSlugify;
   window.laasInitSlugForm = laasInitSlugForm;
 
+  function laasInitAiAssist(root) {
+    var scope = root || document;
+    var form = scope.querySelector('[data-page-form="1"]');
+    var panel = scope.querySelector('[data-ai-assist="1"]');
+    if (!form || !panel) {
+      return;
+    }
+
+    var fieldLabel = panel.querySelector('#ai-field-label');
+    var fieldInput = panel.querySelector('#ai_field');
+    var valueInput = panel.querySelector('#ai_value');
+    var pageIdInput = panel.querySelector('#ai_page_id');
+    var urlInput = panel.querySelector('#ai_url');
+    if (!fieldLabel || !fieldInput || !valueInput) {
+      return;
+    }
+
+    var allowlist = {
+      'title': 'Title',
+      'slug': 'Slug',
+      'content': 'Content'
+    };
+
+    function getPageId() {
+      var input = form.querySelector('input[name="id"]');
+      if (!input) {
+        return '';
+      }
+      return input.value || '';
+    }
+
+    function getSlugValue() {
+      var input = form.querySelector('input[name="slug"]');
+      if (!input) {
+        return '';
+      }
+      return input.value || '';
+    }
+
+    function updateUrlFromSlug() {
+      if (!urlInput) {
+        return;
+      }
+      var slug = getSlugValue().trim();
+      urlInput.value = slug ? '/' + slug : '';
+    }
+
+    function updateContext(target) {
+      if (!target || !target.name || !allowlist[target.name]) {
+        return;
+      }
+      fieldInput.value = target.name;
+      valueInput.value = target.value || '';
+      fieldLabel.textContent = allowlist[target.name] || target.name;
+      if (pageIdInput) {
+        pageIdInput.value = getPageId();
+      }
+      updateUrlFromSlug();
+    }
+
+    if (panel.dataset.aiReady === '1') {
+      return;
+    }
+    panel.dataset.aiReady = '1';
+
+    form.addEventListener('focusin', function (event) {
+      updateContext(event.target);
+    });
+
+    form.addEventListener('input', function (event) {
+      if (document.activeElement === event.target) {
+        updateContext(event.target);
+      }
+    });
+
+    updateUrlFromSlug();
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    laasInitAiAssist(document);
+  });
+
+  document.body.addEventListener('htmx:afterSwap', function (e) {
+    laasInitAiAssist(e.target);
+  });
+
   function extractErrorText(e) {
     var text = '';
     if (e.detail && e.detail.xhr && e.detail.xhr.responseText) {

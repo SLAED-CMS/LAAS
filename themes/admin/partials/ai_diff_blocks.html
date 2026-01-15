@@ -1,0 +1,15 @@
+{% if diff_blocks_present %}
+<div class="mt-3" data-ai-diff-preview="1">
+  <div class="fw-semibold mb-2">Diff Preview</div>
+  {% foreach diff_blocks as block %}
+  <div class="border rounded mb-3">
+    <div class="d-flex flex-wrap gap-2 align-items-center border-bottom px-2 py-1 bg-light">
+      <span class="badge text-bg-secondary">{% block.op %}</span>
+      <span class="small fw-semibold">{% block.path %}</span>
+      <span class="small text-muted">+{% block.stats.added %} -{% block.stats.removed %}</span>
+    </div>
+    <pre class="small mb-0 p-2">{% block.diff %}</pre>
+  </div>
+  {% endforeach %}
+</div>
+{% endif %}

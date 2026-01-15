@@ -9,32 +9,23 @@ use PHPUnit\Framework\TestCase;
 use Tests\Security\Support\SecurityTestHelper;
 use Tests\Support\InMemorySession;
 
-final class AdminAiSaveProposalTest extends TestCase
+final class AdminAiDevAutopilotTest extends TestCase
 {
-    public function testSaveProposalStoresAndReturnsHint(): void
+    public function testDevAutopilotPreview(): void
     {
-        $proposal = [
-            'id' => 'demo-proposal',
-            'created_at' => gmdate(DATE_ATOM),
-            'kind' => 'demo',
-            'summary' => 'Test proposal',
-            'file_changes' => [],
-            'entity_changes' => [],
-            'warnings' => [],
-            'confidence' => 0.2,
-            'risk' => 'low',
-        ];
-
-        $request = $this->makeRequest('POST', '/admin/ai/save-proposal', [
-            'proposal_json' => json_encode($proposal, JSON_UNESCAPED_SLASHES),
+        $request = $this->makeRequest('POST', '/admin/ai/dev-autopilot', [
+            'module_name' => 'AutoX',
         ]);
         $controller = $this->createController($request);
 
-        $response = $controller->saveProposal($request);
+        $response = $controller->devAutopilot($request);
 
         $this->assertSame(200, $response->getStatus());
-        $this->assertStringContainsString('data-ai-save-result', $response->getBody());
-        $this->assertStringContainsString('ai:proposal:apply', $response->getBody());
+        $body = $response->getBody();
+        $this->assertStringContainsString('Dev Autopilot Preview', $body);
+        $this->assertStringContainsString('storage/sandbox/modules/', $body);
+        $this->assertStringContainsString('proposal_json', $body);
+        $this->assertStringNotContainsString('ai:proposal:apply', $body);
     }
 
     private function makeRequest(string $method, string $path, array $post): Request

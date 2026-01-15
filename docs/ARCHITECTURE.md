@@ -1246,6 +1246,12 @@ php tools/cli.php migrate:down
 - **Dev sandbox**: default outputs go under `storage/sandbox/`.
 - **Audit**: template raw usage is logged (`template.raw_used`/`template.raw_blocked`).
 
+**Flow (v4.0.0):**
+```
+Agent -> /api/v1/ai/tools -> /api/v1/ai/run (dry)
+      -> /api/v1/ai/propose -> human review -> CLI apply --yes
+```
+
 ### Authentication
 
 **Session-based authentication:**

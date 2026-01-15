@@ -43,6 +43,23 @@ http://laas.loc/
 
 ---
 
+## AI Assistant (v4.0.0)
+
+Read-only AI assistant for proposal + plan previews with diff rendering.
+No apply in UI: review, then apply via CLI with explicit `--yes`.
+Works in /admin/ai and the page editor AI panel.
+Dry-run checks use allowlisted internal CLI commands.
+Dev Autopilot Preview generates sandbox scaffolds only.
+
+Demo (copy/paste):
+1) Open `/admin/ai`
+2) Propose -> see diff preview
+3) Run dry-run -> see checks
+4) Save proposal -> get id
+5) Apply via CLI: `php tools/cli.php ai:proposal:apply <id> --yes`
+
+---
+
 ## System Requirements
 
 - **PHP:** 8.4+
@@ -169,6 +186,13 @@ http://laas.loc/
 - `php tools/cli.php policy:check`
 - `php tools/cli.php contracts:fixtures:check`
 - `php tools/cli.php contracts:check`
+- `vendor/bin/phpunit`
+
+### v4.0.0 release checklist (short)
+
+- `php tools/cli.php templates:raw:check --path=themes`
+- `php tools/cli.php ai:doctor`
+- `php tools/cli.php ai:plan:demo`
 - `vendor/bin/phpunit`
 
 ## Tech Stack

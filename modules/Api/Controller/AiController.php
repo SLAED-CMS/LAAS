@@ -6,6 +6,7 @@ namespace Laas\Modules\Api\Controller;
 use Laas\Api\ApiResponse;
 use Laas\Ai\Context\AiContextBuilder;
 use Laas\Ai\Context\Redactor;
+use Laas\Ai\Diff\UnifiedDiffRenderer;
 use Laas\Ai\Provider\AiProviderInterface;
 use Laas\Ai\Provider\LocalDemoProvider;
 use Laas\Ai\Provider\RemoteHttpProvider;
@@ -19,13 +20,20 @@ use Laas\Http\Response;
 use Laas\Support\AuditLogger;
 use Laas\Support\SafeHttpClient;
 use Laas\Support\UrlPolicy;
+use Laas\View\View;
 use DomainException;
 use RuntimeException;
 
 final class AiController
 {
-    public function __construct(private ?DatabaseManager $db = null)
-    {
+    private ?AiProviderInterface $providerOverride;
+
+    public function __construct(
+        private ?DatabaseManager $db = null,
+        private ?View $view = null,
+        ?AiProviderInterface $providerOverride = null
+    ) {
+        $this->providerOverride = $providerOverride;
     }
 
     public function propose(Request $request): Response
@@ -36,12 +44,15 @@ final class AiController
         }
 
         $securityConfig = $this->securityConfig();
-        $provider = $this->resolveProvider($securityConfig, $request);
+        $provider = $this->providerOverride ?? $this->resolveProvider($securityConfig, $request);
         $providerName = (string) ($securityConfig['ai_provider'] ?? 'local_demo');
 
         $builder = new AiContextBuilder();
         $context = $builder->build($request);
         $prompt = (string) ($context['prompt'] ?? '');
+        $contextMeta = is_array($context['context'] ?? null) ? $context['context'] : null;
+        $contextField = is_array($contextMeta) ? (string) ($contextMeta['field'] ?? '') : '';
+        $contextValueLen = is_array($contextMeta) ? strlen((string) ($contextMeta['value'] ?? '')) : 0;
 
         try {
             $result = $provider->propose($context);
@@ -76,10 +87,6 @@ final class AiController
             ], 502);
         }
 
-        if ($this->isHtmx($request)) {
-            return Response::html($this->renderProposeHtml($result), 200);
-        }
-
         (new AuditLogger($this->db, $request->session()))->log(
             'ai.propose_called',
             'ai',
@@ -87,11 +94,20 @@ final class AiController
             [
                 'provider' => $providerName,
                 'prompt_len' => strlen($prompt),
+                'context_field' => $contextField,
+                'context_value_len' => $contextValueLen,
                 'path' => $request->getPath(),
             ],
             (int) ($user['id'] ?? 0),
             $request->ip()
         );
+
+        if ($this->isHtmx($request)) {
+            $response = $this->renderProposePartial($result);
+            if ($response !== null) {
+                return $response;
+            }
+        }
 
         return ApiResponse::ok([
             'proposal' => $result['proposal'] ?? [],
@@ -208,7 +224,10 @@ final class AiController
         );
 
         if ($this->isHtmx($request)) {
-            return Response::html($this->renderRunHtml($result), 200);
+            $response = $this->renderRunPartial($result);
+            if ($response !== null) {
+                return $response;
+            }
         }
 
         return ApiResponse::ok([
@@ -323,37 +342,44 @@ final class AiController
         return strtolower((string) ($request->getHeader('hx-request') ?? '')) === 'true';
     }
 
-    private function renderProposeHtml(array $result): string
+    private function renderProposePartial(array $result): ?Response
     {
+        if ($this->view === null) {
+            return null;
+        }
+
         $proposal = is_array($result['proposal'] ?? null) ? $result['proposal'] : [];
         $plan = is_array($result['plan'] ?? null) ? $result['plan'] : [];
         $proposalJson = json_encode($proposal, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
         $planJson = json_encode($plan, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
+        $warnings = is_array($proposal['warnings'] ?? null) ? $proposal['warnings'] : [];
+        $fileChanges = is_array($proposal['file_changes'] ?? null) ? $proposal['file_changes'] : [];
+        $diffBlocks = [];
+        if ($fileChanges !== []) {
+            $diffBlocks = (new UnifiedDiffRenderer())->render($fileChanges);
+        }
 
-        $proposalEsc = htmlspecialchars($proposalJson, ENT_QUOTES);
-        $planEsc = htmlspecialchars($planJson, ENT_QUOTES);
-        $summary = htmlspecialchars((string) ($proposal['summary'] ?? ''), ENT_QUOTES);
-        $risk = htmlspecialchars((string) ($proposal['risk'] ?? ''), ENT_QUOTES);
-        $confidence = htmlspecialchars((string) ($proposal['confidence'] ?? ''), ENT_QUOTES);
-
-        return '<div class="card mt-3">'
-            . '<div class="card-body">'
-            . '<h5 class="card-title mb-2">Proposal + Plan</h5>'
-            . '<div class="text-muted small mb-2">summary=' . $summary
-            . ' risk=' . $risk . ' confidence=' . $confidence . '</div>'
-            . '<div class="row g-3">'
-            . '<div class="col-lg-6"><div class="fw-semibold mb-1">Proposal</div><pre class="small mb-0">'
-            . $proposalEsc . '</pre></div>'
-            . '<div class="col-lg-6"><div class="fw-semibold mb-1">Plan</div><pre class="small mb-0">'
-            . $planEsc . '</pre></div>'
-            . '</div>'
-            . '<textarea id="proposal_json" name="proposal_json" class="d-none">' . $proposalEsc . '</textarea>'
-            . '<textarea id="plan_json" name="plan_json" class="d-none">' . $planEsc . '</textarea>'
-            . '</div></div>';
+        return $this->view->render('partials/ai_propose_result.html', [
+            'summary' => (string) ($proposal['summary'] ?? ''),
+            'risk' => (string) ($proposal['risk'] ?? ''),
+            'confidence' => (string) ($proposal['confidence'] ?? ''),
+            'warnings' => array_values(array_map('strval', $warnings)),
+            'proposal_json' => $proposalJson,
+            'plan_json' => $planJson,
+            'diff_blocks' => $diffBlocks,
+            'diff_blocks_present' => $diffBlocks !== [],
+        ], 200, [], [
+            'theme' => 'admin',
+            'render_partial' => true,
+        ]);
     }
 
-    private function renderRunHtml(array $result): string
+    private function renderRunPartial(array $result): ?Response
     {
+        if ($this->view === null) {
+            return null;
+        }
+
         $outputs = $result['outputs'] ?? [];
         $payload = [
             'steps_total' => (int) ($result['steps_total'] ?? 0),
@@ -362,13 +388,13 @@ final class AiController
             'outputs' => $outputs,
         ];
         $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
-        $jsonEsc = htmlspecialchars($json, ENT_QUOTES);
 
-        return '<div class="card mt-3">'
-            . '<div class="card-body">'
-            . '<h5 class="card-title mb-2">Dry-run results</h5>'
-            . '<pre class="small mb-0">' . $jsonEsc . '</pre>'
-            . '</div></div>';
+        return $this->view->render('partials/ai_run_result.html', [
+            'result_json' => $json,
+        ], 200, [], [
+            'theme' => 'admin',
+            'render_partial' => true,
+        ]);
     }
 
     /**

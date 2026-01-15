@@ -16,10 +16,12 @@ final class AiContextBuilder
      */
     public function build(Request $request): array
     {
-        $prompt = $this->readPrompt($request);
+        $input = $this->readInput($request);
+        $prompt = $this->readPrompt($input);
         $prompt = $this->redactor->redact($prompt);
+        $context = $this->readContext($input);
 
-        return [
+        $payload = [
             'route' => $request->getPath(),
             'user_id' => $this->resolveUserId($request),
             'timestamp' => gmdate(DATE_ATOM),
@@ -28,31 +30,87 @@ final class AiContextBuilder
                 'sandbox' => true,
             ],
         ];
-    }
-
-    private function readPrompt(Request $request): string
-    {
-        $contentType = strtolower((string) ($request->getHeader('content-type') ?? ''));
-        $data = [];
-        if (str_contains($contentType, 'application/json')) {
-            $raw = trim($request->getBody());
-            if ($raw !== '') {
-                $decoded = json_decode($raw, true);
-                if (is_array($decoded)) {
-                    $data = $decoded;
-                }
-            }
-        } else {
-            $data = $request->getPost();
+        if ($context !== []) {
+            $payload['context'] = $context;
         }
 
-        $prompt = (string) ($data['prompt'] ?? '');
+        return $payload;
+    }
+
+    /**
+     * @param array<string, mixed> $input
+     */
+    private function readPrompt(array $input): string
+    {
+        $prompt = (string) ($input['prompt'] ?? '');
         $prompt = trim($prompt);
         if (strlen($prompt) > 4000) {
             $prompt = substr($prompt, 0, 4000);
         }
 
         return $prompt;
+    }
+
+    /**
+     * @param array<string, mixed> $input
+     * @return array<string, mixed>
+     */
+    private function readContext(array $input): array
+    {
+        $raw = $input['context'] ?? null;
+        if (!is_array($raw)) {
+            return [];
+        }
+
+        $context = [];
+        $pageId = $raw['page_id'] ?? null;
+        if (is_int($pageId) || (is_string($pageId) && $pageId !== '')) {
+            $context['page_id'] = is_int($pageId) ? $pageId : (string) $pageId;
+        }
+
+        $field = $raw['field'] ?? null;
+        if (is_string($field)) {
+            $field = trim($field);
+            if ($field !== '') {
+                $context['field'] = $field;
+            }
+        }
+
+        $value = $raw['value'] ?? null;
+        if (is_string($value)) {
+            if (strlen($value) > 20000) {
+                $value = substr($value, 0, 20000);
+            }
+            $context['value'] = $this->redactor->redact($value);
+        }
+
+        $url = $raw['url'] ?? null;
+        if (is_string($url)) {
+            $url = trim($url);
+            if ($url !== '') {
+                $context['url'] = $this->redactor->redact($url);
+            }
+        }
+
+        return $context;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function readInput(Request $request): array
+    {
+        $contentType = strtolower((string) ($request->getHeader('content-type') ?? ''));
+        if (str_contains($contentType, 'application/json')) {
+            $raw = trim($request->getBody());
+            if ($raw === '') {
+                return [];
+            }
+            $decoded = json_decode($raw, true);
+            return is_array($decoded) ? $decoded : [];
+        }
+
+        return $request->getPost();
     }
 
     private function resolveUserId(Request $request): ?int

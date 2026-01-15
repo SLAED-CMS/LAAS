@@ -68,6 +68,16 @@
 - Remote AI provider is disabled by default; enable via `config/security.php` allowlist and limits (no body logging).
 - AI tools endpoints (`/api/v1/ai/tools`, `/api/v1/ai/run`) are dry-run only with allowlisted commands and no writes.
 - Admin AI UI (`/admin/ai`) is read-only; save stores proposals only; apply requires CLI with `--yes`.
+- AI Assist panel context is size-limited and redacted; no auto-apply.
+- Dev Autopilot Preview is sandbox-only; no repo writes; apply requires CLI.
+
+## Threat model summary (AI)
+- Allowlisted commands only; no shell execution.
+- Allowlisted file prefixes for apply; sandbox default for scaffolds.
+- Redaction on prompts/context; size limits enforced.
+- No apply over HTTP; UI is read-only preview.
+- Explicit approvals required via CLI `--yes`.
+- Plan runner enforces dry-run by default.
 
 ## Proposals (AI foundation)
 - Proposals are local artifacts for planning only; no secrets, no network use.

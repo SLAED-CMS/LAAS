@@ -1,0 +1,15 @@
+<div data-ai-save-result="1">
+  {% if error %}
+  <div class="alert alert-danger mb-2">{% error %}</div>
+  {% if errors %}
+  <ul class="small mb-0">
+    {% foreach errors as item %}
+    <li><code>{% item.path %}</code>: {% item.message %}</li>
+    {% endforeach %}
+  </ul>
+  {% endif %}
+  {% else %}
+  <div class="alert alert-success mb-2">Saved proposal id={% id %} path={% path %}</div>
+  <div class="small text-muted">CLI: {% cli_hint %}</div>
+  {% endif %}
+</div>

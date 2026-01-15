@@ -1,56 +1,112 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div class="card">
-  <div class="card-body">
-  <h1 class="h4 mb-3">
-    {% if is_edit %}
-    {% t 'admin.pages.edit' %}
-    {% else %}
-    {% t 'admin.pages.new' %}
-    {% endif %}
-  </h1>
-  <div id="page-messages">
-    {% include "partials/form_errors.html" %}
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-body">
+      <h1 class="h4 mb-3">
+        {% if is_edit %}
+        {% t 'admin.pages.edit' %}
+        {% else %}
+        {% t 'admin.pages.new' %}
+        {% endif %}
+      </h1>
+      <div id="page-messages">
+        {% include "partials/form_errors.html" %}
+      </div>
+      <form method="post"
+            action="/admin/pages/save"
+            hx-post="/admin/pages/save"
+            hx-target="#page-messages"
+            hx-swap="innerHTML"
+            hx-indicator="#loading"
+            data-slug-form="1"
+            data-page-form="1"
+            data-mode="{% mode %}">
+        <input type="hidden" name="_token" value="{% csrf_token %}">
+        {% if is_edit %}
+        <input type="hidden" name="id" value="{% page.id %}">
+        {% endif %}
+        <div class="mb-3">
+          <label class="form-label">{% t 'admin.pages.form.title' %}</label>
+          <input class="form-control" id="page-title" name="title" value="{% page.title %}" maxlength="255" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">{% t 'admin.pages.form.slug' %}</label>
+          <input class="form-control" id="page-slug" name="slug" value="{% page.slug %}" maxlength="255" required>
+          <div class="form-text">{% t 'admin.pages.form.slug_help' %}</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">{% t 'admin.pages.form.status' %}</label>
+          <select class="form-select" name="status">
+            <option value="draft" {% raw status_selected_draft %}>{% t 'admin.pages.status.draft' %}</option>
+            <option value="published" {% raw status_selected_published %}>{% t 'admin.pages.status.published' %}</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">{% t 'admin.pages.form.content' %}</label>
+          <textarea class="form-control" name="content" rows="10">{% page.content %}</textarea>
+        </div>
+        <button class="btn btn-primary" type="submit">{% t 'admin.pages.form.save' %}</button>
+        <a class="btn btn-outline-secondary ms-2 disabled" id="page-preview" href="#" target="_blank" rel="noopener" aria-disabled="true" tabindex="-1">{% t 'admin.pages.form.preview' %}</a>
+      </form>
+      <div id="loading" class="htmx-indicator text-center my-3">
+        <div class="spinner-border" role="status" aria-hidden="true"></div>
+      </div>
+      </div>
+    </div>
   </div>
-  <form method="post"
-        action="/admin/pages/save"
-        hx-post="/admin/pages/save"
-        hx-target="#page-messages"
-        hx-swap="innerHTML"
-        hx-indicator="#loading"
-        data-slug-form="1"
-        data-mode="{% mode %}">
-    <input type="hidden" name="_token" value="{% csrf_token %}">
-    {% if is_edit %}
-    <input type="hidden" name="id" value="{% page.id %}">
-    {% endif %}
-    <div class="mb-3">
-      <label class="form-label">{% t 'admin.pages.form.title' %}</label>
-      <input class="form-control" id="page-title" name="title" value="{% page.title %}" maxlength="255" required>
+  <div class="col-lg-4">
+    <div class="card" data-ai-assist="1">
+      <div class="card-body">
+        <h2 class="h5 mb-2">AI Assist</h2>
+        <div class="text-muted small mb-2">Focused field: <span id="ai-field-label">none</span></div>
+        <div id="ai-assist-fields">
+          <input type="hidden" id="ai_field" name="context[field]">
+          <input type="hidden" id="ai_page_id" name="context[page_id]" value="{% if is_edit %}{% page.id %}{% endif %}">
+          <input type="hidden" id="ai_url" name="context[url]">
+          <textarea class="d-none" id="ai_value" name="context[value]"></textarea>
+          <label class="form-label small" for="ai_prompt">Prompt</label>
+          <textarea class="form-control form-control-sm" id="ai_prompt" name="prompt" rows="4"
+                    placeholder="Describe what to improve..."></textarea>
+        </div>
+        <div class="d-flex flex-wrap gap-2 mt-3">
+          <button type="button"
+                  class="btn btn-primary btn-sm"
+                  hx-post="/api/v1/ai/propose"
+                  hx-target="#ai-propose-out"
+                  hx-swap="innerHTML"
+                  hx-include="#ai-assist-fields">
+            Propose
+          </button>
+          <button type="button"
+                  class="btn btn-outline-secondary btn-sm"
+                  hx-post="/api/v1/ai/run"
+                  hx-target="#ai-run-out"
+                  hx-swap="innerHTML"
+                  hx-include="#plan_json">
+            Dry-Run
+          </button>
+          <button type="button"
+                  class="btn btn-outline-success btn-sm"
+                  hx-post="/admin/ai/save-proposal"
+                  hx-target="#ai-save-out"
+                  hx-swap="innerHTML"
+                  hx-include="#proposal_json">
+            Save Proposal
+          </button>
+        </div>
+        <div class="mt-3">
+          <div id="ai-propose-out"></div>
+          <div id="ai-run-out"></div>
+          <div id="ai-save-out" class="mt-2"></div>
+        </div>
+        <div class="alert alert-warning mt-3 mb-0 small">
+          Apply requires CLI with <code>--yes</code>.
+        </div>
+      </div>
     </div>
-    <div class="mb-3">
-      <label class="form-label">{% t 'admin.pages.form.slug' %}</label>
-      <input class="form-control" id="page-slug" name="slug" value="{% page.slug %}" maxlength="255" required>
-      <div class="form-text">{% t 'admin.pages.form.slug_help' %}</div>
-    </div>
-    <div class="mb-3">
-      <label class="form-label">{% t 'admin.pages.form.status' %}</label>
-      <select class="form-select" name="status">
-        <option value="draft" {% raw status_selected_draft %}>{% t 'admin.pages.status.draft' %}</option>
-        <option value="published" {% raw status_selected_published %}>{% t 'admin.pages.status.published' %}</option>
-      </select>
-    </div>
-    <div class="mb-3">
-      <label class="form-label">{% t 'admin.pages.form.content' %}</label>
-      <textarea class="form-control" name="content" rows="10">{% page.content %}</textarea>
-    </div>
-    <button class="btn btn-primary" type="submit">{% t 'admin.pages.form.save' %}</button>
-    <a class="btn btn-outline-secondary ms-2 disabled" id="page-preview" href="#" target="_blank" rel="noopener" aria-disabled="true" tabindex="-1">{% t 'admin.pages.form.preview' %}</a>
-  </form>
-  <div id="loading" class="htmx-indicator text-center my-3">
-    <div class="spinner-border" role="status" aria-hidden="true"></div>
-  </div>
   </div>
 </div>
 {% endblock %}

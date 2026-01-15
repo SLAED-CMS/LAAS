@@ -1,0 +1,27 @@
+<div class="card mt-3" data-ai-propose-result="1">
+  <div class="card-body">
+    <h5 class="card-title mb-2">Proposal + Plan</h5>
+    <div class="text-muted small mb-2">
+      summary={% summary %} risk={% risk %} confidence={% confidence %}
+    </div>
+    {% if warnings %}
+    <div class="small mb-2">
+      <span class="fw-semibold">Warnings:</span>
+      {% foreach warnings as warn %}<span class="badge text-bg-warning me-1">{% warn %}</span>{% endforeach %}
+    </div>
+    {% endif %}
+    <div class="row g-3">
+      <div class="col-lg-6">
+        <div class="fw-semibold mb-1">Proposal</div>
+        <pre class="small mb-0">{% proposal_json %}</pre>
+      </div>
+      <div class="col-lg-6">
+        <div class="fw-semibold mb-1">Plan</div>
+        <pre class="small mb-0">{% plan_json %}</pre>
+      </div>
+    </div>
+    {% include "partials/ai_diff_blocks.html" %}
+    <textarea id="proposal_json" name="proposal_json" hidden>{% proposal_json %}</textarea>
+    <textarea id="plan_json" name="plan_json" hidden>{% plan_json %}</textarea>
+  </div>
+</div>

@@ -3,9 +3,13 @@ declare(strict_types=1);
 
 namespace Laas\Modules\Admin\Controller;
 
+use Laas\Ai\Dev\DevAutopilot;
+use Laas\Ai\Diff\UnifiedDiffRenderer;
 use Laas\Ai\Proposal;
 use Laas\Ai\ProposalStore;
 use Laas\Ai\ProposalValidator;
+use Laas\Api\ApiResponse;
+use Laas\Http\ErrorCode;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\View\View;
@@ -32,10 +36,14 @@ final class AdminAiController
         $tooLarge = false;
         $proposal = $this->readProposal($request, $tooLarge);
         if ($tooLarge) {
-            return Response::html('<div class="alert alert-danger">Proposal payload too large.</div>', 413);
+            return $this->renderSaveResult([
+                'error' => 'Proposal payload too large.',
+            ], 413);
         }
         if ($proposal === null) {
-            return Response::html('<div class="alert alert-danger">Invalid proposal payload.</div>', 400);
+            return $this->renderSaveResult([
+                'error' => 'Invalid proposal payload.',
+            ], 400);
         }
 
         if (!isset($proposal['id']) || trim((string) $proposal['id']) === '') {
@@ -48,16 +56,10 @@ final class AdminAiController
         $validator = new ProposalValidator();
         $errors = $validator->validate($proposal);
         if ($errors !== []) {
-            $items = array_map(static function (array $error): string {
-                $path = htmlspecialchars((string) ($error['path'] ?? ''), ENT_QUOTES);
-                $message = htmlspecialchars((string) ($error['message'] ?? ''), ENT_QUOTES);
-                return '<li><code>' . $path . '</code>: ' . $message . '</li>';
-            }, $errors);
-            return Response::html(
-                '<div class="alert alert-danger">Proposal validation failed.</div>'
-                . '<ul class="small mb-0">' . implode('', $items) . '</ul>',
-                422
-            );
+            return $this->renderSaveResult([
+                'error' => 'Proposal validation failed.',
+                'errors' => $errors,
+            ], 422);
         }
 
         try {
@@ -65,19 +67,82 @@ final class AdminAiController
             $store = new ProposalStore();
             $path = $store->save($proposalObj);
         } catch (InvalidArgumentException | RuntimeException $e) {
-            $message = htmlspecialchars($e->getMessage(), ENT_QUOTES);
-            return Response::html('<div class="alert alert-danger">' . $message . '</div>', 400);
+            return $this->renderSaveResult([
+                'error' => $e->getMessage(),
+            ], 400);
         }
 
-        $id = htmlspecialchars((string) $proposal['id'], ENT_QUOTES);
-        $pathEsc = htmlspecialchars($path, ENT_QUOTES);
-        $hint = htmlspecialchars('php tools/cli.php ai:proposal:apply ' . $id . ' --yes', ENT_QUOTES);
+        $id = (string) $proposal['id'];
+        $hint = 'php tools/cli.php ai:proposal:apply ' . $id . ' --yes';
 
-        return Response::html(
-            '<div class="alert alert-success mb-2">Saved proposal id=' . $id . ' path=' . $pathEsc . '</div>'
-            . '<div class="small text-muted">CLI: ' . $hint . '</div>',
-            200
-        );
+        return $this->renderSaveResult([
+            'saved' => true,
+            'id' => $id,
+            'path' => $path,
+            'cli_hint' => $hint,
+        ], 200);
+    }
+
+    public function devAutopilot(Request $request): Response
+    {
+        $input = $request->getPost();
+        $moduleName = trim((string) ($input['module_name'] ?? ''));
+        if ($moduleName === '' || !preg_match('/^[A-Z][A-Za-z0-9]{2,32}$/', $moduleName)) {
+            if ($request->isHtmx()) {
+                return $this->renderDevAutopilotResult([
+                    'error' => 'Invalid module name.',
+                ], 422);
+            }
+
+            return ApiResponse::error(ErrorCode::INVALID_REQUEST, 'Invalid request', [
+                'module_name' => 'invalid',
+            ], 422);
+        }
+
+        $autopilot = new DevAutopilot();
+        $result = $autopilot->run($moduleName, true, true, false, true, false);
+        $proposal = is_array($result['proposal'] ?? null) ? $result['proposal'] : [];
+        $plan = is_array($result['plan'] ?? null) ? $result['plan'] : [];
+
+        $proposalJson = json_encode($proposal, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
+        $planJson = json_encode($plan, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
+        $stepsRaw = is_array($plan['steps'] ?? null) ? $plan['steps'] : [];
+        $steps = [];
+        foreach ($stepsRaw as $step) {
+            if (!is_array($step)) {
+                continue;
+            }
+            $args = is_array($step['args'] ?? null) ? $step['args'] : [];
+            $argsText = '';
+            if ($args !== []) {
+                $argsText = implode(' ', array_map('strval', $args));
+            }
+            $steps[] = [
+                'title' => (string) ($step['title'] ?? ''),
+                'command' => (string) ($step['command'] ?? ''),
+                'args_text' => $argsText,
+            ];
+        }
+        $fileChanges = is_array($proposal['file_changes'] ?? null) ? $proposal['file_changes'] : [];
+        $diffBlocks = $fileChanges !== [] ? (new UnifiedDiffRenderer())->render($fileChanges) : [];
+
+        $viewData = [
+            'module_name' => $moduleName,
+            'module_path' => (string) ($result['module_path'] ?? ''),
+            'proposal_id' => (string) ($result['proposal_id'] ?? ''),
+            'plan_id' => (string) ($result['plan_id'] ?? ''),
+            'plan_steps' => $steps,
+            'proposal_json' => $proposalJson,
+            'plan_json' => $planJson,
+            'diff_blocks' => $diffBlocks,
+            'diff_blocks_present' => $diffBlocks !== [],
+        ];
+
+        if ($request->isHtmx()) {
+            return $this->renderDevAutopilotResult($viewData, 200);
+        }
+
+        return ApiResponse::ok($viewData);
     }
 
     /**
@@ -113,5 +178,21 @@ final class AdminAiController
 
         $proposal = $request->post('proposal');
         return is_array($proposal) ? $proposal : null;
+    }
+
+    private function renderSaveResult(array $data, int $status): Response
+    {
+        return $this->view->render('partials/ai_save_result.html', $data, $status, [], [
+            'theme' => 'admin',
+            'render_partial' => true,
+        ]);
+    }
+
+    private function renderDevAutopilotResult(array $data, int $status): Response
+    {
+        return $this->view->render('partials/ai_dev_autopilot_result.html', $data, $status, [], [
+            'theme' => 'admin',
+            'render_partial' => true,
+        ]);
     }
 }

@@ -22,6 +22,11 @@
   - NEU: RemoteHttpProvider (disabled by default, allowlist + limits) for external AI agents
   - NEU: AI Tools API (/api/v1/ai/tools, /api/v1/ai/run) read-only
   - NEU: Admin AI Assistant UI (/admin/ai) with propose + dry-run + save proposal (no apply)
+  - NEU: Cursor-aware AI Assist panel in page editor (propose/dry-run/save; no apply)
+  - HTMX AI responses moved to templates (no HTML in PHP controllers)
+  - NEU: AI Diff Viewer (unified diff preview) in Admin AI UI
+  - NEU: Dev Autopilot Preview in Admin AI UI (sandbox scaffold + plan + diff)
+  - Docs/UX: safety badges + demo guide + threat model summary
   - ai:dev:module:scaffold: Ping nutzt standard API-Envelope (konfigurierbar via --api-envelope=0)
   - Dev: ai:dev:module:scaffold default sandbox (storage/sandbox/), --sandbox=0 fuer direktes modules/
 

@@ -25,6 +25,7 @@ return [
     ['GET', '/admin/ops/refresh', [\Laas\Modules\Admin\Controller\OpsController::class, 'refresh']],
     ['GET', '/admin/ai', [\Laas\Modules\Admin\Controller\AdminAiController::class, 'index']],
     ['POST', '/admin/ai/save-proposal', [\Laas\Modules\Admin\Controller\AdminAiController::class, 'saveProposal']],
+    ['POST', '/admin/ai/dev-autopilot', [\Laas\Modules\Admin\Controller\AdminAiController::class, 'devAutopilot']],
     ['GET', '/admin/security-reports', [\Laas\Modules\Admin\Controller\SecurityReportsController::class, 'index']],
     ['GET', '/admin/security-reports/{id:\d+}', [\Laas\Modules\Admin\Controller\SecurityReportsController::class, 'show']],
     ['POST', '/admin/security-reports/{id:\d+}/triage', [\Laas\Modules\Admin\Controller\SecurityReportsController::class, 'triage']],
