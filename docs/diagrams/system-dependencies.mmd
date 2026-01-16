@@ -5,7 +5,7 @@ graph TB
     %% External: FastRoute, Dotenv, Monolog, CommonMark, AWS SDK (optional)
     %% Security: 2FA/TOTP, Password Reset, Session Timeout, SSRF Protection
     %% Frontend: AssetManager, RenderAdapter, UI Tokens, ViewModels, Theme API v1
-    %% Version: v3.0.0 (2026-01-12)
+    %% Version: v4.0.0 (2026-01-16)
 
     subgraph Bootstrap["Bootstrap Layer"]
         Index["public/index.php<br/>Entry Point"]
@@ -110,12 +110,29 @@ graph TB
     Composer -.-> DB
     Composer -.-> Backup
 
+    %% AI Subsystem (v4.0.0)
+    subgraph AI["AI Subsystem (Core)"]
+        AiProvider["AiProvider<br/>(Local/Remote)"]
+        ToolsApi["Tools API<br/>(Read-Only)"]
+        Proposals["Proposals<br/>(storage/proposals)"]
+        Plans["Plans<br/>(storage/plans)"]
+        Sandbox["Sandbox<br/>(storage/sandbox)"]
+        
+        AiProvider --> ToolsApi
+        AiProvider --> Proposals
+        AiProvider --> Plans
+        Proposals --> Sandbox
+    end
+    
+    Backend --> AiProvider
+    
     style Kernel fill:#ff6b6b
     style Container fill:#4ecdc4
     style Router fill:#ffe66d
-    style DB fill:#a8e6cf
+    style DB fill:#e2f0cb
+    style Cache fill:#ffe66d
 
-    style Session fill:#c7ceea
+    style Session fill:#ff9aa2
     style CSRF fill:#ffd3b6
     style RateLimit fill:#ffaaa5
     style Auth fill:#95e1d3

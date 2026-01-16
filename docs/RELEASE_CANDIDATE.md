@@ -1,6 +1,6 @@
 ## Release Candidate (RC)
 
-This RC packages stability checks and compatibility rules for v3.0.x.
+This RC packages stability checks and compatibility rules for v4.0.0.
 
 ### What is included
 - Preflight command for production readiness

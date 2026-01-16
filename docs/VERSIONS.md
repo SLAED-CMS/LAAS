@@ -520,4 +520,4 @@
 - v0.2: Middleware pipeline + sessions + security headers + error handler + Monolog
 - v0.1: Kernel/Router/Modules + System+Api routes
 
-**Last updated:** January 2026
+**Last updated:** 2026-01-16

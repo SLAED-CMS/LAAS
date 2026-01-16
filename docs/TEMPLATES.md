@@ -651,6 +651,35 @@ php tools/cli.php templates:warmup
 <?php echo htmlspecialchars($user['name'], ENT_QUOTES, 'UTF-8'); ?>
 ```
 
+### Template Raw Mode (v4.0.0)
+
+**Control how raw output is handled via `config/security.php` or `TEMPLATE_RAW_MODE`:**
+
+1. **Strict (`strict`)**:
+   - Only `SanitizedHtml` objects are allowed in `{% raw %}`.
+   - Strings throws `SecurityException`.
+   - **Recommended for high-security environments.**
+
+2. **Escape (`escape`)** (Default):
+   - `SanitizedHtml` is rendered raw.
+   - Strings are auto-escaped (treated as normal output) and logged as a warning.
+   - Safe default preventing accidental XSS.
+
+3. **Allow (`allow`)** (Legacy):
+   - All content in `{% raw %}` is rendered unescaped.
+   - **Dangerous**: Use only for legacy compatibility.
+
+**SanitizedHtml Trust Marker:**
+```php
+use Laas\Core\View\SanitizedHtml;
+
+// In Controller
+return $this->view('page', [
+    // Mark content as safe explicitly
+    'content' => new SanitizedHtml($trustedHtml)
+]);
+```
+
 ### When to Use Raw
 
 **Only use `raw` for:**

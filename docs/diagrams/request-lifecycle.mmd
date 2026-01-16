@@ -1,10 +1,10 @@
 sequenceDiagram
-    %% LAAS CMS v3.0.0 - HTTP Request Lifecycle
+    %% LAAS CMS v4.0.0 - HTTP Request Lifecycle
     %% Flow: Bootstrap -> Middleware -> Routing -> Business Logic -> RenderAdapter -> Response
     %% Performance: Cold 80-120ms, Warm 15-25ms (cache hit 99%)
-    %% Security: Session timeout, 2FA/TOTP, password reset, SSRF protection
+    %% Security: Session timeout, 2FA/TOTP, password reset, SSRF protection, AI safety
     %% Frontend: Content negotiation (Accept header, ?format), AssetManager, UI Tokens
-    %% Version: v3.0.0 (2026-01-12)
+    %% Version: v4.0.0 (2026-01-16)
 
     participant Browser
     participant Nginx
@@ -34,6 +34,7 @@ sequenceDiagram
 
     Note over Kernel,MW: Middleware Pipeline (Order matters!)
     Kernel->>MW: ErrorHandlerMiddleware
+    MW->>MW: HttpLimitsMiddleware (check limits)
     MW->>MW: SessionMiddleware (start session)
     MW->>MW: CSRFMiddleware (skip for GET)
     MW->>MW: RateLimitMiddleware (check limits)

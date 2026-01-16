@@ -30,7 +30,8 @@
 22. [Headless contracts (v2.9)](#headless-contracts-v29)
 23. [v3.0 Contracts foundation](#v30-contracts-foundation)
 24. [Contracts coverage (v3.0.2)](#contracts-coverage-v302)
-25. [Future: Rendering Adapters](#future-rendering-adapters)
+25. [AI Subsystem (v4.0.0)](#ai-subsystem-v400)
+26. [Future: Rendering Adapters](#future-rendering-adapters)
 
 ---
 
@@ -538,6 +539,36 @@ $html = $view->render('pages/show.html', [
     'user' => $auth->user(),
 ]);
 ```
+
+
+---
+
+## AI Layer (v4.0.0)
+
+**Components:**
+- `AiProvider` — Abstract interface for AI backends (Local, Remote)
+- `AiProposal` — Immutable value object for code changes
+- `AiPlan` — Multi-step execution strategy
+- `SanitizedHtml` — Trust marker for safe raw output
+- `ToolsApi` — Read-only API for external agents
+
+**Safety First Architecture:**
+- **Human-in-the-loop:** All proposals must be applied via CLI (`ai:proposal:apply --yes`).
+- **Read-only Agent:** The AI can _propose_ changes but cannot _execute_ them directly.
+- **Diff Preview:** Admin UI shows unified diffs before any change is saved.
+- **Trust Markers:** Raw output in templates requires `SanitizedHtml` wrapper in `strict` mode.
+- **Audit Logging:** All proposals, plans, and raw output events are logged.
+
+**AI Workflow:**
+1. **Analysis:** AI reads code via Tools API (`/api/v1/ai/tools`).
+2. **Proposal:** AI submits a proposal (diff + metadata) via `/api/v1/ai/propose`.
+3. **Review:** Human reviews diff in Admin UI or CLI.
+4. **Execution:** Human applies proposal via CLI (`ai:proposal:apply`).
+
+**Security Boundaries:**
+- AI output is treated as **untrusted** by default.
+- `SanitizedHtml` is the only bridge to raw output.
+- `config/security.php` controls allowed paths for AI operations.
 
 ---
 
@@ -2124,6 +2155,104 @@ return $responder->respond($request, 'pages/page.html', $data, $data);
 **Registry versioning:**
 - `contracts_version` included in `contracts:dump`
 - Breaking changes require version bump
+
+---
+
+## AI Subsystem (v4.0.0)
+
+**Goal:** Safe AI-assisted development with human-in-the-loop approval for all code changes.
+
+### Architecture Overview
+
+```
+src/Ai/
+├── Context/
+│   ├── AiContextBuilder.php    # Build context for AI prompts
+│   └── Redactor.php            # Redact sensitive data from prompts
+├── Dev/
+│   ├── DevAutopilot.php        # Autopilot workflow runner
+│   └── ModuleScaffolder.php    # Module skeleton generator
+├── Diff/
+│   └── UnifiedDiffRenderer.php # Diff preview rendering
+├── Provider/
+│   ├── AiProviderInterface.php # Provider abstraction
+│   ├── LocalDemoProvider.php   # Local demo (no network)
+│   └── RemoteHttpProvider.php  # Remote provider (disabled by default)
+├── Tools/
+│   └── ToolRegistry.php        # Read-only tools registry
+├── FileChangeApplier.php       # Safe file changes with allowlist
+├── Plan.php                    # Plan data structure
+├── PlanRunner.php              # Plan execution with allowlist
+├── PlanStore.php               # Plan storage
+├── Proposal.php                # Proposal data structure
+├── ProposalStore.php           # Proposal storage
+└── ProposalValidator.php       # Proposal schema validation
+```
+
+### Core Principles
+
+1. **Human-in-the-loop:** All AI proposals require explicit `--yes` via CLI to apply
+2. **Read-only UI:** Admin AI interface is preview-only; no direct apply
+3. **Allowlist enforcement:** File changes restricted to allowed prefixes
+4. **Sandbox default:** Dev scaffolds go to `storage/sandbox/` by default
+5. **No shell execution:** Plan runner uses only allowlisted internal CLI commands
+6. **Redaction:** Prompts and context are redacted before processing/storage
+
+### Components
+
+**Proposals:**
+- Local artifacts for AI-suggested changes
+- Stored in `storage/proposals/` (git-ignored)
+- Schema: `docs/ai/proposal.schema.json`
+- Apply requires: `php tools/cli.php ai:proposal:apply <id> --yes`
+
+**Plans:**
+- Workflow execution sequences
+- Stored in `storage/plans/` (git-ignored)
+- Run requires: `php tools/cli.php ai:plan:run <plan> --yes`
+- Only allowlisted CLI commands can be executed
+
+**Providers:**
+- `LocalDemoProvider`: Deterministic demo responses (default)
+- `RemoteHttpProvider`: External AI (disabled by default, requires allowlist)
+
+### Security Model
+
+| Layer | Protection |
+|-------|------------|
+| **Input** | Context size limits, prompt redaction |
+| **Processing** | Read-only tools, no shell access |
+| **Output** | Allowlisted file prefixes, sandbox default |
+| **Apply** | Explicit CLI approval (`--yes` required) |
+| **Audit** | All operations logged |
+
+### CLI Commands
+
+```bash
+# Diagnostics
+php tools/cli.php ai:doctor
+php tools/cli.php ai:doctor --fix
+
+# Proposals
+php tools/cli.php ai:proposal:demo
+php tools/cli.php ai:proposal:validate <id|path>
+php tools/cli.php ai:proposal:apply <id> --yes
+
+# Plans
+php tools/cli.php ai:plan:demo
+php tools/cli.php ai:plan:run <plan> --yes
+
+# Dev scaffolding
+php tools/cli.php ai:dev:module:scaffold <Name> [--sandbox=1|0]
+php tools/cli.php ai:dev:module:scaffold-and-check <Name> --yes
+```
+
+### Admin UI
+
+- **Route:** `/admin/ai`
+- **Features:** Propose, dry-run preview, save proposal, diff viewer
+- **Limitation:** No apply button; apply via CLI only
+- **Page editor:** AI Assist panel with context-aware proposals
 
 ---
 

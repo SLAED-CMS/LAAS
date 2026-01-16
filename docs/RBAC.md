@@ -254,6 +254,13 @@ Grouping is **purely for UI presentation**. Permissions are still checked indivi
 |----------------------|------------------------------------------|
 | `debug.view`         | View DevTools debug toolbar              |
 
+### AI Permissions (v4.0.0)
+
+| Permission           | Description                              |
+|----------------------|------------------------------------------|
+| `ai.view`            | Access AI Assistant (read-only)          |
+| `ai.manage`          | Propose and save AI plans (no apply)     |
+
 ### System Permissions
 
 | Permission           | Description                              |

@@ -63,6 +63,12 @@ Menus:
 
 ## Authenticated Endpoints
 
+AI (v4.0.0, Read-Only):
+- `POST /api/v1/ai/propose` — Submit a proposal (diff + metadata). Redacted prompt, stored as proposal artifact.
+- `GET /api/v1/ai/tools` — List available tool definitions (read-only).
+- `POST /api/v1/ai/run` — Run a specific tool (dry-run/safe checks only).
+- All AI endpoints are **read-only** or **draft-only** (no direct apply). Apply requires CLI confirmation.
+
 Users (RBAC):
 - `GET /api/v1/users`
 - `GET /api/v1/users/{id}`

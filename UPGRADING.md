@@ -27,6 +27,56 @@
 
 ## Version-Specific Upgrade Paths
 
+### v4.0.0 notes
+
+> [!NOTE]
+> **Overview:** Safe AI runtime with proposal/plan workflows, SanitizedHtml trust markers, and centralized security allowlists.
+
+> [!IMPORTANT]
+> **Key features (v4.0.0):**
+> - **SanitizedHtml Trust Marker** — Raw output control with audit events
+>   - Template raw mode: `strict` (throws), `escape` (default), `allow`
+>   - Configure via `config/security.local.php` or env `TEMPLATE_RAW_MODE`
+>   - Audit events: `template.raw_used`, `template.raw_blocked`
+> - **AI Provider Abstraction** — Read-only proposal and plan API
+>   - `/api/v1/ai/propose`, `/api/v1/ai/tools`, `/api/v1/ai/run`
+>   - Demo provider (local, no network) + optional RemoteHttpProvider
+>   - All proposals require explicit `--yes` to apply
+> - **Admin AI UI** — Propose + dry-run + save proposal (no direct apply)
+>   - Diff Viewer for unified diff preview
+>   - Dev Autopilot Preview (sandbox scaffold + plan + diff)
+> - **CLI Commands:**
+>   - `ai:proposal:apply <id> --yes` — Apply saved proposal
+>   - `ai:plan:run <plan> --yes` — Run plan workflow
+>   - `ai:doctor` — Diagnostics incl. DB ping + artifact counts
+>   - `templates:raw:scan` — List raw usage in themes
+>   - `templates:raw:check` — Allowlist baseline enforcement
+>   - `content:sanitize-pages --yes` — Sanitize legacy content
+> - **Security Allowlists** — Centralized in `config/security.php`
+>   - Template raw allowlist path
+>   - File apply prefixes
+>   - Plan command allowlist
+
+**New env variables:**
+- `TEMPLATE_RAW_MODE` — `strict` | `escape` | `allow` (default: `escape`)
+- AI provider settings (disabled by default)
+
+**Upgrade steps:**
+1. Follow standard upgrade flow
+2. **No database migrations required** for v4.0.0
+3. Review template raw mode in `config/security.php`
+4. Run `php tools/cli.php templates:raw:check --path=themes` to audit raw usage
+5. Run `php tools/cli.php ai:doctor` to verify AI subsystem
+6. Test critical flows:
+   - Admin AI UI: `/admin/ai`
+   - Template rendering (raw output behavior)
+
+**Breaking changes:**
+- **Template raw output** — In `strict` mode, non-SanitizedHtml raw output throws
+- **AI apply requires CLI** — UI cannot apply proposals directly; use CLI with `--yes`
+
+---
+
 ### v3.28.0 notes
 
 - No new features; release closure and documentation sync.

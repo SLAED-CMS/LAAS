@@ -35,6 +35,7 @@ LAAS CMS is built on these core principles:
 - **HTML-first** — No build step, progressive enhancement with HTMX
 - **Simplicity** — Minimal abstractions, straightforward architecture
 - **Policy enforcement** — CI guardrails (policy checks) for code quality
+- **AI Safety** — Human-in-the-loop: All AI proposals must be reviewed and applied via CLI (`--yes`)
 
 Please keep these principles in mind when contributing.
 
@@ -788,6 +789,13 @@ php tools/cli.php policy:check                # Run policy checks
 php tools/cli.php contracts:check             # Check contracts
 php tools/cli.php contracts:fixtures:check    # Check contract fixtures
 php tools/cli.php release:check               # Pre-release validation
+
+# AI (v4.0.0+)
+php tools/cli.php ai:doctor                   # AI subsystem diagnostics
+php tools/cli.php ai:proposal:apply <id> --yes  # Apply saved proposal
+php tools/cli.php ai:plan:run <plan> --yes    # Run plan workflow
+php tools/cli.php templates:raw:scan          # List raw usage in themes
+php tools/cli.php templates:raw:check         # Allowlist baseline check
 ```
 
 ### Development Helpers

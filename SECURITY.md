@@ -6,13 +6,22 @@ We release security updates for the following versions of LAAS CMS:
 
 | Version | Supported          | Status                  |
 | ------- | ------------------ | ----------------------- |
-| 3.28.x  | :white_check_mark: | Current stable release  |
+| 4.0.x   | :white_check_mark: | Current stable release  |
 | 3.x     | :white_check_mark: | Full support            |
 | 2.4.x   | :warning:          | Security fixes only     |
 | 2.3.x   | :warning:          | Critical fixes only     |
 | < 2.3   | :x:                | No longer supported     |
 
-**Recommendation:** Always use the latest stable release (v3.28.x) for the best security posture.
+**Recommendation:** Always use the latest stable release (v4.0.x) for the best security posture.
+
+> [!IMPORTANT]
+> **v4.0.0 AI Safety & Trust Markers:**
+> - ✅ SanitizedHtml trust marker for raw output control
+> - ✅ Template raw mode (`strict`/`escape`/`allow`) with audit events
+> - ✅ `templates:raw:scan` and `templates:raw:check` CLI commands
+> - ✅ AI proposal/plan workflows with allowlist enforcement
+> - ✅ Centralized security allowlists in `config/security.php`
+> - ✅ Read-only AI Tools API with redaction and audit
 
 **v3.20.0+ Security Hardening:**
 - ✅ HTTP limits middleware (body size, POST fields, header size, URL length, file count/size)

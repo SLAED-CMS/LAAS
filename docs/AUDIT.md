@@ -232,6 +232,17 @@ AuditLogger::log('custom.action', $userId, [
 |--------|-------------|---------|
 | `settings.updated` | System settings changed | `setting_key`, `old_value`, `new_value` |
 
+### AI Events (v4.0.0)
+
+| Action | Description | Context |
+|--------|-------------|---------|
+| `ai.proposal.created` | New proposal generated | `proposal_id`, `provider`, `model`, `prompt_hash` |
+| `ai.plan.generated` | Plan generated for proposal | `plan_id`, `proposal_id`, `steps_count` |
+| `ai.proposal.applied` | Proposal changes applied | `proposal_id`, `files_changed` |
+| `ai.proposal.validated` | Proposal validated | `proposal_id`, `validation_result` |
+| `template.raw_used` | Raw template tag usages detected | `file`, `line`, `content_snippet` |
+| `template.raw_blocked` | Raw template tag blocked (strict mode) | `file`, `line`, `content_snippet` |
+
 ---
 
 ## Viewing the Audit Log

@@ -631,7 +631,26 @@ Checklist:
 - [ ] JSON contract stable and test-covered
 - [x] Classic and Headless modes supported in parallel
 
-**Status:** Implemented in v2.8.0 (RenderAdapter v1)
+**Status:** Released (v3.0.0)
+
+---
+
+# v4.x — AI Runtime & Safety
+
+## v4.0 — Safe AI Integration
+**Goal:** Human-in-the-loop AI workflows without compromising security.
+
+### v4.0.0 — AI Runtime & Trust Markers
+**Release date:** January 15, 2026
+
+**Key features:**
+- **SanitizedHtml Trust Marker**
+- **AI Proposal/Plan Workflows** (Read-only UI, CLI Apply)
+- **Centralized Allow-lists**
+- **Template Raw Guard** (`strict`/`escape`)
+- **Diff Viewer & Dev Autopilot Preview**
+
+**Status:** Released (v4.0.0)
 
 ---
 
@@ -664,7 +683,7 @@ LAAS CMS evolved from v0.1 to v3.0:
 - Outstanding security score: 99/100
 
 **v2.4.0 — mature, secure enterprise-grade CMS platform that is safe to maintain for years.**
+**v3.0.0 — frontend-agnostic architecture allowing UI evolution independent of backend.**
+**v4.0.0 — safe AI runtime with human-in-the-loop workflows and audit trails.**
 
-**v3.0 — frontend-agnostic architecture allowing UI evolution independent of backend.**
-
-**Last updated:** January 12, 2026
+**Last updated:** January 16, 2026

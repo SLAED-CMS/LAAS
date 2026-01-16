@@ -24,6 +24,13 @@
 - Keys: snake_case or dot-notation (e.g. `csrf_token`, `page.title`)
 - Blocks: short nouns (e.g. `content`, `header`)
 - Includes: `partials/...` for fragments
+- **Safety**: `{% raw %}` must *only* be used with `SanitizedHtml` objects (v4.0.0+). Never pass raw strings.
+
+## AI Safety (v4.0.0+)
+- **Trust Markers**: Use `SanitizedHtml` for any HTML content that is safe to render.
+- **Review**: All AI-generated code must be reviewed by a human.
+- **Validation**: Proposals must pass `ai:proposal:validate` before application.
+- **Redaction**: Secrets must be redacted from AI prompts and context.
 
 ## Middleware order (canonical)
 1) ErrorHandler

@@ -5,13 +5,14 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-00758F.svg)](https://www.mysql.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)](#)
-[![Baseline](https://img.shields.io/badge/Baseline-v3.28.0-orange.svg)](docs/VERSIONS.md)
+[![Baseline](https://img.shields.io/badge/Baseline-v4.0.0-orange.svg)](docs/VERSIONS.md)
 [![Security](https://img.shields.io/badge/Security-99%2F100-brightgreen.svg)](docs/SECURITY.md)
 
-**Stable v3.28.0**
-**Latest Release v3.28.0**
-- Versions: [docs/VERSIONS.md](docs/VERSIONS.md)
-- Contracts: [docs/CONTRACTS.md](docs/CONTRACTS.md)
+> [!TIP]
+> Stable v4.0.0
+> Latest Release v4.0.0
+> Versions: [docs/VERSIONS.md](docs/VERSIONS.md)
+> Contracts: [docs/CONTRACTS.md](docs/CONTRACTS.md)
 
 **Modern, secure, Headless content management system.**
 
@@ -259,6 +260,14 @@ Demo (copy/paste):
 ---
 
 ## Milestones
+
+### v4.x — AI Runtime & Safety
+- **v4.0.0**: Safe AI runtime with proposal/plan workflows
+  - SanitizedHtml trust markers + Raw-Guard/Audit
+  - AI Provider abstraction + Tools API (read-only)
+  - Admin AI UI with Diff Viewer + Dev Autopilot Preview
+  - CLI: `ai:proposal:apply`, `ai:plan:run`, `ai:doctor`, `templates:raw:check`
+  - Security: centralized allowlists in `config/security.php`
 
 ### v3.x — Frontend-agnostic Platform
 - **v3.1.2**: Redis sessions hardening (ops checks, smoke command, fallback diagnostics)

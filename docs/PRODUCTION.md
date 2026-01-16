@@ -89,6 +89,12 @@ Before deploying to production, verify:
 - [ ] API CORS allowlist set (no `*` when Authorization is used)
 - [ ] Token hygiene reviewed (rotation plan, revocation, no Authorization logs)
 
+### AI Safety (v4.0.0)
+- [ ] `TEMPLATE_RAW_MODE` set to `strict` or `escape`
+- [ ] `php tools/cli.php templates:raw:check --path=themes` executed (exit code 0)
+- [ ] `php tools/cli.php ai:doctor` executed
+- [ ] AI Providers configured in `config/security.php` (if used)
+
 ### Monitoring
 - [ ] `/health` endpoint accessible
 - [ ] Monitoring configured for health endpoint

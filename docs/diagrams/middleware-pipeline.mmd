@@ -3,20 +3,22 @@ graph LR
     %% 7 middlewares in strict order (Session before Auth, Auth before RBAC)
     %% Security: CSRF, Rate Limiting, CSP, HSTS, RBAC, API Auth, Session Timeout, SSRF Protection
     %% Performance: Total overhead 5-10ms
-    %% Version: v3.0.0 (2026-01-12)
+    %% Version: v4.0.0 (2026-01-16)
 
     Request["HTTP Request<br/>(from Nginx)"] --> ErrorHandler
 
     subgraph Pipeline["Middleware Pipeline (Ordered)"]
         ErrorHandler["1. ErrorHandlerMiddleware<br/>Catch all exceptions"]
-        Session["2. SessionMiddleware<br/>Start PHP session + check timeout (v3.0.0)"]
-        CSRF["3. CSRFMiddleware<br/>Validate token (POST/PUT/DELETE)"]
-        RateLimit["4. RateLimitMiddleware<br/>Check rate limits (login, API)"]
-        Security["5. SecurityHeadersMiddleware<br/>CSP, X-Frame-Options, etc"]
-        Auth["6. AuthMiddleware<br/>Load authenticated user"]
-        RBAC["7. RBACMiddleware<br/>Check permissions (/admin)"]
+        HttpLimits["2. HttpLimitsMiddleware<br/>Request limits (v3.20.0)"]
+        Session["3. SessionMiddleware<br/>Start PHP session + check timeout (v3.0.0)"]
+        CSRF["4. CSRFMiddleware<br/>Validate token (POST/PUT/DELETE)"]
+        RateLimit["5. RateLimitMiddleware<br/>Check rate limits (login, API)"]
+        Security["6. SecurityHeadersMiddleware<br/>CSP, X-Frame-Options, etc"]
+        Auth["7. AuthMiddleware<br/>Load authenticated user"]
+        RBAC["8. RBACMiddleware<br/>Check permissions (/admin)"]
 
-        ErrorHandler --> Session
+        ErrorHandler --> HttpLimits
+        HttpLimits --> Session
         Session --> CSRF
         CSRF --> RateLimit
         RateLimit --> Security
@@ -28,6 +30,7 @@ graph LR
     Router --> Response["HTTP Response<br/>(to Browser)"]
 
     style ErrorHandler fill:#ff6b6b
+    style HttpLimits fill:#ff6b6b
     style Session fill:#4ecdc4
     style CSRF fill:#ffe66d
     style RateLimit fill:#ff6b6b

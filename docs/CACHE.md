@@ -24,4 +24,10 @@
 - `CACHE_TTL_DEFAULT=300`
 - `CACHE_PREFIX=laas`
 
+## Template Cache
+- Compiled PHP templates under `storage/cache/templates`.
+- Invalidated on file change in debug mode.
+- Manual warmup: `php tools/cli.php templates:warmup`.
+- Manual clear: `php tools/cli.php templates:clear`.
+
 **Last updated:** January 2026

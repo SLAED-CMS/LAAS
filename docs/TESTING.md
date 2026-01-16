@@ -109,6 +109,24 @@ Focus areas:
 - API rate limits (token/IP buckets)
 - CORS allowlist behavior
 
+## AI Testing (v4.0.0)
+
+AI subsystem testing covers safe execution and artifact validation:
+
+```bash
+# Verify AI subsystem health (DB ping, artifacts presence)
+php tools/cli.php ai:doctor
+
+# Validate proposal integrity (schema check, path allowlist)
+php tools/cli.php ai:proposal:validate <id>
+```
+
+Focus areas:
+- **Proposal Validation:** Schema compliance, allowlisted paths (modules/themes/docs only).
+- **Plan Safety:** Ensure plans only run allowlisted internal CLI commands.
+- **Redaction:** Verify sensitive data (prompts) is redacted in logs/artifacts.
+- **Dry-run:** Verify no changes are made without explicit `--yes`.
+
 ## Testdox
 
 ```bash

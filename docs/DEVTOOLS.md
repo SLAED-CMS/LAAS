@@ -42,6 +42,20 @@ DEVTOOLS_BUDGET_SLOW_HTTP_BAD=1000
 - Response: status and content-type.
 - User: id/username/roles.
 
+## AI Assistant (v4.0.0)
+
+**Admin AI UI (`/admin/ai`) Features:**
+- **Proposal Viewer:** Create/Edit proposals with unified diff view.
+- **Diff Preview:** Visual before/after comparison of file changes.
+- **Dev Autopilot Preview:** Scaffold and plan preview (sandbox only).
+- **Safe Mode:** UI is read-only for application (cannot apply changes directly).
+- **Apply Flow:** Get Proposal ID from UI -> Run `ai:proposal:apply <id> --yes` in CLI.
+
+**Conditions:**
+- `APP_DEBUG=true` (recommended for dev features)
+- Permission `ai.view` / `ai.manage` (if configured)
+- AI Provider configured in `config/security.php` (default: local demo)
+
 ## Overview + budgets
 - Total time: OK <200ms, WARN 200-500ms, BAD >500ms.
 - Slow SQL: WARN >50ms, BAD >200ms (based on grouped total per fingerprint).
