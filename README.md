@@ -261,115 +261,15 @@ Demo (copy/paste):
 
 ## Milestones
 
-### v4.x — AI Runtime & Safety
-- **v4.0.0**: Safe AI runtime with proposal/plan workflows
-  - SanitizedHtml trust markers + Raw-Guard/Audit
-  - AI Provider abstraction + Tools API (read-only)
-  - Admin AI UI with Diff Viewer + Dev Autopilot Preview
-  - CLI: `ai:proposal:apply`, `ai:plan:run`, `ai:doctor`, `templates:raw:check`
-  - Security: centralized allowlists in `config/security.php`
+| Version | Focus | Highlights |
+|---------|-------|------------|
+| **v4.0** | AI Safety | Proposal/Plan workflows, SanitizedHtml, Admin AI UI |
+| **v3.0** | Frontend-agnostic | RenderAdapter, Headless mode, Redis sessions |
+| **v2.4** | Security | 2FA/TOTP, Password reset, 99/100 score |
+| **v2.0** | Stable | Production-ready CMS release |
+| **v1.0** | Foundation | Admin UI, RBAC, Media, DevTools |
 
-### v3.x — Frontend-agnostic Platform
-- **v3.1.2**: Redis sessions hardening (ops checks, smoke command, fallback diagnostics)
-- **v3.1.1**: Optional Redis sessions (SESSION_DRIVER=redis with safe fallback, no extensions required)
-- **v3.1.0**: Session abstraction (SessionInterface + NativeSession, no direct $_SESSION usage)
-- **v3.0.8**: CLI doctor command (preflight + environment hints, diagnostics without secrets)
-- **v3.0.7**: Post-release hardening (trust proxy config, secure cookies auto-on-HTTPS, CSP overrides)
-- **v3.0.5**: Release candidate preflight + policies (readiness checks, semver + contracts_version rules)
-- **v3.0.4**: Contract fixtures + compatibility guard (golden fixtures for core endpoints)
-- **v3.0.3**: Official headless mode (APP_HEADLESS + HTML allowlist/override, default JSON envelope)
-- **v3.0.2**: Contract coverage + policy gate (Users + Media contracts, contracts_version in dump)
-- **v3.0.1**: Contracts foundation (JSON envelope structure, public pages + media contracts)
-- **v3.0.0**: Frontend-agnostic platform (RenderAdapter v1, content negotiation, headless mode, Problem Details, ViewModels, policy checks)
-
-### v2.x — Mature Platform
-- **v2.4.2**: Asset Architecture & Frontend Separation (AssetManager, UI Tokens, Theme API v1, CI policy checks)
-- **v2.4.1**: DevTools: JS Errors (client capture, server inbox, rate limiting, masking)
-- **v2.4.0**: Complete security stack (2FA/TOTP, password reset, session timeout, S3 SSRF protection)
-- **v2.3.28**: DevTools Terminal UI with Bluloco theme (one-window, settings, expand all)
-- **v2.3.27**: DevTools pastel terminal theme
-- **v2.3.26**: DevTools Terminal view (prompt/summary/warnings/timeline)
-- **v2.3.24**: DevTools compact CLI view (PowerShell-style)
-- **v2.3.23**: DevTools SQL accordion layout
-- **v2.3.22**: DevTools compact overview layout
-- **v2.3.21**: DevTools overview-first profiler
-- **v2.3.20**: DevTools SQL UI (grouped/raw views, duplicate details)
-- **v2.3.19**: Request-scope caching + DevTools duplicate query detector
-- **v2.3.18**: Security hardening (XSS/SSRF/URL injection, RBAC hardening, menu URL validation)
-- **v2.3.17**: Final security review (C-01..H-02 checklist verification)
-- **v2.3.16**: Menu URL injection hardening
-- **v2.3.15**: SSRF hardening for GitHub changelog
-- **v2.3.14**: RBAC hardening for Settings
-- **v2.3.13**: RBAC hardening for Modules
-- **v2.3.12**: RBAC hardening for User Management
-- **v2.3.11**: Stored XSS fix (pages)
-- **v2.3.10**: API/security test suites + CI api-tests (token/CORS/rate-limit regressions)
-- **v2.3.9**: Token rotation flow and docs
-- **v2.3.8**: API secrets hygiene (masking, no Authorization logs)
-- **v2.3.7**: Strict CORS allowlist for API v1
-- **v2.3.6**: Dedicated API rate limit (token/IP buckets)
-- **v2.3.5**: Auth/token audit events with anti-spam
-- **v2.3.4**: Token revocation + expiry enforcement
-- **v2.3.3**: Headless & API-first + Changelog fixes (REST API v1, Bearer tokens, atomic save, git binary path)
-- **v2.3.2**: Changelog module (GitHub/local git providers)
-- **v2.3.1**: Homepage UX/visual polish (improved layout, unified search, performance panel)
-- **v2.3.0**: Home Showcase (integration demo with real data)
-- **v2.2.6**: Session abstraction (SessionInterface, PhpSession)
-- **v2.2.5**: Security regression test suite
-- **v2.2.4**: Coverage report + CI threshold
-- **v2.2.3**: OPcache docs + safe deploy flow
-- **v2.2.2**: Performance must-have
-- **v2.2.1**: Contract tests (module/storage/media invariants)
-- **v2.2.0**: RBAC diagnostics (permission introspection)
-- **v2.1.1**: Global admin search (pages/media/users)
-- **v2.1.0**: Config snapshot (`config:export`)
-- **v2.0.0**: Stable CMS Release
-
-### v1.x — Production Hardening
-- **v1.15.0**: RBAC/Audit maturity (groups, cloning, filters)
-- **v1.14.0**: Search (admin + frontend, HTMX live search)
-- **v1.13.0**: Performance & cache (settings/menu cache, warmup)
-- **v1.12.0**: CI/QA/Release engineering (GitHub Actions)
-- **v1.11.3**: Production docs & upgrade path
-- **v1.11.2**: Backup/restore hardening
-- **v1.11.1**: Ops safety polish
-- **v1.11.0**: Stability & Ops (health, read-only, backups)
-- **v1.10.1**: S3-compatible storage (MinIO/AWS)
-- **v1.10.0**: Public Media + Signed URLs
-- **v1.9.2**: Image hardening (thumbnails)
-- **v1.9.1**: Media Picker (admin, HTMX)
-- **v1.9.0**: Media transforms (thumbnails sm/md/lg)
-- **v1.8.3**: Media hardening (ClamAV, per-MIME limits, DevTools)
-- **v1.8.2**: Media upload protections (rate limit, size, slow upload)
-- **v1.8.1**: Media admin UI polish (Bootstrap 5 + HTMX)
-- **v1.8.0**: Media security core (quarantine, MIME allowlist, SHA-256 dedupe)
-- **v1.7.1**: DevTools polish pack
-- **v1.7.0**: DevTools (debug toolbar)
-- **v1.6.0**: Menu polish + Audit Log (stable)
-
-### v1.0–v1.5 — Foundation
-- **v1.5**: Menu / Navigation (MVP)
-- **v1.4.1**: Validation quality fixes
-- **v1.4**: Validation layer
-- **v1.3**: Core hardening
-- **v1.2.1**: Pages admin UX
-- **v1.1**: Users management (Admin Users UI)
-- **v1.0.3**: Runtime settings overlay
-- **v1.0.2**: Admin settings UI
-- **v1.0.1**: Admin modules UI
-- **v1.0**: Admin base (modules, settings)
-
-### v0.x — Architecture
-- **v0.9**: RBAC (roles/permissions) + admin module
-- **v0.8.1**: Auth security (session regeneration, login rate limit)
-- **v0.8**: Users + Auth (login/logout)
-- **v0.7**: DB-backed modules
-- **v0.6**: Database layer + migrations
-- **v0.5**: i18n (LocaleResolver + Translator)
-- **v0.4**: Template Engine (HTML-first)
-- **v0.3**: CSRF + rate limiting
-- **v0.2**: Middleware pipeline + security headers
-- **v0.1**: Kernel/Router/Modules
+Full history: [docs/VERSIONS.md](docs/VERSIONS.md) · [docs/ROADMAP.md](docs/ROADMAP.md)
 
 ---
 
