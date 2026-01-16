@@ -9,10 +9,10 @@
 [![Security](https://img.shields.io/badge/Security-99%2F100-brightgreen.svg)](docs/SECURITY.md)
 
 > [!TIP]
-> Stable v4.0.0
-> Latest Release v4.0.0
-> Versions: [docs/VERSIONS.md](docs/VERSIONS.md)
-> Contracts: [docs/CONTRACTS.md](docs/CONTRACTS.md)
+> - Stable v4.0.0
+> - Latest Release v4.0.0
+> - Versions: [docs/VERSIONS.md](docs/VERSIONS.md)
+> - Contracts: [docs/CONTRACTS.md](docs/CONTRACTS.md)
 
 **Modern, secure, Headless content management system.**
 
