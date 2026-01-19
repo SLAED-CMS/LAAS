@@ -4,6 +4,7 @@ declare(strict_types=1);
 return [
     ['GET', '/admin', [\Laas\Modules\Admin\Controller\DashboardController::class, 'index']],
     ['GET', '/admin/modules', [\Laas\Modules\Admin\Controller\ModulesController::class, 'index']],
+    ['GET', '/admin/modules/details', [\Laas\Modules\Admin\Controller\ModulesController::class, 'details']],
     ['POST', '/admin/modules/toggle', [\Laas\Modules\Admin\Controller\ModulesController::class, 'toggle']],
     ['GET', '/admin/settings', [\Laas\Modules\Admin\Controller\SettingsController::class, 'index']],
     ['POST', '/admin/settings', [\Laas\Modules\Admin\Controller\SettingsController::class, 'save']],

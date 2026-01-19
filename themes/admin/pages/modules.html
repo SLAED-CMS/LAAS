@@ -3,23 +3,72 @@
 {% block content %}
 <div class="card shadow-sm">
   <div class="card-body">
-    <h1 class="h4 mb-3">{% t 'admin.modules.title' %}</h1>
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h1 class="h4 mb-0">{% t 'admin.modules.title' %}</h1>
+      <span id="htmx-missing"
+            class="badge text-bg-warning d-none"
+            data-htmx-expected="{% assets.htmx_js %}">HTMX not loaded</span>
+    </div>
     <div id="page-messages">
       {% include "partials/messages.html" %}
     </div>
+    <form class="row g-2 align-items-end mb-3" method="get" action="/admin/modules">
+      <div class="col-12 col-lg-6">
+        <label class="form-label" for="modules-search">Search</label>
+        <input id="modules-search"
+               type="search"
+               name="q"
+               class="form-control"
+               placeholder="Search modules..."
+               value="{% filters.q %}">
+      </div>
+      <div class="col-6 col-lg-2">
+        <label class="form-label" for="modules-status">Status</label>
+        <select id="modules-status" name="status" class="form-select">
+          <option value="all" {% if filter_status_all %}selected{% endif %}>All</option>
+          <option value="on" {% if filter_status_on %}selected{% endif %}>On</option>
+          <option value="off" {% if filter_status_off %}selected{% endif %}>Off</option>
+        </select>
+      </div>
+      <div class="col-6 col-lg-2">
+        <label class="form-label" for="modules-type">Type</label>
+        <select id="modules-type" name="type" class="form-select">
+          <option value="all" {% if filter_type_all %}selected{% endif %}>All</option>
+          <option value="general" {% if filter_type_general %}selected{% endif %}>General</option>
+          <option value="admin" {% if filter_type_admin %}selected{% endif %}>Admin</option>
+          <option value="api" {% if filter_type_api %}selected{% endif %}>API</option>
+          <option value="internal" {% if filter_type_internal %}selected{% endif %}>Internal</option>
+        </select>
+      </div>
+      <div class="col-12 col-lg-2 d-grid">
+        <button class="btn btn-outline-primary" type="submit">Filter</button>
+      </div>
+    </form>
     <table class="table table-sm table-striped align-middle">
       <thead>
         <tr>
+          <th>Icon</th>
           <th>{% t 'admin.modules.name' %}</th>
           <th>{% t 'admin.modules.type' %}</th>
           <th>{% t 'admin.modules.status' %}</th>
           <th>Notes</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         {% foreach modules as module %}
-        <tr>
-          <td class="fw-semibold">{% module.name %}</td>
+        <tr id="module-{% module.module_id %}"
+            data-module-row="1"
+            data-module-id="{% module.module_id %}">
+          <td class="text-muted">
+            <i class="bi bi-{% module.icon %}"></i>
+          </td>
+          <td class="fw-semibold">
+            {% module.name %}
+            {% if module.virtual %}
+            <span class="badge text-bg-light border ms-2">virtual</span>
+            {% endif %}
+          </td>
           <td>
             {% if module.type_is_internal %}
             <span class="badge text-bg-secondary">{% t 'admin.modules.type_internal' %}</span>
@@ -43,11 +92,60 @@
             {% endif %}
           </td>
           <td class="text-muted small">
-            {% if module.notes %}
-            {% module.notes %}
+            {% if module.type_is_internal %}
+              {% if module.admin_url %}
+                {% if module.notes %}
+                {% module.notes %}
+                {% endif %}
+              {% else %}
+            Internal module (no admin UI)
+              {% endif %}
             {% else %}
-            -
+              {% if module.notes %}
+            {% module.notes %}
+              {% endif %}
             {% endif %}
+          </td>
+          <td>
+            {% if module.actions %}
+            <div class="d-flex gap-1 flex-wrap">
+              {% foreach module.actions as action %}
+              {% if action.label != 'Details' %}
+              <a class="btn btn-sm btn-{% action.style %}" href="{% action.url %}">{% action.label %}</a>
+              {% endif %}
+              {% endforeach %}
+              <a class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center"
+                 href="/admin/modules{% module.details_anchor %}"
+                 hx-get="{% module.details_url %}"
+                 hx-target="#module-details-{% module.module_id %}"
+                 hx-swap="innerHTML"
+                 data-module-id="{% module.module_id %}"
+                 data-details-btn="1"
+                 data-details-target="#module-details-{% module.module_id %}"
+                 data-details-row="#module-details-row-{% module.module_id %}">
+                <span data-details-label>Details</span>
+                <span class="spinner-border spinner-border-sm ms-1 invisible" role="status" aria-hidden="true" data-details-spinner></span>
+              </a>
+            </div>
+            {% else %}
+            <a class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center"
+               href="/admin/modules{% module.details_anchor %}"
+               hx-get="{% module.details_url %}"
+               hx-target="#module-details-{% module.module_id %}"
+               hx-swap="innerHTML"
+               data-module-id="{% module.module_id %}"
+               data-details-btn="1"
+               data-details-target="#module-details-{% module.module_id %}"
+               data-details-row="#module-details-row-{% module.module_id %}">
+              <span data-details-label>Details</span>
+              <span class="spinner-border spinner-border-sm ms-1 invisible" role="status" aria-hidden="true" data-details-spinner></span>
+            </a>
+            {% endif %}
+          </td>
+        </tr>
+        <tr id="module-details-row-{% module.module_id %}" class="module-details-row">
+          <td colspan="6" class="module-details-cell">
+            <div id="module-details-{% module.module_id %}" class="module-details-body" data-details-body="1"></div>
           </td>
         </tr>
         {% endforeach %}

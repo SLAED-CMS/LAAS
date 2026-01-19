@@ -28,7 +28,7 @@ final class AssetsManager
         return [
             'bootstrap_css' => $this->resolveAsset('bootstrap_css', $this->join($vendorBase, 'bootstrap/' . $bootstrapVersion . '/bootstrap.min.css')),
             'bootstrap_js' => $this->resolveAsset('bootstrap_js', $this->join($vendorBase, 'bootstrap/' . $bootstrapVersion . '/bootstrap.bundle.min.js')),
-            'bootstrap_icons_css' => $this->resolveAsset('bootstrap_icons_css', $this->join($vendorBase, 'bootstrap-icons/' . $bootstrapIconsVersion . '/bootstrap-icons.css')),
+            'bootstrap_icons_css' => $this->resolveAsset('bootstrap_icons_css', $this->join($vendorBase, 'bootstrap-icons/' . $bootstrapIconsVersion . '/bootstrap-icons.min.css')),
             'htmx_js' => $this->resolveAsset('htmx_js', $this->join($vendorBase, 'htmx/' . $htmxVersion . '/htmx.min.js')),
             'app_css' => $this->resolveAsset('app_css', $this->join($appBase, 'app.css')),
             'app_js' => $this->resolveAsset('app_js', $this->join($appBase, 'app.js')),

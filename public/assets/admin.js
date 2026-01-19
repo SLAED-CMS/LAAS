@@ -63,14 +63,257 @@
     });
   }
 
+  function setDetailsLoading(button, loading) {
+    if (!button) {
+      return;
+    }
+    var spinner = button.querySelector('[data-details-spinner]');
+    if (spinner && spinner.classList) {
+      if (loading) {
+        spinner.classList.remove('invisible');
+      } else {
+        spinner.classList.add('invisible');
+      }
+    }
+    if (button.classList) {
+      if (loading) {
+        button.classList.add('disabled');
+      } else {
+        button.classList.remove('disabled');
+      }
+    }
+    button.setAttribute('aria-disabled', loading ? 'true' : 'false');
+    button.setAttribute('aria-busy', loading ? 'true' : 'false');
+    button.dataset.detailsLoading = loading ? '1' : '0';
+  }
+
+  function getDetailsRow(button) {
+    if (!button) {
+      return null;
+    }
+    var selector = button.getAttribute('data-details-row') || '';
+    if (!selector) {
+      return null;
+    }
+    return document.querySelector(selector);
+  }
+
+  function getDetailsTarget(button) {
+    if (!button) {
+      return null;
+    }
+    var selector = button.getAttribute('data-details-target') || '';
+    if (!selector) {
+      return null;
+    }
+    return document.querySelector(selector);
+  }
+
+  function findDetailsButtonForRow(row) {
+    if (!row || !row.id) {
+      return null;
+    }
+    return document.querySelector('[data-details-row="#' + row.id + '"]');
+  }
+
+  function closeDetailsRow(row) {
+    if (!row) {
+      return;
+    }
+    row.classList.remove('is-open');
+    var button = findDetailsButtonForRow(row);
+    setDetailsLoading(button, false);
+  }
+
+  function closeAllDetailsRows(exceptRow) {
+    var openRows = document.querySelectorAll('.module-details-row.is-open');
+    if (!openRows.length) {
+      return;
+    }
+    openRows.forEach(function (row) {
+      if (exceptRow && row === exceptRow) {
+        return;
+      }
+      closeDetailsRow(row);
+    });
+  }
+
+  function highlightModuleRow(moduleId) {
+    if (!moduleId) {
+      return;
+    }
+    var row = document.querySelector('[data-module-row="1"][data-module-id="' + moduleId + '"]') || document.getElementById('module-' + moduleId);
+    if (!row || !row.classList) {
+      return;
+    }
+    row.classList.add('module-row-highlight');
+    setTimeout(function () {
+      row.classList.remove('module-row-highlight');
+    }, 800);
+  }
+
+  function scrollToModuleRow(moduleId) {
+    var row = document.querySelector('[data-module-row="1"][data-module-id="' + moduleId + '"]') || document.getElementById('module-' + moduleId);
+    if (!row || !row.scrollIntoView) {
+      return;
+    }
+    row.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(function () {
+      window.scrollBy(0, -80);
+    }, 150);
+  }
+
+  function requestDetails(button, target) {
+    if (!button || !target || !window.htmx || !window.htmx.ajax) {
+      return;
+    }
+    var url = button.getAttribute('hx-get') || button.getAttribute('data-hx-get') || button.getAttribute('href');
+    if (!url) {
+      return;
+    }
+    setDetailsLoading(button, true);
+    window.htmx.ajax('GET', url, { target: target, swap: 'innerHTML' });
+  }
+
+  var moduleDetailsReady = false;
+
+  function initModuleDetailsHandlers() {
+    if (moduleDetailsReady) {
+      return;
+    }
+    moduleDetailsReady = true;
+
+    document.addEventListener('click', function (event) {
+      var target = event.target;
+      if (!target || !target.closest) {
+        return;
+      }
+
+      var closeLink = target.closest('[data-details-close="1"]');
+      if (closeLink) {
+        if (typeof window.htmx === 'undefined') {
+          return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        var closeId = closeLink.getAttribute('data-module-id') || '';
+        var closeRow = document.getElementById('module-details-row-' + closeId);
+        closeDetailsRow(closeRow);
+        var focusButton = document.querySelector('[data-details-btn="1"][data-module-id="' + closeId + '"]');
+        if (focusButton && focusButton.focus) {
+          focusButton.focus();
+        }
+        return;
+      }
+
+      var button = target.closest('[data-details-btn="1"]');
+      if (!button) {
+        return;
+      }
+      if (typeof window.htmx === 'undefined') {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      if (button.dataset.detailsLoading === '1') {
+        return;
+      }
+
+      var moduleId = button.getAttribute('data-module-id') || '';
+      var row = getDetailsRow(button);
+      var detailsTarget = getDetailsTarget(button);
+      if (!row || !detailsTarget) {
+        return;
+      }
+
+      if (row.classList.contains('is-open')) {
+        closeDetailsRow(row);
+        return;
+      }
+
+      closeAllDetailsRows(row);
+      row.classList.add('is-open');
+      highlightModuleRow(moduleId);
+      scrollToModuleRow(moduleId);
+
+      if (detailsTarget.innerHTML.trim() === '') {
+        requestDetails(button, detailsTarget);
+      } else {
+        setDetailsLoading(button, false);
+      }
+    });
+  }
+
+  function initTooltips(root) {
+    if (!window.bootstrap || !window.bootstrap.Tooltip) {
+      return;
+    }
+    var scope = root || document;
+    var nodes = scope.querySelectorAll('[data-bs-toggle="tooltip"]');
+    if (!nodes.length) {
+      return;
+    }
+    nodes.forEach(function (node) {
+      if (node.dataset.tooltipReady === '1') {
+        return;
+      }
+      node.dataset.tooltipReady = '1';
+      new window.bootstrap.Tooltip(node, { container: 'body' });
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     scheduleAutoHide(document);
     initCopyButtons(document);
+    initModuleDetailsHandlers();
+    initTooltips(document);
+    var htmxBadge = document.getElementById('htmx-missing');
+    if (htmxBadge && document.body && document.body.getAttribute('data-app-debug') === '1') {
+      if (typeof window.htmx === 'undefined') {
+        htmxBadge.classList.remove('d-none');
+        if (window.console && window.console.warn) {
+          var expected = htmxBadge.getAttribute('data-htmx-expected') || '/assets/vendor/htmx/1.9.12/htmx.min.js';
+          window.console.warn('[admin] HTMX missing: hx-* interactions disabled. Expected ' + expected);
+        }
+      }
+    }
   });
 
   document.body.addEventListener('htmx:afterSwap', function (e) {
     scheduleAutoHide(e.target);
     initCopyButtons(e.target);
+    initTooltips(e.target);
+    if (e.target && e.target.getAttribute && e.target.getAttribute('data-details-body') === '1') {
+      var detailsRow = e.target.closest('.module-details-row');
+      if (detailsRow) {
+        if (e.target.innerHTML.trim() === '') {
+          detailsRow.classList.remove('is-open');
+        } else {
+          detailsRow.classList.add('is-open');
+        }
+      }
+      var detailsButton = document.querySelector('[data-details-target="#' + e.target.id + '"]');
+      setDetailsLoading(detailsButton, false);
+    }
+  });
+
+  document.body.addEventListener('htmx:beforeRequest', function (e) {
+    var target = e.detail && e.detail.target ? e.detail.target : null;
+    if (!target || !target.getAttribute || target.getAttribute('data-details-body') !== '1') {
+      return;
+    }
+    var detailsButton = document.querySelector('[data-details-target="#' + target.id + '"]');
+    setDetailsLoading(detailsButton, true);
+  });
+
+  document.body.addEventListener('htmx:afterRequest', function (e) {
+    var target = e.detail && e.detail.target ? e.detail.target : null;
+    if (!target || !target.getAttribute || target.getAttribute('data-details-body') !== '1') {
+      return;
+    }
+    var detailsButton = document.querySelector('[data-details-target="#' + target.id + '"]');
+    setDetailsLoading(detailsButton, false);
   });
 
   document.addEventListener('laas:toast', function (event) {
@@ -526,6 +769,11 @@
   }
 
   document.body.addEventListener('htmx:responseError', function (e) {
+    var target = e.detail && e.detail.target ? e.detail.target : null;
+    if (target && target.getAttribute && target.getAttribute('data-details-body') === '1') {
+      var detailsButton = document.querySelector('[data-details-target="#' + target.id + '"]');
+      setDetailsLoading(detailsButton, false);
+    }
     if (handleHtmxTriggers(e)) {
       return;
     }

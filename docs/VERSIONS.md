@@ -5,6 +5,12 @@
   - Admin UI: AI flow indicator + improved diff styling + visual hierarchy (wow polish)
   - Admin AI: collapsible diff per file + CLI apply snippet after save (demo wow)
   - Admin UI: /admin/modules lists all modules + navbar dropdown modules list
+  - Admin UI: ModuleCatalog includes virtual "AI" module entry (built-in read-only)
+  - Admin UI: module icons + quick actions (table + navbar dropdown)
+  - Admin UI: /admin/modules search + filters + inline HTMX details drawer (wow)
+  - Admin UI: modules details inline (HTMX) + icons fixed
+  - Admin UI: fixed local HTMX asset (real build; Details/HTMX actions work)
+  - Admin UI: modules accordion details + tooltips + wow polish (UI-09)
 
 - v4.0.0 (Released 2026-01-15)
   - Highlights:

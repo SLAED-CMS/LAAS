@@ -31,6 +31,8 @@ final class ModulesController
 
         $catalog = new ModuleCatalog(dirname(__DIR__, 3), $this->db);
         $modules = $catalog->listAll();
+        $filters = $this->normalizeFilters($request);
+        $modules = $this->filterModules($modules, $filters);
 
         if ($request->wantsJson()) {
             $items = $this->jsonItems($modules);
@@ -54,8 +56,59 @@ final class ModulesController
 
         return $this->view->render('pages/modules.html', [
             'modules' => $modules,
+            'filters' => $filters,
+            'filter_status_all' => $filters['status'] === 'all',
+            'filter_status_on' => $filters['status'] === 'on',
+            'filter_status_off' => $filters['status'] === 'off',
+            'filter_type_all' => $filters['type'] === 'all',
+            'filter_type_admin' => $filters['type'] === 'admin',
+            'filter_type_general' => $filters['type'] === 'general',
+            'filter_type_internal' => $filters['type'] === 'internal',
+            'filter_type_api' => $filters['type'] === 'api',
         ], 200, [], [
             'theme' => 'admin',
+        ]);
+    }
+
+    public function details(Request $request): Response
+    {
+        if (!$this->canManage($request)) {
+            return $this->forbidden($request, 'admin.modules.index');
+        }
+
+        $moduleId = trim((string) ($request->query('module') ?? ''));
+        if ($moduleId === '' || !preg_match('/^[a-z0-9\\-]+$/', $moduleId)) {
+            return $this->renderDetailsError('Invalid module id.', 400);
+        }
+
+        $catalog = new ModuleCatalog(dirname(__DIR__, 3), $this->db);
+        $modules = $catalog->listAll();
+        $module = null;
+        foreach ($modules as $item) {
+            if (is_array($item) && ($item['module_id'] ?? null) === $moduleId) {
+                $module = $item;
+                break;
+            }
+        }
+
+        if ($module === null) {
+            return $this->renderDetailsError('Module not found.', 404);
+        }
+
+        $close = (string) ($request->query('close') ?? '');
+        if ($close !== '') {
+            return new Response('', 200, [
+                'Content-Type' => 'text/html; charset=utf-8',
+            ]);
+        }
+
+        return $this->view->render('partials/module_details.html', [
+            'module' => $module,
+        ], 200, [
+            'Content-Type' => 'text/html; charset=utf-8',
+        ], [
+            'theme' => 'admin',
+            'render_partial' => true,
         ]);
     }
 
@@ -291,6 +344,94 @@ final class ModulesController
             'api' => $this->view->translate('admin.modules.type_api'),
             default => $this->view->translate('admin.modules.type_feature'),
         };
+    }
+
+    /**
+     * @return array{q: string, status: string, type: string}
+     */
+    private function normalizeFilters(Request $request): array
+    {
+        $q = trim((string) ($request->query('q') ?? ''));
+        $status = strtolower(trim((string) ($request->query('status') ?? 'all')));
+        if (!in_array($status, ['all', 'on', 'off'], true)) {
+            $status = 'all';
+        }
+        $type = strtolower(trim((string) ($request->query('type') ?? 'all')));
+        if (!in_array($type, ['all', 'admin', 'general', 'internal', 'api'], true)) {
+            $type = 'all';
+        }
+
+        return [
+            'q' => $q,
+            'status' => $status,
+            'type' => $type,
+        ];
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $modules
+     * @param array{q: string, status: string, type: string} $filters
+     * @return array<int, array<string, mixed>>
+     */
+    private function filterModules(array $modules, array $filters): array
+    {
+        $q = strtolower($filters['q']);
+        $status = $filters['status'];
+        $type = $filters['type'];
+
+        $out = [];
+        foreach ($modules as $module) {
+            if (!is_array($module)) {
+                continue;
+            }
+
+            if ($status !== 'all') {
+                $enabled = (bool) ($module['enabled'] ?? false);
+                if ($status === 'on' && !$enabled) {
+                    continue;
+                }
+                if ($status === 'off' && $enabled) {
+                    continue;
+                }
+            }
+
+            if ($type !== 'all') {
+                $wanted = $type === 'general' ? 'feature' : $type;
+                $moduleType = (string) ($module['type'] ?? '');
+                if ($moduleType !== $wanted) {
+                    continue;
+                }
+            }
+
+            if ($q !== '') {
+                $haystack = strtolower(
+                    (string) ($module['name'] ?? '')
+                    . ' '
+                    . (string) ($module['notes'] ?? '')
+                    . ' '
+                    . (string) ($module['type'] ?? '')
+                );
+                if (!str_contains($haystack, $q)) {
+                    continue;
+                }
+            }
+
+            $out[] = $module;
+        }
+
+        return $out;
+    }
+
+    private function renderDetailsError(string $message, int $status): Response
+    {
+        return $this->view->render('partials/module_details.html', [
+            'error' => $message,
+        ], $status, [
+            'Content-Type' => 'text/html; charset=utf-8',
+        ], [
+            'theme' => 'admin',
+            'render_partial' => true,
+        ]);
     }
 
     private function withSuccessTrigger(Response $response, string $messageKey): Response

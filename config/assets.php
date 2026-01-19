@@ -41,7 +41,7 @@ return [
     ],
     'bootstrap_css' => $assetVendorBase . '/bootstrap/' . $bootstrapVersion . '/bootstrap.min.css',
     'bootstrap_js' => $assetVendorBase . '/bootstrap/' . $bootstrapVersion . '/bootstrap.bundle.min.js',
-    'bootstrap_icons_css' => $assetVendorBase . '/bootstrap-icons/' . $bootstrapIconsVersion . '/bootstrap-icons.css',
+    'bootstrap_icons_css' => $assetVendorBase . '/bootstrap-icons/' . $bootstrapIconsVersion . '/bootstrap-icons.min.css',
     'htmx_js' => $assetVendorBase . '/htmx/' . $htmxVersion . '/htmx.min.js',
     'app_css' => $assetAppBase . '/app.css',
     'app_js' => $assetAppBase . '/app.js',

@@ -1,0 +1,102 @@
+{% if error %}
+<div class="alert alert-warning small mb-0">{% error %}</div>
+{% else %}
+<div class="module-details-card border rounded bg-light p-3">
+  <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+    <div>
+      <div class="fw-semibold d-flex align-items-center gap-2">
+        <i class="bi bi-{% module.icon %}"></i>
+        <span>Module {% module.name %}</span>
+      </div>
+      <div class="text-muted small">{% module.module_id %}</div>
+    </div>
+    <a class="btn btn-sm btn-outline-secondary"
+       href="/admin/modules{% module.details_anchor %}"
+       hx-get="/admin/modules/details?module={% module.module_id %}&close=1"
+       hx-target="#module-details-{% module.module_id %}"
+       hx-swap="innerHTML"
+       data-details-close="1"
+       data-module-id="{% module.module_id %}">Close</a>
+  </div>
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+    {% if module.enabled %}
+    <span class="badge text-bg-success">{% t 'admin.modules.on' %}</span>
+    {% else %}
+    <span class="badge text-bg-secondary">{% t 'admin.modules.off' %}</span>
+    {% endif %}
+    {% if module.type_is_internal %}
+    <span class="badge text-bg-secondary">{% t 'admin.modules.type_internal' %}</span>
+    {% else %}
+      {% if module.type_is_admin %}
+    <span class="badge text-bg-dark">{% t 'admin.modules.type_admin' %}</span>
+      {% else %}
+        {% if module.type_is_api %}
+    <span class="badge text-bg-info text-dark">{% t 'admin.modules.type_api' %}</span>
+        {% else %}
+    <span class="badge text-bg-primary">{% t 'admin.modules.type_feature' %}</span>
+        {% endif %}
+      {% endif %}
+    {% endif %}
+    {% if module.virtual %}
+    <span class="badge text-bg-light border">virtual</span>
+    {% endif %}
+  </div>
+  <div class="small mb-2">
+    <span class="fw-semibold">Admin UI:</span>
+    {% if module.admin_url %}
+    <a href="{% module.admin_url %}">{% module.admin_url %}</a>
+    {% else %}
+    <span class="text-muted">No admin UI</span>
+    {% endif %}
+  </div>
+  {% if module.version %}
+  <div class="small mb-2">
+    <span class="fw-semibold">Version:</span>
+    {% module.version %}
+  </div>
+  {% endif %}
+  {% if module.installed_at %}
+  <div class="small mb-2">
+    <span class="fw-semibold">Installed:</span>
+    {% module.installed_at %}
+  </div>
+  {% endif %}
+  {% if module.updated_at %}
+  <div class="small mb-2">
+    <span class="fw-semibold">Updated:</span>
+    {% module.updated_at %}
+  </div>
+  {% endif %}
+  {% if module.type_is_internal %}
+  <div class="small mb-2">
+    <span class="fw-semibold">Purpose:</span>
+    {% if module.notes %}
+    {% module.notes %}
+    {% else %}
+    Internal module (no admin UI)
+    {% endif %}
+  </div>
+  {% else %}
+    {% if module.notes %}
+  <div class="small mb-2 text-muted">
+    {% module.notes %}
+  </div>
+    {% endif %}
+  {% endif %}
+  <div class="small mb-2">
+    <span class="fw-semibold">Actions:</span>
+    {% if module.actions %}
+    <div class="d-flex flex-wrap gap-1 mt-1">
+      {% foreach module.actions as action %}
+      <a class="btn btn-sm btn-{% action.style %}" href="{% action.url %}">
+        <i class="bi bi-{% action.icon %}"></i>
+        {% action.label %}
+      </a>
+      {% endforeach %}
+    </div>
+    {% else %}
+    <span class="text-muted">No actions available</span>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
