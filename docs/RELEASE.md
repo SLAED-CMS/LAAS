@@ -28,6 +28,13 @@
   - `php tools/cli.php content:sanitize-pages --yes --limit=100 --offset=0`
 - Raw allowlist now lives in `config/template_raw_allowlist.php`
 
+## Stability checklist (v4.0.20)
+- Compat toggles verified (`config/compat.php`) and strict mode smoke-tested
+- Admin modules page: no duplicate queries (list + navbar) in a single request
+- Admin modules details: rate-limited + no-store + content-type header
+- Headless v2: ETag/304 has cache headers and empty body
+- CSP uses local assets only (no inline JS required)
+
 ## Verification commands
 ```bash
 php tools/cli.php policy:check

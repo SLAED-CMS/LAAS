@@ -77,6 +77,8 @@ final class PagesController
             $this->view->getLocale()
         ));
         $blocksJson = $this->blocksRegistry()->renderJsonBlocks($blocks);
+        $legacyDetected = $this->isLegacyContent($page, $blocks);
+        $legacyAllowed = $legacyDetected && $this->compatBlocksLegacyContent();
         if ($this->shouldJson($request)) {
             return ContractResponse::ok([
                 'page' => $this->jsonPage($page),
@@ -89,6 +91,8 @@ final class PagesController
         $viewData = $vm->toArray();
         $viewData['blocks_html'] = $blocksHtml;
         $viewData['blocks_json'] = $blocksJson;
+        $viewData['legacy_content_allowed'] = $legacyAllowed;
+        $viewData['legacy_content_detected'] = $legacyDetected;
         return $this->view->render('pages/page.html', $viewData);
     }
 
@@ -226,5 +230,35 @@ final class PagesController
             return $registry;
         }
         return BlockRegistry::default();
+    }
+
+    /**
+     * @param array<string, mixed> $page
+     * @param array<int, array{type: string, data: array<string, mixed>}> $blocks
+     */
+    private function isLegacyContent(array $page, array $blocks): bool
+    {
+        if ($blocks !== []) {
+            return false;
+        }
+        $content = (string) ($page['content'] ?? '');
+        return trim($content) !== '';
+    }
+
+    private function compatBlocksLegacyContent(): bool
+    {
+        $config = $this->compatConfig();
+        return (bool) ($config['compat_blocks_legacy_content'] ?? false);
+    }
+
+    private function compatConfig(): array
+    {
+        $root = dirname(__DIR__, 3);
+        $path = $root . '/config/compat.php';
+        if (!is_file($path)) {
+            return [];
+        }
+        $data = require $path;
+        return is_array($data) ? $data : [];
     }
 }

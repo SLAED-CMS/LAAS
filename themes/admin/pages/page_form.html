@@ -47,8 +47,16 @@
             </select>
           </div>
           <div class="mb-3">
-            <label class="form-label">{% t 'admin.pages.form.content' %}</label>
+            <label class="form-label">
+              {% t 'admin.pages.form.content' %}
+              {% if legacy_content %}
+              <span class="badge text-bg-warning ms-2">{% t 'admin.pages.legacy_content' %}</span>
+              {% endif %}
+            </label>
             <textarea class="form-control" name="content" rows="10">{% page.content %}</textarea>
+            {% if legacy_content %}
+            <div class="form-text text-warning">{% t 'admin.pages.legacy_content_hint' %}</div>
+            {% endif %}
           </div>
           <textarea name="blocks_json" class="d-none">{% page.blocks_json %}</textarea>
           <div class="d-flex gap-2 flex-wrap">

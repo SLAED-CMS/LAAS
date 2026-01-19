@@ -135,6 +135,7 @@ final class AdminPagesController
             'page' => $this->emptyPage(),
             'status_selected_draft' => $this->selectedAttr(true),
             'status_selected_published' => $this->selectedAttr(false),
+            'legacy_content' => false,
         ], 200, [], [
             'theme' => 'admin',
         ]);
@@ -162,6 +163,8 @@ final class AdminPagesController
         }
 
         $page['blocks_json'] = $this->loadBlocksJson($id);
+        $legacyDetected = $this->isLegacyContent($page);
+        $legacyAllowed = $legacyDetected && $this->compatBlocksLegacyContent();
         $status = (string) ($page['status'] ?? 'draft');
         return $this->view->render('pages/page_form.html', [
             'mode' => 'edit',
@@ -169,6 +172,7 @@ final class AdminPagesController
             'page' => $page,
             'status_selected_draft' => $this->selectedAttr($status === 'draft'),
             'status_selected_published' => $this->selectedAttr($status === 'published'),
+            'legacy_content' => $legacyAllowed,
         ], 200, [], [
             'theme' => 'admin',
         ]);
@@ -519,6 +523,36 @@ final class AdminPagesController
         return BlockRegistry::default();
     }
 
+    /**
+     * @param array<string, mixed> $page
+     */
+    private function isLegacyContent(array $page): bool
+    {
+        $blocksRaw = (string) ($page['blocks_json'] ?? '');
+        if (trim($blocksRaw) !== '') {
+            return false;
+        }
+        $content = (string) ($page['content'] ?? '');
+        return trim($content) !== '';
+    }
+
+    private function compatBlocksLegacyContent(): bool
+    {
+        $config = $this->compatConfig();
+        return (bool) ($config['compat_blocks_legacy_content'] ?? false);
+    }
+
+    private function compatConfig(): array
+    {
+        $root = dirname(__DIR__, 3);
+        $path = $root . '/config/compat.php';
+        if (!is_file($path)) {
+            return [];
+        }
+        $data = require $path;
+        return is_array($data) ? $data : [];
+    }
+
     private function readId(Request $request): ?int
     {
         $raw = $request->post('id');
@@ -566,6 +600,8 @@ final class AdminPagesController
 
         $isEdit = !empty($page['id']);
         $status = (string) ($page['status'] ?? 'draft');
+        $legacyDetected = $this->isLegacyContent($page);
+        $legacyAllowed = $legacyDetected && $this->compatBlocksLegacyContent();
         return $this->view->render('pages/page_form.html', [
             'mode' => $isEdit ? 'edit' : 'create',
             'is_edit' => $isEdit,
@@ -573,6 +609,7 @@ final class AdminPagesController
             'status_selected_draft' => $this->selectedAttr($status === 'draft'),
             'status_selected_published' => $this->selectedAttr($status === 'published'),
             'errors' => $messages,
+            'legacy_content' => $legacyAllowed,
         ], 422, [], [
             'theme' => 'admin',
         ]);

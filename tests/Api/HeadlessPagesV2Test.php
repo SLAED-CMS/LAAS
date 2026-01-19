@@ -49,6 +49,24 @@ final class HeadlessPagesV2Test extends TestCase
         $this->assertNotEmpty($item['media']);
     }
 
+    public function testShowAddsContentHtmlWhenBlocksMissingInCompatMode(): void
+    {
+        $db = $this->createDbWithLegacyContent();
+        $controller = new PagesV2Controller($db);
+
+        $request = new Request('GET', '/api/v2/pages/1', [
+            'include' => 'blocks',
+        ], [], [], '');
+        $response = $controller->show($request, ['id' => 1]);
+
+        $payload = json_decode($response->getBody(), true);
+        $this->assertTrue($payload['ok']);
+        $page = $payload['data']['page'];
+        $this->assertArrayHasKey('blocks', $page);
+        $this->assertSame([], $page['blocks']);
+        $this->assertSame('Legacy body', $page['content_html']);
+    }
+
     private function createDb(): DatabaseManager
     {
         $pdo = new PDO('sqlite::memory:');
@@ -93,6 +111,40 @@ final class HeadlessPagesV2Test extends TestCase
 
         $pdo->exec("INSERT INTO media_files (original_name, mime_type, size_bytes, is_public, created_at) VALUES
             ('photo.jpg', 'image/jpeg', 12345, 1, '2026-01-01')");
+
+        $db = new DatabaseManager(['driver' => 'mysql']);
+        $ref = new ReflectionProperty($db, 'pdo');
+        $ref->setAccessible(true);
+        $ref->setValue($db, $pdo);
+
+        return $db;
+    }
+
+    private function createDbWithLegacyContent(): DatabaseManager
+    {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+
+        $pdo->exec('CREATE TABLE pages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT,
+            slug TEXT UNIQUE,
+            content TEXT,
+            status TEXT,
+            created_at TEXT,
+            updated_at TEXT
+        )');
+        $pdo->exec('CREATE TABLE pages_revisions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            page_id INTEGER,
+            blocks_json TEXT,
+            created_at TEXT,
+            created_by INTEGER
+        )');
+
+        $pdo->exec("INSERT INTO pages (title, slug, content, status, created_at, updated_at) VALUES
+            ('Legacy', 'legacy', 'Legacy body', 'published', '2026-01-01', '2026-01-01')");
 
         $db = new DatabaseManager(['driver' => 'mysql']);
         $ref = new ReflectionProperty($db, 'pdo');

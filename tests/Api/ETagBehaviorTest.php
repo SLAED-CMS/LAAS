@@ -27,6 +27,9 @@ final class ETagBehaviorTest extends TestCase
 
         $this->assertSame(304, $notModified->getStatus());
         $this->assertSame('', $notModified->getBody());
+        $this->assertSame('public, max-age=60', $notModified->getHeader('Cache-Control'));
+        $this->assertSame($etag, $notModified->getHeader('ETag'));
+        $this->assertSame('page:1', $notModified->getHeader('Surrogate-Key'));
     }
 
     private function createDb(): DatabaseManager

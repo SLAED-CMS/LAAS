@@ -2331,6 +2331,13 @@ $config = $container->get('config');
 - Existing repositories already isolate data access.
 - Services call repositories directly to avoid unnecessary indirection.
 
+**Compat mode (v4.0.20):**
+- Purpose: keep v4 changes non-breaking while modules migrate (Theme API v2, Blocks, Headless v2).
+- Toggles live in `config/compat.php` and default to `true` for v4.0.20.
+- `compat_theme_api_v1`: accept legacy `theme.json` and emit warning (strict mode makes it a violation).
+- `compat_blocks_legacy_content`: allow rendering legacy HTML content and expose a legacy badge in admin.
+- Headless v2 may include `content_html` fallback when blocks are missing and compat is on.
+
 **Upload pipeline (MediaService):**
 ```
 validateFile -> generateFilename -> moveToStorage -> persistMedia

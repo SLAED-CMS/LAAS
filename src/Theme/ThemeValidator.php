@@ -25,7 +25,8 @@ final class ThemeValidator
     public function __construct(
         private string $themesRoot,
         private ?string $schemaPath = null,
-        private ?string $snapshotPath = null
+        private ?string $snapshotPath = null,
+        private ?array $compatConfig = null
     ) {
         if ($this->schemaPath === null) {
             $root = dirname(__DIR__, 2);
@@ -34,6 +35,9 @@ final class ThemeValidator
         if ($this->snapshotPath === null) {
             $root = dirname(__DIR__, 2);
             $this->snapshotPath = $root . '/config/theme_snapshot.php';
+        }
+        if ($this->compatConfig === null) {
+            $this->compatConfig = $this->loadCompatConfig();
         }
     }
 
@@ -126,7 +130,11 @@ final class ThemeValidator
 
         $api = $data['api'] ?? null;
         if (!is_string($api) || $api !== 'v2') {
-            $result->addViolation('theme_api', $path, 'Theme api must be v2');
+            if ($this->compatThemeApiV1()) {
+                $result->addWarning('theme_api_compat', $path, 'Theme api is not v2 (compat mode)');
+            } else {
+                $result->addViolation('theme_api', $path, 'Theme api must be v2');
+            }
         }
 
         if (isset($data['capabilities']) && !is_array($data['capabilities'])) {
@@ -275,5 +283,21 @@ final class ThemeValidator
         }
 
         return $files;
+    }
+
+    private function compatThemeApiV1(): bool
+    {
+        return (bool) ($this->compatConfig['compat_theme_api_v1'] ?? false);
+    }
+
+    private function loadCompatConfig(): array
+    {
+        $root = dirname(__DIR__, 2);
+        $path = $root . '/config/compat.php';
+        if (!is_file($path)) {
+            return [];
+        }
+        $data = require $path;
+        return is_array($data) ? $data : [];
     }
 }

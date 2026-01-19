@@ -275,6 +275,12 @@ final class PagesV2Controller
             $pageId = (int) ($row['id'] ?? 0);
             $blocks = $this->loadBlocks($pageId);
             $page['blocks'] = $blocks;
+            if ($blocks === [] && $this->compatBlocksLegacyContent()) {
+                $content = (string) ($row['content'] ?? '');
+                if (trim($content) !== '') {
+                    $page['content_html'] = $content;
+                }
+            }
         }
 
         if ($includeMedia) {
@@ -499,6 +505,22 @@ final class PagesV2Controller
             }
         }
         return $max;
+    }
+
+    private function compatBlocksLegacyContent(): bool
+    {
+        $config = $this->compatConfig();
+        return (bool) ($config['compat_blocks_legacy_content'] ?? false);
+    }
+
+    private function compatConfig(): array
+    {
+        $path = $this->rootPath() . '/config/compat.php';
+        if (!is_file($path)) {
+            return [];
+        }
+        $data = require $path;
+        return is_array($data) ? $data : [];
     }
 
     private function appConfig(): array

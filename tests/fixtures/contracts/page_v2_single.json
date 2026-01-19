@@ -3,6 +3,7 @@
         "locale": "en",
         "page": {
             "content": "Body",
+            "content_html": "Body",
             "id": "__ID__",
             "slug": "hello",
             "title": "Hello",

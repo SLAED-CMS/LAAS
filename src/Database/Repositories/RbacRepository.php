@@ -6,6 +6,7 @@ namespace Laas\Database\Repositories;
 use Laas\Support\Cache\CacheFactory;
 use Laas\Support\Cache\CacheInterface;
 use Laas\Support\Cache\CacheKey;
+use Laas\Support\RequestCache;
 use PDO;
 
 final class RbacRepository
@@ -29,19 +30,24 @@ final class RbacRepository
 
     public function userHasPermission(int $userId, string $permission): bool
     {
-        $roleIds = $this->listUserRoleIds($userId);
-        if ($roleIds === []) {
-            return false;
-        }
-
-        foreach ($roleIds as $roleId) {
-            $permissions = $this->listRolePermissions($roleId);
-            if (in_array($permission, $permissions, true)) {
-                return true;
+        $cacheKey = 'rbac.perm.' . $userId . '.' . $permission;
+        $value = RequestCache::remember($cacheKey, function () use ($userId, $permission): bool {
+            $roleIds = $this->listUserRoleIds($userId);
+            if ($roleIds === []) {
+                return false;
             }
-        }
 
-        return false;
+            foreach ($roleIds as $roleId) {
+                $permissions = $this->listRolePermissions($roleId);
+                if (in_array($permission, $permissions, true)) {
+                    return true;
+                }
+            }
+
+            return false;
+        });
+
+        return $value === true;
     }
 
     public function grantRoleToUser(int $userId, string $roleName): void

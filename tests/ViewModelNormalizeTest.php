@@ -56,6 +56,7 @@ final class ViewModelNormalizeTest extends TestCase
         $vm = new PagePublicViewModel('test', 'Hello', '<p>Body</p>');
         $response = $view->render('pages/page.html', [
             'page' => $vm,
+            'legacy_content_allowed' => true,
         ]);
 
         $this->assertStringContainsString('Hello', $response->getBody());

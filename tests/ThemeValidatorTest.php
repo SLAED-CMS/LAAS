@@ -49,7 +49,9 @@ final class ThemeValidatorTest extends TestCase
         ]);
 
         $snapshotPath = $this->writeSnapshot($root, 'site');
-        $validator = new ThemeValidator($root, null, $snapshotPath);
+        $validator = new ThemeValidator($root, null, $snapshotPath, [
+            'compat_theme_api_v1' => false,
+        ]);
         $result = $validator->validateTheme('site');
 
         $codes = array_map(static fn(array $row): string => $row['code'], $result->getViolations());
@@ -72,6 +74,25 @@ final class ThemeValidatorTest extends TestCase
 
         $codes = array_map(static fn(array $row): string => $row['code'], $result->getViolations());
         $this->assertContains('theme_capability_unknown', $codes);
+    }
+
+    public function testCompatAllowsLegacyApiV1(): void
+    {
+        $root = $this->makeTempDir('theme-validator-compat');
+        $this->createTheme($root, 'site', [
+            'name' => 'site',
+            'version' => '1.2.3',
+            'api' => 'v1',
+        ]);
+
+        $snapshotPath = $this->writeSnapshot($root, 'site');
+        $validator = new ThemeValidator($root, null, $snapshotPath, [
+            'compat_theme_api_v1' => true,
+        ]);
+        $result = $validator->validateTheme('site');
+
+        $this->assertFalse($result->hasViolations());
+        $this->assertTrue($result->hasWarnings());
     }
 
     private function makeTempDir(string $suffix): string

@@ -2086,6 +2086,7 @@
                         "locale": "en",
                         "page": {
                             "content": "Body",
+                            "content_html": "Body",
                             "id": "__ID__",
                             "slug": "hello",
                             "title": "Hello",
@@ -2111,6 +2112,7 @@
                         "locale": "string",
                         "page": {
                             "content": "string",
+                            "content_html": "string",
                             "id": "int",
                             "slug": "string",
                             "title": "string",

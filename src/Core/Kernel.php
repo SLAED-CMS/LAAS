@@ -187,6 +187,19 @@ final class Kernel
                 }
             }
         }
+        if ($themeValidation->hasWarnings()) {
+            foreach ($themeValidation->getWarnings() as $warning) {
+                $logger->notice('Theme compat warning', [
+                    'theme' => $publicTheme,
+                    'code' => $warning['code'] ?? '',
+                    'file' => $warning['file'] ?? '',
+                    'message' => $warning['message'] ?? '',
+                ]);
+                if ((bool) ($appConfig['debug'] ?? false)) {
+                    $devtoolsContext->addWarning('theme_compat', (string) ($warning['message'] ?? 'Theme compat warning'));
+                }
+            }
+        }
 
         $sessionFactory = new SessionFactory($securityConfig['session'] ?? [], $logger, $this->rootPath);
         $session = $sessionFactory->create();
@@ -460,6 +473,7 @@ final class Kernel
             'modules' => $configDir . '/modules.php',
             'modules_nav' => $configDir . '/modules_nav.php',
             'security' => $configDir . '/security.php',
+            'compat' => $configDir . '/compat.php',
             'database' => $configDir . '/database.php',
             'media' => $configDir . '/media.php',
             'storage' => $configDir . '/storage.php',

@@ -11,6 +11,7 @@ use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\ModuleCatalog;
+use Laas\Security\RateLimiter;
 use Laas\Support\Audit;
 use Laas\View\View;
 use Throwable;
@@ -76,6 +77,11 @@ final class ModulesController
             return $this->forbidden($request, 'admin.modules.index');
         }
 
+        $rateLimited = $this->rateLimitDetails($request);
+        if ($rateLimited !== null) {
+            return $rateLimited;
+        }
+
         $moduleId = trim((string) ($request->query('module') ?? ''));
         if ($moduleId === '' || !preg_match('/^[a-z0-9\\-]+$/', $moduleId)) {
             return $this->renderDetailsError('Invalid module id.', 400);
@@ -98,15 +104,13 @@ final class ModulesController
         $close = (string) ($request->query('close') ?? '');
         if ($close !== '') {
             return new Response('', 200, [
-                'Content-Type' => 'text/html; charset=utf-8',
+                ...$this->detailsHeaders(),
             ]);
         }
 
         return $this->view->render('partials/module_details.html', [
             'module' => $module,
-        ], 200, [
-            'Content-Type' => 'text/html; charset=utf-8',
-        ], [
+        ], 200, $this->detailsHeaders(), [
             'theme' => 'admin',
             'render_partial' => true,
         ]);
@@ -426,12 +430,41 @@ final class ModulesController
     {
         return $this->view->render('partials/module_details.html', [
             'error' => $message,
-        ], $status, [
-            'Content-Type' => 'text/html; charset=utf-8',
-        ], [
+        ], $status, $this->detailsHeaders(), [
             'theme' => 'admin',
             'render_partial' => true,
         ]);
+    }
+
+    private function rateLimitDetails(Request $request): ?Response
+    {
+        $ip = $request->ip();
+        if ($ip === '') {
+            return null;
+        }
+
+        try {
+            $limiter = new RateLimiter(dirname(__DIR__, 3));
+            $result = $limiter->hit('admin.modules.details', $ip, 60, 60);
+            if (!$result['allowed']) {
+                return $this->renderDetailsError('Too many requests.', 429);
+            }
+        } catch (Throwable) {
+            return null;
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function detailsHeaders(): array
+    {
+        return [
+            'Content-Type' => 'text/html; charset=utf-8',
+            'Cache-Control' => 'no-store',
+        ];
     }
 
     private function withSuccessTrigger(Response $response, string $messageKey): Response

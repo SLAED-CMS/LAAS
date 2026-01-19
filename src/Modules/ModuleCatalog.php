@@ -5,6 +5,7 @@ namespace Laas\Modules;
 
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\ModulesRepository;
+use Laas\Support\RequestCache;
 use Laas\Support\RequestScope;
 
 final class ModuleCatalog
@@ -25,112 +26,107 @@ final class ModuleCatalog
     public function listAll(): array
     {
         $cacheKey = $this->cacheKey();
-        if (RequestScope::has($cacheKey)) {
-            $cached = RequestScope::get($cacheKey);
-            if (is_array($cached)) {
-                return $cached;
-            }
-        }
-
-        $discovered = $this->discoverModules();
-        $configEnabled = $this->loadConfigEnabled();
-        $dbModules = null;
-        $dbAvailable = $this->db !== null && $this->db->healthCheck();
-        if ($dbAvailable) {
-            $repo = new ModulesRepository($this->db->pdo());
-            $dbModules = $repo->all();
-        }
-
-        if ($discovered === []) {
-            foreach ($configEnabled as $name) {
-                $discovered[$name] = [
-                    'path' => '',
-                    'version' => null,
-                    'type' => 'feature',
-                    'description' => null,
-                ];
-            }
-        }
-
-        $modules = [];
-        foreach ($discovered as $name => $meta) {
-            $enabled = false;
-            $source = 'CONFIG';
-            if ($dbAvailable && is_array($dbModules) && array_key_exists($name, $dbModules)) {
-                $enabled = (bool) ($dbModules[$name]['enabled'] ?? false);
-                $source = 'DB';
-            } elseif (in_array($name, $configEnabled, true)) {
-                $enabled = true;
+        $cached = RequestCache::remember($cacheKey, function (): array {
+            $discovered = $this->discoverModules();
+            $configEnabled = $this->loadConfigEnabled();
+            $dbModules = null;
+            $dbAvailable = $this->db !== null && $this->db->healthCheck();
+            if ($dbAvailable) {
+                $repo = new ModulesRepository($this->db->pdo());
+                $dbModules = $repo->all();
             }
 
-            $type = $this->normalizeType((string) ($meta['type'] ?? 'feature'));
-            if ($type !== 'feature' && $enabled === false && !$dbAvailable && !in_array($name, $configEnabled, true)) {
-                $enabled = true;
-                $source = 'INTERNAL';
-            }
-
-            $moduleId = $this->normalizeModuleId($name);
-            $adminUrl = $this->resolveAdminUrl($name);
-            $detailsAnchor = '#module-' . $moduleId;
-            $detailsUrl = '/admin/modules/details?module=' . $moduleId;
-            $icon = $this->resolveIcon($name, $type, $adminUrl);
-            $actions = $this->resolveActions($name, $adminUrl, $detailsAnchor);
-            $installedAt = null;
-            $updatedAt = null;
-            if ($dbAvailable && is_array($dbModules) && array_key_exists($name, $dbModules)) {
-                $installedAt = is_string($dbModules[$name]['installed_at'] ?? null) ? (string) $dbModules[$name]['installed_at'] : null;
-                $updatedAt = is_string($dbModules[$name]['updated_at'] ?? null) ? (string) $dbModules[$name]['updated_at'] : null;
-            }
-            $modules[] = $this->applyNavMeta([
-                'name' => $name,
-                'key' => $name,
-                'module_id' => $moduleId,
-                'type' => $type,
-                'enabled' => $enabled,
-                'admin_url' => $adminUrl,
-                'details_anchor' => $detailsAnchor,
-                'details_url' => $detailsUrl,
-                'notes' => is_string($meta['description'] ?? null) ? (string) $meta['description'] : '',
-                'virtual' => false,
-                'icon' => $icon,
-                'actions' => $actions,
-                'actions_nav' => array_slice($actions, 0, 2),
-                'version' => $meta['version'] ?? null,
-                'installed_at' => $installedAt,
-                'updated_at' => $updatedAt,
-                'protected' => $type !== 'feature',
-                'source' => $source,
-                'type_is_internal' => $type === 'internal',
-                'type_is_admin' => $type === 'admin',
-                'type_is_api' => $type === 'api',
-            ]);
-        }
-
-        $virtuals = $this->virtualModules();
-        if ($virtuals !== []) {
-            $existing = [];
-            foreach ($modules as $module) {
-                if (is_array($module) && isset($module['name'])) {
-                    $existing[(string) $module['name']] = true;
+            if ($discovered === []) {
+                foreach ($configEnabled as $name) {
+                    $discovered[$name] = [
+                        'path' => '',
+                        'version' => null,
+                        'type' => 'feature',
+                        'description' => null,
+                    ];
                 }
             }
-            foreach ($virtuals as $virtual) {
-                if (!is_array($virtual)) {
-                    continue;
+
+            $modules = [];
+            foreach ($discovered as $name => $meta) {
+                $enabled = false;
+                $source = 'CONFIG';
+                if ($dbAvailable && is_array($dbModules) && array_key_exists($name, $dbModules)) {
+                    $enabled = (bool) ($dbModules[$name]['enabled'] ?? false);
+                    $source = 'DB';
+                } elseif (in_array($name, $configEnabled, true)) {
+                    $enabled = true;
                 }
-                $name = (string) ($virtual['name'] ?? '');
-                if ($name === '' || isset($existing[$name])) {
-                    continue;
+
+                $type = $this->normalizeType((string) ($meta['type'] ?? 'feature'));
+                if ($type !== 'feature' && $enabled === false && !$dbAvailable && !in_array($name, $configEnabled, true)) {
+                    $enabled = true;
+                    $source = 'INTERNAL';
                 }
-                $modules[] = $this->applyNavMeta($virtual);
+
+                $moduleId = $this->normalizeModuleId($name);
+                $adminUrl = $this->resolveAdminUrl($name);
+                $detailsAnchor = '#module-' . $moduleId;
+                $detailsUrl = '/admin/modules/details?module=' . $moduleId;
+                $icon = $this->resolveIcon($name, $type, $adminUrl);
+                $actions = $this->resolveActions($name, $adminUrl, $detailsAnchor);
+                $installedAt = null;
+                $updatedAt = null;
+                if ($dbAvailable && is_array($dbModules) && array_key_exists($name, $dbModules)) {
+                    $installedAt = is_string($dbModules[$name]['installed_at'] ?? null) ? (string) $dbModules[$name]['installed_at'] : null;
+                    $updatedAt = is_string($dbModules[$name]['updated_at'] ?? null) ? (string) $dbModules[$name]['updated_at'] : null;
+                }
+                $modules[] = $this->applyNavMeta([
+                    'name' => $name,
+                    'key' => $name,
+                    'module_id' => $moduleId,
+                    'type' => $type,
+                    'enabled' => $enabled,
+                    'admin_url' => $adminUrl,
+                    'details_anchor' => $detailsAnchor,
+                    'details_url' => $detailsUrl,
+                    'notes' => is_string($meta['description'] ?? null) ? (string) $meta['description'] : '',
+                    'virtual' => false,
+                    'icon' => $icon,
+                    'actions' => $actions,
+                    'actions_nav' => array_slice($actions, 0, 2),
+                    'version' => $meta['version'] ?? null,
+                    'installed_at' => $installedAt,
+                    'updated_at' => $updatedAt,
+                    'protected' => $type !== 'feature',
+                    'source' => $source,
+                    'type_is_internal' => $type === 'internal',
+                    'type_is_admin' => $type === 'admin',
+                    'type_is_api' => $type === 'api',
+                ]);
             }
-        }
 
-        usort($modules, static fn(array $a, array $b): int => strcmp((string) $a['name'], (string) $b['name']));
+            $virtuals = $this->virtualModules();
+            if ($virtuals !== []) {
+                $existing = [];
+                foreach ($modules as $module) {
+                    if (is_array($module) && isset($module['name'])) {
+                        $existing[(string) $module['name']] = true;
+                    }
+                }
+                foreach ($virtuals as $virtual) {
+                    if (!is_array($virtual)) {
+                        continue;
+                    }
+                    $name = (string) ($virtual['name'] ?? '');
+                    if ($name === '' || isset($existing[$name])) {
+                        continue;
+                    }
+                    $modules[] = $this->applyNavMeta($virtual);
+                }
+            }
 
-        RequestScope::set($cacheKey, $modules);
+            usort($modules, static fn(array $a, array $b): int => strcmp((string) $a['name'], (string) $b['name']));
 
-        return $modules;
+            return $modules;
+        });
+
+        return is_array($cached) ? $cached : [];
     }
 
     /**

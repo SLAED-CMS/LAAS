@@ -29,6 +29,8 @@ final class AdminModuleDetailsPartialTest extends TestCase
         $response = $controller->details($request);
 
         $this->assertSame(200, $response->getStatus());
+        $this->assertSame('text/html; charset=utf-8', $response->getHeader('Content-Type'));
+        $this->assertSame('no-store', $response->getHeader('Cache-Control'));
         $body = $response->getBody();
         $this->assertStringNotContainsString('<html', $body);
         $this->assertStringContainsString('AI', $body);
