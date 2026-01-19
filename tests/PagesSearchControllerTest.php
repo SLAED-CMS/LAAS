@@ -5,6 +5,7 @@ use Laas\Auth\NullAuthService;
 use Laas\Database\DatabaseManager;
 use Laas\Http\Request;
 use Laas\I18n\Translator;
+use Laas\Domain\Pages\PagesService;
 use Laas\Modules\Pages\Controller\PagesController;
 use Laas\Settings\SettingsProvider;
 use Laas\View\Template\TemplateCompiler;
@@ -29,10 +30,26 @@ final class PagesSearchControllerTest extends TestCase
         $request = new Request('GET', '/search', ['q' => 'a'], [], [], '');
         $view = $this->createView($db, $request);
 
-        $controller = new PagesController($view, $db);
+        $controller = new PagesController($view, $db, new PagesService($db));
         $response = $controller->search($request);
 
         $this->assertSame(422, $response->getStatus());
+    }
+
+    public function testSearchUsesPagesService(): void
+    {
+        $db = new DatabaseManager(['driver' => 'sqlite', 'database' => ':memory:']);
+        $request = new Request('GET', '/search', ['q' => 'hello'], [], [], '');
+        $view = $this->createView($db, $request);
+        $service = new SpyPagesService($db);
+
+        $controller = new PagesController($view, $db, $service);
+        $response = $controller->search($request);
+
+        $this->assertSame(200, $response->getStatus());
+        $this->assertTrue($service->listCalled);
+        $this->assertSame('hello', $service->lastFilters['query'] ?? null);
+        $this->assertSame('published', $service->lastFilters['status'] ?? null);
     }
 
     private function createView(DatabaseManager $db, Request $request): View
@@ -66,5 +83,23 @@ final class PagesSearchControllerTest extends TestCase
         $view->setRequest($request);
 
         return $view;
+    }
+}
+
+final class SpyPagesService extends PagesService
+{
+    public bool $listCalled = false;
+    public array $lastFilters = [];
+
+    public function list(array $filters = []): array
+    {
+        $this->listCalled = true;
+        $this->lastFilters = $filters;
+
+        return [[
+            'title' => 'Hello',
+            'slug' => 'hello',
+            'content' => 'Hello world',
+        ]];
     }
 }

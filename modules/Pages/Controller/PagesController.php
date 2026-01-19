@@ -4,11 +4,11 @@ declare(strict_types=1);
 namespace Laas\Modules\Pages\Controller;
 
 use Laas\Database\DatabaseManager;
+use Laas\Domain\Pages\PagesService;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\Modules\Pages\Repository\PagesRepository;
 use Laas\Modules\Pages\ViewModel\PagePublicViewModel;
 use Laas\Support\Search\Highlighter;
 use Laas\Support\Search\SearchNormalizer;
@@ -31,7 +31,8 @@ final class PagesController
 
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null
+        private ?DatabaseManager $db = null,
+        private ?PagesService $pagesService = null
     ) {
     }
 
@@ -42,12 +43,23 @@ final class PagesController
             return $this->notFound($request);
         }
 
-        $repo = $this->getRepository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return $this->notFound($request);
         }
 
-        $page = $repo->findPublishedBySlug($slug);
+        try {
+            $pages = $service->list([
+                'slug' => $slug,
+                'status' => 'published',
+                'limit' => 1,
+                'offset' => 0,
+            ]);
+        } catch (Throwable) {
+            return $this->notFound($request);
+        }
+
+        $page = $pages[0] ?? null;
         if ($page === null) {
             return $this->notFound($request);
         }
@@ -66,8 +78,8 @@ final class PagesController
 
     public function search(Request $request): Response
     {
-        $repo = $this->getRepository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return ErrorResponse::respondForRequest($request, 'service_unavailable', [], 503, [], 'pages.search');
         }
 
@@ -81,7 +93,16 @@ final class PagesController
             $status = 422;
         } elseif ($query !== '') {
             $search = new SearchQuery($query, 20, 1, 'pages');
-            $rows = $repo->search($search->q, $search->limit, $search->offset, 'published');
+            try {
+                $rows = $service->list([
+                    'query' => $search->q,
+                    'status' => 'published',
+                    'limit' => $search->limit,
+                    'offset' => $search->offset,
+                ]);
+            } catch (Throwable) {
+                return ErrorResponse::respondForRequest($request, 'service_unavailable', [], 503, [], 'pages.search');
+            }
             foreach ($rows as $row) {
                 $title = (string) ($row['title'] ?? '');
                 $slug = (string) ($row['slug'] ?? '');
@@ -104,17 +125,19 @@ final class PagesController
         ], $status);
     }
 
-    private function getRepository(): ?PagesRepository
+    private function service(): ?PagesService
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
+        if ($this->pagesService !== null) {
+            return $this->pagesService;
+        }
+
+        if ($this->db === null) {
             return null;
         }
 
-        try {
-            return new PagesRepository($this->db);
-        } catch (Throwable) {
-            return null;
-        }
+        $this->pagesService = new PagesService($this->db);
+
+        return $this->pagesService;
     }
 
     private function notFound(Request $request): Response

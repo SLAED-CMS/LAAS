@@ -1,5 +1,10 @@
 # LAAS Versions
 
+- v4.0.20 (Unreleased)
+  - DI Container MVP (foundation for service layer)
+  - PagesService MVP (Service Layer introduction)
+  - MediaService MVP + Upload Pipeline
+
 - v4.0.1: Admin UI Polish (Released 2026-01-19)
   - Admin UI: Bootstrap 5 wired + modern layout for /admin/ai and page editor AI panel
   - Admin UI: AI flow indicator + improved diff styling + visual hierarchy (wow polish)

@@ -6,18 +6,15 @@ namespace Laas\Modules\Media\Controller;
 use Laas\Api\ApiCacheInvalidator;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
+use Laas\Domain\Media\MediaService;
+use Laas\Domain\Media\MediaServiceException;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorCode;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Media\Repository\MediaRepository;
-use Laas\Modules\Media\Service\ClamAvScanner;
 use Laas\Modules\Media\Service\MediaSignedUrlService;
-use Laas\Modules\Media\Service\MediaUploadFailedException;
-use Laas\Modules\Media\Service\MediaUploadPendingException;
-use Laas\Modules\Media\Service\MediaUploadService;
-use Laas\Modules\Media\Service\MimeSniffer;
 use Laas\Modules\Media\Service\StorageService;
 use Laas\Security\RateLimiter;
 use Laas\Support\AuditLogger;
@@ -31,7 +28,8 @@ final class AdminMediaController
 {
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null
+        private ?DatabaseManager $db = null,
+        private ?MediaService $mediaService = null
     ) {
     }
 
@@ -202,35 +200,37 @@ final class AdminMediaController
 
         $originalName = $this->safeOriginalName((string) ($file['name'] ?? ''));
 
-        $scanner = null;
-        if (!empty($config['av_enabled'])) {
-            $scanner = new ClamAvScanner($config);
-        }
-        $service = new MediaUploadService(
-            $repo,
-            $this->storage(),
-            new MimeSniffer(),
-            $scanner,
-            new AuditLogger($this->db, $request->session()),
-            $request->ip()
-        );
-        try {
-            $result = $service->upload($file, $originalName, $config, $this->currentUserId($request));
-        } catch (MediaUploadPendingException $e) {
-            return $this->uploadPendingResponse($request, $e->getMessage());
-        } catch (MediaUploadFailedException) {
-            return $this->validationError($request, [['key' => 'admin.media.error_upload_failed']]);
-        }
-        if (($result['status'] ?? '') === 'error') {
-            return $this->validationError($request, $result['errors'] ?? []);
+        $service = $this->service();
+        if ($service === null) {
+            return $this->uploadMalformedResponse($request);
         }
 
-        $mediaId = (int) ($result['id'] ?? 0);
-        $existing = (bool) ($result['existing'] ?? false);
-        $row = $mediaId > 0 ? $repo->findById($mediaId) : null;
-        $mime = (string) ($row['mime_type'] ?? '');
-        $size = (int) ($row['size_bytes'] ?? 0);
-        $hash = (string) ($row['sha256'] ?? '');
+        try {
+            $media = $service->upload([
+                'name' => $originalName,
+                'tmp_path' => (string) ($file['tmp_name'] ?? ''),
+                'size' => $fileSize,
+                'mime' => (string) ($file['type'] ?? ''),
+            ], [
+                'user_id' => $this->currentUserId($request),
+            ]);
+        } catch (MediaServiceException $e) {
+            if ($e->key() === 'media.upload_too_large') {
+                return $this->uploadTooLargeResponse($request, $this->currentUserId($request), $contentLength, $maxBytes);
+            }
+            return $this->validationError($request, [[
+                'key' => $e->key(),
+                'params' => $e->params(),
+            ]]);
+        } catch (Throwable) {
+            return $this->validationError($request, [['key' => 'admin.media.error_upload_failed']]);
+        }
+
+        $mediaId = (int) ($media['id'] ?? 0);
+        $existing = (bool) ($media['existing'] ?? false);
+        $mime = (string) ($media['mime_type'] ?? '');
+        $size = (int) ($media['size_bytes'] ?? 0);
+        $hash = (string) ($media['sha256'] ?? '');
         $successKey = $existing ? 'admin.media.success_deduped' : 'admin.media.success_uploaded';
 
         (new AuditLogger($this->db, $request->session()))->log(
@@ -667,6 +667,21 @@ final class AdminMediaController
         } catch (Throwable) {
             return null;
         }
+    }
+
+    private function service(): ?MediaService
+    {
+        if ($this->mediaService !== null) {
+            return $this->mediaService;
+        }
+
+        if ($this->db === null) {
+            return null;
+        }
+
+        $this->mediaService = new MediaService($this->db, $this->mediaConfig(), $this->rootPath());
+
+        return $this->mediaService;
     }
 
     private function storage(): StorageService

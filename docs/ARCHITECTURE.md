@@ -31,7 +31,9 @@
 23. [v3.0 Contracts foundation](#v30-contracts-foundation)
 24. [Contracts coverage (v3.0.2)](#contracts-coverage-v302)
 25. [AI Subsystem (v4.0.0)](#ai-subsystem-v400)
-26. [Future: Rendering Adapters](#future-rendering-adapters)
+26. [Dependency Injection (v4.0.20)](#dependency-injection-v4020)
+27. [Service Layer (v4.0.20)](#service-layer-v4020)
+28. [Future: Rendering Adapters](#future-rendering-adapters)
 
 ---
 
@@ -2253,6 +2255,50 @@ php tools/cli.php ai:dev:module:scaffold-and-check <Name> --yes
 - **Features:** Propose, dry-run preview, save proposal, diff viewer
 - **Limitation:** No apply button; apply via CLI only
 - **Page editor:** AI Assist panel with context-aware proposals
+
+---
+
+## Dependency Injection (v4.0.20)
+
+**Goal:** Deterministic, explicit dependency wiring without magic.
+
+**Rules:**
+- **Explicit bindings only:** `bind()` and `singleton()` are the only registration methods.
+- **No autowiring/reflection:** Dependencies are never inferred from constructor signatures.
+- **Deterministic resolution:** `callable` bindings are invoked directly; `class-string` bindings use `new Class()`.
+- **Kernel-owned container:** The Kernel creates exactly one Container at boot and registers core services (`config`, `db`, `translator`).
+
+**Example:**
+```php
+$container = new Container();
+$container->singleton('config', fn () => $config);
+$container->bind('cache', fn () => new FileCache($path));
+
+$config = $container->get('config');
+```
+
+---
+
+## Service Layer (v4.0.20)
+
+**Why Services:** Controllers stay thin and focus on HTTP concerns while services encapsulate domain behavior.
+
+**Boundary:**
+- **Controller:** Request parsing, access checks, response rendering.
+- **Service:** Business rules and repository usage, no HTTP/View code.
+
+**Current services (MVP):**
+- PagesService for page read/create flows.
+- MediaService for uploads and media lookup.
+
+**No extra repository layer (yet):**
+- Existing repositories already isolate data access.
+- Services call repositories directly to avoid unnecessary indirection.
+
+**Upload pipeline (MediaService):**
+```
+validateFile -> generateFilename -> moveToStorage -> persistMedia
+```
 
 ---
 

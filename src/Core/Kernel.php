@@ -47,6 +47,9 @@ use Laas\DevTools\DbCollector;
 use Laas\Theme\ThemeValidator;
 use Laas\Perf\PerfBudgetEnforcer;
 use Laas\Assets\AssetsManager;
+use Laas\Core\Container\Container;
+use Laas\Domain\Media\MediaService;
+use Laas\Domain\Pages\PagesService;
 use Laas\View\AssetManager;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
@@ -58,11 +61,14 @@ final class Kernel
     private array $config;
     private array $configErrors = [];
     private ?DatabaseManager $databaseManager = null;
+    private Container $container;
 
     public function __construct(private string $rootPath)
     {
         $this->config = $this->loadConfig();
         $this->ensureStorage();
+        $this->container = new Container();
+        $this->registerContainerServices();
     }
 
     public function handle(Request $request): Response
@@ -316,6 +322,11 @@ final class Kernel
         }
     }
 
+    public function container(): Container
+    {
+        return $this->container;
+    }
+
     public function database(): DatabaseManager
     {
         if ($this->databaseManager !== null) {
@@ -326,6 +337,40 @@ final class Kernel
         $this->databaseManager = new DatabaseManager($dbConfig);
 
         return $this->databaseManager;
+    }
+
+    private function registerContainerServices(): void
+    {
+        $config = $this->config;
+        $rootPath = $this->rootPath;
+
+        $this->container->singleton('config', static function () use ($config): array {
+            return $config;
+        });
+
+        $this->container->singleton('db', function (): DatabaseManager {
+            return $this->database();
+        });
+
+        $this->container->singleton('translator', static function () use ($config, $rootPath): Translator {
+            $appConfig = $config['app'] ?? [];
+            $theme = $appConfig['theme'] ?? 'default';
+            $locale = $appConfig['default_locale'] ?? 'en';
+
+            return new Translator($rootPath, $theme, $locale);
+        });
+
+        $this->container->singleton(PagesService::class, function (): PagesService {
+            return new PagesService($this->database());
+        });
+
+        $this->container->singleton(MediaService::class, function () use ($config, $rootPath): MediaService {
+            return new MediaService(
+                $this->database(),
+                $config['media'] ?? [],
+                $rootPath
+            );
+        });
     }
 
     private function loadConfig(): array

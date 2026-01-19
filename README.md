@@ -5,12 +5,12 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-00758F.svg)](https://www.mysql.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)](#)
-[![Baseline](https://img.shields.io/badge/Baseline-v4.0.0-orange.svg)](docs/VERSIONS.md)
+[![Baseline](https://img.shields.io/badge/Baseline-v4.0.20-orange.svg)](docs/VERSIONS.md)
 [![Security](https://img.shields.io/badge/Security-99%2F100-brightgreen.svg)](docs/SECURITY.md)
 
 > [!TIP]
-> - Stable v4.0.0
-> - Latest Release v4.0.0
+> - Stable v4.0.20
+> - Latest Release v4.0.20
 > - Versions: [docs/VERSIONS.md](docs/VERSIONS.md)
 > - Contracts: [docs/CONTRACTS.md](docs/CONTRACTS.md)
 
