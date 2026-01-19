@@ -48,6 +48,7 @@ use Laas\Theme\ThemeValidator;
 use Laas\Perf\PerfBudgetEnforcer;
 use Laas\Assets\AssetsManager;
 use Laas\Core\Container\Container;
+use Laas\Domain\ApiTokens\ApiTokensService;
 use Laas\Domain\Media\MediaService;
 use Laas\Domain\Menus\MenusService;
 use Laas\Domain\Ops\OpsService;
@@ -379,6 +380,14 @@ final class Kernel
 
         $this->container->singleton(SecurityReportsService::class, function (): SecurityReportsService {
             return new SecurityReportsService($this->database());
+        });
+
+        $this->container->singleton(ApiTokensService::class, function () use ($config, $rootPath): ApiTokensService {
+            return new ApiTokensService(
+                $this->database(),
+                $config['api'] ?? [],
+                $rootPath
+            );
         });
 
         $this->container->singleton(OpsService::class, function () use ($config, $rootPath): OpsService {

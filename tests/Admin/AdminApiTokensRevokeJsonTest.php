@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use Laas\Database\DatabaseManager;
+use Laas\Domain\ApiTokens\ApiTokensService;
 use Laas\Http\Request;
 use Laas\Modules\Admin\Controller\ApiTokensController;
 use Laas\View\View;
@@ -75,11 +76,19 @@ final class AdminApiTokensRevokeJsonTest extends TestCase
     {
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = $this->createView($db, $request);
-        return new ApiTokensController($view, $db);
+        $service = $this->createService($db);
+        return new ApiTokensController($view, $db, $service);
     }
 
     private function createView(DatabaseManager $db, Request $request): View
     {
         return SecurityTestHelper::createView($db, $request, 'admin');
+    }
+
+    private function createService(DatabaseManager $db): ApiTokensService
+    {
+        return new ApiTokensService($db, [
+            'token_scopes' => ['admin.read'],
+        ], SecurityTestHelper::rootPath());
     }
 }

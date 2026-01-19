@@ -2309,6 +2309,7 @@ $config = $container->get('config');
 - UsersService for admin user listing, roles, and status normalization.
 - MenusService for admin menu CRUD and menu item loading.
 - SettingsService for admin settings read/write and normalization.
+- ApiTokensService for admin API token lifecycle (list/create/rotate/revoke) and normalization.
 
 **Why system services matter:**
 - System-level flows (ops, security, health) need the same service boundary as content.

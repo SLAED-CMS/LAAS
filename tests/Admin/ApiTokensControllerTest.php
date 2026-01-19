@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use Laas\Database\DatabaseManager;
+use Laas\Domain\ApiTokens\ApiTokensService;
 use Laas\Http\Request;
 use Laas\Modules\Admin\Controller\ApiTokensController;
 use Laas\View\View;
@@ -46,7 +47,8 @@ final class ApiTokensControllerTest extends TestCase
         $request->setSession($session);
 
         $view = $this->createView($db, $request);
-        $controller = new ApiTokensController($view, $db);
+        $service = $this->createService($db);
+        $controller = new ApiTokensController($view, $db, $service);
 
         $response = $controller->revoke($request);
 
@@ -56,5 +58,12 @@ final class ApiTokensControllerTest extends TestCase
     private function createView(DatabaseManager $db, Request $request): View
     {
         return SecurityTestHelper::createView($db, $request, 'admin');
+    }
+
+    private function createService(DatabaseManager $db): ApiTokensService
+    {
+        return new ApiTokensService($db, [
+            'token_scopes' => ['admin.read'],
+        ], SecurityTestHelper::rootPath());
     }
 }

@@ -3,10 +3,11 @@ declare(strict_types=1);
 
 namespace Laas\Modules\Admin\Controller;
 
-use Laas\Api\ApiTokenService;
+use Laas\Core\Container\Container;
 use Laas\Database\DatabaseManager;
-use Laas\Database\Repositories\ApiTokensRepository;
 use Laas\Database\Repositories\RbacRepository;
+use Laas\Domain\ApiTokens\ApiTokensService;
+use Laas\Domain\ApiTokens\ApiTokensServiceException;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
@@ -20,7 +21,9 @@ final class ApiTokensController
 {
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null
+        private ?DatabaseManager $db = null,
+        private ?ApiTokensService $apiTokensService = null,
+        private ?Container $container = null
     ) {
     }
 
@@ -30,24 +33,28 @@ final class ApiTokensController
             return $this->forbidden($request);
         }
 
-        $repo = $this->repository();
-        if ($repo === null) {
-            return $this->errorResponse($request, 'db_unavailable', 503, 'admin.api_tokens.index');
-        }
-
         $userId = $this->currentUserId($request);
         if ($userId === null) {
             return $this->forbidden($request);
         }
 
         $service = $this->service();
-        $rows = $service->listTokens($userId);
+        if ($service === null) {
+            return $this->errorResponse($request, 'db_unavailable', 503, 'admin.api_tokens.index');
+        }
+
+        try {
+            $rows = $service->listTokens($userId);
+            $total = $service->countTokens($userId);
+        } catch (Throwable) {
+            return $this->errorResponse($request, 'db_unavailable', 503, 'admin.api_tokens.index');
+        }
 
         if ($request->wantsJson()) {
             return ContractResponse::ok([
                 'items' => $this->mapTokensForJson($rows),
                 'counts' => [
-                    'total' => $repo->countByUser($userId),
+                    'total' => $total,
                 ],
             ], [
                 'route' => 'admin.api_tokens.index',
@@ -55,12 +62,13 @@ final class ApiTokensController
         }
 
         $tokens = $this->mapTokensForView($rows);
-        $selectedScopes = $this->defaultScopesSelection();
+        $selectedScopes = $service->defaultScopesSelection();
+        $scopeOptions = $this->buildScopeOptions($selectedScopes, $service->allowedScopes());
 
         [$flashToken, $flashMessageKey] = $this->consumeFlashToken($request);
         $success = $flashMessageKey !== null ? $this->view->translate($flashMessageKey) : null;
 
-        return $this->renderPage($request, $tokens, $flashToken, null, $selectedScopes, $success, []);
+        return $this->renderPage($request, $tokens, $flashToken, null, $scopeOptions, $success, []);
     }
 
     public function create(Request $request): Response
@@ -69,14 +77,14 @@ final class ApiTokensController
             return $this->forbidden($request);
         }
 
-        $repo = $this->repository();
-        if ($repo === null) {
-            return $this->errorResponse($request, 'db_unavailable', 503, 'admin.api_tokens.create');
-        }
-
         $userId = $this->currentUserId($request);
         if ($userId === null) {
             return $this->forbidden($request);
+        }
+
+        $service = $this->service();
+        if ($service === null) {
+            return $this->errorResponse($request, 'db_unavailable', 503, 'admin.api_tokens.create');
         }
 
         $input = $this->readInput($request);
@@ -84,48 +92,42 @@ final class ApiTokensController
         $expiresRaw = trim((string) ($input['expires_at'] ?? ''));
         $scopesInput = $this->readScopes($input);
 
-        $errors = [];
-        $fields = [];
-        if ($name === '' || strlen($name) > 120) {
-            $errors[] = $this->view->translate('admin.settings.error_invalid');
-            $fields['name'] = ['invalid'];
-        }
+        try {
+            $created = $service->createToken($userId, $name, $scopesInput, $expiresRaw);
+        } catch (ApiTokensServiceException $e) {
+            $code = $e->errorCode();
+            $details = $e->details();
+            $fields = is_array($details['fields'] ?? null) ? $details['fields'] : [];
 
-        $expiresAt = null;
-        if ($expiresRaw !== '') {
-            $expiresAt = $this->parseExpiresAt($expiresRaw);
-            if ($expiresAt === null) {
-                $errors[] = $this->view->translate('admin.settings.error_invalid');
-                $fields['expires_at'] = ['invalid'];
-            }
-        }
+            if ($code === 'validation') {
+                if ($request->wantsJson()) {
+                    return ContractResponse::error('validation_failed', [
+                        'route' => 'admin.api_tokens.create',
+                    ], 422, $fields);
+                }
 
-        $allowedScopes = $this->allowedScopes();
-        $invalidScopes = $this->invalidScopes($scopesInput, $allowedScopes);
-        $scopes = $this->normalizeScopes($scopesInput, $allowedScopes);
-        if ($scopesInput === [] && $allowedScopes !== []) {
-            $scopes = $allowedScopes;
-        }
-        if ($invalidScopes !== []) {
-            $errors[] = $this->view->translate('admin.settings.error_invalid');
-            $fields['scopes'] = ['invalid'];
-        }
-
-        if ($errors !== []) {
-            if ($request->wantsJson()) {
-                return ContractResponse::error('validation_failed', [
-                    'route' => 'admin.api_tokens.create',
-                ], 422, $fields);
+                try {
+                    $tokens = $this->mapTokensForView($service->listTokens($userId));
+                } catch (Throwable) {
+                    return $this->errorResponse($request, 'db_unavailable', 503, 'admin.api_tokens.create');
+                }
+                $selectedScopes = $this->selectScopes($scopesInput, $service);
+                $scopeOptions = $this->buildScopeOptions($selectedScopes, $service->allowedScopes());
+                $errors = $this->validationErrors($fields);
+                return $this->renderPage($request, $tokens, null, $name, $scopeOptions, null, $errors, 422);
             }
 
-            $service = $this->service();
-            $tokens = $this->mapTokensForView($service->listTokens($userId));
-            $selectedScopes = $scopes !== [] ? $scopes : $this->defaultScopesSelection();
-            return $this->renderPage($request, $tokens, null, $name, $selectedScopes, null, $errors, 422);
+            if ($code === 'limit') {
+                return $this->errorResponse($request, 'invalid_request', 400, 'admin.api_tokens.create');
+            }
+
+            return $this->errorResponse($request, 'not_found', 404, 'admin.api_tokens.create');
+        } catch (Throwable) {
+            return $this->errorResponse($request, 'db_unavailable', 503, 'admin.api_tokens.create');
         }
 
-        $service = $this->service();
-        $created = $service->createToken($userId, $name, $scopes, $expiresAt);
+        $scopes = is_array($created['scopes'] ?? null) ? $created['scopes'] : [];
+        $expiresAt = is_string($created['expires_at'] ?? null) ? $created['expires_at'] : null;
 
         Audit::log('api_tokens.create', 'api_token', (int) ($created['token_id'] ?? 0), [
             'actor_user_id' => $userId,
@@ -152,9 +154,10 @@ final class ApiTokensController
         if ($request->isHtmx()) {
             $tokens = $this->mapTokensForView($service->listTokens($userId));
             $plain = (string) ($created['token'] ?? '');
-            $selectedScopes = $this->defaultScopesSelection();
+            $selectedScopes = $service->defaultScopesSelection();
+            $scopeOptions = $this->buildScopeOptions($selectedScopes, $service->allowedScopes());
             $success = $this->view->translate('admin.api_tokens.created');
-            $response = $this->renderPage($request, $tokens, $plain, $name, $selectedScopes, $success, [], 200);
+            $response = $this->renderPage($request, $tokens, $plain, $name, $scopeOptions, $success, [], 200);
             return $this->withSuccessTrigger($response, 'admin.api_tokens.created');
         }
 
@@ -170,14 +173,14 @@ final class ApiTokensController
             return $this->forbidden($request);
         }
 
-        $repo = $this->repository();
-        if ($repo === null) {
-            return $this->errorResponse($request, 'db_unavailable', 503, 'admin.api_tokens.rotate');
-        }
-
         $userId = $this->currentUserId($request);
         if ($userId === null) {
             return $this->forbidden($request);
+        }
+
+        $service = $this->service();
+        if ($service === null) {
+            return $this->errorResponse($request, 'db_unavailable', 503, 'admin.api_tokens.rotate');
         }
 
         $input = $this->readInput($request);
@@ -186,60 +189,49 @@ final class ApiTokensController
             return $this->errorResponse($request, 'invalid_request', 400, 'admin.api_tokens.rotate');
         }
 
-        $existing = $repo->findById($id);
-        if ($existing === null || (int) ($existing['user_id'] ?? 0) !== $userId) {
-            return $this->errorResponse($request, 'not_found', 404, 'admin.api_tokens.rotate');
-        }
-
         $nameRaw = trim((string) ($input['name'] ?? ''));
-        $name = $nameRaw !== '' ? $nameRaw : $this->rotateName((string) ($existing['name'] ?? ''));
         $expiresRaw = trim((string) ($input['expires_at'] ?? ''));
         $revokeOld = (string) ($input['revoke_old'] ?? '') === '1';
         $scopesInput = $this->readScopes($input);
 
-        $errors = [];
-        $fields = [];
-        if ($name === '' || strlen($name) > 120) {
-            $errors[] = $this->view->translate('admin.settings.error_invalid');
-            $fields['name'] = ['invalid'];
-        }
+        try {
+            $created = $service->rotateToken($userId, $id, $nameRaw, $scopesInput, $expiresRaw, $revokeOld);
+        } catch (ApiTokensServiceException $e) {
+            $code = $e->errorCode();
+            $details = $e->details();
+            $fields = is_array($details['fields'] ?? null) ? $details['fields'] : [];
 
-        $expiresAt = null;
-        if ($expiresRaw !== '') {
-            $expiresAt = $this->parseExpiresAt($expiresRaw);
-            if ($expiresAt === null) {
-                $errors[] = $this->view->translate('admin.settings.error_invalid');
-                $fields['expires_at'] = ['invalid'];
-            }
-        }
+            if ($code === 'validation') {
+                if ($request->wantsJson()) {
+                    return ContractResponse::error('validation_failed', [
+                        'route' => 'admin.api_tokens.rotate',
+                    ], 422, $fields);
+                }
 
-        $allowedScopes = $this->allowedScopes();
-        $invalidScopes = $this->invalidScopes($scopesInput, $allowedScopes);
-        $scopes = $this->normalizeScopes($scopesInput, $allowedScopes);
-        if ($scopesInput === [] && $allowedScopes !== []) {
-            $existingScopes = $this->decodeScopes($existing['scopes'] ?? null);
-            $scopes = $existingScopes !== [] ? $existingScopes : $allowedScopes;
-        }
-        if ($invalidScopes !== []) {
-            $errors[] = $this->view->translate('admin.settings.error_invalid');
-            $fields['scopes'] = ['invalid'];
-        }
-
-        if ($errors !== []) {
-            if ($request->wantsJson()) {
-                return ContractResponse::error('validation_failed', [
-                    'route' => 'admin.api_tokens.rotate',
-                ], 422, $fields);
+                try {
+                    $tokens = $this->mapTokensForView($service->listTokens($userId));
+                } catch (Throwable) {
+                    return $this->errorResponse($request, 'db_unavailable', 503, 'admin.api_tokens.rotate');
+                }
+                $selectedScopes = $this->selectScopes($scopesInput, $service);
+                $scopeOptions = $this->buildScopeOptions($selectedScopes, $service->allowedScopes());
+                $errors = $this->validationErrors($fields);
+                return $this->renderPage($request, $tokens, null, $nameRaw, $scopeOptions, null, $errors, 422);
             }
 
-            $service = $this->service();
-            $tokens = $this->mapTokensForView($service->listTokens($userId));
-            $selectedScopes = $scopes !== [] ? $scopes : $this->defaultScopesSelection();
-            return $this->renderPage($request, $tokens, null, $name, $selectedScopes, null, $errors, 422);
+            if ($code === 'limit') {
+                return $this->errorResponse($request, 'invalid_request', 400, 'admin.api_tokens.rotate');
+            }
+
+            return $this->errorResponse($request, 'not_found', 404, 'admin.api_tokens.rotate');
+        } catch (Throwable) {
+            return $this->errorResponse($request, 'db_unavailable', 503, 'admin.api_tokens.rotate');
         }
 
-        $service = $this->service();
-        $created = $service->createToken($userId, $name, $scopes, $expiresAt);
+        $name = (string) ($created['name'] ?? '');
+        $scopes = is_array($created['scopes'] ?? null) ? $created['scopes'] : [];
+        $expiresAt = is_string($created['expires_at'] ?? null) ? $created['expires_at'] : null;
+        $revokedOld = (bool) ($created['revoked_old'] ?? false);
 
         Audit::log('api_tokens.create', 'api_token', (int) ($created['token_id'] ?? 0), [
             'actor_user_id' => $userId,
@@ -250,7 +242,7 @@ final class ApiTokensController
             'rotated_from' => $id,
         ]);
 
-        if ($revokeOld && $repo->revoke($id, $userId)) {
+        if ($revokeOld && $revokedOld) {
             Audit::log('api_tokens.revoke', 'api_token', $id, [
                 'actor_user_id' => $userId,
                 'token_id' => $id,
@@ -276,9 +268,10 @@ final class ApiTokensController
         if ($request->isHtmx()) {
             $tokens = $this->mapTokensForView($service->listTokens($userId));
             $plain = (string) ($created['token'] ?? '');
-            $selectedScopes = $this->defaultScopesSelection();
+            $selectedScopes = $service->defaultScopesSelection();
+            $scopeOptions = $this->buildScopeOptions($selectedScopes, $service->allowedScopes());
             $success = $this->view->translate('admin.api_tokens.rotated');
-            $response = $this->renderPage($request, $tokens, $plain, $name, $selectedScopes, $success, [], 200);
+            $response = $this->renderPage($request, $tokens, $plain, $name, $scopeOptions, $success, [], 200);
             return $this->withSuccessTrigger($response, 'admin.api_tokens.rotated');
         }
 
@@ -294,14 +287,14 @@ final class ApiTokensController
             return $this->forbidden($request);
         }
 
-        $repo = $this->repository();
-        if ($repo === null) {
-            return $this->errorResponse($request, 'db_unavailable', 503, 'admin.api_tokens.revoke');
-        }
-
         $userId = $this->currentUserId($request);
         if ($userId === null) {
             return $this->forbidden($request);
+        }
+
+        $service = $this->service();
+        if ($service === null) {
+            return $this->errorResponse($request, 'db_unavailable', 503, 'admin.api_tokens.revoke');
         }
 
         $input = $this->readInput($request);
@@ -310,7 +303,19 @@ final class ApiTokensController
             return $this->errorResponse($request, 'invalid_request', 400, 'admin.api_tokens.revoke');
         }
 
-        $ok = $repo->revoke($id, $userId);
+        $ok = true;
+        try {
+            $service->revokeToken($id, $userId);
+        } catch (ApiTokensServiceException $e) {
+            if ($e->errorCode() === 'not_found') {
+                $ok = false;
+            } else {
+                return $this->errorResponse($request, 'invalid_request', 400, 'admin.api_tokens.revoke');
+            }
+        } catch (Throwable) {
+            return $this->errorResponse($request, 'db_unavailable', 503, 'admin.api_tokens.revoke');
+        }
+
         if ($ok) {
             Audit::log('api_tokens.revoke', 'api_token', $id, [
                 'actor_user_id' => $userId,
@@ -335,11 +340,15 @@ final class ApiTokensController
             ]);
         }
 
-        $service = $this->service();
-        $tokens = $this->mapTokensForView($service->listTokens($userId));
-        $selectedScopes = $this->defaultScopesSelection();
+        try {
+            $tokens = $this->mapTokensForView($service->listTokens($userId));
+        } catch (Throwable) {
+            return $this->errorResponse($request, 'db_unavailable', 503, 'admin.api_tokens.revoke');
+        }
+        $selectedScopes = $service->defaultScopesSelection();
+        $scopeOptions = $this->buildScopeOptions($selectedScopes, $service->allowedScopes());
         $success = $ok ? $this->view->translate('admin.api_tokens.revoked_ok') : null;
-        $response = $this->renderPage($request, $tokens, null, null, $selectedScopes, $success, [], 200);
+        $response = $this->renderPage($request, $tokens, null, null, $scopeOptions, $success, [], 200);
         if ($request->isHtmx() && $ok) {
             return $this->withSuccessTrigger($response, 'admin.api_tokens.revoked_ok');
         }
@@ -351,7 +360,7 @@ final class ApiTokensController
         array $tokens,
         ?string $plainToken,
         ?string $tokenName,
-        array $selectedScopes,
+        array $scopeOptions,
         ?string $success,
         array $errors,
         int $status = 200
@@ -360,7 +369,7 @@ final class ApiTokensController
             'tokens' => $tokens,
             'plain_token' => $plainToken,
             'token_name' => $tokenName,
-            'scope_options' => $this->buildScopeOptions($selectedScopes),
+            'scope_options' => $scopeOptions,
             'success' => $success,
             'errors' => $errors,
         ];
@@ -423,116 +432,70 @@ final class ApiTokensController
         return $response->withToastSuccess($messageKey, $this->view->translate($messageKey));
     }
 
-    private function repository(): ?ApiTokensRepository
+    private function service(): ?ApiTokensService
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
+        if ($this->apiTokensService !== null) {
+            return $this->apiTokensService;
         }
 
-        try {
-            return new ApiTokensRepository($this->db->pdo());
-        } catch (Throwable) {
-            return null;
-        }
-    }
-
-    private function service(): ApiTokenService
-    {
-        $config = $this->apiConfig();
-        return new ApiTokenService($this->db, $config, dirname(__DIR__, 3));
-    }
-
-    /** @return array<string, mixed> */
-    private function apiConfig(): array
-    {
-        $path = dirname(__DIR__, 3) . '/config/api.php';
-        if (!is_file($path)) {
-            return [];
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(ApiTokensService::class);
+                if ($service instanceof ApiTokensService) {
+                    $this->apiTokensService = $service;
+                    return $this->apiTokensService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
         }
 
-        $config = require $path;
-        return is_array($config) ? $config : [];
+        return null;
     }
 
     /** @return array<int, string> */
-    private function allowedScopes(): array
+    private function selectScopes(array $scopesInput, ApiTokensService $service): array
     {
-        $config = $this->apiConfig();
-        $scopes = $config['token_scopes'] ?? [];
-        if (!is_array($scopes)) {
-            return [];
-        }
-
-        $out = [];
-        foreach ($scopes as $scope) {
+        $allowed = $service->allowedScopes();
+        $selected = [];
+        foreach ($scopesInput as $scope) {
             if (!is_string($scope)) {
                 continue;
             }
             $scope = trim($scope);
-            if ($scope === '') {
-                continue;
+            if ($scope !== '' && in_array($scope, $allowed, true)) {
+                $selected[] = $scope;
             }
-            $out[] = $scope;
         }
 
-        return array_values(array_unique($out));
+        if ($selected === [] && $allowed !== []) {
+            return $service->defaultScopesSelection();
+        }
+
+        return array_values(array_unique($selected));
     }
 
     /** @return array<int, string> */
-    private function normalizeScopes(array $scopes, array $allowlist): array
+    private function validationErrors(array $fields): array
     {
-        $allowed = array_flip($allowlist);
-        $out = [];
-        foreach ($scopes as $scope) {
-            if (!is_string($scope)) {
-                continue;
-            }
-            $scope = trim($scope);
-            if ($scope === '' || !isset($allowed[$scope])) {
-                continue;
-            }
-            $out[] = $scope;
-        }
-
-        return array_values(array_unique($out));
-    }
-
-    /** @return array<int, string> */
-    private function invalidScopes(array $scopes, array $allowlist): array
-    {
-        if ($scopes === []) {
+        if ($fields === []) {
             return [];
         }
 
-        $allowed = array_flip($allowlist);
-        $invalid = [];
-        foreach ($scopes as $scope) {
-            if (!is_string($scope)) {
-                continue;
-            }
-            $scope = trim($scope);
-            if ($scope === '') {
-                continue;
-            }
-            if (!isset($allowed[$scope])) {
-                $invalid[] = $scope;
-            }
+        $message = $this->view->translate('admin.settings.error_invalid');
+        $errors = [];
+        foreach (array_keys($fields) as $key) {
+            $errors[] = $message;
         }
 
-        return array_values(array_unique($invalid));
-    }
-
-    /** @return array<int, string> */
-    private function defaultScopesSelection(): array
-    {
-        return $this->allowedScopes();
+        return $errors !== [] ? $errors : [$message];
     }
 
     /** @return array<int, array<string, mixed>> */
-    private function buildScopeOptions(array $selectedScopes): array
+    private function buildScopeOptions(array $selectedScopes, array $allowedScopes): array
     {
         $options = [];
-        foreach ($this->allowedScopes() as $scope) {
+        foreach ($allowedScopes as $scope) {
             $id = 'scope-' . preg_replace('/[^a-z0-9_-]/i', '-', $scope);
             $options[] = [
                 'value' => $scope,
@@ -691,7 +654,7 @@ final class ApiTokensController
             $lastUsed = (string) ($row['last_used_at'] ?? '');
             $expiresAt = (string) ($row['expires_at'] ?? '');
             $revokedAt = (string) ($row['revoked_at'] ?? '');
-            $status = $this->status($expiresAt, $revokedAt);
+            $status = (string) ($row['status'] ?? $this->status($expiresAt, $revokedAt));
             $statusLabel = $this->statusLabel($status);
             $isActive = $status === 'active';
             $isExpired = $status === 'expired';
@@ -735,7 +698,7 @@ final class ApiTokensController
                 'expires_at' => $this->normalizeDate($row['expires_at'] ?? null),
                 'revoked_at' => $this->normalizeDate($row['revoked_at'] ?? null),
                 'created_at' => (string) ($row['created_at'] ?? ''),
-                'status' => $this->status($expiresAt, $revokedAt),
+                'status' => (string) ($row['status'] ?? $this->status($expiresAt, $revokedAt)),
             ];
         }
 
@@ -781,16 +744,6 @@ final class ApiTokensController
         return $value !== '' ? $value : null;
     }
 
-    private function parseExpiresAt(string $value): ?string
-    {
-        $ts = strtotime($value);
-        if ($ts === false) {
-            return null;
-        }
-
-        return date('Y-m-d H:i:s', $ts);
-    }
-
     private function status(string $expiresAt, string $revokedAt): string
     {
         if ($revokedAt !== '') {
@@ -804,15 +757,6 @@ final class ApiTokensController
         }
 
         return 'active';
-    }
-
-    private function rotateName(string $name): string
-    {
-        if ($name === '') {
-            return 'Rotated token';
-        }
-
-        return $name . ' (rotated)';
     }
 
     private function statusLabel(string $status): string

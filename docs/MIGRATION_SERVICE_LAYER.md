@@ -78,6 +78,13 @@ $snapshot = $opsService->overview($request->isHttps());
 $viewData = $opsService->viewData($snapshot, fn (string $key) => $view->translate($key));
 ```
 
+API tokens example (list + create):
+```php
+// controller
+$tokens = $apiTokensService->listTokens($userId);
+$created = $apiTokensService->createToken($userId, $name, $scopes, $expiresAt);
+```
+
 ## Anti-patterns (do not do this)
 - `new SomeService()` inside controllers
 - business rules implemented in controllers
