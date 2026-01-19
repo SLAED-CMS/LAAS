@@ -1,6 +1,6 @@
 # LAAS Versions
 
-- v4.0.1 (Unreleased)
+- v4.0.1 (Released 2026-01-19)
   - Admin UI: Bootstrap 5 wired + modern layout for /admin/ai and page editor AI panel
   - Admin UI: AI flow indicator + improved diff styling + visual hierarchy (wow polish)
   - Admin AI: collapsible diff per file + CLI apply snippet after save (demo wow)
@@ -532,4 +532,4 @@
 - v0.2: Middleware pipeline + sessions + security headers + error handler + Monolog
 - v0.1: Kernel/Router/Modules + System+Api routes
 
-**Last updated:** 2026-01-16
+**Last updated:** 2026-01-19
