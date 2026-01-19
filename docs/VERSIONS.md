@@ -1,6 +1,6 @@
 # LAAS Versions
 
-- v4.0.20 (Unreleased)
+- v4.0.20 (Released 2026-01-19)
   - DI Container MVP (foundation for service layer)
   - PagesService MVP (Service Layer introduction)
   - MediaService MVP + Upload Pipeline
