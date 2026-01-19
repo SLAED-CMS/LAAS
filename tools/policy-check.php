@@ -157,6 +157,59 @@ function policy_check_theme_layouts(array $paths): array
 }
 
 /**
+ * @param array<int, string> $paths
+ * @return array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>
+ */
+function policy_check_theme_manifests(array $paths): array
+{
+    $findings = [];
+    $root = policy_root_path();
+    $autoload = $root . '/vendor/autoload.php';
+    if (is_file($autoload)) {
+        require_once $autoload;
+    }
+
+    if (!class_exists('\\Laas\\Theme\\ThemeValidator')) {
+        return $findings;
+    }
+
+    foreach (policy_theme_roots($paths) as $themesRoot) {
+        $items = @scandir($themesRoot);
+        if (!is_array($items)) {
+            continue;
+        }
+        $validator = new \Laas\Theme\ThemeValidator($themesRoot);
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
+            $themePath = $themesRoot . '/' . $item;
+            if (!is_dir($themePath)) {
+                continue;
+            }
+            $result = $validator->validateTheme($item);
+            if (!$result->hasViolations()) {
+                continue;
+            }
+            foreach ($result->getViolations() as $violation) {
+                $file = (string) ($violation['file'] ?? $themePath);
+                $message = 'Theme ' . $item . ': ' . (string) ($violation['message'] ?? '');
+                $findings[] = [
+                    'level' => 'error',
+                    'code' => 'T1',
+                    'file' => $file,
+                    'line' => 1,
+                    'message' => $message,
+                    'snippet' => '',
+                ];
+            }
+        }
+    }
+
+    return $findings;
+}
+
+/**
  * @return array<int, string>
  */
 function policy_w3_excludes(): array
@@ -508,6 +561,7 @@ function policy_analyze(array $paths): array
     $findings = policy_check_paths($paths);
     $findings = array_merge($findings, policy_check_php_paths($paths));
     $findings = array_merge($findings, policy_check_theme_layouts($paths));
+    $findings = array_merge($findings, policy_check_theme_manifests($paths));
     $errors = [];
     $warnings = [];
     foreach ($findings as $finding) {

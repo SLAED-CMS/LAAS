@@ -11,7 +11,9 @@ use Laas\Database\Repositories\RbacRepository;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Pages\Repository\PagesRepository;
+use Laas\Modules\Pages\Repository\PagesRevisionsRepository;
 use Laas\Support\Search\SearchNormalizer;
+use Laas\Content\Blocks\BlockRegistry;
 use Throwable;
 
 final class PagesController
@@ -107,7 +109,7 @@ final class PagesController
             return ApiResponse::error('not_found', 'Not Found', [], 404);
         }
 
-        return ApiResponse::ok($this->mapPage($page));
+        return ApiResponse::ok($this->mapPage($page, true));
     }
 
     public function bySlug(Request $request, array $params = []): Response
@@ -133,7 +135,7 @@ final class PagesController
             return ApiResponse::error('not_found', 'Not Found', [], 404);
         }
 
-        return ApiResponse::ok($this->mapPage($page));
+        return ApiResponse::ok($this->mapPage($page, true));
     }
 
     private function repository(): ?PagesRepository
@@ -149,9 +151,9 @@ final class PagesController
         }
     }
 
-    private function mapPage(array $row): array
+    private function mapPage(array $row, bool $withBlocks = false): array
     {
-        return [
+        $data = [
             'id' => (int) ($row['id'] ?? 0),
             'title' => (string) ($row['title'] ?? ''),
             'slug' => (string) ($row['slug'] ?? ''),
@@ -159,6 +161,35 @@ final class PagesController
             'status' => (string) ($row['status'] ?? ''),
             'updated_at' => (string) ($row['updated_at'] ?? ''),
         ];
+        if ($withBlocks) {
+            $blocks = $this->loadBlocks((int) ($row['id'] ?? 0));
+            $data['blocks'] = $blocks;
+        }
+        return $data;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function loadBlocks(int $pageId): array
+    {
+        if ($pageId <= 0) {
+            return [];
+        }
+        if ($this->db === null || !$this->db->healthCheck()) {
+            return [];
+        }
+        try {
+            $repo = new PagesRevisionsRepository($this->db);
+            $blocks = $repo->findLatestBlocksByPageId($pageId);
+            if (!is_array($blocks)) {
+                return [];
+            }
+            $registry = BlockRegistry::default();
+            return $registry->renderJsonBlocks($blocks);
+        } catch (Throwable) {
+            return [];
+        }
     }
 
     private function canViewAll(Request $request): bool

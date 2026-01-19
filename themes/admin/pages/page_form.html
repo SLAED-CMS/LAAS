@@ -50,6 +50,7 @@
             <label class="form-label">{% t 'admin.pages.form.content' %}</label>
             <textarea class="form-control" name="content" rows="10">{% page.content %}</textarea>
           </div>
+          <textarea name="blocks_json" class="d-none">{% page.blocks_json %}</textarea>
           <div class="d-flex gap-2 flex-wrap">
             <button class="btn btn-primary" type="submit">{% t 'admin.pages.form.save' %}</button>
             <a class="btn btn-outline-secondary disabled" id="page-preview" href="#" target="_blank" rel="noopener" aria-disabled="true" tabindex="-1">{% t 'admin.pages.form.preview' %}</a>

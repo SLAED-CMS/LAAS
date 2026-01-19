@@ -5,6 +5,8 @@ namespace Laas\Theme;
 
 final class ThemeValidator
 {
+    private const SEMVER_PATTERN = '/^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$/';
+
     /** @var array<int, string> */
     private array $cdnPatterns = [
         'https://cdn.',
@@ -20,14 +22,39 @@ final class ThemeValidator
         'partials/header.html',
     ];
 
-    public function __construct(private string $themesRoot)
-    {
+    public function __construct(
+        private string $themesRoot,
+        private ?string $schemaPath = null,
+        private ?string $snapshotPath = null
+    ) {
+        if ($this->schemaPath === null) {
+            $root = dirname(__DIR__, 2);
+            $this->schemaPath = $root . '/docs/theme/theme.schema.json';
+        }
+        if ($this->snapshotPath === null) {
+            $root = dirname(__DIR__, 2);
+            $this->snapshotPath = $root . '/config/theme_snapshot.php';
+        }
     }
 
-    public function validateTheme(string $themeName): ThemeValidationResult
+    public function validateTheme(string $themeName, bool $acceptSnapshot = false): ThemeValidationResult
     {
         $result = new ThemeValidationResult($themeName);
         $themePath = rtrim($this->themesRoot, '/\\') . '/' . $themeName;
+
+        $manifestPath = $themePath . '/theme.json';
+        if (!is_file($manifestPath)) {
+            $result->addViolation('theme_json_missing', $manifestPath, 'Missing theme.json');
+        } else {
+            $data = $this->readThemeJson($manifestPath);
+            if ($data === null) {
+                $result->addViolation('theme_json_invalid', $manifestPath, 'Invalid theme.json');
+            } else {
+                $this->validateSchema($result, $manifestPath, $data);
+                $this->validateCapabilities($result, $manifestPath, $data);
+                $this->validateSnapshot($result, $manifestPath, $data, $acceptSnapshot);
+            }
+        }
 
         $baseLayout = $themePath . '/layouts/base.html';
         if (!is_file($baseLayout)) {
@@ -64,6 +91,145 @@ final class ThemeValidator
         }
 
         return $result;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function readThemeJson(string $path): ?array
+    {
+        $raw = @file_get_contents($path);
+        if (!is_string($raw)) {
+            return null;
+        }
+        $data = json_decode($raw, true);
+        if (!is_array($data)) {
+            return null;
+        }
+        return $data;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function validateSchema(ThemeValidationResult $result, string $path, array $data): void
+    {
+        $name = $data['name'] ?? null;
+        if (!is_string($name) || trim($name) === '') {
+            $result->addViolation('theme_schema', $path, 'Missing or invalid name');
+        }
+
+        $version = $data['version'] ?? null;
+        if (!is_string($version) || preg_match(self::SEMVER_PATTERN, $version) !== 1) {
+            $result->addViolation('theme_schema', $path, 'Missing or invalid version');
+        }
+
+        $api = $data['api'] ?? null;
+        if (!is_string($api) || $api !== 'v2') {
+            $result->addViolation('theme_api', $path, 'Theme api must be v2');
+        }
+
+        if (isset($data['capabilities']) && !is_array($data['capabilities'])) {
+            $result->addViolation('theme_schema', $path, 'capabilities must be an array of strings');
+        }
+        if (isset($data['provides']) && !is_array($data['provides'])) {
+            $result->addViolation('theme_schema', $path, 'provides must be an array of strings');
+        }
+        if (isset($data['meta']) && !is_array($data['meta'])) {
+            $result->addViolation('theme_schema', $path, 'meta must be an object');
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function validateCapabilities(ThemeValidationResult $result, string $path, array $data): void
+    {
+        if (!isset($data['capabilities']) || !is_array($data['capabilities'])) {
+            return;
+        }
+
+        $caps = ThemeCapabilities::normalize($data['capabilities']);
+        $allowlist = ThemeCapabilities::allowlist();
+        foreach ($caps as $cap) {
+            if (!in_array($cap, $allowlist, true)) {
+                $result->addViolation('theme_capability_unknown', $path, 'Unknown capability: ' . $cap);
+            }
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function validateSnapshot(ThemeValidationResult $result, string $path, array $data, bool $acceptSnapshot): void
+    {
+        $snapshotPath = $this->snapshotPath ?? '';
+        $snapshot = $this->readSnapshot($snapshotPath);
+        if ($snapshot === null) {
+            if (!$acceptSnapshot) {
+                $result->addViolation('theme_snapshot_missing', $snapshotPath, 'Missing theme snapshot');
+            }
+            return;
+        }
+
+        $hash = hash_file('sha256', $path);
+        if (!is_string($hash) || $hash === '') {
+            return;
+        }
+
+        $themes = $snapshot['themes'] ?? [];
+        $entry = $themes[$result->getThemeName()] ?? null;
+        $expected = is_array($entry) ? (string) ($entry['sha256'] ?? '') : (string) $entry;
+        if ($expected === '' || strtolower($expected) !== strtolower($hash)) {
+            if ($acceptSnapshot) {
+                $this->writeSnapshot($snapshotPath, $snapshot, $result->getThemeName(), $hash, $path);
+                return;
+            }
+            $result->addViolation('theme_snapshot_mismatch', $path, 'theme.json changed; accept snapshot to update');
+        }
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function readSnapshot(string $path): ?array
+    {
+        if ($path === '' || !is_file($path)) {
+            return null;
+        }
+        $data = require $path;
+        return is_array($data) ? $data : null;
+    }
+
+    /**
+     * @param array<string, mixed> $snapshot
+     */
+    private function writeSnapshot(string $path, array $snapshot, string $themeName, string $hash, string $themePath): void
+    {
+        $snapshot['version'] = (int) ($snapshot['version'] ?? 1);
+        $snapshot['generated_at'] = gmdate('c');
+        if (!isset($snapshot['themes']) || !is_array($snapshot['themes'])) {
+            $snapshot['themes'] = [];
+        }
+        $snapshot['themes'][$themeName] = [
+            'sha256' => $hash,
+            'path' => $this->relativePath($themePath),
+        ];
+
+        $export = var_export($snapshot, true);
+        $contents = "<?php\n" . "declare(strict_types=1);\n\nreturn " . $export . ";\n";
+        @file_put_contents($path, $contents);
+    }
+
+    private function relativePath(string $path): string
+    {
+        $root = dirname(__DIR__, 2);
+        $normalized = str_replace('\\', '/', $path);
+        $root = str_replace('\\', '/', $root);
+        if (str_starts_with($normalized, $root . '/')) {
+            return ltrim(substr($normalized, strlen($root)), '/');
+        }
+        return $normalized;
     }
 
     private function hasInlineStyle(string $contents): bool

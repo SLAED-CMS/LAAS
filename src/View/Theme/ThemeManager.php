@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Laas\View\Theme;
 
 use Laas\DevTools\DevToolsContext;
+use Laas\Theme\ThemeCapabilities;
 use Laas\Support\RequestScope;
 use Laas\Settings\SettingsProvider;
 use RuntimeException;
@@ -89,6 +90,44 @@ final class ThemeManager
 
         $this->themeCache[$theme] = $data;
         return $data;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function getCapabilities(?string $theme = null): array
+    {
+        $config = $this->getThemeConfig($theme);
+        $caps = $config['capabilities'] ?? [];
+        if (!is_array($caps)) {
+            return [];
+        }
+        return ThemeCapabilities::normalize($caps);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function getProvides(?string $theme = null): array
+    {
+        $config = $this->getThemeConfig($theme);
+        $provides = $config['provides'] ?? [];
+        if (!is_array($provides)) {
+            return [];
+        }
+        return array_values(array_filter($provides, 'is_string'));
+    }
+
+    public function getThemeApi(?string $theme = null): ?string
+    {
+        $config = $this->getThemeConfig($theme);
+        return is_string($config['api'] ?? null) ? $config['api'] : null;
+    }
+
+    public function getThemeVersion(?string $theme = null): ?string
+    {
+        $config = $this->getThemeConfig($theme);
+        return is_string($config['version'] ?? null) ? $config['version'] : null;
     }
 
     public function getLayoutPath(string $key = 'base', ?string $theme = null): string

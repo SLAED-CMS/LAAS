@@ -1,0 +1,20 @@
+{
+    "data": {
+        "items": [
+            {
+                "id": "__ID__",
+                "slug": "hello",
+                "title": "Hello",
+                "updated_at": "__TIME__"
+            }
+        ],
+        "locale": "en",
+        "total": 1
+    },
+    "meta": {
+        "format": "json",
+        "request_id": "__REQ__",
+        "route": "/api/v2/pages",
+        "ts": "__TIME__"
+    }
+}

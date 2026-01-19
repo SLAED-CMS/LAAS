@@ -62,6 +62,7 @@ use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
 use Laas\View\Theme\ThemeManager;
 use Laas\View\View;
+use Laas\Content\Blocks\BlockRegistry;
 
 final class Kernel
 {
@@ -82,6 +83,7 @@ final class Kernel
     {
         RequestScope::reset();
         RequestScope::setRequest($request);
+        RequestScope::set('blocks.registry', $this->container->get(BlockRegistry::class));
 
         try {
         $router = new Router();
@@ -442,6 +444,10 @@ final class Kernel
 
         $this->container->singleton(SettingsService::class, function (): SettingsService {
             return new SettingsService($this->database());
+        });
+
+        $this->container->singleton(BlockRegistry::class, static function (): BlockRegistry {
+            return BlockRegistry::default();
         });
     }
 

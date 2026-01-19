@@ -322,6 +322,15 @@ final class ApiMiddleware implements MiddlewareInterface
         if (preg_match('#^/api/v1/pages/by-slug/[^/]+$#', $path)) {
             return true;
         }
+        if ($path === '/api/v2/pages') {
+            return true;
+        }
+        if (preg_match('#^/api/v2/pages/\\d+$#', $path)) {
+            return true;
+        }
+        if (preg_match('#^/api/v2/pages/by-slug/[^/]+$#', $path)) {
+            return true;
+        }
         if ($path === '/api/v1/media') {
             return true;
         }
@@ -332,6 +341,12 @@ final class ApiMiddleware implements MiddlewareInterface
             return true;
         }
         if (preg_match('#^/api/v1/menus/[^/]+$#', $path)) {
+            return true;
+        }
+        if ($path === '/api/v2/menus') {
+            return true;
+        }
+        if (preg_match('#^/api/v2/menus/[^/]+$#', $path)) {
             return true;
         }
 

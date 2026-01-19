@@ -2578,7 +2578,16 @@ $commands['policy:check'] = function () use ($rootPath): int {
 };
 
 $commands['theme:validate'] = function () use ($rootPath, $appConfig, $dbManager, $args): int {
-    $validator = new ThemeValidator($rootPath . '/themes');
+    $themesRoot = (string) (getOption($args, 'themes-root') ?? ($rootPath . '/themes'));
+    $schemaPath = (string) (getOption($args, 'schema') ?? '');
+    $snapshotPath = (string) (getOption($args, 'snapshot') ?? ($rootPath . '/config/theme_snapshot.php'));
+    $acceptSnapshot = hasFlag($args, 'accept-snapshot') || hasFlag($args, 'update-snapshot');
+
+    $validator = new ThemeValidator(
+        $themesRoot,
+        $schemaPath !== '' ? $schemaPath : null,
+        $snapshotPath !== '' ? $snapshotPath : null
+    );
     $themes = [];
 
     $themeArgs = array_filter($args, static fn($arg) => !str_starts_with($arg, '--'));
@@ -2604,11 +2613,11 @@ $commands['theme:validate'] = function () use ($rootPath, $appConfig, $dbManager
         if ($theme === '') {
             continue;
         }
-        $result = $validator->validateTheme($theme);
-        if (!$result->hasViolations()) {
-            echo 'Theme ' . $theme . ": OK\n";
-            continue;
-        }
+            $result = $validator->validateTheme($theme, $acceptSnapshot);
+            if (!$result->hasViolations()) {
+                echo 'Theme ' . $theme . ": OK\n";
+                continue;
+            }
         $exit = 2;
         echo 'Theme ' . $theme . ": VIOLATIONS\n";
         foreach ($result->getViolations() as $violation) {
@@ -2620,6 +2629,10 @@ $commands['theme:validate'] = function () use ($rootPath, $appConfig, $dbManager
     }
 
     return $exit;
+};
+
+$commands['themes:validate'] = static function () use (&$commands): int {
+    return $commands['theme:validate']();
 };
 
 if ($command === '' || !isset($commands[$command])) {

@@ -17,7 +17,9 @@
   <main id="app" class="container py-3">
     {% block content %}{% endblock %}
   </main>
+  {% if theme.capabilities.toasts %}
   <div id="laas-toasts" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+  {% endif %}
   <script src="{% assets.htmx_js %}" defer></script>
   <script src="{% assets.bootstrap_js %}" defer></script>
   <script src="{% assets.app_js %}" defer></script>

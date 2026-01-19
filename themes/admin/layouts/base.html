@@ -24,7 +24,9 @@
     </div>
     {% block content %}{% endblock %}
   </main>
+  {% if theme.capabilities.toasts %}
   {% include "partials/toasts.html" %}
+  {% endif %}
   <script src="{% assets.htmx_js %}" defer></script>
   <script src="{% assets.bootstrap_js %}" defer></script>
   <script src="{% assets.app_js %}" defer></script>

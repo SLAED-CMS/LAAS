@@ -1,0 +1,19 @@
+{
+    "data": {
+        "items": [
+            {
+                "id": "__ID__",
+                "name": "main",
+                "title": "Main"
+            }
+        ],
+        "locale": "en",
+        "total": 1
+    },
+    "meta": {
+        "format": "json",
+        "request_id": "__REQ__",
+        "route": "/api/v2/menus",
+        "ts": "__TIME__"
+    }
+}

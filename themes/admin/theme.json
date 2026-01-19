@@ -1,6 +1,16 @@
 {
   "name": "admin",
   "version": "1.0.0",
+  "api": "v2",
+  "capabilities": [
+    "toasts",
+    "devtools",
+    "headless"
+  ],
+  "provides": [
+    "layouts",
+    "partials"
+  ],
   "author": "LAAS CMS",
   "layouts": {
     "base": "layouts/base.html",

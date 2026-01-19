@@ -24,6 +24,7 @@ use Laas\View\ViewModelInterface;
 use Laas\View\Template\TemplateEngine;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Theme\ThemeManager;
+use Laas\Theme\ThemeCapabilities;
 use Laas\Ui\PresentationLeakDetector;
 
 final class View
@@ -80,7 +81,23 @@ final class View
     ): Response
     {
         $data = $this->normalizeViewModels($data);
-        if ($this->request !== null && HeadlessMode::isEnabled()) {
+        $renderOptions = [
+            'render_partial' => $this->request?->isHtmx() ?? false,
+        ];
+        $renderOptions = array_merge($renderOptions, $options);
+        $theme = $renderOptions['theme'] ?? $this->themeManager->getPublicTheme();
+        $themeCapabilities = $this->resolveThemeCapabilities($theme);
+
+        if (!in_array('blocks', $themeCapabilities, true)) {
+            if (array_key_exists('blocks_html', $data)) {
+                $data['blocks_html'] = [];
+            }
+            if (array_key_exists('blocks_json', $data)) {
+                $data['blocks_json'] = [];
+            }
+        }
+
+        if ($this->request !== null && HeadlessMode::isEnabled() && in_array('headless', $themeCapabilities, true)) {
             if (HeadlessMode::shouldBlockHtml($this->request)) {
                 return ContractResponse::error('not_acceptable', [
                     'route' => HeadlessMode::resolveRoute($this->request),
@@ -92,8 +109,8 @@ final class View
                 ]);
             }
         }
-        $ctx = array_merge($this->globalContext(), $data);
-        $devtoolsEnabled = $this->resolveDevtoolsEnabled();
+        $ctx = array_merge($this->globalContext($theme, $themeCapabilities), $data);
+        $devtoolsEnabled = $this->resolveDevtoolsEnabled() && in_array('devtools', $themeCapabilities, true);
         $showRequestId = $this->debug || $devtoolsEnabled;
         if (!isset($ctx['devtools']) || !is_array($ctx['devtools'])) {
             $ctx['devtools'] = ['enabled' => $devtoolsEnabled];
@@ -104,12 +121,6 @@ final class View
         if ($warnings !== []) {
             $this->handlePresentationWarnings($warnings);
         }
-        $renderOptions = [
-            'render_partial' => $this->request?->isHtmx() ?? false,
-        ];
-        $renderOptions = array_merge($renderOptions, $options);
-
-        $theme = $renderOptions['theme'] ?? $this->themeManager->getPublicTheme();
         $engine = $this->resolveEngine($theme);
         $ctx['__menu'] = function (string $name) use ($engine): string {
             if ($this->db === null || !$this->db->healthCheck()) {
@@ -209,7 +220,34 @@ final class View
         return $this->translator;
     }
 
-    private function globalContext(): array
+    public function getLocale(): string
+    {
+        return $this->locale;
+    }
+
+    public function getThemeName(): string
+    {
+        return $this->themeManager->getPublicTheme();
+    }
+
+    /**
+     * @param array<int, string> $themeCapabilities
+     */
+    private function globalContext(string $theme, array $themeCapabilities): array
+    {
+        $ctx = $this->globalContextBase();
+        $caps = ThemeCapabilities::toMap($themeCapabilities);
+        $ctx['theme'] = [
+            'name' => $theme,
+            'api' => $this->resolveThemeApi($theme),
+            'version' => $this->resolveThemeVersion($theme),
+            'capabilities' => $caps,
+            'provides' => $this->resolveThemeProvides($theme),
+        ];
+        return $ctx;
+    }
+
+    private function globalContextBase(): array
     {
         $csrfToken = '';
         $session = $this->request?->session();
@@ -271,6 +309,45 @@ final class View
             $this->debug,
             $this->templateRawMode
         );
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function resolveThemeCapabilities(string $theme): array
+    {
+        $manager = $this->resolveThemeManager($theme);
+        return $manager->getCapabilities($theme);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function resolveThemeProvides(string $theme): array
+    {
+        $manager = $this->resolveThemeManager($theme);
+        return $manager->getProvides($theme);
+    }
+
+    private function resolveThemeApi(string $theme): ?string
+    {
+        $manager = $this->resolveThemeManager($theme);
+        return $manager->getThemeApi($theme);
+    }
+
+    private function resolveThemeVersion(string $theme): ?string
+    {
+        $manager = $this->resolveThemeManager($theme);
+        return $manager->getThemeVersion($theme);
+    }
+
+    private function resolveThemeManager(string $theme): ThemeManager
+    {
+        if ($theme === $this->defaultTheme) {
+            return $this->themeManager;
+        }
+
+        return new ThemeManager($this->themesRoot, $theme, $this->settingsProvider);
     }
 
     /**

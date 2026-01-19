@@ -1,5 +1,7 @@
 # Theme API v1
 
+Note: Theme API v2 is the current contract. See `docs/themes/THEME_API_V2.md`.
+
 ## Purpose / Goals
 
 - Зафиксировать контракт между backend и темами.

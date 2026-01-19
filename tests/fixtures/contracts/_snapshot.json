@@ -2030,9 +2030,115 @@
         },
         {
             "example_ok": {
+                "fixture": "menus_v2",
+                "payload": {
+                    "data": {
+                        "items": [
+                            {
+                                "id": "__ID__",
+                                "name": "main",
+                                "title": "Main"
+                            }
+                        ],
+                        "locale": "en",
+                        "total": 1
+                    },
+                    "meta": {
+                        "format": "json",
+                        "request_id": "__REQ__",
+                        "route": "/api/v2/menus",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "menus_v2",
+            "rbac": "public",
+            "responses": {
+                "200": {
+                    "data": {
+                        "items": [
+                            {
+                                "id": "int",
+                                "name": "string",
+                                "title": "string"
+                            }
+                        ],
+                        "locale": "string",
+                        "total": "int"
+                    },
+                    "meta": {
+                        "format": "json",
+                        "route": "/api/v2/menus"
+                    }
+                }
+            },
+            "route": "/api/v2/menus",
+            "version": "3.18.0"
+        },
+        {
+            "example_ok": {
+                "fixture": "page_v2_single",
+                "payload": {
+                    "data": {
+                        "locale": "en",
+                        "page": {
+                            "content": "Body",
+                            "id": "__ID__",
+                            "slug": "hello",
+                            "title": "Hello",
+                            "updated_at": "__TIME__"
+                        }
+                    },
+                    "meta": {
+                        "format": "json",
+                        "request_id": "__REQ__",
+                        "route": "/api/v2/pages/{id}",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "page_v2_single",
+            "rbac": "public",
+            "responses": {
+                "200": {
+                    "data": {
+                        "locale": "string",
+                        "page": {
+                            "content": "string",
+                            "id": "int",
+                            "slug": "string",
+                            "title": "string",
+                            "updated_at": "__TIME__"
+                        }
+                    },
+                    "meta": {
+                        "format": "json",
+                        "route": "/api/v2/pages/{id}"
+                    }
+                },
+                "404": {
+                    "error": "error.not_found",
+                    "meta": {
+                        "format": "json",
+                        "route": "/api/v2/pages/{id}"
+                    }
+                }
+            },
+            "route": "/api/v2/pages/{id}",
+            "version": "3.18.0"
+        },
+        {
+            "example_ok": {
                 "fixture": "pages.show",
                 "payload": {
                     "data": {
+                        "blocks": [],
                         "page": {
                             "content": "Body",
                             "id": "__ID__",
@@ -2057,6 +2163,7 @@
             "responses": {
                 "200": {
                     "data": {
+                        "blocks": "array",
                         "page": {
                             "content": "string",
                             "id": "int",
@@ -2079,6 +2186,65 @@
                 }
             },
             "route": "/{slug}",
+            "version": "3.18.0"
+        },
+        {
+            "example_ok": {
+                "fixture": "pages_v2",
+                "payload": {
+                    "data": {
+                        "items": [
+                            {
+                                "id": "__ID__",
+                                "slug": "hello",
+                                "title": "Hello",
+                                "updated_at": "__TIME__"
+                            }
+                        ],
+                        "locale": "en",
+                        "total": 1
+                    },
+                    "meta": {
+                        "format": "json",
+                        "request_id": "__REQ__",
+                        "route": "/api/v2/pages",
+                        "ts": "__TIME__"
+                    }
+                }
+            },
+            "methods": [
+                "GET"
+            ],
+            "name": "pages_v2",
+            "rbac": "public",
+            "responses": {
+                "200": {
+                    "data": {
+                        "items": [
+                            {
+                                "id": "int",
+                                "slug": "string",
+                                "title": "string",
+                                "updated_at": "__TIME__"
+                            }
+                        ],
+                        "locale": "string",
+                        "total": "int"
+                    },
+                    "meta": {
+                        "format": "json",
+                        "route": "/api/v2/pages"
+                    }
+                },
+                "400": {
+                    "error": "error.invalid_request",
+                    "meta": {
+                        "format": "json",
+                        "route": "/api/v2/pages"
+                    }
+                }
+            },
+            "route": "/api/v2/pages",
             "version": "3.18.0"
         },
         {

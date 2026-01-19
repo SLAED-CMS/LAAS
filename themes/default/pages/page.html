@@ -4,7 +4,15 @@
 <div class="card">
   <div class="card-body">
     <h1 class="h4 mb-3">{% page.title %}</h1>
+    {% if blocks_html %}
+    <div class="page-content">
+      {% foreach blocks_html as block %}
+        {% raw block %}
+      {% endforeach %}
+    </div>
+    {% else %}
     <div class="page-content">{% raw page.content %}</div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

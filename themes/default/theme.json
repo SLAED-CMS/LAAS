@@ -1,6 +1,18 @@
 {
   "name": "default",
   "version": "1.0.0",
+  "api": "v2",
+  "capabilities": [
+    "toasts",
+    "devtools",
+    "headless",
+    "blocks"
+  ],
+  "provides": [
+    "layouts",
+    "partials",
+    "blocks"
+  ],
   "author": "LAAS CMS",
   "layouts": {
     "base": "layouts/base.html",

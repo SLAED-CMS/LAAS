@@ -70,6 +70,17 @@ final class PagesRepository
     }
 
     /** @return array<int, array<string, mixed>> */
+    public function listPublishedAll(): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT id, title, slug, content, status, updated_at FROM pages WHERE status = :status ORDER BY updated_at DESC, id DESC'
+        );
+        $stmt->execute(['status' => 'published']);
+        $rows = $stmt->fetchAll();
+        return is_array($rows) ? $rows : [];
+    }
+
+    /** @return array<int, array<string, mixed>> */
     public function listByStatus(?string $status, int $limit, int $offset): array
     {
         $sql = 'SELECT id, title, slug, content, status, updated_at FROM pages';

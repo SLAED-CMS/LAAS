@@ -102,6 +102,7 @@ final class HomeControllerTest extends TestCase
         $pdo->exec('CREATE TABLE permissions (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, title TEXT, created_at TEXT, updated_at TEXT)');
         $pdo->exec('CREATE TABLE role_user (user_id INTEGER, role_id INTEGER)');
         $pdo->exec('CREATE TABLE permission_role (role_id INTEGER, permission_id INTEGER)');
+        $pdo->exec('CREATE TABLE settings (id INTEGER PRIMARY KEY AUTOINCREMENT, `key` TEXT, `value` TEXT, `type` TEXT, updated_at TEXT)');
         $pdo->exec('CREATE TABLE pages (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, slug TEXT, content TEXT, status TEXT, updated_at TEXT)');
         $pdo->exec('CREATE TABLE media_files (id INTEGER PRIMARY KEY AUTOINCREMENT, original_name TEXT, mime_type TEXT, disk_path TEXT, size_bytes INTEGER, created_at TEXT, uploaded_by INTEGER, is_public INTEGER)');
         $pdo->exec('CREATE TABLE menus (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, title TEXT, created_at TEXT, updated_at TEXT)');

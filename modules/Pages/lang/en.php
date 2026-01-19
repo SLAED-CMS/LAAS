@@ -27,4 +27,5 @@ return [
     'admin.pages.filter.search' => 'Search',
     'admin.pages.filter.status' => 'Status',
     'admin.pages.filter.all' => 'All',
+    'validation.blocks_json_invalid' => 'Blocks JSON is invalid.',
 ];

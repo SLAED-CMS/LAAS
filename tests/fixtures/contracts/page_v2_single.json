@@ -1,0 +1,18 @@
+{
+    "data": {
+        "locale": "en",
+        "page": {
+            "content": "Body",
+            "id": "__ID__",
+            "slug": "hello",
+            "title": "Hello",
+            "updated_at": "__TIME__"
+        }
+    },
+    "meta": {
+        "format": "json",
+        "request_id": "__REQ__",
+        "route": "/api/v2/pages/{id}",
+        "ts": "__TIME__"
+    }
+}

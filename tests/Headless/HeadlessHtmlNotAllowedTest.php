@@ -18,6 +18,7 @@ final class HeadlessHtmlNotAllowedTest extends TestCase
 
         try {
             $pdo = SecurityTestHelper::createSqlitePdo();
+            SecurityTestHelper::seedSettingsTable($pdo);
             SecurityTestHelper::seedPagesTable($pdo);
             SecurityTestHelper::seedMediaTable($pdo);
             SecurityTestHelper::seedMenusTables($pdo);

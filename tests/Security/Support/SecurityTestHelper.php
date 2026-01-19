@@ -133,6 +133,17 @@ final class SecurityTestHelper
         )');
     }
 
+    public static function seedSettingsTable(PDO $pdo): void
+    {
+        $pdo->exec('CREATE TABLE settings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            `key` VARCHAR(255) UNIQUE,
+            `value` TEXT NULL,
+            `type` VARCHAR(20) NULL,
+            updated_at DATETIME NULL
+        )');
+    }
+
     public static function seedAuditTable(PDO $pdo): void
     {
         $pdo->exec('CREATE TABLE audit_logs (

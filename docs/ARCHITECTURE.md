@@ -1056,14 +1056,17 @@ public function render(string $template, array $data): string
 - Если HTML запрошен, но запрещён, возвращается `406 not_acceptable` в JSON envelope
 - Редиректы в headless возвращают JSON `{ "redirect_to": "/path" }`
 
-### ThemeManager and Theme API v1
+### ThemeManager and Theme API v2
 
-**Theme API v1 contract:**
-- `themes/<theme>/theme.json` declares theme metadata and layouts
-- `layouts.base` is required and validated if `theme.json` exists
-- Legacy themes without `theme.json` fall back to `layout.html`
+**Theme API v2 contract:**
+- `themes/<theme>/theme.json` is required and validated against schema
+- Required fields: `name`, `version`, `api: "v2"`
+- Optional fields: `capabilities`, `provides`, `meta`
+- Capabilities gate features (toasts, devtools, headless, blocks)
+- `theme.json` changes are snapshot-frozen and must be explicitly accepted
+- Legacy themes without `theme.json` fall back to `layout.html`, but fail validation
 
-**Standard structure (v1):**
+**Standard structure:**
 - `layouts/`
 - `pages/`
 - `partials/`
@@ -1076,6 +1079,14 @@ public function render(string $template, array $data): string
 - `t()` translator helper
 
 ---
+
+### Content Model (Blocks MVP)
+
+- Pages can store revisions in `pages_revisions.blocks_json` (canonical format).
+- Latest revision is used for rendering; legacy `pages.content` remains fallback.
+- Block rendering is allowlisted via `BlockRegistry` with strict validation.
+- HTML rendering is done in the theme using rendered block fragments.
+- JSON output returns structured blocks for headless usage.
 
 ---
 

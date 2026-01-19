@@ -12,15 +12,19 @@ use Laas\Http\Response;
 use Laas\Http\ErrorCode;
 use Laas\Http\ErrorResponse;
 use Laas\Modules\Pages\Repository\PagesRepository;
+use Laas\Modules\Pages\Repository\PagesRevisionsRepository;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Security\HtmlSanitizer;
 use Laas\Support\AuditLogger;
 use Laas\Support\Search\Highlighter;
 use Laas\Support\Search\SearchNormalizer;
 use Laas\Support\Search\SearchQuery;
+use Laas\Support\RequestScope;
 use Laas\Ui\UiTokenMapper;
 use Laas\View\SanitizedHtml;
 use Laas\View\View;
+use Laas\Content\Blocks\BlockRegistry;
+use Laas\Content\Blocks\BlockValidationException;
 use Throwable;
 
 final class AdminPagesController
@@ -157,6 +161,7 @@ final class AdminPagesController
             return $this->notFound();
         }
 
+        $page['blocks_json'] = $this->loadBlocksJson($id);
         $status = (string) ($page['status'] ?? 'draft');
         return $this->view->render('pages/page_form.html', [
             'mode' => 'edit',
@@ -185,6 +190,41 @@ final class AdminPagesController
         $slug = trim((string) ($request->post('slug') ?? ''));
         $content = (string) ($request->post('content') ?? '');
         $status = (string) ($request->post('status') ?? 'draft');
+        $blocksRaw = trim((string) ($request->post('blocks_json') ?? ''));
+        $blocksData = null;
+
+        if ($blocksRaw !== '') {
+            $decoded = json_decode($blocksRaw, true);
+            if (!is_array($decoded)) {
+                return $this->formErrorResponse($request, [[
+                    'field' => 'blocks_json',
+                    'key' => 'validation.blocks_json_invalid',
+                ]], [
+                    'id' => $id ?? 0,
+                    'title' => $title,
+                    'slug' => $slug,
+                    'content' => $content,
+                    'status' => $status,
+                    'blocks_json' => $blocksRaw,
+                ]);
+            }
+
+            try {
+                $blocksData = $this->blocksRegistry()->normalizeBlocks($decoded);
+            } catch (BlockValidationException) {
+                return $this->formErrorResponse($request, [[
+                    'field' => 'blocks_json',
+                    'key' => 'validation.blocks_json_invalid',
+                ]], [
+                    'id' => $id ?? 0,
+                    'title' => $title,
+                    'slug' => $slug,
+                    'content' => $content,
+                    'status' => $status,
+                    'blocks_json' => $blocksRaw,
+                ]);
+            }
+        }
 
         $data = [
             'title' => $title,
@@ -218,6 +258,7 @@ final class AdminPagesController
                 'slug' => $slug,
                 'content' => $content,
                 'status' => $status,
+                'blocks_json' => $blocksRaw,
             ]);
         }
 
@@ -225,6 +266,7 @@ final class AdminPagesController
 
         $audit = new AuditLogger($this->db, $request->session());
 
+        $revisionRepo = $this->revisionsRepository();
         if ($id === null) {
             $newId = $repo->create([
                 'title' => $title,
@@ -232,6 +274,9 @@ final class AdminPagesController
                 'content' => $sanitizedContent,
                 'status' => $status,
             ]);
+            if ($blocksData !== null && $revisionRepo !== null) {
+                $revisionRepo->createRevision($newId, $blocksData, $this->currentUserId($request));
+            }
             $audit->log(
                 'pages.create',
                 'page',
@@ -251,6 +296,9 @@ final class AdminPagesController
                 'content' => $sanitizedContent,
                 'status' => $status,
             ]);
+            if ($blocksData !== null && $revisionRepo !== null) {
+                $revisionRepo->createRevision($id, $blocksData, $this->currentUserId($request));
+            }
             $audit->log(
                 'pages.update',
                 'page',
@@ -302,6 +350,10 @@ final class AdminPagesController
             return $this->notFound();
         }
 
+        $revisions = $this->revisionsRepository();
+        if ($revisions !== null) {
+            $revisions->deleteByPageId($id);
+        }
         $repo->delete($id);
         (new AuditLogger($this->db, $request->session()))->log(
             'pages.delete',
@@ -429,7 +481,42 @@ final class AdminPagesController
             'slug' => '',
             'content' => '',
             'status' => 'draft',
+            'blocks_json' => '',
         ];
+    }
+
+    private function loadBlocksJson(int $pageId): string
+    {
+        $repo = $this->revisionsRepository();
+        if ($repo === null) {
+            return '';
+        }
+        $row = $repo->findLatestByPageId($pageId);
+        if ($row === null) {
+            return '';
+        }
+        return (string) ($row['blocks_json'] ?? '');
+    }
+
+    private function revisionsRepository(): ?PagesRevisionsRepository
+    {
+        if ($this->db === null || !$this->db->healthCheck()) {
+            return null;
+        }
+        try {
+            return new PagesRevisionsRepository($this->db);
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    private function blocksRegistry(): BlockRegistry
+    {
+        $registry = RequestScope::get('blocks.registry');
+        if ($registry instanceof BlockRegistry) {
+            return $registry;
+        }
+        return BlockRegistry::default();
     }
 
     private function readId(Request $request): ?int

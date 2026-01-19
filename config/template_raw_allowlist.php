@@ -27,6 +27,7 @@ return [
         ['file' => 'themes/admin/partials/settings_form.html', 'line' => 28, 'kind' => 'raw_output'],
         ['file' => 'themes/admin/partials/settings_form.html', 'line' => 41, 'kind' => 'raw_output'],
         ['file' => 'themes/admin/partials/settings_form.html', 'line' => 54, 'kind' => 'raw_output'],
-        ['file' => 'themes/default/pages/page.html', 'line' => 7, 'kind' => 'raw_output'],
+        ['file' => 'themes/default/pages/page.html', 'line' => 10, 'kind' => 'raw_output'],
+        ['file' => 'themes/default/pages/page.html', 'line' => 14, 'kind' => 'raw_output'],
     ],
 ];

@@ -74,19 +74,20 @@ ContractRegistry::register('pages.show', [
     'methods' => ['GET'],
     'rbac' => 'public',
     'responses' => [
-        '200' => [
-            'data' => [
-                'page' => [
-                    'id' => 'int',
-                    'slug' => 'string',
-                    'title' => 'string',
-                    'content' => 'string',
-                    'updated_at' => 'string',
+            '200' => [
+                'data' => [
+                    'page' => [
+                        'id' => 'int',
+                        'slug' => 'string',
+                        'title' => 'string',
+                        'content' => 'string',
+                        'updated_at' => 'string',
+                    ],
+                    'blocks' => 'array',
                 ],
-            ],
-            'meta' => [
-                'format' => 'json',
-                'route' => 'pages.show',
+                'meta' => [
+                    'format' => 'json',
+                    'route' => 'pages.show',
             ],
         ],
         '404' => [
@@ -100,6 +101,114 @@ ContractRegistry::register('pages.show', [
     'example_ok' => [
         'fixture' => 'pages.show',
         'payload' => [
+                'data' => [
+                    'page' => [
+                        'id' => 1,
+                        'slug' => 'hello',
+                        'title' => 'Hello',
+                        'content' => 'Body',
+                        'updated_at' => '2026-01-01 00:00:00',
+                    ],
+                    'blocks' => [],
+                ],
+            'meta' => [
+                'format' => 'json',
+                'route' => 'pages.show',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('pages_v2', [
+    'route' => '/api/v2/pages',
+    'methods' => ['GET'],
+    'rbac' => 'public',
+    'responses' => [
+        '200' => [
+            'data' => [
+                'items' => [
+                    [
+                        'id' => 'int',
+                        'slug' => 'string',
+                        'title' => 'string',
+                        'updated_at' => 'string',
+                    ],
+                ],
+                'total' => 'int',
+                'locale' => 'string',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => '/api/v2/pages',
+            ],
+        ],
+        '400' => [
+            'error' => 'error.invalid_request',
+            'meta' => [
+                'format' => 'json',
+                'route' => '/api/v2/pages',
+            ],
+        ],
+    ],
+    'example_ok' => [
+        'fixture' => 'pages_v2',
+        'payload' => [
+            'data' => [
+                'items' => [
+                    [
+                        'id' => 1,
+                        'slug' => 'hello',
+                        'title' => 'Hello',
+                        'updated_at' => '2026-01-01 00:00:00',
+                    ],
+                ],
+                'total' => 1,
+                'locale' => 'en',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => '/api/v2/pages',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('page_v2_single', [
+    'route' => '/api/v2/pages/{id}',
+    'methods' => ['GET'],
+    'rbac' => 'public',
+    'responses' => [
+        '200' => [
+            'data' => [
+                'page' => [
+                    'id' => 'int',
+                    'slug' => 'string',
+                    'title' => 'string',
+                    'content' => 'string',
+                    'updated_at' => 'string',
+                ],
+                'locale' => 'string',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => '/api/v2/pages/{id}',
+            ],
+        ],
+        '404' => [
+            'error' => 'error.not_found',
+            'meta' => [
+                'format' => 'json',
+                'route' => '/api/v2/pages/{id}',
+            ],
+        ],
+    ],
+    'example_ok' => [
+        'fixture' => 'page_v2_single',
+        'payload' => [
             'data' => [
                 'page' => [
                     'id' => 1,
@@ -108,10 +217,58 @@ ContractRegistry::register('pages.show', [
                     'content' => 'Body',
                     'updated_at' => '2026-01-01 00:00:00',
                 ],
+                'locale' => 'en',
             ],
             'meta' => [
                 'format' => 'json',
-                'route' => 'pages.show',
+                'route' => '/api/v2/pages/{id}',
+                'request_id' => 'req-1',
+                'ts' => '2026-01-01T00:00:00Z',
+            ],
+        ],
+    ],
+]);
+
+ContractRegistry::register('menus_v2', [
+    'route' => '/api/v2/menus',
+    'methods' => ['GET'],
+    'rbac' => 'public',
+    'responses' => [
+        '200' => [
+            'data' => [
+                'items' => [
+                    [
+                        'id' => 'int',
+                        'name' => 'string',
+                        'title' => 'string',
+                    ],
+                ],
+                'total' => 'int',
+                'locale' => 'string',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => '/api/v2/menus',
+            ],
+        ],
+    ],
+    'example_ok' => [
+        'fixture' => 'menus_v2',
+        'payload' => [
+            'data' => [
+                'items' => [
+                    [
+                        'id' => 1,
+                        'name' => 'main',
+                        'title' => 'Main',
+                    ],
+                ],
+                'total' => 1,
+                'locale' => 'en',
+            ],
+            'meta' => [
+                'format' => 'json',
+                'route' => '/api/v2/menus',
                 'request_id' => 'req-1',
                 'ts' => '2026-01-01T00:00:00Z',
             ],

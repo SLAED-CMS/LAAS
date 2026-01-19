@@ -18,4 +18,9 @@ return [
     ['POST', '/api/v1/ai/propose', [\Laas\Modules\Api\Controller\AiController::class, 'propose']],
     ['GET', '/api/v1/ai/tools', [\Laas\Modules\Api\Controller\AiController::class, 'tools']],
     ['POST', '/api/v1/ai/run', [\Laas\Modules\Api\Controller\AiController::class, 'runTools']],
+    ['GET', '/api/v2/pages', [\Laas\Modules\Api\Controller\PagesV2Controller::class, 'index']],
+    ['GET', '/api/v2/pages/{id:\d+}', [\Laas\Modules\Api\Controller\PagesV2Controller::class, 'show']],
+    ['GET', '/api/v2/pages/by-slug/{slug:[^/]+}', [\Laas\Modules\Api\Controller\PagesV2Controller::class, 'bySlug']],
+    ['GET', '/api/v2/menus', [\Laas\Modules\Api\Controller\MenusV2Controller::class, 'index']],
+    ['GET', '/api/v2/menus/{name:[^/]+}', [\Laas\Modules\Api\Controller\MenusV2Controller::class, 'show']],
 ];

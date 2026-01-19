@@ -10,11 +10,15 @@ use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
+use Laas\Modules\Pages\Repository\PagesRevisionsRepository;
 use Laas\Modules\Pages\ViewModel\PagePublicViewModel;
 use Laas\Support\Search\Highlighter;
 use Laas\Support\Search\SearchNormalizer;
 use Laas\Support\Search\SearchQuery;
+use Laas\Support\RequestScope;
 use Laas\View\View;
+use Laas\Content\Blocks\BlockRegistry;
+use Laas\Content\Blocks\ThemeContext;
 use Throwable;
 
 final class PagesController
@@ -67,15 +71,25 @@ final class PagesController
         }
 
         $vm = PagePublicViewModel::fromArray($page);
+        $blocks = $this->loadLatestBlocks((int) ($page['id'] ?? 0));
+        $blocksHtml = $this->blocksRegistry()->renderHtmlBlocks($blocks, new ThemeContext(
+            $this->view->getThemeName(),
+            $this->view->getLocale()
+        ));
+        $blocksJson = $this->blocksRegistry()->renderJsonBlocks($blocks);
         if ($this->shouldJson($request)) {
             return ContractResponse::ok([
                 'page' => $this->jsonPage($page),
+                'blocks' => $blocksJson,
             ], [
                 'route' => 'pages.show',
             ]);
         }
 
-        return $this->view->render('pages/page.html', $vm);
+        $viewData = $vm->toArray();
+        $viewData['blocks_html'] = $blocksHtml;
+        $viewData['blocks_json'] = $blocksJson;
+        return $this->view->render('pages/page.html', $viewData);
     }
 
     public function search(Request $request): Response
@@ -185,5 +199,32 @@ final class PagesController
             'content' => (string) ($page['content'] ?? ''),
             'updated_at' => (string) ($page['updated_at'] ?? ''),
         ];
+    }
+
+    /**
+     * @return array<int, array{type: string, data: array<string, mixed>}>
+     */
+    private function loadLatestBlocks(int $pageId): array
+    {
+        if ($pageId <= 0 || $this->db === null || !$this->db->healthCheck()) {
+            return [];
+        }
+
+        try {
+            $repo = new PagesRevisionsRepository($this->db);
+            $blocks = $repo->findLatestBlocksByPageId($pageId);
+            return is_array($blocks) ? $blocks : [];
+        } catch (Throwable) {
+            return [];
+        }
+    }
+
+    private function blocksRegistry(): BlockRegistry
+    {
+        $registry = RequestScope::get('blocks.registry');
+        if ($registry instanceof BlockRegistry) {
+            return $registry;
+        }
+        return BlockRegistry::default();
     }
 }
