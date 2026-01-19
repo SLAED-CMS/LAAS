@@ -2310,6 +2310,7 @@ $config = $container->get('config');
 - MenusService for admin menu CRUD and menu item loading.
 - SettingsService for admin settings read/write and normalization.
 - ApiTokensService for admin API token lifecycle (list/create/rotate/revoke) and normalization.
+- AdminSearchService for grouped admin search results (pages/media/users/menus/modules + optional ops/security).
 
 **Why system services matter:**
 - System-level flows (ops, security, health) need the same service boundary as content.

@@ -13,6 +13,7 @@
   - Settings module migrated to SettingsService
   - Admin Ops migrated to OpsService
   - ApiTokens moved to service layer (DI)
+  - Admin search moved to service layer + grouped results
 
 - v4.0.1: Admin UI Polish (Released 2026-01-19)
   - Admin UI: Bootstrap 5 wired + modern layout for /admin/ai and page editor AI panel

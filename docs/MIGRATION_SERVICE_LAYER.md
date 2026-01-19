@@ -85,6 +85,12 @@ $tokens = $apiTokensService->listTokens($userId);
 $created = $apiTokensService->createToken($userId, $name, $scopes, $expiresAt);
 ```
 
+Admin search example (grouped results):
+```php
+// controller
+$results = $adminSearchService->search($query, $options);
+```
+
 ## Anti-patterns (do not do this)
 - `new SomeService()` inside controllers
 - business rules implemented in controllers

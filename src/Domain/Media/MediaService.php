@@ -100,6 +100,23 @@ class MediaService
         return $this->repository()->findById($id);
     }
 
+    /** @return array<int, array<string, mixed>> */
+    public function search(string $query, int $limit = 10, int $offset = 0): array
+    {
+        $query = trim($query);
+        if ($query === '') {
+            return [];
+        }
+        if ($limit <= 0) {
+            throw new InvalidArgumentException('Limit must be positive.');
+        }
+        if ($offset < 0) {
+            throw new InvalidArgumentException('Offset must be zero or positive.');
+        }
+
+        return $this->repository()->search($query, $limit, $offset);
+    }
+
     /** @param array<string, mixed> $file */
     private function normalizeFile(array $file): array
     {

@@ -19,7 +19,7 @@
   <main class="container-xxl pb-5">
     <div id="admin-search-results">
       {% if admin_search_results %}
-        {% include "search/results_partial.html" %}
+        {% include "partials/admin_search_results.html" %}
       {% endif %}
     </div>
     {% block content %}{% endblock %}

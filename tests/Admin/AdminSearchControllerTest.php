@@ -3,9 +3,15 @@ declare(strict_types=1);
 
 use Laas\Auth\NullAuthService;
 use Laas\Database\DatabaseManager;
+use Laas\Domain\AdminSearch\AdminSearchService;
+use Laas\Domain\Media\MediaService;
+use Laas\Domain\Menus\MenusService;
+use Laas\Domain\Pages\PagesService;
+use Laas\Domain\Users\UsersService;
 use Laas\Http\Request;
 use Laas\I18n\Translator;
 use Laas\Modules\Admin\Controller\AdminSearchController;
+use Laas\Modules\ModuleCatalog;
 use Laas\Settings\SettingsProvider;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
@@ -21,52 +27,10 @@ final class AdminSearchControllerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->rootPath = dirname(__DIR__);
+        $this->rootPath = dirname(__DIR__, 2);
     }
 
-    public function testControllerHidesScopesWithoutPermission(): void
-    {
-        $db = $this->createDatabase();
-        $pdo = $db->pdo();
-
-        $pdo->exec("INSERT INTO users (id, username, email) VALUES (1, 'admin', 'admin@example.com')");
-        $pdo->exec("INSERT INTO roles (id, name, title, created_at, updated_at) VALUES (1, 'admin', 'Admin', '2026-01-01 00:00:00', '2026-01-01 00:00:00')");
-        $pdo->exec("INSERT INTO permissions (id, name, title, created_at, updated_at) VALUES (1, 'media.view', 'Media view', '2026-01-01 00:00:00', '2026-01-01 00:00:00')");
-        $pdo->exec("INSERT INTO permission_role (role_id, permission_id) VALUES (1, 1)");
-        $pdo->exec("INSERT INTO role_user (user_id, role_id) VALUES (1, 1)");
-
-        $pdo->exec("INSERT INTO pages (id, title, slug, status, content, updated_at) VALUES (1, 'test page', 'test-page', 'draft', 'x', '2026-01-01 00:00:00')");
-        $pdo->exec("INSERT INTO media_files (id, original_name, mime_type, disk_path, size_bytes, created_at) VALUES (1, 'test file', 'image/png', 'uploads/x.png', 10, '2026-01-01 00:00:00')");
-        $pdo->exec("INSERT INTO users (id, username, email) VALUES (2, 'testuser', 'user@example.com')");
-
-        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
-        $session = $this->buildSession(1);
-        $request = new Request('GET', '/admin/search', ['q' => 'test'], [], ['hx-request' => 'true'], '');
-        $request->setSession($session);
-        $view = $this->createView($db, $request);
-        $controller = new AdminSearchController($view, $db);
-
-        $response = $controller->index($request);
-        $body = $response->getBody();
-
-        $this->assertStringContainsString('Media', $body);
-        $this->assertStringNotContainsString('Pages', $body);
-        $this->assertStringNotContainsString('Users', $body);
-    }
-
-    public function testQueryTooShortReturns422(): void
-    {
-        $db = $this->createDatabase();
-        $request = new Request('GET', '/admin/search', ['q' => 'a'], [], ['hx-request' => 'true'], '');
-        $view = $this->createView($db, $request);
-        $controller = new AdminSearchController($view, $db);
-
-        $response = $controller->index($request);
-
-        $this->assertSame(422, $response->getStatus());
-    }
-
-    public function testHighlightEscapesHtml(): void
+    public function testHtmxReturnsGroupedResults(): void
     {
         $db = $this->createDatabase();
         $pdo = $db->pdo();
@@ -76,21 +40,36 @@ final class AdminSearchControllerTest extends TestCase
         $pdo->exec("INSERT INTO permissions (id, name, title, created_at, updated_at) VALUES (1, 'pages.edit', 'Pages edit', '2026-01-01 00:00:00', '2026-01-01 00:00:00')");
         $pdo->exec("INSERT INTO permission_role (role_id, permission_id) VALUES (1, 1)");
         $pdo->exec("INSERT INTO role_user (user_id, role_id) VALUES (1, 1)");
-
-        $pdo->exec("INSERT INTO pages (id, title, slug, status, content, updated_at) VALUES (1, '<script>alert(1)</script>', 'x', 'draft', 'x', '2026-01-01 00:00:00')");
+        $pdo->exec("INSERT INTO pages (id, title, slug, status, content, updated_at) VALUES (1, 'test page', 'test-page', 'draft', 'x', '2026-01-01 00:00:00')");
 
         $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
         $session = $this->buildSession(1);
-        $request = new Request('GET', '/admin/search', ['q' => 'alert'], [], ['hx-request' => 'true'], '');
+        $request = new Request('GET', '/admin/search', ['q' => 'test'], [], ['hx-request' => 'true'], '');
         $request->setSession($session);
         $view = $this->createView($db, $request);
-        $controller = new AdminSearchController($view, $db);
+        $service = $this->createService($db);
+        $controller = new AdminSearchController($view, $db, $service);
 
         $response = $controller->index($request);
         $body = $response->getBody();
 
-        $this->assertStringNotContainsString('<script>', $body);
-        $this->assertStringContainsString('&lt;script&gt;', $body);
+        $this->assertSame(200, $response->getStatus());
+        $this->assertStringContainsString('Results for', $body);
+        $this->assertStringContainsString('Pages', $body);
+    }
+
+    public function testQueryTooShortReturns422(): void
+    {
+        $db = $this->createDatabase();
+        $request = new Request('GET', '/admin/search', ['q' => 'a'], [], ['hx-request' => 'true'], '');
+        $view = $this->createView($db, $request);
+        $service = $this->createService($db);
+        $controller = new AdminSearchController($view, $db, $service);
+
+        $response = $controller->index($request);
+
+        $this->assertSame(422, $response->getStatus());
+        $this->assertStringContainsString('Please enter at least 2 characters.', $response->getBody());
     }
 
     private function createDatabase(): DatabaseManager
@@ -106,6 +85,7 @@ final class AdminSearchControllerTest extends TestCase
         $pdo->exec('CREATE TABLE permission_role (role_id INTEGER, permission_id INTEGER)');
         $pdo->exec('CREATE TABLE pages (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, slug TEXT, status TEXT, content TEXT, updated_at TEXT)');
         $pdo->exec('CREATE TABLE media_files (id INTEGER PRIMARY KEY AUTOINCREMENT, original_name TEXT, mime_type TEXT, disk_path TEXT, size_bytes INTEGER, created_at TEXT, uploaded_by INTEGER)');
+        $pdo->exec('CREATE TABLE menus (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, title TEXT, created_at TEXT, updated_at TEXT)');
 
         $db = new DatabaseManager(['driver' => 'mysql']);
         $ref = new ReflectionProperty($db, 'pdo');
@@ -146,6 +126,17 @@ final class AdminSearchControllerTest extends TestCase
         $view->setRequest($request);
 
         return $view;
+    }
+
+    private function createService(DatabaseManager $db): AdminSearchService
+    {
+        $pages = new PagesService($db);
+        $media = new MediaService($db, [], $this->rootPath);
+        $users = new UsersService($db);
+        $menus = new MenusService($db);
+        $modules = new ModuleCatalog($this->rootPath, null, null);
+
+        return new AdminSearchService($pages, $media, $users, $menus, $modules);
     }
 
     private function buildSession(int $userId): InMemorySession

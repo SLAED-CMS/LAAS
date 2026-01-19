@@ -48,6 +48,7 @@ use Laas\Theme\ThemeValidator;
 use Laas\Perf\PerfBudgetEnforcer;
 use Laas\Assets\AssetsManager;
 use Laas\Core\Container\Container;
+use Laas\Domain\AdminSearch\AdminSearchService;
 use Laas\Domain\ApiTokens\ApiTokensService;
 use Laas\Domain\Media\MediaService;
 use Laas\Domain\Menus\MenusService;
@@ -397,6 +398,24 @@ final class Kernel
                 $this->database(),
                 $config,
                 $rootPath,
+                $securityReports
+            );
+        });
+
+        $this->container->singleton(AdminSearchService::class, function () use ($config, $rootPath): AdminSearchService {
+            $pages = $this->container->get(PagesService::class);
+            $media = $this->container->get(MediaService::class);
+            $users = $this->container->get(UsersService::class);
+            $menus = $this->container->get(MenusService::class);
+            $securityReports = $this->container->get(SecurityReportsService::class);
+            $moduleCatalog = new ModuleCatalog($rootPath, $this->database(), $config['modules'] ?? null);
+
+            return new AdminSearchService(
+                $pages,
+                $media,
+                $users,
+                $menus,
+                $moduleCatalog,
                 $securityReports
             );
         });

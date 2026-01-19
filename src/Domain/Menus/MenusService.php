@@ -26,6 +26,24 @@ class MenusService
         return array_map([$this, 'normalizeMenu'], $rows);
     }
 
+    /** @return array<int, array<string, mixed>> */
+    public function search(string $query, int $limit = 10, int $offset = 0): array
+    {
+        $query = trim($query);
+        if ($query === '') {
+            return [];
+        }
+        if ($limit <= 0) {
+            throw new InvalidArgumentException('Limit must be positive.');
+        }
+        if ($offset < 0) {
+            throw new InvalidArgumentException('Offset must be zero or positive.');
+        }
+
+        $rows = $this->menusRepository()->searchByQuery($query, $limit, $offset);
+        return array_map([$this, 'normalizeMenu'], $rows);
+    }
+
     /** @return array<string, mixed>|null */
     public function find(int $id): ?array
     {

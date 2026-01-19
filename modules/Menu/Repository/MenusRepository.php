@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Laas\Modules\Menu\Repository;
 
 use Laas\Database\DatabaseManager;
+use Laas\Support\Search\LikeEscaper;
 use PDO;
 
 final class MenusRepository
@@ -38,6 +39,27 @@ final class MenusRepository
     {
         $stmt = $this->pdo->query('SELECT * FROM menus ORDER BY name ASC');
         $rows = $stmt->fetchAll();
+        return is_array($rows) ? $rows : [];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function searchByQuery(string $query, int $limit, int $offset): array
+    {
+        $query = trim($query);
+        if ($query === '') {
+            return [];
+        }
+
+        $escaped = LikeEscaper::escape($query);
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM menus WHERE name LIKE :q ESCAPE \'\\\' OR title LIKE :q ESCAPE \'\\\' ORDER BY name ASC LIMIT :limit OFFSET :offset'
+        );
+        $stmt->bindValue('q', '%' . $escaped . '%');
+        $stmt->bindValue('limit', max(1, min(50, $limit)), PDO::PARAM_INT);
+        $stmt->bindValue('offset', max(0, $offset), PDO::PARAM_INT);
+        $stmt->execute();
+        $rows = $stmt->fetchAll();
+
         return is_array($rows) ? $rows : [];
     }
 

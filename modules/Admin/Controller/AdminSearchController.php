@@ -3,16 +3,12 @@ declare(strict_types=1);
 
 namespace Laas\Modules\Admin\Controller;
 
+use Laas\Core\Container\Container;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
-use Laas\Database\Repositories\UsersRepository;
+use Laas\Domain\AdminSearch\AdminSearchService;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\Modules\Media\Repository\MediaRepository;
-use Laas\Modules\Pages\Repository\PagesRepository;
-use Laas\Support\Search\Highlighter;
-use Laas\Support\Search\SearchNormalizer;
-use Laas\Support\Search\SearchQuery;
 use Laas\View\View;
 use Throwable;
 
@@ -20,179 +16,76 @@ final class AdminSearchController
 {
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null
+        private ?DatabaseManager $db = null,
+        private ?AdminSearchService $searchService = null,
+        private ?Container $container = null
     ) {
     }
 
     public function index(Request $request): Response
     {
-        $query = SearchNormalizer::normalize((string) ($request->query('q') ?? ''));
-        if (SearchNormalizer::isTooShort($query)) {
-            $message = $this->view->translate('search.too_short');
-            if ($request->isHtmx()) {
-                $response = $this->view->render('partials/messages.html', [
-                    'errors' => [$message],
-                ], 422, [], [
-                    'theme' => 'admin',
-                    'render_partial' => true,
-                ]);
-                return $response->withHeader('HX-Retarget', '#page-messages');
-            }
-
+        $service = $this->service();
+        if ($service === null) {
             return $this->view->render('search/index.html', [
-                'errors' => [$message],
-                'q' => $query,
+                'errors' => [$this->view->translate('error.service_unavailable')],
+                'q' => '',
                 'admin_search_results' => true,
-                'search' => $this->emptySearch($query),
-            ], 422, [], [
+                'search' => $service !== null ? $service->search('') : $this->emptySearch(),
+            ], 503, [], [
                 'theme' => 'admin',
             ]);
         }
 
-        $search = $this->buildSearch($request, $query);
+        $query = (string) ($request->query('q') ?? '');
+        $options = $this->buildOptions($request);
+        $search = $service->search($query, $options);
+        $status = $search['reason'] === 'too_short' ? 422 : 200;
+
         $data = [
-            'q' => $query,
-            'errors' => [],
+            'q' => $search['q'] ?? '',
+            'errors' => $search['reason'] === 'too_short' ? [$this->view->translate('search.too_short')] : [],
             'admin_search_results' => true,
             'search' => $search,
         ];
 
         if ($request->isHtmx()) {
-            return $this->view->render('search/results_partial.html', $data, 200, [], [
+            return $this->view->render('partials/admin_search_results.html', $data, $status, [], [
                 'theme' => 'admin',
                 'render_partial' => true,
             ]);
         }
 
-        return $this->view->render('search/index.html', $data, 200, [], [
+        return $this->view->render('search/index.html', $data, $status, [], [
             'theme' => 'admin',
         ]);
     }
 
-    private function buildSearch(Request $request, string $query): array
+    /** @return array<string, mixed> */
+    private function buildOptions(Request $request): array
     {
-        $result = $this->emptySearch($query);
-        if ($query === '') {
-            return $result;
-        }
-
-        $db = $this->db;
-        if ($db === null || !$db->healthCheck()) {
-            return $result;
-        }
-
         $userId = $this->currentUserId($request);
         $rbac = $this->getRbacRepository();
+
         if ($userId === null || $rbac === null) {
-            return $result;
+            return [
+                'can_pages' => false,
+                'can_media' => false,
+                'can_users' => false,
+                'can_menus' => false,
+                'can_modules' => false,
+                'can_security_reports' => false,
+                'can_ops' => false,
+            ];
         }
 
-        $canPages = $this->canAny($rbac, $userId, ['pages.edit', 'pages.view']);
-        $canMedia = $this->canAny($rbac, $userId, ['media.view']);
-        $canUsers = $this->canAny($rbac, $userId, ['users.manage', 'users.view']);
-
-        $limit = 10;
-        $searchQuery = new SearchQuery($query, $limit, 1, 'admin');
-
-        if ($canPages) {
-            $repo = $this->getPagesRepository();
-            if ($repo !== null) {
-                $rows = $repo->search($searchQuery->q, $searchQuery->limit, $searchQuery->offset, null);
-                foreach ($rows as $row) {
-                    $result['pages'][] = $this->mapPageResult($row, $searchQuery->q);
-                }
-            }
-        }
-
-        if ($canMedia) {
-            $repo = $this->getMediaRepository();
-            if ($repo !== null) {
-                $rows = $repo->search($searchQuery->q, $searchQuery->limit, $searchQuery->offset);
-                foreach ($rows as $row) {
-                    $result['media'][] = $this->mapMediaResult($row, $searchQuery->q);
-                }
-            }
-        }
-
-        if ($canUsers) {
-            $repo = $this->getUsersRepository();
-            if ($repo !== null) {
-                $rows = $repo->search($searchQuery->q, $searchQuery->limit, $searchQuery->offset);
-                foreach ($rows as $row) {
-                    $result['users'][] = $this->mapUserResult($row, $searchQuery->q);
-                }
-            }
-        }
-
-        $result['has_results'] = $result['pages'] !== [] || $result['media'] !== [] || $result['users'] !== [];
-        $result['scopes'] = [
-            ['key' => 'pages', 'label' => 'admin.search.scope.pages', 'items' => $result['pages']],
-            ['key' => 'media', 'label' => 'admin.search.scope.media', 'items' => $result['media']],
-            ['key' => 'users', 'label' => 'admin.search.scope.users', 'items' => $result['users']],
-        ];
-
-        return $result;
-    }
-
-    private function emptySearch(string $query): array
-    {
         return [
-            'query' => $query,
-            'pages' => [],
-            'media' => [],
-            'users' => [],
-            'scopes' => [],
-            'has_results' => false,
-        ];
-    }
-
-    private function mapPageResult(array $row, string $query): array
-    {
-        $id = (int) ($row['id'] ?? 0);
-        $title = (string) ($row['title'] ?? '');
-        $slug = (string) ($row['slug'] ?? '');
-        $status = (string) ($row['status'] ?? '');
-
-        return [
-            'id' => $id,
-            'title' => $title,
-            'slug' => $slug,
-            'status' => $status,
-            'url' => $id > 0 ? '/admin/pages/' . $id . '/edit' : '/admin/pages',
-            'title_segments' => Highlighter::segments($title, $query),
-            'slug_segments' => Highlighter::segments($slug, $query),
-        ];
-    }
-
-    private function mapMediaResult(array $row, string $query): array
-    {
-        $id = (int) ($row['id'] ?? 0);
-        $name = (string) ($row['original_name'] ?? '');
-        $mime = (string) ($row['mime_type'] ?? '');
-
-        return [
-            'id' => $id,
-            'name' => $name,
-            'mime' => $mime,
-            'url' => $id > 0 ? '/media/' . $id . '/file' : '#',
-            'name_segments' => Highlighter::segments($name, $query),
-            'mime_segments' => Highlighter::segments($mime, $query),
-        ];
-    }
-
-    private function mapUserResult(array $row, string $query): array
-    {
-        $id = (int) ($row['id'] ?? 0);
-        $username = (string) ($row['username'] ?? '');
-        $email = (string) ($row['email'] ?? '');
-
-        return [
-            'id' => $id,
-            'username' => $username,
-            'email' => $email,
-            'url' => $id > 0 ? '/admin/users#user-' . $id : '/admin/users',
-            'username_segments' => Highlighter::segments($username, $query),
-            'email_segments' => Highlighter::segments($email, $query),
+            'can_pages' => $this->canAny($rbac, $userId, ['pages.edit', 'pages.view']),
+            'can_media' => $this->canAny($rbac, $userId, ['media.view']),
+            'can_users' => $this->canAny($rbac, $userId, ['users.manage', 'users.view']),
+            'can_menus' => $this->canAny($rbac, $userId, ['menus.edit']),
+            'can_modules' => $this->canAny($rbac, $userId, ['admin.modules.manage']),
+            'can_security_reports' => $this->canAny($rbac, $userId, ['security_reports.view']),
+            'can_ops' => $this->canAny($rbac, $userId, ['ops.view']),
         ];
     }
 
@@ -210,46 +103,8 @@ final class AdminSearchController
         if (is_string($raw) && ctype_digit($raw)) {
             return (int) $raw;
         }
+
         return null;
-    }
-
-    private function getPagesRepository(): ?PagesRepository
-    {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
-        }
-
-        try {
-            return new PagesRepository($this->db);
-        } catch (Throwable) {
-            return null;
-        }
-    }
-
-    private function getMediaRepository(): ?MediaRepository
-    {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
-        }
-
-        try {
-            return new MediaRepository($this->db);
-        } catch (Throwable) {
-            return null;
-        }
-    }
-
-    private function getUsersRepository(): ?UsersRepository
-    {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
-        }
-
-        try {
-            return new UsersRepository($this->db->pdo());
-        } catch (Throwable) {
-            return null;
-        }
     }
 
     private function getRbacRepository(): ?RbacRepository
@@ -278,5 +133,37 @@ final class AdminSearchController
         }
 
         return false;
+    }
+
+    private function service(): ?AdminSearchService
+    {
+        if ($this->searchService !== null) {
+            return $this->searchService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(AdminSearchService::class);
+                if ($service instanceof AdminSearchService) {
+                    $this->searchService = $service;
+                    return $this->searchService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    /** @return array<string, mixed> */
+    private function emptySearch(): array
+    {
+        return [
+            'q' => '',
+            'total' => 0,
+            'groups' => [],
+            'reason' => null,
+        ];
     }
 }
