@@ -64,3 +64,61 @@
   min-width: 4.5rem;
   justify-content: flex-end;
 }
+
+.nav-modules-menu {
+  min-width: 420px;
+  padding: 0.25rem 0;
+}
+
+.nav-modules-search input {
+  width: 100%;
+}
+
+.nav-modules-section {
+  padding-bottom: 0.25rem;
+}
+
+.nav-modules-section-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0 0.5rem;
+}
+
+.nav-modules-item {
+  border-radius: 0.5rem;
+}
+
+.nav-modules-link {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--bs-body-color);
+}
+
+.nav-modules-link:hover,
+.nav-modules-link:focus {
+  color: var(--bs-primary);
+}
+
+.nav-modules-title {
+  font-weight: 600;
+}
+
+.nav-modules-badge {
+  font-size: 0.65rem;
+  letter-spacing: 0.02em;
+}
+
+.nav-modules-empty {
+  padding: 0.5rem 1rem;
+}
+
+.nav-modules-actions .btn {
+  line-height: 1;
+}
+
+@media (max-width: 576px) {
+  .nav-modules-menu {
+    min-width: 100%;
+  }
+}

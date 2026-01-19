@@ -22,6 +22,13 @@ final class ModuleCatalogTest extends TestCase
             $this->assertArrayHasKey('module_id', $module);
             $this->assertArrayHasKey('type', $module);
             $this->assertArrayHasKey('enabled', $module);
+            $this->assertArrayHasKey('group', $module);
+            $this->assertArrayHasKey('pinned', $module);
+            $this->assertArrayHasKey('nav_priority', $module);
+            $this->assertArrayHasKey('nav_label', $module);
+            $this->assertArrayHasKey('nav_badge', $module);
+            $this->assertArrayHasKey('nav_badge_tone', $module);
+            $this->assertArrayHasKey('nav_search', $module);
             $this->assertArrayHasKey('admin_url', $module);
             $this->assertArrayHasKey('details_anchor', $module);
             $this->assertArrayHasKey('details_url', $module);
@@ -61,6 +68,7 @@ final class ModuleCatalogTest extends TestCase
         $this->assertNotEmpty($ai['actions']);
         $this->assertSame('Open', $ai['actions'][0]['label'] ?? null);
         $this->assertSame('/admin/ai', $ai['actions'][0]['url'] ?? null);
+        $this->assertSame('demo', $ai['group'] ?? null);
     }
 
     public function testUiModulesHaveAdminUrls(): void
@@ -75,6 +83,43 @@ final class ModuleCatalogTest extends TestCase
         $this->assertSame('/admin/users', $this->findAdminUrl($modules, 'Users'));
     }
 
+    public function testNavSortingHonorsGroupAndPinned(): void
+    {
+        $root = SecurityTestHelper::rootPath();
+        $navConfig = [
+            'pinned' => ['Media'],
+            'modules' => [
+                'Users' => ['group' => 'core', 'nav_priority' => 20],
+                'Admin' => ['group' => 'system', 'nav_priority' => 10],
+                'Pages' => ['group' => 'content', 'nav_priority' => 20],
+                'Media' => ['group' => 'content', 'nav_priority' => 10, 'pinned' => true],
+            ],
+        ];
+
+        $catalog = new ModuleCatalog($root, null, null, $navConfig);
+        $modules = $catalog->listNav();
+
+        $this->assertLessThan($this->indexOfModule($modules, 'Admin'), $this->indexOfModule($modules, 'Users'));
+        $this->assertLessThan($this->indexOfModule($modules, 'Pages'), $this->indexOfModule($modules, 'Media'));
+    }
+
+    public function testNavActionsRespectAllowlist(): void
+    {
+        $root = SecurityTestHelper::rootPath();
+        $navConfig = [
+            'actions_allowlist' => ['/admin/pages', '/admin/modules'],
+        ];
+
+        $catalog = new ModuleCatalog($root, null, null, $navConfig);
+        $modules = $catalog->listAll();
+        $pages = $this->findModule($modules, 'Pages');
+
+        $this->assertIsArray($pages);
+        $labels = array_map(static fn(array $action): string => (string) ($action['label'] ?? ''), $pages['actions_nav'] ?? []);
+        $this->assertContains('Open', $labels);
+        $this->assertNotContains('New', $labels);
+    }
+
     private function findAdminUrl(array $modules, string $name): ?string
     {
         foreach ($modules as $module) {
@@ -84,5 +129,27 @@ final class ModuleCatalogTest extends TestCase
         }
 
         return null;
+    }
+
+    private function findModule(array $modules, string $name): ?array
+    {
+        foreach ($modules as $module) {
+            if (($module['name'] ?? null) === $name) {
+                return $module;
+            }
+        }
+
+        return null;
+    }
+
+    private function indexOfModule(array $modules, string $name): int
+    {
+        foreach ($modules as $index => $module) {
+            if (($module['name'] ?? null) === $name) {
+                return (int) $index;
+            }
+        }
+
+        return -1;
     }
 }

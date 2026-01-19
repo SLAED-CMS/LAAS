@@ -14,7 +14,8 @@ final class ModuleCatalog
     public function __construct(
         private string $rootPath,
         private ?DatabaseManager $db = null,
-        private ?array $configModules = null
+        private ?array $configModules = null,
+        private ?array $navConfig = null
     ) {
     }
 
@@ -23,8 +24,9 @@ final class ModuleCatalog
      */
     public function listAll(): array
     {
-        if (RequestScope::has(self::CACHE_KEY)) {
-            $cached = RequestScope::get(self::CACHE_KEY);
+        $cacheKey = $this->cacheKey();
+        if (RequestScope::has($cacheKey)) {
+            $cached = RequestScope::get($cacheKey);
             if (is_array($cached)) {
                 return $cached;
             }
@@ -79,7 +81,7 @@ final class ModuleCatalog
                 $installedAt = is_string($dbModules[$name]['installed_at'] ?? null) ? (string) $dbModules[$name]['installed_at'] : null;
                 $updatedAt = is_string($dbModules[$name]['updated_at'] ?? null) ? (string) $dbModules[$name]['updated_at'] : null;
             }
-            $modules[] = [
+            $modules[] = $this->applyNavMeta([
                 'name' => $name,
                 'key' => $name,
                 'module_id' => $moduleId,
@@ -101,7 +103,7 @@ final class ModuleCatalog
                 'type_is_internal' => $type === 'internal',
                 'type_is_admin' => $type === 'admin',
                 'type_is_api' => $type === 'api',
-            ];
+            ]);
         }
 
         $virtuals = $this->virtualModules();
@@ -120,15 +122,34 @@ final class ModuleCatalog
                 if ($name === '' || isset($existing[$name])) {
                     continue;
                 }
-                $modules[] = $virtual;
+                $modules[] = $this->applyNavMeta($virtual);
             }
         }
 
         usort($modules, static fn(array $a, array $b): int => strcmp((string) $a['name'], (string) $b['name']));
 
-        RequestScope::set(self::CACHE_KEY, $modules);
+        RequestScope::set($cacheKey, $modules);
 
         return $modules;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function listNav(): array
+    {
+        $modules = $this->listAll();
+        usort($modules, fn(array $a, array $b): int => $this->compareNavModules($a, $b));
+        return $modules;
+    }
+
+    /**
+     * @return array<int, array{key: string, title: string, items: array<int, array<string, mixed>>}>
+     */
+    public function listNavSections(): array
+    {
+        $modules = $this->listNav();
+        return $this->buildNavSections($modules);
     }
 
     private function normalizeType(string $type): string
@@ -260,7 +281,6 @@ final class ModuleCatalog
             'virtual' => true,
             'icon' => 'robot',
             'actions' => $actions,
-            'actions_nav' => array_slice($actions, 0, 2),
             'version' => null,
             'installed_at' => null,
             'updated_at' => null,
@@ -374,5 +394,350 @@ final class ModuleCatalog
         $normalized = preg_replace('/[^a-z0-9]+/', '-', $name);
         $normalized = trim($normalized ?? $name, '-');
         return $normalized !== '' ? $normalized : $name;
+    }
+
+    private function cacheKey(): string
+    {
+        $modulesSignature = $this->configModules !== null ? md5(serialize($this->configModules)) : 'default';
+        $navSignature = $this->navConfig !== null ? md5(serialize($this->navConfig)) : 'default';
+        return self::CACHE_KEY . '.' . $modulesSignature . '.' . $navSignature;
+    }
+
+    /**
+     * @param array<string, mixed> $module
+     * @return array<string, mixed>
+     */
+    private function applyNavMeta(array $module): array
+    {
+        $navConfig = $this->loadNavConfig();
+        $name = (string) ($module['name'] ?? '');
+        $moduleConfig = $this->resolveNavConfig($navConfig, $name);
+
+        $group = $this->normalizeNavGroup((string) ($moduleConfig['group'] ?? $this->inferNavGroup($module)));
+        $pinned = (bool) ($moduleConfig['pinned'] ?? $this->isPinnedFromConfig($navConfig, $name));
+        $navPriority = (int) ($moduleConfig['nav_priority'] ?? 100);
+        $navLabel = (string) ($moduleConfig['nav_label'] ?? $name);
+        $navBadge = (string) ($moduleConfig['nav_badge'] ?? $this->resolveNavBadge($module));
+        $navBadgeTone = (string) ($moduleConfig['nav_badge_tone'] ?? $this->resolveNavBadgeTone($module, $navBadge));
+        $navActions = $this->resolveNavActions($module, $moduleConfig, $navConfig);
+
+        $search = trim(strtolower(
+            $this->normalizeKey($name)
+            . ' '
+            . $name
+            . ' '
+            . $navLabel
+            . ' '
+            . (string) ($module['notes'] ?? '')
+        ));
+
+        $module['group'] = $group;
+        $module['pinned'] = $pinned;
+        $module['nav_priority'] = $navPriority;
+        $module['nav_label'] = $navLabel;
+        $module['nav_badge'] = $navBadge;
+        $module['nav_badge_tone'] = $navBadgeTone;
+        $module['actions_nav'] = $navActions;
+        $module['nav_search'] = $search;
+
+        return $module;
+    }
+
+    private function compareNavModules(array $a, array $b): int
+    {
+        $groupA = $this->normalizeNavGroup((string) ($a['group'] ?? 'system'));
+        $groupB = $this->normalizeNavGroup((string) ($b['group'] ?? 'system'));
+        $groupRank = $this->navGroupRank($groupA) <=> $this->navGroupRank($groupB);
+        if ($groupRank !== 0) {
+            return $groupRank;
+        }
+
+        $pinnedA = !empty($a['pinned']);
+        $pinnedB = !empty($b['pinned']);
+        if ($pinnedA !== $pinnedB) {
+            return $pinnedA ? -1 : 1;
+        }
+
+        $priorityA = (int) ($a['nav_priority'] ?? 100);
+        $priorityB = (int) ($b['nav_priority'] ?? 100);
+        if ($priorityA !== $priorityB) {
+            return $priorityA <=> $priorityB;
+        }
+
+        return strcmp((string) ($a['name'] ?? ''), (string) ($b['name'] ?? ''));
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $modules
+     * @return array<int, array{key: string, title: string, items: array<int, array<string, mixed>>}>
+     */
+    private function buildNavSections(array $modules): array
+    {
+        $sections = [
+            'pinned' => ['key' => 'pinned', 'title' => 'Pinned', 'items' => []],
+            'core' => ['key' => 'core', 'title' => 'Core', 'items' => []],
+            'content' => ['key' => 'content', 'title' => 'Content', 'items' => []],
+            'system' => ['key' => 'system', 'title' => 'System', 'items' => []],
+            'dev' => ['key' => 'dev', 'title' => 'Dev', 'items' => []],
+            'demo' => ['key' => 'demo', 'title' => 'Demo', 'items' => []],
+        ];
+
+        foreach ($modules as $module) {
+            if (!is_array($module)) {
+                continue;
+            }
+            if (!empty($module['pinned'])) {
+                $sections['pinned']['items'][] = $module;
+                continue;
+            }
+
+            $group = $this->normalizeNavGroup((string) ($module['group'] ?? 'system'));
+            $sectionKey = $this->resolveSectionKey($group);
+            if (!isset($sections[$sectionKey])) {
+                $sections[$sectionKey] = ['key' => $sectionKey, 'title' => ucfirst($sectionKey), 'items' => []];
+            }
+            $sections[$sectionKey]['items'][] = $module;
+        }
+
+        $ordered = [];
+        foreach (['pinned', 'core', 'content', 'system', 'dev', 'demo'] as $key) {
+            if ($key === 'demo' && empty($sections[$key]['items'])) {
+                continue;
+            }
+            $ordered[] = $sections[$key];
+        }
+
+        return $ordered;
+    }
+
+    private function resolveSectionKey(string $group): string
+    {
+        return match ($group) {
+            'api', 'internal' => 'system',
+            default => $group,
+        };
+    }
+
+    private function loadNavConfig(): array
+    {
+        $config = $this->navConfig;
+        if ($config === null) {
+            $configPath = $this->rootPath . '/config/modules_nav.php';
+            $configPath = realpath($configPath) ?: $configPath;
+            if (is_file($configPath)) {
+                $config = require $configPath;
+            }
+        }
+
+        return is_array($config) ? $config : [];
+    }
+
+    private function resolveNavConfig(array $navConfig, string $name): array
+    {
+        if (!isset($navConfig['modules']) || !is_array($navConfig['modules'])) {
+            return [];
+        }
+
+        $key = $this->normalizeKey($name);
+        $modulesConfig = $navConfig['modules'];
+        $entry = $modulesConfig[$name] ?? $modulesConfig[$key] ?? [];
+        return is_array($entry) ? $entry : [];
+    }
+
+    private function isPinnedFromConfig(array $navConfig, string $name): bool
+    {
+        if (!isset($navConfig['pinned']) || !is_array($navConfig['pinned'])) {
+            return false;
+        }
+
+        $key = $this->normalizeKey($name);
+        foreach ($navConfig['pinned'] as $item) {
+            if (!is_string($item)) {
+                continue;
+            }
+            if ($item === $name || $this->normalizeKey($item) === $key) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param array<string, mixed> $module
+     */
+    private function inferNavGroup(array $module): string
+    {
+        $name = (string) ($module['name'] ?? '');
+        $key = $this->normalizeKey($name);
+
+        $map = [
+            'admin' => 'core',
+            'users' => 'core',
+            'pages' => 'content',
+            'menu' => 'content',
+            'menus' => 'content',
+            'media' => 'content',
+            'system' => 'system',
+            'ops' => 'system',
+            'securityreports' => 'system',
+            'audit' => 'system',
+            'api' => 'api',
+            'devtools' => 'dev',
+            'changelog' => 'dev',
+            'demo' => 'demo',
+            'demoblog' => 'demo',
+            'demoenv' => 'demo',
+            'ai' => 'demo',
+        ];
+
+        if (isset($map[$key])) {
+            return $map[$key];
+        }
+
+        $type = (string) ($module['type'] ?? 'feature');
+        return match ($type) {
+            'admin' => 'core',
+            'api' => 'api',
+            'internal' => 'system',
+            default => 'content',
+        };
+    }
+
+    private function normalizeNavGroup(string $group): string
+    {
+        $group = strtolower(trim($group));
+        return match ($group) {
+            'core', 'content', 'system', 'dev', 'api', 'internal', 'demo' => $group,
+            default => 'system',
+        };
+    }
+
+    private function navGroupRank(string $group): int
+    {
+        return match ($group) {
+            'core' => 10,
+            'content' => 20,
+            'system' => 30,
+            'internal' => 31,
+            'api' => 32,
+            'dev' => 40,
+            'demo' => 50,
+            default => 99,
+        };
+    }
+
+    /**
+     * @param array<string, mixed> $module
+     */
+    private function resolveNavBadge(array $module): string
+    {
+        if (!empty($module['virtual'])) {
+            return 'VIRTUAL';
+        }
+
+        $type = strtoupper((string) ($module['type'] ?? ''));
+        if ($type !== '' && $type !== 'FEATURE') {
+            return $type;
+        }
+
+        return !empty($module['enabled']) ? 'ON' : 'OFF';
+    }
+
+    /**
+     * @param array<string, mixed> $module
+     */
+    private function resolveNavBadgeTone(array $module, string $badge): string
+    {
+        $badge = strtoupper($badge);
+        return match ($badge) {
+            'ON' => 'success',
+            'OFF' => 'secondary',
+            'ADMIN' => 'dark',
+            'API' => 'info',
+            'INTERNAL' => 'secondary',
+            'DEMO' => 'warning',
+            'VIRTUAL' => 'light',
+            default => !empty($module['enabled']) ? 'success' : 'secondary',
+        };
+    }
+
+    /**
+     * @param array<string, mixed> $module
+     * @param array<string, mixed> $moduleConfig
+     * @param array<string, mixed> $navConfig
+     * @return array<int, array{label: string, url: string, style: string, icon: string}>
+     */
+    private function resolveNavActions(array $module, array $moduleConfig, array $navConfig): array
+    {
+        $actions = $module['actions'] ?? [];
+        if (!is_array($actions)) {
+            return [];
+        }
+
+        $labels = ['Open', 'New', 'Details'];
+        if (isset($navConfig['actions_nav_default']) && is_array($navConfig['actions_nav_default'])) {
+            $labels = array_values(array_filter($navConfig['actions_nav_default'], 'is_string'));
+        }
+        if (isset($moduleConfig['actions_nav']) && is_array($moduleConfig['actions_nav'])) {
+            $labels = array_values(array_filter($moduleConfig['actions_nav'], 'is_string'));
+        }
+
+        $detailsAnchor = (string) ($module['details_anchor'] ?? '');
+        $detailsUrl = $detailsAnchor !== '' ? '/admin/modules' . $detailsAnchor : '';
+
+        $allowed = [];
+        foreach ($actions as $action) {
+            if (!is_array($action)) {
+                continue;
+            }
+            $label = (string) ($action['label'] ?? '');
+            if ($label === '' || !in_array($label, $labels, true)) {
+                continue;
+            }
+
+            $url = (string) ($action['url'] ?? '');
+            if ($label === 'Details' && $detailsUrl !== '') {
+                $url = $detailsUrl;
+            }
+            if ($url === '' || !$this->isNavActionAllowed($navConfig, $url)) {
+                continue;
+            }
+
+            $allowed[] = [
+                'label' => $label,
+                'url' => $url,
+                'style' => (string) ($action['style'] ?? 'secondary'),
+                'icon' => (string) ($action['icon'] ?? 'box-arrow-up-right'),
+            ];
+        }
+
+        return $allowed;
+    }
+
+    private function isNavActionAllowed(array $navConfig, string $url): bool
+    {
+        $allowlist = $navConfig['actions_allowlist'] ?? [];
+        if (!is_array($allowlist) || $allowlist === []) {
+            $allowlist = ['/admin*', '#'];
+        }
+
+        foreach ($allowlist as $allowed) {
+            if (!is_string($allowed) || $allowed === '') {
+                continue;
+            }
+            if (str_ends_with($allowed, '*')) {
+                $prefix = substr($allowed, 0, -1);
+                if ($prefix !== '' && str_starts_with($url, $prefix)) {
+                    return true;
+                }
+                continue;
+            }
+            if ($url === $allowed) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

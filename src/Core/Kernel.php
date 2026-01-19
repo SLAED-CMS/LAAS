@@ -222,10 +222,17 @@ final class Kernel
 
         $adminModulesNav = [];
         if (str_starts_with($request->getPath(), '/admin')) {
-            $catalog = new ModuleCatalog($this->rootPath, $this->database(), $this->config['modules'] ?? null);
-            $adminModulesNav = $catalog->listAll();
+            $catalog = new ModuleCatalog(
+                $this->rootPath,
+                $this->database(),
+                $this->config['modules'] ?? null,
+                $this->config['modules_nav'] ?? null
+            );
+            $adminModulesNav = $catalog->listNav();
+            $adminModulesNavSections = $catalog->listNavSections();
         }
         $view->share('admin_modules_nav', $adminModulesNav);
+        $view->share('admin_modules_nav_sections', $adminModulesNavSections ?? []);
 
         $modules = new ModuleManager($this->config['modules'] ?? [], $view, $this->database(), $this->container);
         $modules->register($router);
@@ -408,7 +415,12 @@ final class Kernel
             $users = $this->container->get(UsersService::class);
             $menus = $this->container->get(MenusService::class);
             $securityReports = $this->container->get(SecurityReportsService::class);
-            $moduleCatalog = new ModuleCatalog($rootPath, $this->database(), $config['modules'] ?? null);
+            $moduleCatalog = new ModuleCatalog(
+                $rootPath,
+                $this->database(),
+                $config['modules'] ?? null,
+                $config['modules_nav'] ?? null
+            );
 
             return new AdminSearchService(
                 $pages,
@@ -440,6 +452,7 @@ final class Kernel
         $files = [
             'app' => $configDir . '/app.php',
             'modules' => $configDir . '/modules.php',
+            'modules_nav' => $configDir . '/modules_nav.php',
             'security' => $configDir . '/security.php',
             'database' => $configDir . '/database.php',
             'media' => $configDir . '/media.php',

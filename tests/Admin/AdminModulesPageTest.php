@@ -121,7 +121,8 @@ final class AdminModulesPageTest extends TestCase
         );
         $view->setRequest($request);
         $catalog = new ModuleCatalog($root, $db);
-        $view->share('admin_modules_nav', $catalog->listAll());
+        $view->share('admin_modules_nav', $catalog->listNav());
+        $view->share('admin_modules_nav_sections', $catalog->listNavSections());
 
         return $view;
     }

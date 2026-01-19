@@ -11,44 +11,60 @@
           <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
             {% t 'admin.nav.modules' %}
           </a>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="/admin/modules">All modules</a></li>
-            <li><hr class="dropdown-divider"></li>
-            {% if admin_modules_nav %}
-            {% foreach admin_modules_nav as module %}
-            <li>
-              <div class="dropdown-item d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center gap-2">
-                  <i class="bi bi-{% module.icon %}"></i>
-                  {% if module.admin_url %}
-                  <a class="text-decoration-none" href="{% module.admin_url %}">{% module.name %}</a>
-                  {% else %}
-                  <a class="text-decoration-none" href="/admin/modules{% module.details_anchor %}">{% module.name %}</a>
-                  {% endif %}
-                </div>
-                <div class="d-flex align-items-center gap-1 flex-nowrap nav-modules-actions">
-                  {% if module.actions_nav %}
-                  {% foreach module.actions_nav as action %}
-                  <a class="btn btn-sm btn-outline-secondary py-0 px-1"
-                     href="{% if action.label == 'Details' %}/admin/modules{% module.details_anchor %}{% else %}{% action.url %}{% endif %}"
-                     aria-label="{% action.label %}"
-                     data-bs-toggle="tooltip"
-                     data-bs-placement="left"
-                     title="{% action.label %}">
-                    <i class="bi bi-{% action.icon %}"></i>
-                  </a>
+          <ul class="dropdown-menu nav-modules-menu">
+            <li class="nav-modules-search px-3 py-2">
+              <input type="search"
+                     id="modules-nav-q"
+                     class="form-control form-control-sm"
+                     placeholder="Search modules..."
+                     aria-label="Search modules">
+            </li>
+            <li><hr class="dropdown-divider my-1"></li>
+            {% if admin_modules_nav_sections %}
+            {% foreach admin_modules_nav_sections as section %}
+            <li class="nav-modules-section" data-modules-nav-section="{% section.key %}">
+              <div class="dropdown-header text-uppercase small text-muted" role="presentation">{% section.title %}</div>
+              <div class="nav-modules-section-items">
+                {% if section.items %}
+                  {% foreach section.items as module %}
+                  <div class="dropdown-item nav-modules-item d-flex align-items-center justify-content-between gap-2"
+                       data-modules-nav-item="1"
+                       data-section="{% section.key %}"
+                       data-search="{% module.nav_search %}">
+                    <a class="nav-modules-link d-flex align-items-center gap-2 text-decoration-none"
+                       href="{% if module.admin_url %}{% module.admin_url %}{% else %}/admin/modules{% module.details_anchor %}{% endif %}">
+                      <i class="bi bi-{% module.icon %}"></i>
+                      <span class="nav-modules-title">{% module.nav_label %}</span>
+                      {% if module.nav_badge %}
+                      <span class="badge text-bg-{% module.nav_badge_tone %} nav-modules-badge">{% module.nav_badge %}</span>
+                      {% endif %}
+                    </a>
+                    <div class="d-flex align-items-center gap-1 flex-nowrap nav-modules-actions">
+                      {% if module.actions_nav %}
+                      {% foreach module.actions_nav as action %}
+                      <a class="btn btn-sm btn-outline-secondary py-0 px-1"
+                         href="{% action.url %}"
+                         aria-label="{% action.label %}"
+                         data-bs-toggle="tooltip"
+                         data-bs-placement="left"
+                         title="{% action.label %}">
+                        <i class="bi bi-{% action.icon %}"></i>
+                      </a>
+                      {% endforeach %}
+                      {% endif %}
+                    </div>
+                  </div>
                   {% endforeach %}
-                  {% endif %}
-                  {% if module.enabled %}
-                  <span class="badge text-bg-success">{% t 'admin.modules.on' %}</span>
-                  {% else %}
-                  <span class="badge text-bg-secondary">{% t 'admin.modules.off' %}</span>
-                  {% endif %}
-                </div>
+                {% else %}
+                  <div class="dropdown-item text-muted small">No modules</div>
+                {% endif %}
               </div>
             </li>
             {% endforeach %}
             {% endif %}
+            <li class="nav-modules-empty text-muted small text-center d-none" data-modules-nav-empty="1">No matches.</li>
+            <li><hr class="dropdown-divider my-1"></li>
+            <li><a class="dropdown-item" href="/admin/modules">All modules</a></li>
           </ul>
         </li>
         <li class="nav-item"><a class="nav-link" href="/admin/menus">{% t 'admin.nav.menus' %}</a></li>

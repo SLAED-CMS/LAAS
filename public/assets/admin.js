@@ -263,11 +263,83 @@
     });
   }
 
+  function initModulesNavSearch(root) {
+    var scope = root || document;
+    var input = scope.querySelector('#modules-nav-q');
+    if (!input) {
+      return;
+    }
+    if (input.dataset.modulesNavReady === '1') {
+      return;
+    }
+    input.dataset.modulesNavReady = '1';
+
+    var menu = input.closest('.nav-modules-menu') || document;
+    var items = menu.querySelectorAll('[data-modules-nav-item="1"]');
+    var sections = menu.querySelectorAll('[data-modules-nav-section]');
+    var emptyRow = menu.querySelector('[data-modules-nav-empty="1"]');
+
+    function normalizeQuery(value) {
+      return (value || '').toString().trim().toLowerCase();
+    }
+
+    function applyFilter(query) {
+      var q = normalizeQuery(query);
+      var matches = 0;
+      var sectionCounts = {};
+
+      items.forEach(function (item) {
+        var haystack = (item.getAttribute('data-search') || '').toLowerCase();
+        var visible = q === '' || haystack.indexOf(q) !== -1;
+        item.classList.toggle('d-none', !visible);
+        if (visible) {
+          matches++;
+          var sectionKey = item.getAttribute('data-section') || '';
+          if (sectionKey) {
+            sectionCounts[sectionKey] = (sectionCounts[sectionKey] || 0) + 1;
+          }
+        }
+      });
+
+      sections.forEach(function (section) {
+        var key = section.getAttribute('data-modules-nav-section') || '';
+        if (q === '') {
+          section.classList.remove('d-none');
+          return;
+        }
+        if (key === 'pinned') {
+          section.classList.toggle('d-none', (sectionCounts[key] || 0) === 0);
+          return;
+        }
+        section.classList.toggle('d-none', (sectionCounts[key] || 0) === 0);
+      });
+
+      if (emptyRow) {
+        emptyRow.classList.toggle('d-none', q === '' || matches > 0);
+      }
+    }
+
+    input.addEventListener('input', function () {
+      applyFilter(input.value);
+    });
+
+    input.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        input.value = '';
+        applyFilter('');
+        input.blur();
+      }
+    });
+
+    applyFilter(input.value);
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     scheduleAutoHide(document);
     initCopyButtons(document);
     initModuleDetailsHandlers();
     initTooltips(document);
+    initModulesNavSearch(document);
     var htmxBadge = document.getElementById('htmx-missing');
     if (htmxBadge && document.body && document.body.getAttribute('data-app-debug') === '1') {
       if (typeof window.htmx === 'undefined') {
@@ -284,6 +356,7 @@
     scheduleAutoHide(e.target);
     initCopyButtons(e.target);
     initTooltips(e.target);
+    initModulesNavSearch(e.target);
     if (e.target && e.target.getAttribute && e.target.getAttribute('data-details-body') === '1') {
       var detailsRow = e.target.closest('.module-details-row');
       if (detailsRow) {
