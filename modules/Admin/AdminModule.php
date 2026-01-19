@@ -7,12 +7,14 @@ use Laas\Modules\ModuleInterface;
 use Laas\Routing\Router;
 use Laas\View\View;
 use Laas\Database\DatabaseManager;
+use Laas\Core\Container\Container;
 
 final class AdminModule implements ModuleInterface
 {
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null
+        private ?DatabaseManager $db = null,
+        private ?Container $container = null
     )
     {
     }
@@ -31,8 +33,20 @@ final class AdminModule implements ModuleInterface
                 continue;
             }
 
-            $router->addRoute($method, $path, function ($request, array $vars = []) use ($class, $action) {
-                $controller = new $class($this->view, $this->db);
+            $ctor = (new \ReflectionClass($class))->getConstructor();
+            $paramCount = $ctor?->getNumberOfParameters() ?? 0;
+            $useContainer = $this->container !== null;
+
+            $router->addRoute($method, $path, function ($request, array $vars = []) use ($class, $action, $paramCount, $useContainer) {
+                if ($useContainer && $paramCount >= 4) {
+                    $controller = new $class($this->view, $this->db, null, $this->container);
+                } elseif ($useContainer && $paramCount >= 3) {
+                    $controller = new $class($this->view, $this->db, $this->container);
+                } elseif ($paramCount >= 2) {
+                    $controller = new $class($this->view, $this->db);
+                } else {
+                    $controller = new $class($this->view);
+                }
                 return $controller->{$action}($request);
             });
         }

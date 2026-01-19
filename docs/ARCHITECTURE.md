@@ -321,7 +321,8 @@ laas/
 │   ├── DevTools/          # Debug toolbar (dev-only)
 │   ├── Api/               # API utilities
 │   ├── Ai/                # AI proposal system
-│   └── Support/           # URL validation, HTTP client
+│   ├── Support/           # URL validation, HTTP client
+│   └── Domain/            # Service layer (Pages, Media)
 ├── modules/               # Feature modules
 │   ├── System/            # Core system module
 │   ├── Admin/             # Admin panel
@@ -2287,9 +2288,31 @@ $config = $container->get('config');
 - **Controller:** Request parsing, access checks, response rendering.
 - **Service:** Business rules and repository usage, no HTTP/View code.
 
+**Service rules (mandatory):**
+- encapsulates domain or system logic
+- no HTTP (Request/Response)
+- no templates
+- returns structured data only
+- may use config, DB, filesystem, logger
+
+**Controller rules (mandatory):**
+- calls services
+- maps Request -> service call
+- maps service result -> view/JSON
+- contains no business logic
+
 **Current services (MVP):**
 - PagesService for page read/create flows.
 - MediaService for uploads and media lookup.
+- SecurityReportsService for centralized security report access (admin/ops, controller-agnostic).
+- OpsService for admin ops snapshots and normalization (health, sessions, backups, cache, perf, security).
+- UsersService for admin user listing, roles, and status normalization.
+- MenusService for admin menu CRUD and menu item loading.
+- SettingsService for admin settings read/write and normalization.
+
+**Why system services matter:**
+- System-level flows (ops, security, health) need the same service boundary as content.
+- Keeping this logic in services keeps controllers thin and makes system data testable and reusable.
 
 **No extra repository layer (yet):**
 - Existing repositories already isolate data access.

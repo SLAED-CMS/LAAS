@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 use Laas\Auth\NullAuthService;
 use Laas\Database\DatabaseManager;
+use Laas\Domain\Pages\PagesService;
 use Laas\Http\Request;
 use Laas\I18n\Translator;
 use Laas\Modules\Pages\Controller\PagesController;
@@ -66,7 +67,7 @@ final class PagesPublicJsonTest extends TestCase
             $db
         );
 
-        $controller = new PagesController($view, $db);
+        $controller = new PagesController($view, $db, new PagesService($db));
         $request = new Request('GET', '/hello', [], [], ['accept' => 'application/json'], '');
         $view->setRequest($request);
 

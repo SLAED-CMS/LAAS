@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use Laas\Database\DatabaseManager;
+use Laas\Domain\Settings\SettingsService;
 use Laas\Http\Request;
 use Laas\Modules\Admin\Controller\SettingsController;
 use Laas\View\View;
@@ -67,7 +68,7 @@ final class AdminSettingsValidationJsonTest extends TestCase
     {
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = $this->createView($db, $request);
-        return new SettingsController($view, $db);
+        return new SettingsController($view, $db, new SettingsService($db));
     }
 
     private function createView(DatabaseManager $db, Request $request): View

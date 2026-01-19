@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Laas\Modules\Media\Controller;
 
 use Laas\Api\ApiCacheInvalidator;
+use Laas\Core\Container\Container;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Domain\Media\MediaService;
@@ -14,6 +15,7 @@ use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Media\Repository\MediaRepository;
+use Laas\Modules\Media\Service\MimeSniffer;
 use Laas\Modules\Media\Service\MediaSignedUrlService;
 use Laas\Modules\Media\Service\StorageService;
 use Laas\Security\RateLimiter;
@@ -29,7 +31,8 @@ final class AdminMediaController
     public function __construct(
         private View $view,
         private ?DatabaseManager $db = null,
-        private ?MediaService $mediaService = null
+        private ?MediaService $mediaService = null,
+        private ?Container $container = null
     ) {
     }
 
@@ -675,13 +678,23 @@ final class AdminMediaController
             return $this->mediaService;
         }
 
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(MediaService::class);
+                if ($service instanceof MediaService) {
+                    $this->mediaService = $service;
+                    return $this->mediaService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
         if ($this->db === null) {
             return null;
         }
 
-        $this->mediaService = new MediaService($this->db, $this->mediaConfig(), $this->rootPath());
-
-        return $this->mediaService;
+        return null;
     }
 
     private function storage(): StorageService

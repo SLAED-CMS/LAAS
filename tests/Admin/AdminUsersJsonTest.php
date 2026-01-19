@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use Laas\Database\DatabaseManager;
+use Laas\Domain\Users\UsersService;
 use Laas\Http\Request;
 use Laas\Modules\Admin\Controller\UsersController;
 use Laas\View\View;
@@ -66,7 +67,7 @@ final class AdminUsersJsonTest extends TestCase
     {
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = $this->createView($db, $request);
-        return new UsersController($view, $db);
+        return new UsersController($view, $db, new UsersService($db));
     }
 
     private function createView(DatabaseManager $db, Request $request): View

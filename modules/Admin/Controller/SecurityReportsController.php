@@ -3,10 +3,12 @@ declare(strict_types=1);
 
 namespace Laas\Modules\Admin\Controller;
 
+use Laas\Core\Container\Container;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\SecurityReportsRepository;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Database\Repositories\UsersRepository;
+use Laas\Domain\Security\SecurityReportsService;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
@@ -20,7 +22,9 @@ final class SecurityReportsController
 {
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null
+        private ?DatabaseManager $db = null,
+        private ?SecurityReportsService $reportsService = null,
+        private ?Container $container = null
     ) {
     }
 
@@ -30,26 +34,36 @@ final class SecurityReportsController
             return $this->forbidden($request, 'admin.security_reports.index');
         }
 
-        $repo = $this->repository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503, 'admin.security_reports.index');
         }
 
         $filters = $this->readFilters($request);
         $page = $this->readPage($request);
         $limit = 100;
-        $total = $repo->count($filters);
-        $totalPages = max(1, (int) ceil($total / $limit));
-        if ($page > $totalPages) {
-            $page = $totalPages;
-        }
-        $offset = ($page - 1) * $limit;
+        try {
+            $total = $service->count($filters);
+            $totalPages = max(1, (int) ceil($total / $limit));
+            if ($page > $totalPages) {
+                $page = $totalPages;
+            }
+            $offset = ($page - 1) * $limit;
 
-        $rows = $repo->list($filters, $limit, $offset);
-        $canManage = $this->canManage($request);
-        $items = array_map(function (array $row) use ($canManage): array {
-            return $this->mapRowForView($row, $canManage);
-        }, $rows);
+            $rows = $service->list(array_merge($filters, [
+                'limit' => $limit,
+                'offset' => $offset,
+            ]));
+            $canManage = $this->canManage($request);
+            $items = array_map(function (array $row) use ($canManage): array {
+                return $this->mapRowForView($row, $canManage);
+            }, $rows);
+
+            $statusCounts = $this->countStatusFilters($service, $filters);
+            $typeCounts = $this->countTypeFilters($service, $filters);
+        } catch (Throwable) {
+            return $this->errorResponse($request, 'db_unavailable', 503, 'admin.security_reports.index');
+        }
 
         if ($request->wantsJson()) {
             return ContractResponse::ok([
@@ -63,9 +77,6 @@ final class SecurityReportsController
                 'route' => 'admin.security_reports.index',
             ]);
         }
-
-        $statusCounts = $repo->countByStatus($filters);
-        $typeCounts = $repo->countByType($filters);
 
         $viewData = [
             'reports' => $items,
@@ -82,10 +93,10 @@ final class SecurityReportsController
             ],
             'stats' => [
                 'total' => $total,
-                'new' => (int) ($statusCounts['new'] ?? 0),
-                'triaged' => (int) ($statusCounts['triaged'] ?? 0),
-                'ignored' => (int) ($statusCounts['ignored'] ?? 0),
-                'csp' => (int) ($typeCounts['csp'] ?? 0),
+                'new' => $statusCounts['new'],
+                'triaged' => $statusCounts['triaged'],
+                'ignored' => $statusCounts['ignored'],
+                'csp' => $typeCounts['csp'],
                 'other' => $this->countOtherTypes($typeCounts),
             ],
         ];
@@ -426,6 +437,69 @@ final class SecurityReportsController
         }
 
         return $sum;
+    }
+
+    private function service(): ?SecurityReportsService
+    {
+        if ($this->reportsService !== null) {
+            return $this->reportsService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(SecurityReportsService::class);
+                if ($service instanceof SecurityReportsService) {
+                    $this->reportsService = $service;
+                    return $this->reportsService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    /** @return array{new: int, triaged: int, ignored: int} */
+    private function countStatusFilters(SecurityReportsService $service, array $filters): array
+    {
+        $status = $filters['status'] ?? 'all';
+        $statusCounts = [
+            'new' => 0,
+            'triaged' => 0,
+            'ignored' => 0,
+        ];
+
+        if (in_array($status, ['new', 'triaged', 'ignored'], true)) {
+            $statusCounts[$status] = $service->count(array_merge($filters, ['status' => $status]));
+            return $statusCounts;
+        }
+
+        foreach (['new', 'triaged', 'ignored'] as $item) {
+            $statusCounts[$item] = $service->count(array_merge($filters, ['status' => $item]));
+        }
+
+        return $statusCounts;
+    }
+
+    /** @return array{csp: int, other: int} */
+    private function countTypeFilters(SecurityReportsService $service, array $filters): array
+    {
+        $type = $filters['type'] ?? 'all';
+        $typeCounts = [
+            'csp' => 0,
+            'other' => 0,
+        ];
+
+        if (in_array($type, ['csp', 'other'], true)) {
+            $typeCounts[$type] = $service->count(array_merge($filters, ['type' => $type]));
+            return $typeCounts;
+        }
+
+        $typeCounts['csp'] = $service->count(array_merge($filters, ['type' => 'csp']));
+        $typeCounts['other'] = $service->count(array_merge($filters, ['type' => 'other']));
+
+        return $typeCounts;
     }
 
     private function buildPageUrl(int $page, array $filters): string

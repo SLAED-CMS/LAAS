@@ -202,6 +202,20 @@ final class SecurityReportsRepository
             $params['q'] = $like;
         }
 
+        $since = $filters['since'] ?? null;
+        if ($since instanceof \DateTimeInterface) {
+            $since = $since->format('Y-m-d H:i:s');
+        }
+        if (is_string($since)) {
+            $since = trim($since);
+        } else {
+            $since = '';
+        }
+        if ($since !== '') {
+            $conditions[] = 'created_at >= :since';
+            $params['since'] = $since;
+        }
+
         $where = $conditions !== [] ? ' WHERE ' . implode(' AND ', $conditions) : '';
 
         return [

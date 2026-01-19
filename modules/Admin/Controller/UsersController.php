@@ -3,9 +3,10 @@ declare(strict_types=1);
 
 namespace Laas\Modules\Admin\Controller;
 
+use Laas\Core\Container\Container;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
-use Laas\Database\Repositories\UsersRepository;
+use Laas\Domain\Users\UsersService;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
@@ -24,7 +25,9 @@ final class UsersController
 
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null
+        private ?DatabaseManager $db = null,
+        private ?UsersService $usersService = null,
+        private ?Container $container = null
     ) {
     }
 
@@ -37,9 +40,8 @@ final class UsersController
             return $this->forbidden($request);
         }
 
-        $repo = $this->getUsersRepository();
-        $rbac = $this->getRbacRepository();
-        if ($repo === null || $rbac === null) {
+        $service = $this->service();
+        if ($service === null) {
             if ($request->wantsJson()) {
                 return $this->contractServiceUnavailable('admin.users.index');
             }
@@ -80,9 +82,16 @@ final class UsersController
             $search = new SearchQuery($query, 50, 1, 'users');
             $limit = $search->limit;
             $offset = $search->offset;
-            $users = $repo->search($search->q, $search->limit, $search->offset);
+            $users = $service->list([
+                'query' => $search->q,
+                'limit' => $search->limit,
+                'offset' => $search->offset,
+            ]);
         } else {
-            $users = $repo->list(100, 0);
+            $users = $service->list([
+                'limit' => 100,
+                'offset' => 0,
+            ]);
         }
         $rows = [];
         $userIds = [];
@@ -93,7 +102,7 @@ final class UsersController
             }
         }
 
-        $rolesMap = $rbac->getRolesForUsers($userIds);
+        $rolesMap = $service->rolesForUsers($userIds);
         $contractItems = [];
         foreach ($users as $user) {
             $userId = (int) ($user['id'] ?? 0);
@@ -114,7 +123,7 @@ final class UsersController
         ];
 
         if ($request->wantsJson()) {
-            $total = $query !== '' ? $repo->countSearch($query) : $repo->countAll();
+            $total = $service->count(['query' => $query]);
             return ContractResponse::ok([
                 'items' => $contractItems,
                 'pagination' => [
@@ -158,9 +167,8 @@ final class UsersController
             return $this->errorResponse($request, 'invalid_request', 400);
         }
 
-        $repo = $this->getUsersRepository();
-        $rbac = $this->getRbacRepository();
-        if ($repo === null || $rbac === null) {
+        $service = $this->service();
+        if ($service === null) {
             if ($request->wantsJson()) {
                 return $this->contractServiceUnavailable('admin.users.toggle');
             }
@@ -177,7 +185,7 @@ final class UsersController
             return $this->errorResponse($request, 'self_protected', 400);
         }
 
-        $user = $repo->findById($userId);
+        $user = $service->find($userId);
         if ($user === null) {
             if ($request->wantsJson()) {
                 return $this->contractValidationError('admin.users.toggle', [
@@ -189,7 +197,7 @@ final class UsersController
 
         $currentStatus = (int) ($user['status'] ?? 0);
         $nextStatus = $currentStatus === 1 ? 0 : 1;
-        $repo->setStatus($userId, $nextStatus);
+        $service->setStatus($userId, $nextStatus);
 
         $actorId = $currentUserId;
         (new AuditLogger($this->db, $request->session()))->log(
@@ -206,7 +214,7 @@ final class UsersController
             $request->ip()
         );
 
-        $isAdmin = $rbac->userHasRole($userId, 'admin');
+        $isAdmin = $service->isAdmin($userId);
         $row = $this->mapUserRow($user, $isAdmin, $currentUserId);
         $row['status'] = $nextStatus;
 
@@ -239,9 +247,8 @@ final class UsersController
             return $this->errorResponse($request, 'invalid_request', 400);
         }
 
-        $repo = $this->getUsersRepository();
-        $rbac = $this->getRbacRepository();
-        if ($repo === null || $rbac === null) {
+        $service = $this->service();
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
@@ -250,17 +257,13 @@ final class UsersController
             return $this->errorResponse($request, 'self_protected', 400);
         }
 
-        $user = $repo->findById($userId);
+        $user = $service->find($userId);
         if ($user === null) {
             return $this->errorResponse($request, 'not_found', 404);
         }
 
-        $isAdmin = $rbac->userHasRole($userId, 'admin');
-        if ($isAdmin) {
-            $rbac->revokeRoleFromUser($userId, 'admin');
-        } else {
-            $rbac->grantRoleToUser($userId, 'admin');
-        }
+        $isAdmin = $service->isAdmin($userId);
+        $service->setAdminRole($userId, !$isAdmin);
 
         $actorId = $currentUserId;
         $audit = new AuditLogger($this->db, $request->session());
@@ -304,12 +307,12 @@ final class UsersController
             return $this->passwordError($request, 'admin.users.password_weak');
         }
 
-        $repo = $this->getUsersRepository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
-        $user = $repo->findById($userId);
+        $user = $service->find($userId);
         if ($user === null) {
             return $this->errorResponse($request, 'not_found', 404);
         }
@@ -319,7 +322,7 @@ final class UsersController
             return $this->errorResponse($request, 'invalid_request', 400);
         }
 
-        $repo->setPasswordHash($userId, $hash);
+        $service->setPasswordHash($userId, $hash);
 
         $actorId = $this->currentUserId($request);
         (new AuditLogger($this->db, $request->session()))->log(
@@ -361,8 +364,8 @@ final class UsersController
             return $this->errorResponse($request, 'invalid_request', 400);
         }
 
-        $repo = $this->getUsersRepository();
-        if ($repo === null || $this->db === null || !$this->db->healthCheck()) {
+        $service = $this->service();
+        if ($service === null || $this->db === null || !$this->db->healthCheck()) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
@@ -371,14 +374,12 @@ final class UsersController
             return $this->errorResponse($request, 'self_protected', 400);
         }
 
-        $user = $repo->findById($userId);
+        $user = $service->find($userId);
         if ($user === null) {
             return $this->errorResponse($request, 'not_found', 404);
         }
 
-        $stmt = $this->db->pdo()->prepare('DELETE FROM role_user WHERE user_id = :user_id');
-        $stmt->execute(['user_id' => $userId]);
-        $repo->delete($userId);
+        $service->delete($userId);
 
         $actorId = $currentUserId;
         (new AuditLogger($this->db, $request->session()))->log(
@@ -578,32 +579,6 @@ final class UsersController
         return !preg_match('/[A-Za-z]/', $value) || !preg_match('/\d/', $value);
     }
 
-    private function getUsersRepository(): ?UsersRepository
-    {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
-        }
-
-        try {
-            return new UsersRepository($this->db->pdo());
-        } catch (Throwable) {
-            return null;
-        }
-    }
-
-    private function getRbacRepository(): ?RbacRepository
-    {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
-        }
-
-        try {
-            return new RbacRepository($this->db->pdo());
-        } catch (Throwable) {
-            return null;
-        }
-    }
-
     private function errorResponse(Request $request, string $code, int $status): Response
     {
         return ErrorResponse::respondForRequest($request, $code, [], $status, [], 'admin.users');
@@ -633,5 +608,26 @@ final class UsersController
     private function withSuccessTrigger(Response $response, string $messageKey): Response
     {
         return $response->withToastSuccess($messageKey, $this->view->translate($messageKey));
+    }
+
+    private function service(): ?UsersService
+    {
+        if ($this->usersService !== null) {
+            return $this->usersService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(UsersService::class);
+                if ($service instanceof UsersService) {
+                    $this->usersService = $service;
+                    return $this->usersService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
     }
 }

@@ -7,6 +7,8 @@ use Laas\Http\Request;
 use Laas\Modules\Menu\Controller\AdminMenusController;
 use Laas\Modules\Media\Controller\AdminMediaController;
 use Laas\Modules\Pages\Controller\PagesController;
+use Laas\Domain\Pages\PagesService;
+use Laas\Domain\Menus\MenusService;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Tests\Security\Support\SecurityTestHelper;
@@ -31,7 +33,7 @@ final class XssSecurityTest extends TestCase
 
         $request = new Request('GET', '/search', ['q' => 'alert'], [], [], '');
         $view = SecurityTestHelper::createView($db, $request, 'default');
-        $controller = new PagesController($view, $db);
+        $controller = new PagesController($view, $db, new PagesService($db));
 
         $response = $controller->search($request);
         $body = $response->getBody();
@@ -86,7 +88,7 @@ final class XssSecurityTest extends TestCase
         $request = new Request('GET', '/admin/menus', [], [], [], '');
         $this->attachSession($request, 1);
         $view = SecurityTestHelper::createView($db, $request, 'admin');
-        $controller = new AdminMenusController($view, $db);
+        $controller = new AdminMenusController($view, $db, new MenusService($db));
 
         $response = $controller->index($request);
         $body = $response->getBody();

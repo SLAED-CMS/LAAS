@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use Laas\Database\DatabaseManager;
+use Laas\Domain\Security\SecurityReportsService;
 use Laas\Http\Request;
 use Laas\Modules\Admin\Controller\SecurityReportsController;
 use Laas\View\View;
@@ -102,7 +103,7 @@ final class AdminSecurityReportsIndexJsonTest extends TestCase
     {
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = $this->createView($db, $request);
-        return new SecurityReportsController($view, $db);
+        return new SecurityReportsController($view, $db, new SecurityReportsService($db));
     }
 
     private function createView(DatabaseManager $db, Request $request): View

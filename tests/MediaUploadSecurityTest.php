@@ -20,6 +20,7 @@ namespace Laas\Modules\Media\Service {
 namespace {
     use Laas\Auth\NullAuthService;
     use Laas\Database\DatabaseManager;
+    use Laas\Domain\Media\MediaService;
     use Laas\Http\Request;
     use Laas\I18n\Translator;
     use Laas\Modules\Media\Controller\AdminMediaController;
@@ -65,8 +66,7 @@ namespace {
                 'hx-request' => 'true',
             ], '');
             $this->attachSession($request);
-            $view = $this->createView($db, $request);
-            $controller = new AdminMediaController($view, $db);
+            $controller = $this->createController($db, $request);
 
             $response = $controller->upload($request);
             $this->assertSame(413, $response->getStatus());
@@ -96,8 +96,7 @@ namespace {
                 'hx-request' => 'true',
             ], '');
             $this->attachSession($request);
-            $view = $this->createView($db, $request);
-            $controller = new AdminMediaController($view, $db);
+            $controller = $this->createController($db, $request);
 
             $response = $controller->upload($request);
             $this->assertSame(413, $response->getStatus());
@@ -129,8 +128,7 @@ namespace {
                 'hx-request' => 'true',
             ], '');
             $this->attachSession($request);
-            $view = $this->createView($db, $request);
-            $controller = new AdminMediaController($view, $db);
+            $controller = $this->createController($db, $request);
 
             $response = $controller->upload($request);
             $this->assertSame(422, $response->getStatus());
@@ -165,8 +163,7 @@ namespace {
                 'hx-request' => 'true',
             ], '');
             $this->attachSession($request);
-            $view = $this->createView($db, $request);
-            $controller = new AdminMediaController($view, $db);
+            $controller = $this->createController($db, $request);
 
             $response = $controller->upload($request);
             $this->assertSame(200, $response->getStatus());
@@ -257,6 +254,18 @@ namespace {
             $view->setRequest($request);
 
             return $view;
+        }
+
+        private function createController(DatabaseManager $db, Request $request): AdminMediaController
+        {
+            $view = $this->createView($db, $request);
+            $config = require $this->rootPath . '/config/media.php';
+            if (!is_array($config)) {
+                $config = [];
+            }
+            $service = new MediaService($db, $config, $this->rootPath);
+
+            return new AdminMediaController($view, $db, $service);
         }
 
         private function clearRateLimit(): void

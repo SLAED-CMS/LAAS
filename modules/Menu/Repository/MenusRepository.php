@@ -24,6 +24,15 @@ final class MenusRepository
         return $row ?: null;
     }
 
+    public function findById(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM menus WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
     /** @return array<int, array<string, mixed>> */
     public function listMenus(): array
     {
@@ -62,5 +71,11 @@ final class MenusRepository
         ]);
 
         return (int) $this->pdo->lastInsertId();
+    }
+
+    public function deleteMenu(int $id): void
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM menus WHERE id = :id');
+        $stmt->execute(['id' => $id]);
     }
 }

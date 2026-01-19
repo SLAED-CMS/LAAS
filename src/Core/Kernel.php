@@ -49,7 +49,12 @@ use Laas\Perf\PerfBudgetEnforcer;
 use Laas\Assets\AssetsManager;
 use Laas\Core\Container\Container;
 use Laas\Domain\Media\MediaService;
+use Laas\Domain\Menus\MenusService;
+use Laas\Domain\Ops\OpsService;
 use Laas\Domain\Pages\PagesService;
+use Laas\Domain\Security\SecurityReportsService;
+use Laas\Domain\Settings\SettingsService;
+use Laas\Domain\Users\UsersService;
 use Laas\View\AssetManager;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
@@ -220,7 +225,7 @@ final class Kernel
         }
         $view->share('admin_modules_nav', $adminModulesNav);
 
-        $modules = new ModuleManager($this->config['modules'] ?? [], $view, $this->database());
+        $modules = new ModuleManager($this->config['modules'] ?? [], $view, $this->database(), $this->container);
         $modules->register($router);
 
         $collectors = [
@@ -370,6 +375,33 @@ final class Kernel
                 $config['media'] ?? [],
                 $rootPath
             );
+        });
+
+        $this->container->singleton(SecurityReportsService::class, function (): SecurityReportsService {
+            return new SecurityReportsService($this->database());
+        });
+
+        $this->container->singleton(OpsService::class, function () use ($config, $rootPath): OpsService {
+            $securityReports = $this->container->get(SecurityReportsService::class);
+
+            return new OpsService(
+                $this->database(),
+                $config,
+                $rootPath,
+                $securityReports
+            );
+        });
+
+        $this->container->singleton(UsersService::class, function (): UsersService {
+            return new UsersService($this->database());
+        });
+
+        $this->container->singleton(MenusService::class, function (): MenusService {
+            return new MenusService($this->database());
+        });
+
+        $this->container->singleton(SettingsService::class, function (): SettingsService {
+            return new SettingsService($this->database());
         });
     }
 

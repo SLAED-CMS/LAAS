@@ -11,27 +11,25 @@ use PHPUnit\Framework\TestCase;
 use Tests\Security\Support\SecurityTestHelper;
 use Tests\Support\InMemorySession;
 
-final class AdminOpsHtmxPartialTest extends TestCase
+final class AdminOpsIndexUsesServiceTest extends TestCase
 {
-    public function testIndexReturnsPartialForHtmx(): void
+    public function testIndexUsesService(): void
     {
-        $pdo = $this->createBaseSchema();
+        $pdo = SecurityTestHelper::createSqlitePdo();
+        SecurityTestHelper::seedRbacTables($pdo);
         $this->seedPermission($pdo, 1, 'ops.view');
 
         $request = $this->makeRequest('GET', '/admin/ops');
-        $controller = $this->createController($pdo, $request);
+        $db = SecurityTestHelper::dbManagerFromPdo($pdo);
+        $view = $this->createView($db, $request);
+        $service = new SpyOpsService($db, $this->config(), SecurityTestHelper::rootPath(), new SecurityReportsService($db));
+        $controller = new OpsController($view, $db, $service);
 
         $response = $controller->index($request);
 
         $this->assertSame(200, $response->getStatus());
-        $this->assertStringContainsString('data-ops-section="health"', $response->getBody());
-    }
-
-    private function createBaseSchema(): \PDO
-    {
-        $pdo = SecurityTestHelper::createSqlitePdo();
-        SecurityTestHelper::seedRbacTables($pdo);
-        return $pdo;
+        $this->assertTrue($service->overviewCalled);
+        $this->assertTrue($service->viewDataCalled);
     }
 
     private function seedPermission(\PDO $pdo, int $userId, string $permission): void
@@ -45,7 +43,7 @@ final class AdminOpsHtmxPartialTest extends TestCase
 
     private function makeRequest(string $method, string $path): Request
     {
-        $request = new Request($method, $path, [], [], ['hx-request' => 'true'], '');
+        $request = new Request($method, $path, [], [], [], '');
         $session = new InMemorySession();
         $session->start();
         $session->set('user_id', 1);
@@ -53,22 +51,14 @@ final class AdminOpsHtmxPartialTest extends TestCase
         return $request;
     }
 
-    private function createController(\PDO $pdo, Request $request): OpsController
-    {
-        $db = SecurityTestHelper::dbManagerFromPdo($pdo);
-        $view = $this->createView($db, $request);
-        $service = $this->createOpsService($db);
-        return new OpsController($view, $db, $service);
-    }
-
     private function createView(DatabaseManager $db, Request $request): View
     {
         return SecurityTestHelper::createView($db, $request, 'admin');
     }
 
-    private function createOpsService(DatabaseManager $db): OpsService
+    private function config(): array
     {
-        $config = [
+        return [
             'app' => [
                 'env' => 'test',
                 'debug' => false,
@@ -84,8 +74,23 @@ final class AdminOpsHtmxPartialTest extends TestCase
             'media' => [],
             'perf' => [],
         ];
-        $reports = new SecurityReportsService($db);
+    }
+}
 
-        return new OpsService($db, $config, SecurityTestHelper::rootPath(), $reports);
+final class SpyOpsService extends OpsService
+{
+    public bool $overviewCalled = false;
+    public bool $viewDataCalled = false;
+
+    public function overview(bool $isHttps): array
+    {
+        $this->overviewCalled = true;
+        return parent::overview($isHttps);
+    }
+
+    public function viewData(array $snapshot, callable $translate): array
+    {
+        $this->viewDataCalled = true;
+        return parent::viewData($snapshot, $translate);
     }
 }

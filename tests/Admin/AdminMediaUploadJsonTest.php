@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use Laas\Database\DatabaseManager;
+use Laas\Domain\Media\MediaService;
 use Laas\Http\ErrorCode;
 use Laas\Http\Request;
 use Laas\Modules\Media\Controller\AdminMediaController;
@@ -128,7 +129,14 @@ final class AdminMediaUploadJsonTest extends TestCase
     {
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = $this->createView($db, $request);
-        return new AdminMediaController($view, $db);
+        $root = SecurityTestHelper::rootPath();
+        $configPath = $root . '/config/media.php';
+        $config = is_file($configPath) ? require $configPath : [];
+        if (!is_array($config)) {
+            $config = [];
+        }
+        $service = new MediaService($db, $config, $root);
+        return new AdminMediaController($view, $db, $service);
     }
 
     private function createView(DatabaseManager $db, Request $request): View

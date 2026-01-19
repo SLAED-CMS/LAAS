@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Laas\Modules;
 
+use Laas\Core\Container\Container;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\ModulesRepository;
 use Laas\Routing\Router;
@@ -15,7 +16,8 @@ final class ModuleManager
     public function __construct(
         private array $moduleClasses,
         private View $view,
-        private ?DatabaseManager $db = null
+        private ?DatabaseManager $db = null,
+        private ?Container $container = null
     ) {
     }
 
@@ -131,8 +133,14 @@ final class ModuleManager
     private function instantiateModule(string $class): object
     {
         $ctor = (new \ReflectionClass($class))->getConstructor();
-        if ($ctor !== null && $ctor->getNumberOfParameters() >= 2 && $this->db !== null) {
-            return new $class($this->view, $this->db);
+        if ($ctor !== null && $this->db !== null) {
+            $paramCount = $ctor->getNumberOfParameters();
+            if ($paramCount >= 3 && $this->container !== null) {
+                return new $class($this->view, $this->db, $this->container);
+            }
+            if ($paramCount >= 2) {
+                return new $class($this->view, $this->db);
+            }
         }
 
         return new $class($this->view);

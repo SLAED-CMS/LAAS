@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use Laas\Database\DatabaseManager;
+use Laas\Domain\Menus\MenusService;
 use Laas\Http\Request;
 use Laas\Modules\Menu\Controller\AdminMenusController;
 use Laas\View\View;
@@ -65,7 +66,7 @@ final class AdminMenusUrlValidationTest extends TestCase
     {
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = $this->createView($db, $request);
-        return new AdminMenusController($view, $db);
+        return new AdminMenusController($view, $db, new MenusService($db));
     }
 
     private function createView(DatabaseManager $db, Request $request): View

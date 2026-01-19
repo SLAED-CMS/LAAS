@@ -4,17 +4,17 @@ declare(strict_types=1);
 namespace Laas\Modules\Menu\Controller;
 
 use Laas\Api\ApiCacheInvalidator;
+use Laas\Core\Container\Container;
 use Laas\Core\Validation\Validator;
 use Laas\Core\Validation\ValidationResult;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
+use Laas\Domain\Menus\MenusService;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Support\AuditLogger;
 use Laas\Support\UrlValidator;
-use Laas\Modules\Menu\Repository\MenuItemsRepository;
-use Laas\Modules\Menu\Repository\MenusRepository;
 use Laas\Modules\Menu\Service\MenuCacheInvalidator;
 use Laas\View\SanitizedHtml;
 use Laas\View\View;
@@ -24,7 +24,9 @@ final class AdminMenusController
 {
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null
+        private ?DatabaseManager $db = null,
+        private ?MenusService $menusService = null,
+        private ?Container $container = null
     ) {
     }
 
@@ -73,12 +75,12 @@ final class AdminMenusController
             return $this->errorResponse($request, 'invalid_request', 400);
         }
 
-        $repo = $this->itemsRepo();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
-        $item = $repo->findById($id);
+        $item = $service->findItem($id);
         if ($item === null) {
             return $this->errorResponse($request, 'not_found', 404);
         }
@@ -173,11 +175,15 @@ final class AdminMenusController
             $payload['id'] = $id;
         }
 
-        $repo = $this->itemsRepo();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
-        $itemId = $repo->saveItem($payload);
+        if ($id === null) {
+            $itemId = $service->createItem($payload);
+        } else {
+            $itemId = $service->updateItem($id, $payload);
+        }
         $action = $id === null ? 'menus.item.create' : 'menus.item.update';
         (new AuditLogger($this->db, $request->session()))->log(
             $action,
@@ -224,19 +230,19 @@ final class AdminMenusController
             return $this->errorResponse($request, 'invalid_request', 400);
         }
 
-        $repo = $this->itemsRepo();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
-        $item = $repo->findById($id);
+        $item = $service->findItem($id);
         if ($item === null) {
             return $this->errorResponse($request, 'not_found', 404);
         }
 
         $enabled = !empty($item['enabled']) ? 1 : 0;
         $nextEnabled = $enabled === 1 ? 0 : 1;
-        $repo->setEnabled($id, $nextEnabled);
+        $service->setItemEnabled($id, $nextEnabled);
         (new AuditLogger($this->db, $request->session()))->log(
             $nextEnabled === 1 ? 'menus.item.enable' : 'menus.item.disable',
             'menu_item',
@@ -272,12 +278,12 @@ final class AdminMenusController
             return $this->errorResponse($request, 'invalid_request', 400);
         }
 
-        $repo = $this->itemsRepo();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
-        $item = $repo->findById($id);
-        $repo->deleteItem($id);
+        $item = $service->findItem($id);
+        $service->deleteItem($id);
         (new AuditLogger($this->db, $request->session()))->log(
             'menus.item.delete',
             'menu_item',
@@ -372,12 +378,12 @@ final class AdminMenusController
             return [];
         }
 
-        $repo = $this->itemsRepo();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return [];
         }
 
-        $rows = $repo->listItems((int) $menu['id']);
+        $rows = $service->loadItems((int) $menu['id']);
 
         return array_map(static function (array $item) use ($flashId): array {
             $item['enabled'] = !empty($item['enabled']);
@@ -389,38 +395,12 @@ final class AdminMenusController
 
     private function getMainMenu(): ?array
     {
-        $repo = $this->menusRepo();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return null;
         }
 
-        return $repo->findMenuByName('main');
-    }
-
-    private function menusRepo(): ?MenusRepository
-    {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
-        }
-
-        try {
-            return new MenusRepository($this->db);
-        } catch (Throwable) {
-            return null;
-        }
-    }
-
-    private function itemsRepo(): ?MenuItemsRepository
-    {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
-        }
-
-        try {
-            return new MenuItemsRepository($this->db);
-        } catch (Throwable) {
-            return null;
-        }
+        return $service->findByName('main');
     }
 
     private function canEdit(Request $request): bool
@@ -543,5 +523,26 @@ final class AdminMenusController
         }
 
         return $messages;
+    }
+
+    private function service(): ?MenusService
+    {
+        if ($this->menusService !== null) {
+            return $this->menusService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(MenusService::class);
+                if ($service instanceof MenusService) {
+                    $this->menusService = $service;
+                    return $this->menusService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
     }
 }

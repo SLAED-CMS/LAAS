@@ -3,9 +3,10 @@ declare(strict_types=1);
 
 namespace Laas\Modules\Admin\Controller;
 
+use Laas\Core\Container\Container;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
-use Laas\Database\Repositories\SettingsRepository;
+use Laas\Domain\Settings\SettingsService;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
@@ -19,7 +20,9 @@ final class SettingsController
 {
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null
+        private ?DatabaseManager $db = null,
+        private ?SettingsService $settingsService = null,
+        private ?Container $container = null
     ) {
     }
 
@@ -29,37 +32,19 @@ final class SettingsController
             return $this->forbidden($request, 'admin.settings.index');
         }
 
-        $appConfig = $this->loadAppConfig();
-        $apiConfig = $this->loadApiConfig();
-        $locales = $this->normalizeList($appConfig['locales'] ?? []);
-        $themes = $this->discoverThemes();
+        $service = $this->service();
+        if ($service === null) {
+            return $this->errorResponse($request, 'db_unavailable', 503);
+        }
+
+        $defaults = $service->defaultSettings();
+        $locales = $service->availableLocales();
+        $themes = $service->availableThemes();
         $tokenIssueModes = $this->apiTokenIssueModes();
 
-        $defaults = [
-            'site_name' => 'LAAS CMS',
-            'default_locale' => (string) ($appConfig['default_locale'] ?? 'en'),
-            'theme' => (string) ($appConfig['theme'] ?? 'default'),
-            'api_token_issue_mode' => (string) ($apiConfig['token_issue_mode'] ?? 'admin'),
-        ];
-
-        $settings = $defaults;
-        $sources = [
-            'site_name' => 'CONFIG',
-            'default_locale' => 'CONFIG',
-            'theme' => 'CONFIG',
-            'api_token_issue_mode' => 'CONFIG',
-        ];
-        $repo = $this->getRepository();
-        if ($repo !== null) {
-            $settings['site_name'] = (string) $repo->get('site_name', $defaults['site_name']);
-            $settings['default_locale'] = (string) $repo->get('default_locale', $defaults['default_locale']);
-            $settings['theme'] = (string) $repo->get('theme', $defaults['theme']);
-            $settings['api_token_issue_mode'] = (string) $repo->get('api.token_issue_mode', $defaults['api_token_issue_mode']);
-            $sources['site_name'] = $repo->has('site_name') ? 'DB' : 'CONFIG';
-            $sources['default_locale'] = $repo->has('default_locale') ? 'DB' : 'CONFIG';
-            $sources['theme'] = $repo->has('theme') ? 'DB' : 'CONFIG';
-            $sources['api_token_issue_mode'] = $repo->has('api.token_issue_mode') ? 'DB' : 'CONFIG';
-        }
+        $payload = $service->settingsWithSources();
+        $settings = $payload['settings'];
+        $sources = $payload['sources'];
 
         if (!in_array($settings['default_locale'], $locales, true)) {
             $settings['default_locale'] = $defaults['default_locale'];
@@ -107,16 +92,20 @@ final class SettingsController
             return $this->forbidden($request, 'admin.settings.save');
         }
 
-        $appConfig = $this->loadAppConfig();
-        $apiConfig = $this->loadApiConfig();
-        $locales = $this->normalizeList($appConfig['locales'] ?? []);
-        $themes = $this->discoverThemes();
+        $service = $this->service();
+        if ($service === null) {
+            return $this->errorResponse($request, 'db_unavailable', 503);
+        }
+
+        $defaults = $service->defaultSettings();
+        $locales = $service->availableLocales();
+        $themes = $service->availableThemes();
         $tokenIssueModes = $this->apiTokenIssueModes();
 
         $siteName = trim((string) ($request->post('site_name') ?? ''));
         $defaultLocale = (string) ($request->post('default_locale') ?? '');
         $theme = (string) ($request->post('theme') ?? '');
-        $apiTokenIssueMode = (string) ($request->post('api_token_issue_mode') ?? ($apiConfig['token_issue_mode'] ?? 'admin'));
+        $apiTokenIssueMode = (string) ($request->post('api_token_issue_mode') ?? ($defaults['api_token_issue_mode'] ?? 'admin'));
 
         $errors = [];
         if ($siteName === '' || strlen($siteName) > 80) {
@@ -132,19 +121,21 @@ final class SettingsController
             $errors[] = 'api_token_issue_mode';
         }
 
-        $repo = $this->getRepository();
-        if ($repo === null) {
-            return $this->saveErrorResponse($request, $siteName, $defaultLocale, $theme, $apiTokenIssueMode, $locales, $themes, $tokenIssueModes, 503, $errors);
-        }
-
         if ($errors !== []) {
             return $this->saveErrorResponse($request, $siteName, $defaultLocale, $theme, $apiTokenIssueMode, $locales, $themes, $tokenIssueModes, 422, $errors);
         }
 
-        $repo->set('site_name', $siteName, 'string');
-        $repo->set('default_locale', $defaultLocale, 'string');
-        $repo->set('theme', $theme, 'string');
-        $repo->set('api.token_issue_mode', $apiTokenIssueMode, 'string');
+        try {
+            $service->setMany([
+                'site_name' => $siteName,
+                'default_locale' => $defaultLocale,
+                'theme' => $theme,
+                'api_token_issue_mode' => $apiTokenIssueMode,
+            ]);
+        } catch (Throwable) {
+            return $this->saveErrorResponse($request, $siteName, $defaultLocale, $theme, $apiTokenIssueMode, $locales, $themes, $tokenIssueModes, 503, $errors);
+        }
+
         Audit::log('settings.save', 'setting', null, [
             'actor_user_id' => $this->currentUserId($request),
             'site_name' => $siteName,
@@ -212,12 +203,9 @@ final class SettingsController
             'theme' => 'DB',
             'api_token_issue_mode' => 'DB',
         ];
-        $repo = $this->getRepository();
-        if ($repo !== null) {
-            $sources['site_name'] = $repo->has('site_name') ? 'DB' : 'CONFIG';
-            $sources['default_locale'] = $repo->has('default_locale') ? 'DB' : 'CONFIG';
-            $sources['theme'] = $repo->has('theme') ? 'DB' : 'CONFIG';
-            $sources['api_token_issue_mode'] = $repo->has('api.token_issue_mode') ? 'DB' : 'CONFIG';
+        $service = $this->service();
+        if ($service !== null) {
+            $sources = $service->sources(['site_name', 'default_locale', 'theme', 'api_token_issue_mode']);
         }
 
         if ($request->isHtmx()) {
@@ -262,87 +250,6 @@ final class SettingsController
         ], $status, [], [
             'theme' => 'admin',
         ]);
-    }
-
-    private function getRepository(): ?SettingsRepository
-    {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
-        }
-
-        try {
-            return new SettingsRepository($this->db->pdo());
-        } catch (Throwable) {
-            return null;
-        }
-    }
-
-    private function loadAppConfig(): array
-    {
-        $configPath = dirname(__DIR__, 3) . '/config/app.php';
-        $configPath = realpath($configPath) ?: $configPath;
-        if (!is_file($configPath)) {
-            return [];
-        }
-
-        $config = require $configPath;
-        return is_array($config) ? $config : [];
-    }
-
-    private function loadApiConfig(): array
-    {
-        $configPath = dirname(__DIR__, 3) . '/config/api.php';
-        $configPath = realpath($configPath) ?: $configPath;
-        if (!is_file($configPath)) {
-            return [];
-        }
-
-        $config = require $configPath;
-        return is_array($config) ? $config : [];
-    }
-
-    private function discoverThemes(): array
-    {
-        $themesDir = dirname(__DIR__, 3) . '/themes';
-        $themesDir = realpath($themesDir) ?: $themesDir;
-        if (!is_dir($themesDir)) {
-            return [];
-        }
-
-        $items = scandir($themesDir) ?: [];
-        $themes = [];
-        foreach ($items as $item) {
-            if ($item === '.' || $item === '..') {
-                continue;
-            }
-            $path = $themesDir . '/' . $item;
-            if (!is_dir($path)) {
-                continue;
-            }
-
-            $hasLayout = is_file($path . '/layout.html');
-            $hasMeta = is_file($path . '/theme.json');
-            if (!$hasLayout && !$hasMeta) {
-                continue;
-            }
-
-            $themes[] = $item;
-        }
-
-        sort($themes);
-        return $themes;
-    }
-
-    private function normalizeList(array $values): array
-    {
-        $out = [];
-        foreach ($values as $value) {
-            if (is_string($value)) {
-                $out[] = $value;
-            }
-        }
-
-        return $out;
     }
 
     private function buildOptions(array $values, string $selected): array
@@ -475,5 +382,26 @@ final class SettingsController
     private function withSuccessTrigger(Response $response, string $messageKey): Response
     {
         return $response->withToastSuccess($messageKey, $this->view->translate($messageKey));
+    }
+
+    private function service(): ?SettingsService
+    {
+        if ($this->settingsService !== null) {
+            return $this->settingsService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(SettingsService::class);
+                if ($service instanceof SettingsService) {
+                    $this->settingsService = $service;
+                    return $this->settingsService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
     }
 }

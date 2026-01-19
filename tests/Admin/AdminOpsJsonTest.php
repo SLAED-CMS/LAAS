@@ -2,6 +2,8 @@
 declare(strict_types=1);
 
 use Laas\Database\DatabaseManager;
+use Laas\Domain\Ops\OpsService;
+use Laas\Domain\Security\SecurityReportsService;
 use Laas\Http\Request;
 use Laas\Modules\Admin\Controller\OpsController;
 use Laas\View\View;
@@ -66,11 +68,35 @@ final class AdminOpsJsonTest extends TestCase
     {
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = $this->createView($db, $request);
-        return new OpsController($view, $db);
+        $service = $this->createOpsService($db);
+        return new OpsController($view, $db, $service);
     }
 
     private function createView(DatabaseManager $db, Request $request): View
     {
         return SecurityTestHelper::createView($db, $request, 'admin');
+    }
+
+    private function createOpsService(DatabaseManager $db): OpsService
+    {
+        $config = [
+            'app' => [
+                'env' => 'test',
+                'debug' => false,
+                'read_only' => false,
+                'headless_mode' => false,
+            ],
+            'security' => [
+                'session' => ['driver' => 'native'],
+            ],
+            'storage' => [
+                'default' => 'local',
+            ],
+            'media' => [],
+            'perf' => [],
+        ];
+        $reports = new SecurityReportsService($db);
+
+        return new OpsService($db, $config, SecurityTestHelper::rootPath(), $reports);
     }
 }

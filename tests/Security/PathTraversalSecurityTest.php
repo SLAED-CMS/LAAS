@@ -6,6 +6,7 @@ require_once __DIR__ . '/Support/SecurityTestHelper.php';
 use Laas\Http\Request;
 use Laas\Modules\Media\Controller\MediaThumbController;
 use Laas\Modules\Pages\Controller\PagesController;
+use Laas\Domain\Pages\PagesService;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Tests\Security\Support\SecurityTestHelper;
@@ -21,7 +22,7 @@ final class PathTraversalSecurityTest extends TestCase
 
         $request = new Request('GET', '/pages/../etc/passwd', [], [], [], '');
         $view = SecurityTestHelper::createView($db, $request, 'default');
-        $controller = new PagesController($view, $db);
+        $controller = new PagesController($view, $db, new PagesService($db));
 
         $response = $controller->show($request, ['slug' => '../etc/passwd']);
         $this->assertSame(404, $response->getStatus());

@@ -1,0 +1,86 @@
+# Service Layer Migration Notes (v4.0.20)
+
+## Why the service layer exists
+- keep controllers thin and focused on HTTP concerns
+- move domain/system logic into testable, reusable classes
+- reduce direct repository usage inside controllers
+- enable consistent DI container wiring
+
+## How to migrate an existing controller
+1) Identify the domain/system logic in the controller.
+2) Move that logic into a `*Service` class in `src/Domain/*`.
+3) Keep the controller as a mapper:
+   - Request -> service call
+   - service result -> view or JSON
+4) Register the service as a singleton in the container.
+5) Update the controller to resolve the service via the container (or inject it in tests).
+6) Add/adjust tests:
+   - service test for core behavior
+   - controller test that asserts service usage
+
+## Before / After (short)
+
+Before (controller has logic):
+```php
+// controller
+$repo = new PagesRepository($db);
+$rows = $repo->search($query, 20, 0, 'published');
+```
+
+After (controller delegates to service):
+```php
+// controller
+$rows = $pagesService->list([
+    'query' => $query,
+    'status' => 'published',
+    'limit' => 20,
+    'offset' => 0,
+]);
+```
+
+Users example (roles + status):
+```php
+// controller
+$users = $usersService->list([
+    'query' => $query,
+    'limit' => 50,
+    'offset' => 0,
+]);
+$roles = $usersService->rolesForUsers($userIds);
+```
+
+Menus example (items + tree):
+```php
+// controller
+$menu = $menusService->findByName('main');
+$items = $menusService->loadItems((int) ($menu['id'] ?? 0));
+$items = $menusService->buildTree($items);
+```
+
+Settings example (read + save):
+```php
+// controller
+$payload = $settingsService->settingsWithSources();
+$settings = $payload['settings'];
+
+$settingsService->setMany([
+    'site_name' => $siteName,
+    'default_locale' => $defaultLocale,
+    'theme' => $theme,
+    'api_token_issue_mode' => $mode,
+]);
+```
+
+Ops example (snapshot + view data):
+```php
+// controller
+$snapshot = $opsService->overview($request->isHttps());
+$viewData = $opsService->viewData($snapshot, fn (string $key) => $view->translate($key));
+```
+
+## Anti-patterns (do not do this)
+- `new SomeService()` inside controllers
+- business rules implemented in controllers
+- services that return HTML or Response objects
+- services that know about Request/Session/View
+- adding a repository layer on top of existing repositories
