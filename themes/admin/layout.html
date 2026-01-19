@@ -15,8 +15,8 @@
   {% endif %}
 </head>
 <body class="bg-light laas-theme-admin" hx-headers='{"X-CSRF-Token":"{% csrf_token %}"}' data-app-debug="{% if request.show_request_id %}1{% else %}0{% endif %}">
-  <main class="container-fluid py-3">
-    {% include "partials/header.html" %}
+  {% include "partials/header.html" %}
+  <main class="container-xxl pb-5">
     <div id="admin-search-results">
       {% if admin_search_results %}
         {% include "search/results_partial.html" %}

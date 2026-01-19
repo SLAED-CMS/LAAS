@@ -10,3 +10,19 @@
   0% { background-color: rgba(255, 193, 7, 0.55); }
   100% { background-color: transparent; }
 }
+
+.diff-view {
+  max-height: 460px;
+  white-space: pre;
+  tab-size: 4;
+}
+
+.diff-add {
+  display: block;
+  background: rgba(25, 135, 84, 0.20);
+}
+
+.diff-del {
+  display: block;
+  background: rgba(220, 53, 69, 0.20);
+}

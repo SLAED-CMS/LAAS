@@ -38,7 +38,7 @@ final class AiControllerHtmxResponseTest extends TestCase
         $this->assertStringContainsString('data-ai-propose-result', $body);
         $this->assertStringContainsString('proposal_json', $body);
         $this->assertStringContainsString('plan_json', $body);
-        $this->assertStringContainsString('Diff Preview', $body);
+        $this->assertStringContainsString('Proposed changes', $body);
         $this->assertStringContainsString('docs/demo.txt', $body);
     }
 

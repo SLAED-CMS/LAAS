@@ -10,6 +10,12 @@
   {% endif %}
   {% else %}
   <div class="alert alert-success mb-2">Saved proposal id={% id %} path={% path %}</div>
+  <div class="small text-muted mb-2">proposal_saved={% id %}</div>
   <div class="small text-muted">CLI: {% cli_hint %}</div>
+  <div class="mt-2">
+    <div class="fw-semibold">Next step (CLI apply)</div>
+    <div class="text-muted small">UI does not apply changes. Review and apply explicitly:</div>
+    <pre class="small bg-light border rounded p-2 mb-0">php tools/cli.php ai:proposal:apply {% id %} --yes</pre>
+  </div>
   {% endif %}
 </div>

@@ -1,6 +1,12 @@
 <div class="card mt-3" data-ai-propose-result="1">
   <div class="card-body">
-    <h5 class="card-title mb-2">Proposal + Plan</h5>
+    <div class="d-flex flex-wrap align-items-center justify-content-between mb-2">
+      <h5 class="card-title mb-0">Proposal + Plan</h5>
+      <span class="badge text-bg-warning">Not applied</span>
+    </div>
+    {% if diff_blocks_count %}
+    <div class="text-muted small mb-2">files_changed={% diff_blocks_count %}</div>
+    {% endif %}
     <div class="text-muted small mb-2">
       summary={% summary %} risk={% risk %} confidence={% confidence %}
     </div>

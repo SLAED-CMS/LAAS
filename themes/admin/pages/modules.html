@@ -1,31 +1,58 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div class="card">
+<div class="card shadow-sm">
   <div class="card-body">
-  <h1 class="h4 mb-3">{% t 'admin.modules.title' %}</h1>
-  <div id="page-messages">
-    {% include "partials/messages.html" %}
-  </div>
-  <table class="table table-striped table-hover align-middle">
-    <thead>
-      <tr>
-        <th>{% t 'admin.modules.name' %}</th>
-        <th>{% t 'admin.modules.version' %}</th>
-        <th>{% t 'admin.modules.type' %}</th>
-        <th>{% t 'admin.modules.status' %}</th>
-        <th>{% t 'admin.modules.action' %}</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% foreach modules as module %}
-      {% include "partials/module_row.html" %}
-      {% endforeach %}
-    </tbody>
-  </table>
-  <div id="loading" class="htmx-indicator text-center my-3">
-    <div class="spinner-border" role="status" aria-hidden="true"></div>
-  </div>
+    <h1 class="h4 mb-3">{% t 'admin.modules.title' %}</h1>
+    <div id="page-messages">
+      {% include "partials/messages.html" %}
+    </div>
+    <table class="table table-sm table-striped align-middle">
+      <thead>
+        <tr>
+          <th>{% t 'admin.modules.name' %}</th>
+          <th>{% t 'admin.modules.type' %}</th>
+          <th>{% t 'admin.modules.status' %}</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% foreach modules as module %}
+        <tr>
+          <td class="fw-semibold">{% module.name %}</td>
+          <td>
+            {% if module.type_is_internal %}
+            <span class="badge text-bg-secondary">{% t 'admin.modules.type_internal' %}</span>
+            {% else %}
+              {% if module.type_is_admin %}
+            <span class="badge text-bg-dark">{% t 'admin.modules.type_admin' %}</span>
+              {% else %}
+                {% if module.type_is_api %}
+            <span class="badge text-bg-info text-dark">{% t 'admin.modules.type_api' %}</span>
+                {% else %}
+            <span class="badge text-bg-primary">{% t 'admin.modules.type_feature' %}</span>
+                {% endif %}
+              {% endif %}
+            {% endif %}
+          </td>
+          <td>
+            {% if module.enabled %}
+            <span class="badge text-bg-success">{% t 'admin.modules.on' %}</span>
+            {% else %}
+            <span class="badge text-bg-secondary">{% t 'admin.modules.off' %}</span>
+            {% endif %}
+          </td>
+          <td class="text-muted small">
+            {% if module.notes %}
+            {% module.notes %}
+            {% else %}
+            -
+            {% endif %}
+          </td>
+        </tr>
+        {% endforeach %}
+      </tbody>
+    </table>
   </div>
 </div>
 {% endblock %}

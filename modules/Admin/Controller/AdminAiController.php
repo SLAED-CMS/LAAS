@@ -125,6 +125,8 @@ final class AdminAiController
         }
         $fileChanges = is_array($proposal['file_changes'] ?? null) ? $proposal['file_changes'] : [];
         $diffBlocks = $fileChanges !== [] ? (new UnifiedDiffRenderer())->render($fileChanges) : [];
+        $diffBlocks = $this->addDiffCollapseIds($diffBlocks, 'diff-dev');
+        $diffBlocksCount = count($diffBlocks);
 
         $viewData = [
             'module_name' => $moduleName,
@@ -136,6 +138,7 @@ final class AdminAiController
             'plan_json' => $planJson,
             'diff_blocks' => $diffBlocks,
             'diff_blocks_present' => $diffBlocks !== [],
+            'diff_blocks_count' => $diffBlocksCount,
         ];
 
         if ($request->isHtmx()) {
@@ -194,5 +197,25 @@ final class AdminAiController
             'theme' => 'admin',
             'render_partial' => true,
         ]);
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $diffBlocks
+     * @return array<int, array<string, mixed>>
+     */
+    private function addDiffCollapseIds(array $diffBlocks, string $prefix): array
+    {
+        $out = [];
+        $index = 1;
+        foreach ($diffBlocks as $block) {
+            if (!is_array($block)) {
+                continue;
+            }
+            $block['collapse_id'] = $prefix . '-' . $index;
+            $out[] = $block;
+            $index++;
+        }
+
+        return $out;
     }
 }

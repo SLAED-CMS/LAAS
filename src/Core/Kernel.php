@@ -29,6 +29,7 @@ use Laas\Database\Repositories\UsersRepository;
 use Laas\I18n\LocaleResolver;
 use Laas\I18n\Translator;
 use Laas\Modules\ModuleManager;
+use Laas\Modules\ModuleCatalog;
 use Laas\Routing\Router;
 use Laas\Security\RateLimiter;
 use Laas\Security\SecurityHeaders;
@@ -205,6 +206,13 @@ final class Kernel
             $templateRawMode
         );
         $view->setRequest($request);
+
+        $adminModulesNav = [];
+        if (str_starts_with($request->getPath(), '/admin')) {
+            $catalog = new ModuleCatalog($this->rootPath, $this->database(), $this->config['modules'] ?? null);
+            $adminModulesNav = $catalog->listAll();
+        }
+        $view->share('admin_modules_nav', $adminModulesNav);
 
         $modules = new ModuleManager($this->config['modules'] ?? [], $view, $this->database());
         $modules->register($router);

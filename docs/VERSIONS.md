@@ -1,5 +1,11 @@
 # LAAS Versions
 
+- v4.0.1 (Unreleased)
+  - Admin UI: Bootstrap 5 wired + modern layout for /admin/ai and page editor AI panel
+  - Admin UI: AI flow indicator + improved diff styling + visual hierarchy (wow polish)
+  - Admin AI: collapsible diff per file + CLI apply snippet after save (demo wow)
+  - Admin UI: /admin/modules lists all modules + navbar dropdown modules list
+
 - v4.0.0 (Released 2026-01-15)
   - Highlights:
     - Safe AI runtime (proposal/plan + allowlists + --yes)

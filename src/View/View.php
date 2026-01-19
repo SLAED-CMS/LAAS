@@ -29,6 +29,7 @@ use Laas\Ui\PresentationLeakDetector;
 final class View
 {
     private ?Request $request = null;
+    private array $shared = [];
 
     public function __construct(
         private ThemeManager $themeManager,
@@ -63,6 +64,11 @@ final class View
     {
         $this->request = $request;
         RequestScope::set('view', $this);
+    }
+
+    public function share(string $key, mixed $value): void
+    {
+        $this->shared[$key] = $value;
     }
 
     public function render(
@@ -214,7 +220,7 @@ final class View
         $devtoolsEnabled = $this->resolveDevtoolsEnabled();
         $showRequestId = $this->debug || $devtoolsEnabled;
 
-        return [
+        $ctx = [
             'csrf_token' => $csrfToken,
             '__translator' => $this->translator,
             '__assets' => $this->assetManager,
@@ -243,6 +249,12 @@ final class View
                 ],
             ],
         ];
+
+        if ($this->shared !== []) {
+            $ctx = array_merge($ctx, $this->shared);
+        }
+
+        return $ctx;
     }
 
     private function resolveEngine(string $theme): TemplateEngine

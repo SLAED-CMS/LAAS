@@ -10,6 +10,7 @@ use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
+use Laas\Modules\ModuleCatalog;
 use Laas\Support\Audit;
 use Laas\View\View;
 use Throwable;
@@ -28,58 +29,8 @@ final class ModulesController
             return $this->forbidden($request, 'admin.modules.index');
         }
 
-        $modules = [];
-        $discovered = $this->discoverModules();
-        $configEnabled = $this->loadConfigEnabled();
-        $dbModules = null;
-        $dbAvailable = $this->db !== null && $this->db->healthCheck();
-        if ($dbAvailable) {
-            $repo = new ModulesRepository($this->db->pdo());
-            $dbModules = $repo->all();
-        }
-
-        if ($discovered === []) {
-            foreach ($configEnabled as $name) {
-                $discovered[$name] = [
-                    'path' => '',
-                    'version' => null,
-                    'type' => 'feature',
-                ];
-            }
-        }
-
-        foreach ($discovered as $name => $meta) {
-            $enabled = false;
-            $source = 'CONFIG';
-            if ($dbAvailable && is_array($dbModules) && array_key_exists($name, $dbModules)) {
-                $enabled = (bool) ($dbModules[$name]['enabled'] ?? false);
-                $source = 'DB';
-            } elseif (in_array($name, $configEnabled, true)) {
-                $enabled = true;
-            }
-
-            $type = (string) ($meta['type'] ?? 'feature');
-            $typeLabel = $this->typeLabel($type);
-            if ($type !== 'feature' && $enabled === false && !$dbAvailable && !in_array($name, $configEnabled, true)) {
-                $enabled = true;
-                $source = 'INTERNAL';
-            }
-
-            $modules[] = [
-                'name' => $name,
-                'enabled' => $enabled,
-                'version' => $meta['version'] ?? null,
-                'type' => $type,
-                'type_label' => $typeLabel,
-                'type_is_internal' => $type === 'internal',
-                'type_is_admin' => $type === 'admin',
-                'type_is_api' => $type === 'api',
-                'source' => $source,
-                'protected' => $type !== 'feature',
-            ];
-        }
-
-        usort($modules, static fn(array $a, array $b): int => strcmp($a['name'], $b['name']));
+        $catalog = new ModuleCatalog(dirname(__DIR__, 3), $this->db);
+        $modules = $catalog->listAll();
 
         if ($request->wantsJson()) {
             $items = $this->jsonItems($modules);

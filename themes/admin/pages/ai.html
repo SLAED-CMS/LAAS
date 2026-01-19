@@ -1,7 +1,11 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div class="card">
+<div class="card shadow-sm border-primary mb-4">
+  <div class="card-header d-flex align-items-center justify-content-between bg-primary bg-opacity-10">
+    <h1 class="h5 mb-0">AI Assistant</h1>
+    <span class="badge text-bg-secondary">Read-only</span>
+  </div>
   <div class="card-body">
     <div class="d-flex flex-wrap gap-2 mb-3">
       <span class="badge text-bg-success">Read-only by default</span>
@@ -9,9 +13,16 @@
       <span class="badge text-bg-secondary">Sandbox</span>
       <span class="badge text-bg-warning">Apply requires CLI --yes</span>
     </div>
-    <div class="d-flex align-items-center justify-content-between mb-3">
-      <h1 class="h4 mb-0">AI Assistant</h1>
+    <div class="mt-2 d-flex align-items-center gap-2 flex-wrap">
+      <span class="badge text-bg-primary">1) Propose</span>
+      <span class="text-muted small">→</span>
+      <span class="badge text-bg-secondary">2) Dry-run</span>
+      <span class="text-muted small">→</span>
+      <span class="badge text-bg-secondary">3) Save</span>
+      <span class="text-muted small">→</span>
+      <span class="badge text-bg-dark">4) CLI Apply (--yes)</span>
     </div>
+    <div class="text-muted small mt-2 mb-3">Review diff and checks. UI never applies changes.</div>
     <p class="text-muted small mb-3">
       Read-only assistant. Propose, dry-run checks, then save the proposal for CLI apply.
     </p>
@@ -20,7 +31,7 @@
       <textarea class="form-control" id="prompt" name="prompt" rows="6"
                 placeholder="Describe the change you want..."></textarea>
     </div>
-    <div class="d-flex flex-wrap gap-2 mb-3">
+    <div class="d-flex flex-wrap gap-2 mb-2">
       <button type="button"
               class="btn btn-primary"
               hx-post="/api/v1/ai/propose"
@@ -28,9 +39,8 @@
               hx-swap="innerHTML"
               hx-include="#prompt"
               hx-indicator="#ai-loading">
-        Propose
+        Propose (Preview)
       </button>
-      <div class="small text-muted w-100">Generates proposal + plan (no writes).</div>
       <button type="button"
               class="btn btn-outline-secondary"
               hx-post="/api/v1/ai/run"
@@ -40,7 +50,6 @@
               hx-indicator="#ai-loading">
         Run Dry-Run
       </button>
-      <div class="small text-muted w-100">Runs allowlisted checks only.</div>
       <button type="button"
               class="btn btn-outline-success"
               hx-post="/admin/ai/save-proposal"
@@ -50,39 +59,47 @@
               hx-indicator="#ai-loading">
         Save Proposal
       </button>
-      <div class="small text-muted w-100">Stores proposal JSON locally.</div>
+    </div>
+    <div class="small text-muted mb-3">
+      <div>Propose generates a plan without writing files.</div>
+      <div>Dry-run executes allowlisted checks only.</div>
+      <div>Save stores the proposal JSON for CLI apply.</div>
     </div>
     <div id="ai-loading" class="htmx-indicator text-center my-3">
       <div class="spinner-border" role="status" aria-hidden="true"></div>
     </div>
-    <div id="ai-propose-out"></div>
-    <div id="ai-run-out"></div>
-    <div id="ai-save-out" class="mt-3"></div>
+    <div id="ai-propose-out" class="mt-3 p-2 bg-light border rounded"></div>
+    <div id="ai-run-out" class="mt-2 p-2 bg-light border rounded"></div>
+    <div id="ai-save-out" class="mt-2 p-2 bg-light border rounded"></div>
     <div class="alert alert-warning mt-3 mb-0">
       <div class="fw-semibold">No apply in UI</div>
       <div class="small">Use CLI apply with <code>--yes</code> after saving.</div>
     </div>
   </div>
 </div>
-<div class="card mt-3">
+<div class="card shadow-sm border-warning">
+  <div class="card-header bg-warning bg-opacity-10">
+    <strong>Dev Autopilot Preview</strong>
+  </div>
   <div class="card-body">
-    <h2 class="h5 mb-2">Dev Autopilot Preview</h2>
     <div class="text-muted small mb-3">Sandbox-only preview. Apply to repo requires CLI.</div>
     <div class="mb-3">
       <label class="form-label" for="ai_module_name">Module name</label>
       <input class="form-control form-control-sm" id="ai_module_name" name="module_name" maxlength="40" placeholder="DemoX">
     </div>
-    <button type="button"
-            class="btn btn-outline-primary btn-sm"
-            hx-post="/admin/ai/dev-autopilot"
-            hx-target="#ai-dev-out"
-            hx-swap="innerHTML"
-            hx-include="#ai_module_name"
-            hx-indicator="#ai-loading">
-      Dev Autopilot Preview
-    </button>
-    <div class="small text-muted mt-2">Sandbox scaffold preview only.</div>
-    <div id="ai-dev-out" class="mt-3"></div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <button type="button"
+              class="btn btn-outline-primary btn-sm"
+              hx-post="/admin/ai/dev-autopilot"
+              hx-target="#ai-dev-out"
+              hx-swap="innerHTML"
+              hx-include="#ai_module_name"
+              hx-indicator="#ai-loading">
+        Dev Autopilot Preview
+      </button>
+      <div class="small text-muted">Sandbox scaffold preview only.</div>
+    </div>
+    <div id="ai-dev-out" class="mt-3 p-2 bg-light border rounded small"></div>
   </div>
 </div>
 {% endblock %}

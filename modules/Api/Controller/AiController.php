@@ -357,7 +357,9 @@ final class AiController
         $diffBlocks = [];
         if ($fileChanges !== []) {
             $diffBlocks = (new UnifiedDiffRenderer())->render($fileChanges);
+            $diffBlocks = $this->addDiffCollapseIds($diffBlocks, 'diff-propose');
         }
+        $diffBlocksCount = count($diffBlocks);
 
         return $this->view->render('partials/ai_propose_result.html', [
             'summary' => (string) ($proposal['summary'] ?? ''),
@@ -368,6 +370,7 @@ final class AiController
             'plan_json' => $planJson,
             'diff_blocks' => $diffBlocks,
             'diff_blocks_present' => $diffBlocks !== [],
+            'diff_blocks_count' => $diffBlocksCount,
         ], 200, [], [
             'theme' => 'admin',
             'render_partial' => true,
@@ -395,6 +398,26 @@ final class AiController
             'theme' => 'admin',
             'render_partial' => true,
         ]);
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $diffBlocks
+     * @return array<int, array<string, mixed>>
+     */
+    private function addDiffCollapseIds(array $diffBlocks, string $prefix): array
+    {
+        $out = [];
+        $index = 1;
+        foreach ($diffBlocks as $block) {
+            if (!is_array($block)) {
+                continue;
+            }
+            $block['collapse_id'] = $prefix . '-' . $index;
+            $out[] = $block;
+            $index++;
+        }
+
+        return $out;
     }
 
     /**

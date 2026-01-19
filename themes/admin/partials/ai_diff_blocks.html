@@ -1,15 +1,34 @@
-{% if diff_blocks_present %}
 <div class="mt-3" data-ai-diff-preview="1">
-  <div class="fw-semibold mb-2">Diff Preview</div>
+  <div class="d-flex align-items-center justify-content-between mb-1">
+    <div class="fw-semibold">Proposed changes</div>
+    <span class="badge text-bg-warning">Not applied</span>
+  </div>
+  <div class="text-muted small">Review each file diff. Apply only via CLI with <code>--yes</code>.</div>
+  {% if diff_blocks_present %}
   {% foreach diff_blocks as block %}
-  <div class="border rounded mb-3">
-    <div class="d-flex flex-wrap gap-2 align-items-center border-bottom px-2 py-1 bg-light">
-      <span class="badge text-bg-secondary">{% block.op %}</span>
-      <span class="small fw-semibold">{% block.path %}</span>
-      <span class="small text-muted">+{% block.stats.added %} -{% block.stats.removed %}</span>
+  <div class="card mt-2">
+    <div class="card-header bg-light p-2">
+      <button class="btn btn-sm btn-outline-primary w-100 text-start d-flex align-items-center justify-content-between"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#{% block.collapse_id %}"
+              aria-expanded="false"
+              aria-controls="{% block.collapse_id %}">
+        <span class="fw-semibold">{% block.path %}</span>
+        <span class="d-flex align-items-center gap-2">
+          <span class="badge text-bg-light border">+{% block.stats.added %} -{% block.stats.removed %}</span>
+          <span class="badge text-bg-secondary">Show</span>
+        </span>
+      </button>
     </div>
-    <pre class="small mb-0 p-2">{% block.diff %}</pre>
+    <div id="{% block.collapse_id %}" class="collapse">
+      <div class="card-body p-2">
+        <pre class="diff-view small mb-0 bg-dark text-light p-2 rounded border overflow-auto">{% block.diff %}</pre>
+      </div>
+    </div>
   </div>
   {% endforeach %}
+  {% else %}
+  <div class="text-muted small mt-2">No file changes proposed.</div>
+  {% endif %}
 </div>
-{% endif %}
