@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace Laas\Modules\Media\Controller;
 
-use Laas\Database\DatabaseManager;
-use Laas\Database\Repositories\RbacRepository;
+use Laas\Core\Container\Container;
+use Laas\Domain\Media\MediaServiceInterface;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorCode;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\Modules\Media\Repository\MediaRepository;
 use Laas\Modules\Media\Service\MediaSignedUrlService;
 use Laas\Modules\Media\Service\MimeSniffer;
 use Laas\Modules\Media\Service\StorageService;
@@ -20,7 +20,9 @@ final class MediaServeController
 {
     public function __construct(
         private ?View $view = null,
-        private ?DatabaseManager $db = null
+        private ?MediaServiceInterface $mediaService = null,
+        private ?Container $container = null,
+        private ?RbacServiceInterface $rbacService = null
     ) {
     }
 
@@ -34,15 +36,15 @@ final class MediaServeController
             return $this->notFound();
         }
 
-        $repo = $this->repository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             if ($request->wantsJson()) {
                 return $this->contractNotFound();
             }
             return $this->notFound();
         }
 
-        $row = $repo->findById($id);
+        $row = $service->find($id);
         if ($row === null) {
             if ($request->wantsJson()) {
                 return $this->contractNotFound();
@@ -155,36 +157,61 @@ final class MediaServeController
         ]);
     }
 
-    private function repository(): ?MediaRepository
-    {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
-        }
-
-        try {
-            return new MediaRepository($this->db);
-        } catch (Throwable) {
-            return null;
-        }
-    }
-
     private function canView(Request $request): bool
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return false;
-        }
-
         $userId = $this->currentUserId($request);
         if ($userId === null) {
             return false;
         }
 
-        try {
-            $rbac = new RbacRepository($this->db->pdo());
-            return $rbac->userHasPermission($userId, 'media.view');
-        } catch (Throwable) {
+        $rbac = $this->rbacService();
+        if ($rbac === null) {
             return false;
         }
+
+        return $rbac->userHasPermission($userId, 'media.view');
+    }
+
+    private function service(): ?MediaServiceInterface
+    {
+        if ($this->mediaService !== null) {
+            return $this->mediaService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(MediaServiceInterface::class);
+                if ($service instanceof MediaServiceInterface) {
+                    $this->mediaService = $service;
+                    return $this->mediaService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function rbacService(): ?RbacServiceInterface
+    {
+        if ($this->rbacService !== null) {
+            return $this->rbacService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(RbacServiceInterface::class);
+                if ($service instanceof RbacServiceInterface) {
+                    $this->rbacService = $service;
+                    return $this->rbacService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
     }
 
     private function currentUserId(Request $request): ?int

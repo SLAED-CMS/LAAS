@@ -3,12 +3,12 @@ declare(strict_types=1);
 
 namespace Laas\Modules\Media\Controller;
 
-use Laas\Database\DatabaseManager;
-use Laas\Database\Repositories\RbacRepository;
+use Laas\Core\Container\Container;
+use Laas\Domain\Media\MediaServiceInterface;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\Modules\Media\Repository\MediaRepository;
 use Laas\Modules\Media\Service\MediaThumbnailService;
 use Laas\Modules\Media\Service\MimeSniffer;
 use Laas\Modules\Media\Service\StorageService;
@@ -19,7 +19,9 @@ final class AdminMediaPickerController
 {
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null
+        private ?MediaServiceInterface $mediaService = null,
+        private ?Container $container = null,
+        private ?RbacServiceInterface $rbacService = null
     ) {
     }
 
@@ -29,13 +31,13 @@ final class AdminMediaPickerController
             return $this->forbidden($request);
         }
 
-        $repo = $this->repository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
         $query = trim((string) ($request->query('q') ?? ''));
-        $items = $this->mapRows($repo->list(20, 0, $query));
+        $items = $this->mapRows($service->list(20, 0, $query));
 
         if ($request->isHtmx()) {
             return $this->view->render('media/picker_table.html', [
@@ -61,8 +63,8 @@ final class AdminMediaPickerController
             return $this->errorResponse($request, 'forbidden', 403);
         }
 
-        $repo = $this->repository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
@@ -72,7 +74,7 @@ final class AdminMediaPickerController
         }
 
         $id = (int) $raw;
-        $row = $repo->findById($id);
+        $row = $service->find($id);
         if ($row === null) {
             return $this->errorResponse($request, 'not_found', 404);
         }
@@ -128,17 +130,46 @@ final class AdminMediaPickerController
         }, $rows);
     }
 
-    private function repository(): ?MediaRepository
+    private function service(): ?MediaServiceInterface
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
+        if ($this->mediaService !== null) {
+            return $this->mediaService;
         }
 
-        try {
-            return new MediaRepository($this->db);
-        } catch (Throwable) {
-            return null;
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(MediaServiceInterface::class);
+                if ($service instanceof MediaServiceInterface) {
+                    $this->mediaService = $service;
+                    return $this->mediaService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
         }
+
+        return null;
+    }
+
+    private function rbacService(): ?RbacServiceInterface
+    {
+        if ($this->rbacService !== null) {
+            return $this->rbacService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(RbacServiceInterface::class);
+                if ($service instanceof RbacServiceInterface) {
+                    $this->rbacService = $service;
+                    return $this->rbacService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
     }
 
     private function mediaConfig(): array
@@ -153,21 +184,17 @@ final class AdminMediaPickerController
 
     private function canView(Request $request): bool
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return false;
-        }
-
         $userId = $this->currentUserId($request);
         if ($userId === null) {
             return false;
         }
 
-        try {
-            $rbac = new RbacRepository($this->db->pdo());
-            return $rbac->userHasPermission($userId, 'media.view');
-        } catch (Throwable) {
+        $rbac = $this->rbacService();
+        if ($rbac === null) {
             return false;
         }
+
+        return $rbac->userHasPermission($userId, 'media.view');
     }
 
     private function currentUserId(Request $request): ?int
