@@ -8,30 +8,45 @@ final class ReadOnlyProxyTest extends TestCase
 {
     public function testReadMethodPassesThrough(): void
     {
-        $service = new ReadOnlyProxyTestService();
-        $proxy = new ReadOnlyProxyTestProxy(
-            $service,
-            ReadOnlyProxy::allowedMethods($service)
-        );
+        $service = new ReadOnlyProxyReadService();
+        $proxy = ReadOnlyProxy::wrap($service, ReadOnlyProxyTestInterface::class);
 
         $this->assertSame('ok', $proxy->read());
     }
 
     public function testMutationMethodThrows(): void
     {
-        $service = new ReadOnlyProxyTestService();
-        $proxy = new ReadOnlyProxyTestProxy(
-            $service,
-            ReadOnlyProxy::allowedMethods($service)
-        );
+        $service = new ReadOnlyProxyWriteService();
+        $proxy = ReadOnlyProxy::wrap($service, ReadOnlyProxyTestInterface::class);
 
         $this->expectException(DomainException::class);
-        $this->expectExceptionMessage('Read-only service: mutation method write is not allowed');
+        $this->expectExceptionMessage(
+            'Read-only service: mutation method ' . ReadOnlyProxyTestInterface::class . '::write is not allowed'
+        );
         $proxy->write();
     }
 }
 
-final class ReadOnlyProxyTestService
+interface ReadOnlyProxyTestInterface
+{
+    public function read(): string;
+
+    public function write(): void;
+}
+
+final class ReadOnlyProxyReadService implements ReadOnlyProxyTestInterface
+{
+    public function read(): string
+    {
+        return 'ok';
+    }
+
+    public function write(): void
+    {
+    }
+}
+
+final class ReadOnlyProxyWriteService implements ReadOnlyProxyTestInterface
 {
     public function read(): string
     {
@@ -41,18 +56,5 @@ final class ReadOnlyProxyTestService
     /** @mutation */
     public function write(): void
     {
-    }
-}
-
-final class ReadOnlyProxyTestProxy extends ReadOnlyProxy
-{
-    public function read(): string
-    {
-        return $this->call(__FUNCTION__, func_get_args());
-    }
-
-    public function write(): void
-    {
-        $this->call(__FUNCTION__, func_get_args());
     }
 }
