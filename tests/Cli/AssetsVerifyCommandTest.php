@@ -24,8 +24,10 @@ final class AssetsVerifyCommandTest extends TestCase
         $this->writeSizedFile($assetsRoot . '/htmx/0.0.0/htmx.min.js', 12000, 'vendor placeholder');
         $this->writeSizedFile($assetsRoot . '/bootstrap/0.0.0/bootstrap.min.css', 6000, '/* ok */');
         $this->writeSizedFile($assetsRoot . '/bootstrap/0.0.0/bootstrap.bundle.min.js', 12000, '/* ok */');
-        $this->writeSizedFile($assetsRoot . '/bootstrap-icons/0.0.0/bootstrap-icons.min.css', 6000, '/* ok */');
+        $iconsCss = '@font-face{src:url("./fonts/bootstrap-icons.woff2") format("woff2"),url("./fonts/bootstrap-icons.woff") format("woff")}.bi{font-family:bootstrap-icons}';
+        $this->writeSizedFile($assetsRoot . '/bootstrap-icons/0.0.0/bootstrap-icons.min.css', 6000, $iconsCss);
         $this->writeSizedFile($assetsRoot . '/bootstrap-icons/0.0.0/fonts/bootstrap-icons.woff2', 6000, 'ok');
+        $this->writeSizedFile($assetsRoot . '/bootstrap-icons/0.0.0/fonts/bootstrap-icons.woff', 6000, 'ok');
 
         [$code, $output] = $this->runCli($root, ['assets:verify', '--root=' . $fixtureRoot]);
 

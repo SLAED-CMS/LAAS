@@ -608,6 +608,36 @@ function policy_core_theme_strict(): bool
     return policy_env_bool('POLICY_CORE_THEME_STRICT', false);
 }
 
+/**
+ * @return array{assets: int, http: int}
+ */
+function policy_run_assets_checks(): array
+{
+    $root = policy_root_path();
+    require_once $root . '/tools/assets-verify.php';
+    require_once $root . '/tools/assets-http-smoke.php';
+
+    $assetsCode = assets_verify_run($root);
+
+    $env = strtolower((string) ($_ENV['APP_ENV'] ?? ''));
+    $httpSmoke = false;
+    if ($env === 'local') {
+        $httpSmoke = true;
+    } else {
+        $policySmoke = $_ENV['POLICY_HTTP_SMOKE'] ?? '';
+        $httpSmoke = filter_var($policySmoke, FILTER_VALIDATE_BOOLEAN) === true;
+    }
+
+    if ($httpSmoke) {
+        $httpCode = assets_http_smoke_run($root, []);
+    } else {
+        $httpCode = 0;
+        echo "assets.http_smoke.skipped (set POLICY_HTTP_SMOKE=1)\n";
+    }
+
+    return ['assets' => $assetsCode, 'http' => $httpCode];
+}
+
 function policy_is_core_theme_path(string $path): bool
 {
     $root = policy_root_path();
@@ -916,6 +946,7 @@ function policy_exit_code(array $analysis): int
  */
 function policy_run(array $paths): int
 {
+    $assetsResult = policy_run_assets_checks();
     $analysis = policy_analyze($paths);
     foreach ($analysis['errors'] as $error) {
         $snippet = $error['snippet'] !== '' ? (' | ' . $error['snippet']) : '';
@@ -960,7 +991,7 @@ function policy_run(array $paths): int
     }
     echo 'Summary: errors=' . $errorsCount . ' warnings=' . $warningsCount . ' w3a=' . $w3aCount . ' w3b=' . $w3bCount . ' w4=' . $w4Count . ' w5=' . $w5Count . ' w6=' . $w6Count . "\n";
 
-    return policy_exit_code($analysis);
+    return max($assetsResult['assets'], $assetsResult['http'], policy_exit_code($analysis));
 }
 
 if (PHP_SAPI === 'cli' && realpath($argv[0] ?? '') === realpath(__FILE__)) {

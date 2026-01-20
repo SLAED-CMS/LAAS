@@ -2575,16 +2575,19 @@ $commands['assets:verify'] = function () use ($rootPath, $args): int {
     return assets_verify_run($root);
 };
 
+$commands['assets:http:smoke'] = function () use ($rootPath, $args): int {
+    require_once $rootPath . '/tools/assets-http-smoke.php';
+    return assets_http_smoke_run($rootPath, $args);
+};
+
 $commands['policy:check'] = function () use ($rootPath): int {
     require_once $rootPath . '/tools/policy-check.php';
-    require_once $rootPath . '/tools/assets-verify.php';
-    $assetsCode = assets_verify_run($rootPath);
     $policyCode = policy_run([
         $rootPath . '/themes',
         $rootPath . '/src',
         $rootPath . '/modules',
     ]);
-    return max($assetsCode, $policyCode);
+    return $policyCode;
 };
 
 $commands['theme:validate'] = function () use ($rootPath, $appConfig, $dbManager, $args): int {

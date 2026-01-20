@@ -17,6 +17,7 @@
 - `vendor/bin/phpunit` is green
 - `php tools/cli.php policy:check` is green (Summary warnings=0)
 - `php tools/cli.php assets:verify` is green
+- Local only: `php tools/cli.php assets:http:smoke --base=https://laas.loc` (Content-Type: js contains "javascript", css contains "text/css", woff2 is "font/woff2" or "application/font-woff2" or "application/octet-stream")
 - `php tools/cli.php templates:raw:check --path=themes` is green
 - `git status` is clean; ensure no `nul` file exists
 
@@ -44,6 +45,7 @@
 ```bash
 php tools/cli.php policy:check
 php tools/cli.php assets:verify
+php tools/cli.php assets:http:smoke --base=https://laas.loc
 php tools/cli.php templates:raw:check --path=themes
 php tools/cli.php contracts:fixtures:check
 php tools/cli.php contracts:check
@@ -55,4 +57,3 @@ vendor/bin/phpunit
 ## Apply safety
 - UI is preview-only; no apply over HTTP
 - CLI apply requires explicit `--yes`
-

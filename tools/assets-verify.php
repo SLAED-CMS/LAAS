@@ -35,7 +35,8 @@ function assets_verify_run(string $rootPath): int
     foreach ($targets as $target) {
         $path = $target['path'];
         $kind = $target['kind'];
-        foreach (assets_verify_file($path, $kind) as $message) {
+        $minBytes = $target['min_bytes'] ?? null;
+        foreach (assets_verify_file($path, $kind, is_int($minBytes) ? $minBytes : null) as $message) {
             $issues[] = [
                 'path' => $path,
                 'message' => $message,
@@ -70,7 +71,7 @@ function assets_verify_root_path(string $rootPath): string
 /**
  * @param array<string, mixed> $config
  * @return array{
- *   0: array<int, array{path: string, kind: string}>,
+ *   0: array<int, array{path: string, kind: string, min_bytes?: int}>,
  *   1: array<int, array{path: string, message: string}>
  * }
  */
@@ -99,10 +100,9 @@ function assets_verify_targets(string $root, array $config): array
         $targets[] = ['path' => $path, 'kind' => $meta['kind']];
 
         if ($key === 'bootstrap_icons_css') {
-            $fontsDir = rtrim(dirname($path), '/\\') . '/fonts';
-            $fontTargets = assets_verify_fonts($fontsDir, $errors);
-            foreach ($fontTargets as $fontPath) {
-                $targets[] = ['path' => $fontPath, 'kind' => 'font'];
+            $fontTargets = assets_verify_bootstrap_icons_fonts($root, $path, $errors);
+            foreach ($fontTargets as $fontTarget) {
+                $targets[] = $fontTarget;
             }
         }
     }
@@ -112,27 +112,88 @@ function assets_verify_targets(string $root, array $config): array
 
 /**
  * @param array<int, array{path: string, message: string}> $errors
- * @return array<int, string>
+ * @return array<int, array{path: string, kind: string, min_bytes?: int}>
  */
-function assets_verify_fonts(string $fontsDir, array &$errors): array
+function assets_verify_bootstrap_icons_fonts(string $root, string $cssPath, array &$errors): array
 {
-    if (!is_dir($fontsDir)) {
+    if (!is_file($cssPath)) {
+        return [];
+    }
+
+    $contents = @file_get_contents($cssPath);
+    if ($contents === false) {
         $errors[] = [
-            'path' => $fontsDir,
-            'message' => 'Missing fonts directory',
+            'path' => $cssPath,
+            'message' => 'Unreadable bootstrap-icons CSS',
         ];
         return [];
     }
-    $fonts = glob($fontsDir . '/*.woff2');
-    if ($fonts === false || $fonts === []) {
+
+    $urls = assets_verify_extract_css_urls($contents);
+    if ($urls === []) {
         $errors[] = [
-            'path' => $fontsDir . '/*.woff2',
-            'message' => 'Missing woff2 font files',
+            'path' => $cssPath,
+            'message' => 'No font URLs found in bootstrap-icons CSS',
         ];
         return [];
     }
-    sort($fonts);
-    return $fonts;
+
+    $targets = [];
+    $seen = [];
+    $woffPaths = [];
+
+    foreach ($urls as $url) {
+        $clean = assets_verify_clean_css_url($url);
+        if ($clean === '') {
+            continue;
+        }
+        if (str_starts_with($clean, 'data:')) {
+            $errors[] = [
+                'path' => $cssPath,
+                'message' => 'Embedded font URL not allowed: ' . $clean,
+            ];
+            continue;
+        }
+        if (assets_verify_is_external_url($clean)) {
+            $errors[] = [
+                'path' => $cssPath,
+                'message' => 'External font URL not allowed: ' . $clean,
+            ];
+            continue;
+        }
+        $pathPart = assets_verify_strip_query_fragment($clean);
+        if ($pathPart === '') {
+            continue;
+        }
+        $ext = strtolower(pathinfo($pathPart, PATHINFO_EXTENSION));
+        if (!in_array($ext, ['woff', 'woff2'], true)) {
+            $errors[] = [
+                'path' => $cssPath,
+                'message' => 'Unsupported font extension in URL: ' . $clean,
+            ];
+            continue;
+        }
+        $resolved = assets_verify_resolve_css_path($root, $cssPath, $pathPart);
+        if (!isset($seen[$resolved])) {
+            $targets[] = ['path' => $resolved, 'kind' => 'font', 'min_bytes' => 1024];
+            $seen[$resolved] = true;
+        }
+        if ($ext === 'woff') {
+            $woffPaths[] = $resolved;
+        }
+    }
+
+    foreach ($woffPaths as $woffPath) {
+        $candidate = assets_verify_woff2_candidate($woffPath);
+        if ($candidate !== '' && !is_file($candidate)) {
+            $errors[] = [
+                'path' => $woffPath,
+                'message' => 'Missing woff2 font for ' . basename($woffPath),
+            ];
+        }
+    }
+
+    return $targets;
 }
 
 function assets_verify_local_path(string $root, string $assetPath): string
@@ -154,7 +215,7 @@ function assets_verify_extract_path(string $assetPath): string
 /**
  * @return array<int, string>
  */
-function assets_verify_file(string $path, string $kind): array
+function assets_verify_file(string $path, string $kind, ?int $minBytes = null): array
 {
     if (!is_file($path)) {
         return ['Missing file'];
@@ -165,7 +226,7 @@ function assets_verify_file(string $path, string $kind): array
     if ($size === false) {
         $errors[] = 'Unreadable file size';
     } else {
-        $min = assets_verify_min_bytes($kind);
+        $min = $minBytes ?? assets_verify_min_bytes($kind);
         if ($min !== null && $size < $min) {
             $errors[] = 'File size ' . $size . ' bytes is below ' . $min . ' bytes';
         }
@@ -194,4 +255,67 @@ function assets_verify_file(string $path, string $kind): array
 function assets_verify_min_bytes(string $kind): ?int
 {
     return ASSETS_VERIFY_MIN_BYTES[$kind] ?? null;
+}
+
+/**
+ * @return array<int, string>
+ */
+function assets_verify_extract_css_urls(string $contents): array
+{
+    if (preg_match_all('/url\\(([^)]+)\\)/i', $contents, $matches) <= 0) {
+        return [];
+    }
+    $urls = [];
+    foreach ($matches[1] as $raw) {
+        if (!is_string($raw)) {
+            continue;
+        }
+        $urls[] = $raw;
+    }
+    return $urls;
+}
+
+function assets_verify_clean_css_url(string $value): string
+{
+    $value = trim($value);
+    if ($value === '') {
+        return '';
+    }
+    $value = trim($value, " \t\n\r\0\x0B\"'");
+    return trim($value);
+}
+
+function assets_verify_strip_query_fragment(string $value): string
+{
+    $value = trim($value);
+    if ($value === '') {
+        return '';
+    }
+    $stripped = strtok($value, '?#');
+    return is_string($stripped) ? $stripped : '';
+}
+
+function assets_verify_is_external_url(string $value): bool
+{
+    if (str_starts_with($value, '//')) {
+        return true;
+    }
+    return preg_match('/^[a-z][a-z0-9+.-]*:/i', $value) === 1;
+}
+
+function assets_verify_resolve_css_path(string $root, string $cssPath, string $assetPath): string
+{
+    if (str_starts_with($assetPath, '/')) {
+        return rtrim($root, '/\\') . '/public' . $assetPath;
+    }
+    return rtrim(dirname($cssPath), '/\\') . '/' . $assetPath;
+}
+
+function assets_verify_woff2_candidate(string $woffPath): string
+{
+    if (!str_ends_with(strtolower($woffPath), '.woff')) {
+        return '';
+    }
+    $base = substr($woffPath, 0, -5);
+    return $base . '.woff2';
 }
