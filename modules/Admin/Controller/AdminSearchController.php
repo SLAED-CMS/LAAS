@@ -4,8 +4,7 @@ declare(strict_types=1);
 namespace Laas\Modules\Admin\Controller;
 
 use Laas\Core\Container\Container;
-use Laas\Database\DatabaseManager;
-use Laas\Database\Repositories\RbacRepository;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Domain\AdminSearch\AdminSearchServiceInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
@@ -16,7 +15,6 @@ final class AdminSearchController
 {
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null,
         private ?AdminSearchServiceInterface $searchService = null,
         private ?Container $container = null
     ) {
@@ -64,7 +62,7 @@ final class AdminSearchController
     private function buildOptions(Request $request): array
     {
         $userId = $this->currentUserId($request);
-        $rbac = $this->getRbacRepository();
+        $rbac = $this->rbacService();
 
         if ($userId === null || $rbac === null) {
             return [
@@ -107,20 +105,7 @@ final class AdminSearchController
         return null;
     }
 
-    private function getRbacRepository(): ?RbacRepository
-    {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
-        }
-
-        try {
-            return new RbacRepository($this->db->pdo());
-        } catch (Throwable) {
-            return null;
-        }
-    }
-
-    private function canAny(RbacRepository $rbac, int $userId, array $permissions): bool
+    private function canAny(RbacServiceInterface $rbac, int $userId, array $permissions): bool
     {
         foreach ($permissions as $permission) {
             try {
@@ -154,6 +139,20 @@ final class AdminSearchController
         }
 
         return null;
+    }
+
+    private function rbacService(): ?RbacServiceInterface
+    {
+        if ($this->container === null) {
+            return null;
+        }
+
+        try {
+            $service = $this->container->get(RbacServiceInterface::class);
+            return $service instanceof RbacServiceInterface ? $service : null;
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     /** @return array<string, mixed> */

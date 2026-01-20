@@ -5,8 +5,7 @@ namespace Laas\Modules\Users\Controller;
 
 use Laas\Core\Validation\Validator;
 use Laas\Core\Validation\ValidationResult;
-use Laas\Database\Repositories\UsersRepository;
-use Laas\Database\Repositories\PasswordResetRepository;
+use Laas\Domain\Users\UsersServiceInterface;
 use Laas\Support\Mail\MailerInterface;
 use Laas\Security\RateLimiter;
 use Laas\Http\Request;
@@ -21,8 +20,7 @@ final class PasswordResetController
 
     public function __construct(
         private View $view,
-        private UsersRepository $users,
-        private PasswordResetRepository $passwordResets,
+        private ?UsersServiceInterface $users,
         private MailerInterface $mailer,
         private RateLimiter $rateLimiter,
         private string $rootPath,
@@ -38,6 +36,10 @@ final class PasswordResetController
 
     public function requestReset(Request $request): Response
     {
+        if ($this->users === null) {
+            return new Response('', 503);
+        }
+
         $email = trim((string) ($request->post('email') ?? ''));
 
         $validator = new Validator();
@@ -83,9 +85,8 @@ final class PasswordResetController
             $rawToken = bin2hex(random_bytes(32));
             $hashedToken = hash('sha256', $rawToken);
 
-            $this->passwordResets->deleteByEmail($email);
-
-            $this->passwordResets->createToken($email, $hashedToken, 3600);
+            $this->users->deletePasswordResetByEmail($email);
+            $this->users->createPasswordResetToken($email, $hashedToken, 3600);
 
             $scheme = $request->header('X-Forwarded-Proto') ?? ($request->isSecure() ? 'https' : 'http');
             $host = $request->header('Host') ?? 'localhost';
@@ -115,15 +116,19 @@ final class PasswordResetController
 
     public function showResetForm(Request $request): Response
     {
+        if ($this->users === null) {
+            return $this->view->render('pages/password_reset_invalid.html', [], 503);
+        }
+
         $rawToken = trim((string) ($request->query('token') ?? ''));
         if ($rawToken === '') {
             return $this->view->render('pages/password_reset_invalid.html', [], 400);
         }
 
         $hashedToken = hash('sha256', $rawToken);
-        $tokenRecord = $this->passwordResets->findByToken($hashedToken);
+        $tokenRecord = $this->users->findPasswordResetByToken($hashedToken);
 
-        if ($tokenRecord === null || !$this->passwordResets->isValid($tokenRecord)) {
+        if ($tokenRecord === null || !$this->users->isPasswordResetTokenValid($tokenRecord)) {
             return $this->view->render('pages/password_reset_invalid.html', [], 400);
         }
 
@@ -134,6 +139,10 @@ final class PasswordResetController
 
     public function processReset(Request $request): Response
     {
+        if ($this->users === null) {
+            return $this->view->render('pages/password_reset_invalid.html', [], 503);
+        }
+
         $rawToken = trim((string) ($request->post('token') ?? ''));
         $password = (string) ($request->post('password') ?? '');
         $passwordConfirm = (string) ($request->post('password_confirm') ?? '');
@@ -173,9 +182,9 @@ final class PasswordResetController
         }
 
         $hashedToken = hash('sha256', $rawToken);
-        $tokenRecord = $this->passwordResets->findByToken($hashedToken);
+        $tokenRecord = $this->users->findPasswordResetByToken($hashedToken);
 
-        if ($tokenRecord === null || !$this->passwordResets->isValid($tokenRecord)) {
+        if ($tokenRecord === null || !$this->users->isPasswordResetTokenValid($tokenRecord)) {
             return $this->view->render('pages/password_reset_invalid.html', [], 400);
         }
 
@@ -192,7 +201,7 @@ final class PasswordResetController
         $passwordHash = password_hash($password, PASSWORD_BCRYPT);
         $this->users->setPasswordHash((int) $user['id'], $passwordHash);
 
-        $this->passwordResets->deleteToken($hashedToken);
+        $this->users->deletePasswordResetToken($hashedToken);
 
         $this->logger->info('Password reset successful', [
             'user_id' => (int) $user['id'],

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Laas\Modules\Changelog\Support;
 
-use Laas\Database\Repositories\SettingsRepository;
+use Laas\Domain\Settings\SettingsServiceInterface;
 
 final class ChangelogSettings
 {
@@ -48,10 +48,10 @@ final class ChangelogSettings
     }
 
     /** @return array<string, mixed> */
-    public static function load(string $rootPath, ?SettingsRepository $repo): array
+    public static function load(string $rootPath, ?SettingsServiceInterface $settings): array
     {
         $values = self::defaults($rootPath);
-        if ($repo === null) {
+        if ($settings === null) {
             return $values;
         }
 
@@ -72,9 +72,9 @@ final class ChangelogSettings
         ];
 
         foreach ($map as $key => $target) {
-            $has = $repo->has($key);
+            $has = $settings->has($key);
             if ($has) {
-                $val = $repo->get($key, $values[$target] ?? null);
+                $val = $settings->get($key, $values[$target] ?? null);
                 $values[$target] = $val;
             }
         }

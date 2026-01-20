@@ -7,7 +7,7 @@ use Laas\Core\Validation\Validator;
 use Laas\Core\Validation\ValidationResult;
 use Laas\Auth\AuthInterface;
 use Laas\Auth\TotpService;
-use Laas\Database\Repositories\UsersRepository;
+use Laas\Domain\Users\UsersServiceInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\View\View;
@@ -17,7 +17,7 @@ final class AuthController
     public function __construct(
         private View $view,
         private AuthInterface $auth,
-        private UsersRepository $users,
+        private ?UsersServiceInterface $users,
         private TotpService $totp
     ) {
     }
@@ -29,6 +29,10 @@ final class AuthController
 
     public function doLogin(Request $request): Response
     {
+        if ($this->users === null) {
+            return new Response('', 503);
+        }
+
         $username = $request->post('username') ?? '';
         $password = $request->post('password') ?? '';
 
@@ -133,6 +137,10 @@ final class AuthController
 
     public function verify2fa(Request $request): Response
     {
+        if ($this->users === null) {
+            return new Response('', 503);
+        }
+
         $session = $request->session();
         $pendingUserId = (int) $session->get('_2fa_pending_user_id', 0);
         $pendingIp = (string) $session->get('_2fa_pending_ip', '');
@@ -160,7 +168,7 @@ final class AuthController
             ], 422);
         }
 
-        $user = $this->users->findById($pendingUserId);
+        $user = $this->users->find($pendingUserId);
         if ($user === null || (int) ($user['status'] ?? 0) !== 1) {
             $session->delete('_2fa_pending_user_id');
             $session->delete('_2fa_pending_ip');

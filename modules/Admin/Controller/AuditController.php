@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace Laas\Modules\Admin\Controller;
 
-use Laas\Database\DatabaseManager;
-use Laas\Database\Repositories\AuditLogRepository;
-use Laas\Database\Repositories\RbacRepository;
+use Laas\Core\Container\Container;
+use Laas\Domain\Audit\AuditLogServiceInterface;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
@@ -17,7 +17,8 @@ final class AuditController
 {
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null
+        private ?AuditLogServiceInterface $auditService = null,
+        private ?Container $container = null
     ) {
     }
 
@@ -27,12 +28,12 @@ final class AuditController
             return $this->forbidden($request);
         }
 
-        if ($this->db === null || !$this->db->healthCheck()) {
+        $service = $this->service();
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
         try {
-            $repo = new AuditLogRepository($this->db);
             $filters = $this->readFilters($request);
             if (!$filters['valid']) {
                 $message = $this->view->translate('audit.filters.invalid_range');
@@ -46,7 +47,7 @@ final class AuditController
                     return $response->withHeader('HX-Retarget', '#page-messages');
                 }
 
-                $actions = $repo->listActions();
+                $actions = $service->listActions();
                 $actionOptions = array_map(static function (string $action) use ($filters): array {
                     return [
                         'name' => $action,
@@ -58,7 +59,7 @@ final class AuditController
                     'logs' => [],
                     'filters' => $filters['values'],
                     'actions' => $actionOptions,
-                    'users' => $repo->listUsers(),
+                    'users' => $service->listUsers(),
                     'pagination' => $this->emptyPagination(),
                     'errors' => [$message],
                 ], 422, [], [
@@ -69,10 +70,10 @@ final class AuditController
             $page = $this->readPage($request);
             $limit = 50;
             $offset = ($page - 1) * $limit;
-            $total = $repo->countSearch($filters['values']);
-            $rows = $repo->search($filters['values'], $limit, $offset);
-            $actions = $repo->listActions();
-            $users = $repo->listUsers();
+            $total = $service->countSearch($filters['values']);
+            $rows = $service->search($filters['values'], $limit, $offset);
+            $actions = $service->listActions();
+            $users = $service->listUsers();
             $actionOptions = array_map(static function (string $action) use ($filters): array {
                 return [
                     'name' => $action,
@@ -134,21 +135,17 @@ final class AuditController
 
     private function canView(Request $request): bool
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return false;
-        }
-
         $userId = $this->currentUserId($request);
         if ($userId === null) {
             return false;
         }
 
-        try {
-            $rbac = new RbacRepository($this->db->pdo());
-            return $rbac->userHasPermission($userId, 'audit.view');
-        } catch (Throwable) {
+        $rbac = $this->rbac();
+        if ($rbac === null) {
             return false;
         }
+
+        return $rbac->userHasPermission($userId, 'audit.view');
     }
 
     private function currentUserId(Request $request): ?int
@@ -326,5 +323,42 @@ final class AuditController
         }
 
         return substr($text, 0, $limit) . '...';
+    }
+
+    private function service(): ?AuditLogServiceInterface
+    {
+        if ($this->auditService !== null) {
+            return $this->auditService;
+        }
+
+        if ($this->container === null) {
+            return null;
+        }
+
+        try {
+            $service = $this->container->get(AuditLogServiceInterface::class);
+            if ($service instanceof AuditLogServiceInterface) {
+                $this->auditService = $service;
+                return $this->auditService;
+            }
+        } catch (Throwable) {
+            return null;
+        }
+
+        return null;
+    }
+
+    private function rbac(): ?RbacServiceInterface
+    {
+        if ($this->container === null) {
+            return null;
+        }
+
+        try {
+            $service = $this->container->get(RbacServiceInterface::class);
+            return $service instanceof RbacServiceInterface ? $service : null;
+        } catch (Throwable) {
+            return null;
+        }
     }
 }

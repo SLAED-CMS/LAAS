@@ -4,14 +4,13 @@ declare(strict_types=1);
 namespace Laas\Modules\Admin\Controller;
 
 use Laas\Core\Container\Container;
-use Laas\Database\DatabaseManager;
-use Laas\Database\Repositories\RbacRepository;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Domain\Users\UsersServiceInterface;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\Support\AuditLogger;
+use Laas\Support\Audit;
 use Laas\Support\Search\Highlighter;
 use Laas\Support\Search\SearchNormalizer;
 use Laas\Support\Search\SearchQuery;
@@ -25,7 +24,6 @@ final class UsersController
 
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null,
         private ?UsersServiceInterface $usersService = null,
         private ?Container $container = null
     ) {
@@ -200,7 +198,7 @@ final class UsersController
         $service->setStatus($userId, $nextStatus);
 
         $actorId = $currentUserId;
-        (new AuditLogger($this->db, $request->session()))->log(
+        Audit::log(
             'users.status.updated',
             'user',
             $userId,
@@ -266,13 +264,12 @@ final class UsersController
         $service->setAdminRole($userId, !$isAdmin);
 
         $actorId = $currentUserId;
-        $audit = new AuditLogger($this->db, $request->session());
-        $audit->log('rbac.user.roles.updated', 'user', $userId, [
+        Audit::log('rbac.user.roles.updated', 'user', $userId, [
             'actor_user_id' => $actorId,
             'target_user_id' => $userId,
             'added_roles' => $isAdmin ? [] : ['admin'],
             'removed_roles' => $isAdmin ? ['admin'] : [],
-        ], $actorId, $request->ip());
+        ]);
 
         $row = $this->mapUserRow($user, !$isAdmin, $currentUserId);
         $response = $this->renderRow($request, $row);
@@ -325,7 +322,7 @@ final class UsersController
         $service->setPasswordHash($userId, $hash);
 
         $actorId = $this->currentUserId($request);
-        (new AuditLogger($this->db, $request->session()))->log(
+        Audit::log(
             'users.password.changed',
             'user',
             $userId,
@@ -365,7 +362,7 @@ final class UsersController
         }
 
         $service = $this->service();
-        if ($service === null || $this->db === null || !$this->db->healthCheck()) {
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
@@ -382,7 +379,7 @@ final class UsersController
         $service->delete($userId);
 
         $actorId = $currentUserId;
-        (new AuditLogger($this->db, $request->session()))->log(
+        Audit::log(
             'users.deleted',
             'user',
             $userId,
@@ -515,21 +512,17 @@ final class UsersController
 
     private function hasPermission(Request $request, string $permission): bool
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return false;
-        }
-
         $userId = $this->currentUserId($request);
         if ($userId === null) {
             return false;
         }
 
-        try {
-            $rbac = new RbacRepository($this->db->pdo());
-            return $rbac->userHasPermission($userId, $permission);
-        } catch (Throwable) {
+        $rbac = $this->rbac();
+        if ($rbac === null) {
             return false;
         }
+
+        return $rbac->userHasPermission($userId, $permission);
     }
 
     private function forbidden(Request $request): Response
@@ -629,5 +622,19 @@ final class UsersController
         }
 
         return null;
+    }
+
+    private function rbac(): ?RbacServiceInterface
+    {
+        if ($this->container === null) {
+            return null;
+        }
+
+        try {
+            $service = $this->container->get(RbacServiceInterface::class);
+            return $service instanceof RbacServiceInterface ? $service : null;
+        } catch (Throwable) {
+            return null;
+        }
     }
 }

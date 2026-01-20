@@ -102,6 +102,42 @@ class MediaService implements MediaServiceInterface
     }
 
     /** @return array<int, array<string, mixed>> */
+    public function list(int $limit = 20, int $offset = 0, string $query = ''): array
+    {
+        if ($limit <= 0) {
+            throw new InvalidArgumentException('Limit must be positive.');
+        }
+        if ($offset < 0) {
+            throw new InvalidArgumentException('Offset must be zero or positive.');
+        }
+
+        return $this->repository()->list($limit, $offset, $query);
+    }
+
+    public function count(string $query = ''): int
+    {
+        return $this->repository()->count($query);
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function listPublic(int $limit = 20, int $offset = 0, string $query = ''): array
+    {
+        if ($limit <= 0) {
+            throw new InvalidArgumentException('Limit must be positive.');
+        }
+        if ($offset < 0) {
+            throw new InvalidArgumentException('Offset must be zero or positive.');
+        }
+
+        return $this->repository()->listPublic($limit, $offset, $query);
+    }
+
+    public function countPublic(string $query = ''): int
+    {
+        return $this->repository()->countPublic($query);
+    }
+
+    /** @return array<int, array<string, mixed>> */
     public function search(string $query, int $limit = 10, int $offset = 0): array
     {
         $query = trim($query);
@@ -116,6 +152,31 @@ class MediaService implements MediaServiceInterface
         }
 
         return $this->repository()->search($query, $limit, $offset);
+    }
+
+    public function countSearch(string $query): int
+    {
+        return $this->repository()->countSearch($query);
+    }
+
+    /** @mutation */
+    public function delete(int $id): void
+    {
+        if ($id <= 0) {
+            throw new InvalidArgumentException('Media id must be positive.');
+        }
+
+        $this->repository()->delete($id);
+    }
+
+    /** @mutation */
+    public function setPublic(int $id, bool $isPublic, ?string $token): void
+    {
+        if ($id <= 0) {
+            throw new InvalidArgumentException('Media id must be positive.');
+        }
+
+        $this->repository()->setPublic($id, $isPublic, $token);
     }
 
     /** @param array<string, mixed> $file */

@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace Laas\Modules\DevTools\Controller;
 
-use Laas\Database\DatabaseManager;
-use Laas\Database\Repositories\RbacRepository;
+use Laas\Core\Container\Container;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\DevTools\DevToolsContext;
 use Laas\DevTools\JsErrorInbox;
 use Laas\Http\ErrorResponse;
@@ -20,7 +20,8 @@ final class DevToolsController
 
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null
+        private ?RbacServiceInterface $rbacService = null,
+        private ?Container $container = null
     ) {
     }
 
@@ -234,10 +235,6 @@ final class DevToolsController
             return false;
         }
 
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return false;
-        }
-
         $session = $request->session();
         if (!$session->isStarted()) {
             return false;
@@ -250,11 +247,34 @@ final class DevToolsController
 
         $userId = (int) $userId;
 
-        try {
-            $rbac = new RbacRepository($this->db->pdo());
-            return $rbac->userHasPermission($userId, 'debug.view');
-        } catch (\Throwable) {
+        $rbac = $this->rbac();
+        if ($rbac === null) {
             return false;
         }
+
+        return $rbac->userHasPermission($userId, 'debug.view');
+    }
+
+    private function rbac(): ?RbacServiceInterface
+    {
+        if ($this->rbacService !== null) {
+            return $this->rbacService;
+        }
+
+        if ($this->container === null) {
+            return null;
+        }
+
+        try {
+            $service = $this->container->get(RbacServiceInterface::class);
+            if ($service instanceof RbacServiceInterface) {
+                $this->rbacService = $service;
+                return $this->rbacService;
+            }
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return null;
     }
 }

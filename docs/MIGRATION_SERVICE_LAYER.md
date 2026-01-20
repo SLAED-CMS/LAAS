@@ -10,6 +10,7 @@
 - controllers depend on `*ServiceInterface` only (no concrete service types)
 - Kernel binds services against interfaces for stable contracts and test isolation
 - contract tests fail if a service is missing its interface
+- mutating service methods must include `@mutation` (tests enforce common mutation prefixes)
 
 ## How to migrate an existing controller
 1) Identify the domain/system logic in the controller.

@@ -3,22 +3,23 @@ declare(strict_types=1);
 
 namespace Laas\Modules\Admin\Controller;
 
-use Laas\Database\DatabaseManager;
-use Laas\Database\Repositories\RbacRepository;
-use Laas\Database\Repositories\UsersRepository;
+use Laas\Core\Container\Container;
+use Laas\Domain\Rbac\RbacServiceInterface;
+use Laas\Domain\Users\UsersServiceInterface;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\Support\AuditLogger;
+use Laas\Support\Audit;
 use Laas\Support\Rbac\RbacDiagnosticsService;
 use Laas\View\View;
-use Throwable;
 
 final class RbacDiagnosticsController
 {
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null
+        private ?UsersServiceInterface $usersService = null,
+        private ?Container $container = null,
+        private ?RbacServiceInterface $rbacService = null
     ) {
     }
 
@@ -110,9 +111,11 @@ final class RbacDiagnosticsController
         $perms = $service->getUserEffectivePermissions($userId);
         $groups = $perms['groups'] ?? [];
 
-        (new AuditLogger($this->db, $request->session()))->log('rbac.diagnostics.viewed', 'rbac', $userId, [
+        Audit::log('rbac.diagnostics.viewed', 'rbac', $userId, [
             'target_user_id' => $userId,
-        ], $this->currentUserId($request), $request->ip());
+            'actor_user_id' => $this->currentUserId($request),
+            'actor_ip' => $request->ip(),
+        ]);
 
         return [
             'user_id' => $userId,
@@ -123,14 +126,17 @@ final class RbacDiagnosticsController
 
     private function listUsers(): ?array
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
+        $usersService = $this->usersService();
+        if ($usersService === null) {
             return null;
         }
 
         try {
-            $repo = new UsersRepository($this->db->pdo());
-            $rows = $repo->list(200, 0);
-        } catch (Throwable) {
+            $rows = $usersService->list([
+                'limit' => 200,
+                'offset' => 0,
+            ]);
+        } catch (\Throwable) {
             return null;
         }
 
@@ -157,15 +163,55 @@ final class RbacDiagnosticsController
 
     private function service(): ?RbacDiagnosticsService
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
+        $rbac = $this->rbacService();
+        $users = $this->usersService();
+        if ($rbac === null || $users === null) {
             return null;
         }
 
-        try {
-            return new RbacDiagnosticsService($this->db);
-        } catch (Throwable) {
-            return null;
+        return new RbacDiagnosticsService($rbac, $users);
+    }
+
+    private function usersService(): ?UsersServiceInterface
+    {
+        if ($this->usersService !== null) {
+            return $this->usersService;
         }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(UsersServiceInterface::class);
+                if ($service instanceof UsersServiceInterface) {
+                    $this->usersService = $service;
+                    return $this->usersService;
+                }
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function rbacService(): ?RbacServiceInterface
+    {
+        if ($this->rbacService !== null) {
+            return $this->rbacService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(RbacServiceInterface::class);
+                if ($service instanceof RbacServiceInterface) {
+                    $this->rbacService = $service;
+                    return $this->rbacService;
+                }
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+
+        return null;
     }
 
     private function readUserId(?string $raw): ?int
@@ -182,21 +228,17 @@ final class RbacDiagnosticsController
 
     private function canDiagnostics(Request $request): bool
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return false;
-        }
-
         $userId = $this->currentUserId($request);
         if ($userId === null) {
             return false;
         }
 
-        try {
-            $rbac = new RbacRepository($this->db->pdo());
-            return $rbac->userHasPermission($userId, 'rbac.diagnostics');
-        } catch (Throwable) {
+        $rbac = $this->rbacService();
+        if ($rbac === null) {
             return false;
         }
+
+        return $rbac->userHasPermission($userId, 'rbac.diagnostics');
     }
 
     private function currentUserId(Request $request): ?int

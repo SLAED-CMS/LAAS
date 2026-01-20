@@ -28,6 +28,49 @@ final class ServiceInterfaceCoverageTest extends TestCase
         }
     }
 
+    public function testServiceInterfacesHaveBindingsAndMethods(): void
+    {
+        $root = dirname(__DIR__);
+        $interfaceFiles = $this->domainServiceInterfaceFiles($root . '/src/Domain');
+
+        $this->assertNotEmpty($interfaceFiles);
+
+        $kernelPath = $root . '/src/Core/Kernel.php';
+        $kernelContents = file_get_contents($kernelPath);
+        $this->assertNotFalse($kernelContents, 'Unable to read ' . $kernelPath);
+
+        foreach ($interfaceFiles as $interfaceFile) {
+            $serviceFile = substr($interfaceFile, 0, -strlen('ServiceInterface.php')) . 'Service.php';
+            $this->assertFileExists($serviceFile, 'Missing service for ' . $interfaceFile);
+
+            $interfaceClass = $this->classNameFromFile($interfaceFile, 'interface');
+            $serviceClass = $this->classNameFromFile($serviceFile, 'class');
+
+            $this->assertTrue(interface_exists($interfaceClass), 'Missing interface ' . $interfaceClass);
+            $this->assertTrue(class_exists($serviceClass), 'Missing class ' . $serviceClass);
+            $this->assertTrue(
+                is_subclass_of($serviceClass, $interfaceClass),
+                $serviceClass . ' must implement ' . $interfaceClass
+            );
+
+            $serviceReflection = new ReflectionClass($serviceClass);
+            $interfaceReflection = new ReflectionClass($interfaceClass);
+            foreach ($interfaceReflection->getMethods() as $method) {
+                $this->assertTrue(
+                    $serviceReflection->hasMethod($method->getName()),
+                    $serviceClass . ' missing method ' . $method->getName()
+                );
+            }
+
+            $interfaceNeedle = $interfaceClass . '::class';
+            $shortNeedle = $this->shortName($interfaceClass) . '::class';
+            $this->assertTrue(
+                str_contains($kernelContents, $interfaceNeedle) || str_contains($kernelContents, $shortNeedle),
+                'Kernel must bind ' . $interfaceClass
+            );
+        }
+    }
+
     /**
      * @return array<int, string>
      */
@@ -51,6 +94,34 @@ final class ServiceInterfaceCoverageTest extends TestCase
                 continue;
             }
             if (str_ends_with($name, 'ServiceInterface.php') || str_ends_with($name, 'ServiceException.php')) {
+                continue;
+            }
+            $files[] = $file->getPathname();
+        }
+
+        sort($files);
+        return $files;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function domainServiceInterfaceFiles(string $root): array
+    {
+        $files = [];
+        if (!is_dir($root)) {
+            return $files;
+        }
+
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS)
+        );
+
+        foreach ($iterator as $file) {
+            if (!$file->isFile()) {
+                continue;
+            }
+            if (!str_ends_with($file->getFilename(), 'ServiceInterface.php')) {
                 continue;
             }
             $files[] = $file->getPathname();
@@ -88,5 +159,11 @@ final class ServiceInterfaceCoverageTest extends TestCase
         }
 
         return $namespace . '\\' . $class;
+    }
+
+    private function shortName(string $class): string
+    {
+        $pos = strrpos($class, '\\');
+        return $pos === false ? $class : substr($class, $pos + 1);
     }
 }

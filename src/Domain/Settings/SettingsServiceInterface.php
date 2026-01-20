@@ -17,6 +17,12 @@ interface SettingsServiceInterface
     /** @return array{settings: array<string, mixed>, sources: array<string, string>} */
     public function settingsWithSources(): array;
 
+    public function get(string $key, mixed $default = null): mixed;
+
+    public function has(string $key): bool;
+
+    public function set(string $key, mixed $value): void;
+
     public function setMany(array $pairs): void;
 
     /** @return array<string, string> */

@@ -7,13 +7,12 @@ use Laas\Api\ApiCacheInvalidator;
 use Laas\Core\Container\Container;
 use Laas\Core\Validation\Validator;
 use Laas\Core\Validation\ValidationResult;
-use Laas\Database\DatabaseManager;
-use Laas\Database\Repositories\RbacRepository;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Domain\Menus\MenusServiceInterface;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\Support\AuditLogger;
+use Laas\Support\Audit;
 use Laas\Support\UrlValidator;
 use Laas\Modules\Menu\Service\MenuCacheInvalidator;
 use Laas\View\SanitizedHtml;
@@ -24,9 +23,9 @@ final class AdminMenusController
 {
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null,
         private ?MenusServiceInterface $menusService = null,
-        private ?Container $container = null
+        private ?Container $container = null,
+        private ?RbacServiceInterface $rbacService = null
     ) {
     }
 
@@ -185,20 +184,15 @@ final class AdminMenusController
             $itemId = $service->updateItem($id, $payload);
         }
         $action = $id === null ? 'menus.item.create' : 'menus.item.update';
-        (new AuditLogger($this->db, $request->session()))->log(
-            $action,
-            'menu_item',
-            $itemId,
-            [
-                'label' => $label,
-                'url' => $url,
-                'enabled' => (int) $enabledValue,
-                'is_external' => (int) $isExternalValue,
-                'sort_order' => (int) $sortOrderValue,
-            ],
-            $this->currentUserId($request),
-            $request->ip()
-        );
+        Audit::log($action, 'menu_item', $itemId, [
+            'label' => $label,
+            'url' => $url,
+            'enabled' => (int) $enabledValue,
+            'is_external' => (int) $isExternalValue,
+            'sort_order' => (int) $sortOrderValue,
+            'actor_user_id' => $this->currentUserId($request),
+            'actor_ip' => $request->ip(),
+        ]);
 
         (new MenuCacheInvalidator())->invalidate((string) ($menu['name'] ?? ''));
         (new ApiCacheInvalidator())->invalidateMenu((string) ($menu['name'] ?? ''));
@@ -243,18 +237,13 @@ final class AdminMenusController
         $enabled = !empty($item['enabled']) ? 1 : 0;
         $nextEnabled = $enabled === 1 ? 0 : 1;
         $service->setItemEnabled($id, $nextEnabled);
-        (new AuditLogger($this->db, $request->session()))->log(
-            $nextEnabled === 1 ? 'menus.item.enable' : 'menus.item.disable',
-            'menu_item',
-            $id,
-            [
-                'label' => (string) ($item['label'] ?? ''),
-                'url' => (string) ($item['url'] ?? ''),
-                'enabled' => $nextEnabled,
-            ],
-            $this->currentUserId($request),
-            $request->ip()
-        );
+        Audit::log($nextEnabled === 1 ? 'menus.item.enable' : 'menus.item.disable', 'menu_item', $id, [
+            'label' => (string) ($item['label'] ?? ''),
+            'url' => (string) ($item['url'] ?? ''),
+            'enabled' => $nextEnabled,
+            'actor_user_id' => $this->currentUserId($request),
+            'actor_ip' => $request->ip(),
+        ]);
 
         (new MenuCacheInvalidator())->invalidate((string) ($menu['name'] ?? ''));
         (new ApiCacheInvalidator())->invalidateMenu((string) ($menu['name'] ?? ''));
@@ -284,17 +273,12 @@ final class AdminMenusController
         }
         $item = $service->findItem($id);
         $service->deleteItem($id);
-        (new AuditLogger($this->db, $request->session()))->log(
-            'menus.item.delete',
-            'menu_item',
-            $id,
-            [
-                'label' => (string) ($item['label'] ?? ''),
-                'url' => (string) ($item['url'] ?? ''),
-            ],
-            $this->currentUserId($request),
-            $request->ip()
-        );
+        Audit::log('menus.item.delete', 'menu_item', $id, [
+            'label' => (string) ($item['label'] ?? ''),
+            'url' => (string) ($item['url'] ?? ''),
+            'actor_user_id' => $this->currentUserId($request),
+            'actor_ip' => $request->ip(),
+        ]);
 
         (new MenuCacheInvalidator())->invalidate((string) ($menu['name'] ?? ''));
         (new ApiCacheInvalidator())->invalidateMenu((string) ($menu['name'] ?? ''));
@@ -405,21 +389,17 @@ final class AdminMenusController
 
     private function canEdit(Request $request): bool
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return false;
-        }
-
         $userId = $this->currentUserId($request);
         if ($userId === null) {
             return false;
         }
 
-        try {
-            $rbac = new RbacRepository($this->db->pdo());
-            return $rbac->userHasPermission($userId, 'menus.edit');
-        } catch (Throwable) {
+        $rbac = $this->rbacService();
+        if ($rbac === null) {
             return false;
         }
+
+        return $rbac->userHasPermission($userId, 'menus.edit');
     }
 
     private function currentUserId(Request $request): ?int
@@ -537,6 +517,27 @@ final class AdminMenusController
                 if ($service instanceof MenusServiceInterface) {
                     $this->menusService = $service;
                     return $this->menusService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function rbacService(): ?RbacServiceInterface
+    {
+        if ($this->rbacService !== null) {
+            return $this->rbacService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(RbacServiceInterface::class);
+                if ($service instanceof RbacServiceInterface) {
+                    $this->rbacService = $service;
+                    return $this->rbacService;
                 }
             } catch (Throwable) {
                 return null;

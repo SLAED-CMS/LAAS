@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace Laas\Modules\Changelog\Controller;
 
-use Laas\Database\DatabaseManager;
-use Laas\Database\Repositories\SettingsRepository;
+use Laas\Core\Container\Container;
+use Laas\Domain\Settings\SettingsServiceInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Changelog\Service\ChangelogService;
@@ -18,7 +18,8 @@ final class ChangelogController
 {
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null
+        private ?SettingsServiceInterface $settingsService = null,
+        private ?Container $container = null
     ) {
     }
 
@@ -93,21 +94,28 @@ final class ChangelogController
 
     private function loadSettings(): array
     {
-        $repo = $this->settingsRepository();
-        return ChangelogSettings::load($this->rootPath(), $repo);
+        return ChangelogSettings::load($this->rootPath(), $this->settingsService());
     }
 
-    private function settingsRepository(): ?SettingsRepository
+    private function settingsService(): ?SettingsServiceInterface
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
+        if ($this->settingsService !== null) {
+            return $this->settingsService;
         }
 
-        try {
-            return new SettingsRepository($this->db->pdo());
-        } catch (Throwable) {
-            return null;
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(SettingsServiceInterface::class);
+                if ($service instanceof SettingsServiceInterface) {
+                    $this->settingsService = $service;
+                    return $this->settingsService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
         }
+
+        return null;
     }
 
     private function rootPath(): string

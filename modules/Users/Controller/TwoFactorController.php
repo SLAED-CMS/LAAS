@@ -7,7 +7,7 @@ use Laas\Auth\AuthInterface;
 use Laas\Auth\TotpService;
 use Laas\Core\Validation\Validator;
 use Laas\Core\Validation\ValidationResult;
-use Laas\Database\Repositories\UsersRepository;
+use Laas\Domain\Users\UsersServiceInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\View\View;
@@ -21,7 +21,7 @@ final class TwoFactorController
     public function __construct(
         private View $view,
         private AuthInterface $auth,
-        private UsersRepository $users,
+        private ?UsersServiceInterface $users,
         private TotpService $totp,
         ?LoggerInterface $logger = null
     ) {
@@ -30,6 +30,10 @@ final class TwoFactorController
 
     public function showSetup(Request $request): Response
     {
+        if ($this->users === null) {
+            return new Response('', 503);
+        }
+
         $user = $this->auth->user();
         if ($user === null) {
             return new Response('', 302, ['Location' => '/login']);
@@ -49,6 +53,10 @@ final class TwoFactorController
 
     public function enableTotp(Request $request): Response
     {
+        if ($this->users === null) {
+            return new Response('', 503);
+        }
+
         $user = $this->auth->user();
         if ($user === null) {
             return new Response('', 302, ['Location' => '/login']);
@@ -82,6 +90,10 @@ final class TwoFactorController
 
     public function verifyAndEnable(Request $request): Response
     {
+        if ($this->users === null) {
+            return new Response('', 503);
+        }
+
         $user = $this->auth->user();
         if ($user === null) {
             return new Response('', 302, ['Location' => '/login']);
@@ -144,6 +156,10 @@ final class TwoFactorController
 
     public function disable(Request $request): Response
     {
+        if ($this->users === null) {
+            return new Response('', 503);
+        }
+
         $user = $this->auth->user();
         if ($user === null) {
             return new Response('', 302, ['Location' => '/login']);
@@ -196,6 +212,10 @@ final class TwoFactorController
 
     public function regenerateBackupCodes(Request $request): Response
     {
+        if ($this->users === null) {
+            return new Response('', 503);
+        }
+
         $user = $this->auth->user();
         if ($user === null) {
             return new Response('', 302, ['Location' => '/login']);

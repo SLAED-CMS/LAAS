@@ -3,23 +3,21 @@ declare(strict_types=1);
 
 namespace Laas\Modules\System\Controller;
 
-use Laas\Auth\AuthorizationService;
-use Laas\Database\DatabaseManager;
-use Laas\Database\Repositories\AuditLogRepository;
-use Laas\Database\Repositories\RbacRepository;
-use Laas\Database\Repositories\RolesRepository;
-use Laas\Database\Repositories\SettingsRepository;
-use Laas\Database\Repositories\UsersRepository;
+use Laas\Core\Container\Container;
+use Laas\Domain\Audit\AuditLogServiceInterface;
+use Laas\Domain\Menus\MenusServiceInterface;
+use Laas\Domain\Media\MediaServiceInterface;
+use Laas\Domain\Pages\PagesServiceInterface;
+use Laas\Domain\Rbac\RbacServiceInterface;
+use Laas\Domain\Settings\SettingsServiceInterface;
+use Laas\Domain\Users\UsersServiceInterface;
+use Laas\DevTools\DevToolsContext;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Changelog\Service\ChangelogService;
 use Laas\Modules\Changelog\Support\ChangelogCache;
 use Laas\Modules\Changelog\Support\ChangelogSettings;
-use Laas\Modules\Media\Repository\MediaRepository;
 use Laas\Modules\Media\Service\StorageService;
-use Laas\Modules\Menu\Repository\MenuItemsRepository;
-use Laas\Modules\Menu\Repository\MenusRepository;
-use Laas\Modules\Pages\Repository\PagesRepository;
 use Laas\Support\Search\Highlighter;
 use Laas\Support\Search\SearchNormalizer;
 use Laas\Support\Search\SearchQuery;
@@ -29,9 +27,17 @@ use Throwable;
 
 final class HomeController
 {
+    private ?PagesServiceInterface $pagesService = null;
+    private ?MediaServiceInterface $mediaService = null;
+    private ?MenusServiceInterface $menusService = null;
+    private ?SettingsServiceInterface $settingsService = null;
+    private ?UsersServiceInterface $usersService = null;
+    private ?RbacServiceInterface $rbacService = null;
+    private ?AuditLogServiceInterface $auditService = null;
+
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null
+        private ?Container $container = null
     )
     {
     }
@@ -109,8 +115,8 @@ final class HomeController
         $pages = [];
         $status = 200;
 
-        $repo = $this->pagesRepository();
-        if ($repo === null) {
+        $service = $this->pagesService();
+        if ($service === null) {
             return [
                 'pages_query' => $query,
                 'pages' => [],
@@ -124,7 +130,21 @@ final class HomeController
             $status = 422;
         } elseif ($query !== '') {
             $search = new SearchQuery($query, $limit, 1, 'pages');
-            $rows = $repo->search($search->q, $search->limit, $search->offset, 'published');
+            try {
+                $rows = $service->list([
+                    'query' => $search->q,
+                    'status' => 'published',
+                    'limit' => $search->limit,
+                    'offset' => $search->offset,
+                ]);
+            } catch (Throwable) {
+                return [
+                    'pages_query' => $query,
+                    'pages' => [],
+                    'pages_errors' => [],
+                    'pages_status' => 503,
+                ];
+            }
             foreach ($rows as $row) {
                 $title = (string) ($row['title'] ?? '');
                 $content = (string) ($row['content'] ?? '');
@@ -136,10 +156,14 @@ final class HomeController
                 ];
             }
         } else {
-            if (method_exists($repo, 'listPublished')) {
-                $rows = $repo->listPublished($limit, 0);
-            } else {
-                $rows = $repo->listForAdmin($limit, 0, null, 'published');
+            try {
+                $rows = $service->list([
+                    'status' => 'published',
+                    'limit' => $limit,
+                    'offset' => 0,
+                ]);
+            } catch (Throwable) {
+                $rows = [];
             }
             foreach ($rows as $row) {
                 $pages[] = [
@@ -161,8 +185,8 @@ final class HomeController
 
     private function mediaData(int $limit): array
     {
-        $repo = $this->mediaRepository();
-        if ($repo === null) {
+        $service = $this->mediaService();
+        if ($service === null) {
             return [
                 'items' => [],
             ];
@@ -170,7 +194,11 @@ final class HomeController
 
         $config = $this->mediaConfig();
         $mode = (string) ($config['public_mode'] ?? 'private');
-        $rows = $repo->list($limit, 0, '');
+        try {
+            $rows = $service->list($limit, 0, '');
+        } catch (Throwable) {
+            $rows = [];
+        }
         $items = [];
         foreach ($rows as $row) {
             $id = (int) ($row['id'] ?? 0);
@@ -208,9 +236,8 @@ final class HomeController
 
     private function menuData(Request $request): array
     {
-        $menusRepo = $this->menusRepository();
-        $itemsRepo = $this->menuItemsRepository();
-        if ($menusRepo === null || $itemsRepo === null) {
+        $service = $this->menusService();
+        if ($service === null) {
             return [
                 'menu' => null,
                 'items' => [],
@@ -218,7 +245,7 @@ final class HomeController
             ];
         }
 
-        $menu = $menusRepo->findMenuByName('main');
+        $menu = $service->findByName('main');
         if ($menu === null) {
             return [
                 'menu' => null,
@@ -227,7 +254,7 @@ final class HomeController
             ];
         }
 
-        $items = $itemsRepo->listItems((int) $menu['id'], true);
+        $items = $service->loadItems((int) $menu['id'], true);
         $currentPath = '/' . ltrim($request->getPath(), '/');
         $currentPath = $currentPath === '/' ? '/' : rtrim($currentPath, '/');
         $items = array_map(function (array $item) use ($currentPath): array {
@@ -277,32 +304,45 @@ final class HomeController
             $status = 422;
         } elseif ($query !== '') {
             $search = new SearchQuery($query, $limit, 1, 'home');
-            $pagesRepo = $this->pagesRepository();
-            if ($pagesRepo !== null) {
-                $rows = $pagesRepo->search($search->q, $search->limit, $search->offset, 'published');
-                foreach ($rows as $row) {
-                    $title = (string) ($row['title'] ?? '');
-                    $content = (string) ($row['content'] ?? '');
-                    $results['pages'][] = [
-                        'title_segments' => Highlighter::segments($title, $search->q),
-                        'snippet_segments' => Highlighter::snippet($content, $search->q, 140),
-                        'url' => '/' . (string) ($row['slug'] ?? ''),
-                    ];
+            $pagesService = $this->pagesService();
+            if ($pagesService !== null) {
+                try {
+                    $rows = $pagesService->list([
+                        'query' => $search->q,
+                        'status' => 'published',
+                        'limit' => $search->limit,
+                        'offset' => $search->offset,
+                    ]);
+                    foreach ($rows as $row) {
+                        $title = (string) ($row['title'] ?? '');
+                        $content = (string) ($row['content'] ?? '');
+                        $results['pages'][] = [
+                            'title_segments' => Highlighter::segments($title, $search->q),
+                            'snippet_segments' => Highlighter::snippet($content, $search->q, 140),
+                            'url' => '/' . (string) ($row['slug'] ?? ''),
+                        ];
+                    }
+                } catch (Throwable) {
+                    $results['pages'] = [];
                 }
             }
 
-            $mediaRepo = $this->mediaRepository();
-            if ($mediaRepo !== null) {
-                $rows = $mediaRepo->search($search->q, $search->limit, $search->offset);
-                foreach ($rows as $row) {
-                    $name = (string) ($row['original_name'] ?? '');
-                    $mime = (string) ($row['mime_type'] ?? '');
-                    $id = (int) ($row['id'] ?? 0);
-                    $results['media'][] = [
-                        'name_segments' => Highlighter::segments($name, $search->q),
-                        'mime_segments' => Highlighter::segments($mime, $search->q),
-                        'url' => $id > 0 ? '/media/' . $id . '/file' : '',
-                    ];
+            $mediaService = $this->mediaService();
+            if ($mediaService !== null) {
+                try {
+                    $rows = $mediaService->search($search->q, $search->limit, $search->offset);
+                    foreach ($rows as $row) {
+                        $name = (string) ($row['original_name'] ?? '');
+                        $mime = (string) ($row['mime_type'] ?? '');
+                        $id = (int) ($row['id'] ?? 0);
+                        $results['media'][] = [
+                            'name_segments' => Highlighter::segments($name, $search->q),
+                            'mime_segments' => Highlighter::segments($mime, $search->q),
+                            'url' => $id > 0 ? '/media/' . $id . '/file' : '',
+                        ];
+                    }
+                } catch (Throwable) {
+                    $results['media'] = [];
                 }
             }
         }
@@ -328,7 +368,7 @@ final class HomeController
             ];
         }
 
-        $rbac = $this->rbacRepository();
+        $rbac = $this->rbacService();
         if ($rbac === null) {
             return [
                 'user' => $user,
@@ -339,23 +379,31 @@ final class HomeController
             ];
         }
 
-        $roles = $rbac->listUserRoles((int) $user['id']);
+        $userId = (int) ($user['id'] ?? 0);
+        $roles = [];
+        $usersService = $this->usersService();
+        if ($usersService !== null && $userId > 0) {
+            try {
+                $roles = $usersService->rolesForUser($userId);
+            } catch (Throwable) {
+                $roles = [];
+            }
+        }
         $permissionsCount = $this->permissionsCount($roles);
-        $authz = new AuthorizationService($rbac);
 
         return [
             'user' => $user,
             'roles' => $roles,
             'permissions_count' => $permissionsCount,
-            'can_admin' => $authz->can($user, 'admin.access'),
-            'can_media' => $authz->can($user, 'media.view'),
+            'can_admin' => $userId > 0 ? $rbac->userHasPermission($userId, 'admin.access') : false,
+            'can_media' => $userId > 0 ? $rbac->userHasPermission($userId, 'media.view') : false,
         ];
     }
 
     private function auditData(Request $request, int $limit): array
     {
         $user = $this->currentUser($request);
-        $rbac = $this->rbacRepository();
+        $rbac = $this->rbacService();
         if ($user === null || $rbac === null) {
             return [
                 'allowed' => false,
@@ -363,39 +411,45 @@ final class HomeController
             ];
         }
 
-        $authz = new AuthorizationService($rbac);
-        if (!$authz->can($user, 'audit.view')) {
+        $userId = (int) ($user['id'] ?? 0);
+        if ($userId <= 0 || !$rbac->userHasPermission($userId, 'audit.view')) {
             return [
                 'allowed' => false,
                 'entries' => [],
             ];
         }
 
-        $repo = $this->auditRepository();
-        if ($repo === null) {
+        $service = $this->auditService();
+        if ($service === null) {
             return [
                 'allowed' => true,
                 'entries' => [],
             ];
         }
 
+        try {
+            $rows = $service->list($limit, 0);
+        } catch (Throwable) {
+            $rows = [];
+        }
+
         return [
             'allowed' => true,
-            'entries' => $this->auditEntries($repo->list($limit, 0)),
+            'entries' => $this->auditEntries($rows),
         ];
     }
 
     private function perfData(array $appConfig): array
     {
         $debug = (bool) ($appConfig['debug'] ?? false);
-        if (!$debug || $this->db === null) {
+        if (!$debug) {
             return [
                 'enabled' => false,
             ];
         }
 
-        $context = $this->db->getDevToolsContext();
-        if ($context === null) {
+        $context = RequestScope::get('devtools.context');
+        if (!$context instanceof DevToolsContext) {
             return [
                 'enabled' => false,
             ];
@@ -500,107 +554,158 @@ final class HomeController
 
     private function changelogSettings(): array
     {
-        $repo = $this->settingsRepository();
-        return ChangelogSettings::load($this->rootPath(), $repo);
+        return ChangelogSettings::load($this->rootPath(), $this->settingsService());
     }
 
-    private function pagesRepository(): ?PagesRepository
+    private function pagesService(): ?PagesServiceInterface
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
+        if ($this->pagesService !== null) {
+            return $this->pagesService;
         }
 
-        try {
-            return new PagesRepository($this->db);
-        } catch (Throwable) {
-            return null;
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(PagesServiceInterface::class);
+                if ($service instanceof PagesServiceInterface) {
+                    $this->pagesService = $service;
+                    return $this->pagesService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
         }
+
+        return null;
     }
 
-    private function mediaRepository(): ?MediaRepository
+    private function mediaService(): ?MediaServiceInterface
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
+        if ($this->mediaService !== null) {
+            return $this->mediaService;
         }
 
-        try {
-            return new MediaRepository($this->db);
-        } catch (Throwable) {
-            return null;
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(MediaServiceInterface::class);
+                if ($service instanceof MediaServiceInterface) {
+                    $this->mediaService = $service;
+                    return $this->mediaService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
         }
+
+        return null;
     }
 
-    private function menusRepository(): ?MenusRepository
+    private function menusService(): ?MenusServiceInterface
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
+        if ($this->menusService !== null) {
+            return $this->menusService;
         }
 
-        try {
-            return new MenusRepository($this->db);
-        } catch (Throwable) {
-            return null;
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(MenusServiceInterface::class);
+                if ($service instanceof MenusServiceInterface) {
+                    $this->menusService = $service;
+                    return $this->menusService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
         }
+
+        return null;
     }
 
-    private function menuItemsRepository(): ?MenuItemsRepository
+    private function settingsService(): ?SettingsServiceInterface
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
+        if ($this->settingsService !== null) {
+            return $this->settingsService;
         }
 
-        try {
-            return new MenuItemsRepository($this->db);
-        } catch (Throwable) {
-            return null;
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(SettingsServiceInterface::class);
+                if ($service instanceof SettingsServiceInterface) {
+                    $this->settingsService = $service;
+                    return $this->settingsService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
         }
+
+        return null;
     }
 
-    private function auditRepository(): ?AuditLogRepository
+    private function usersService(): ?UsersServiceInterface
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
+        if ($this->usersService !== null) {
+            return $this->usersService;
         }
 
-        try {
-            return new AuditLogRepository($this->db);
-        } catch (Throwable) {
-            return null;
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(UsersServiceInterface::class);
+                if ($service instanceof UsersServiceInterface) {
+                    $this->usersService = $service;
+                    return $this->usersService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
         }
+
+        return null;
     }
 
-    private function settingsRepository(): ?SettingsRepository
+    private function rbacService(): ?RbacServiceInterface
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
+        if ($this->rbacService !== null) {
+            return $this->rbacService;
         }
 
-        try {
-            return new SettingsRepository($this->db->pdo());
-        } catch (Throwable) {
-            return null;
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(RbacServiceInterface::class);
+                if ($service instanceof RbacServiceInterface) {
+                    $this->rbacService = $service;
+                    return $this->rbacService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
         }
+
+        return null;
     }
 
-    private function rbacRepository(): ?RbacRepository
+    private function auditService(): ?AuditLogServiceInterface
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
+        if ($this->auditService !== null) {
+            return $this->auditService;
         }
 
-        try {
-            return new RbacRepository($this->db->pdo());
-        } catch (Throwable) {
-            return null;
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(AuditLogServiceInterface::class);
+                if ($service instanceof AuditLogServiceInterface) {
+                    $this->auditService = $service;
+                    return $this->auditService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
         }
+
+        return null;
     }
 
     private function currentUser(Request $request): ?array
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
-        }
-
         $session = $request->session();
         if (!$session->isStarted()) {
             return null;
@@ -618,9 +723,13 @@ final class HomeController
             return null;
         }
 
+        $service = $this->usersService();
+        if ($service === null) {
+            return null;
+        }
+
         try {
-            $repo = new UsersRepository($this->db->pdo());
-            return $repo->findById($userId);
+            return $service->find($userId);
         } catch (Throwable) {
             return null;
         }
@@ -629,20 +738,24 @@ final class HomeController
     /** @param array<int, string> $roles */
     private function permissionsCount(array $roles): int
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
+        $rbac = $this->rbacService();
+        if ($rbac === null) {
             return 0;
         }
 
-        $rolesRepo = new RolesRepository($this->db->pdo());
-        $rbac = new RbacRepository($this->db->pdo());
         $perms = [];
         foreach ($roles as $roleName) {
-            $roleId = $rolesRepo->findIdByName($roleName);
+            if (!is_string($roleName) || $roleName === '') {
+                continue;
+            }
+            $roleId = $rbac->findRoleIdByName($roleName);
             if ($roleId === null) {
                 continue;
             }
             foreach ($rbac->listRolePermissions($roleId) as $perm) {
-                $perms[$perm] = true;
+                if (is_string($perm) && $perm !== '') {
+                    $perms[$perm] = true;
+                }
             }
         }
 
@@ -715,7 +828,7 @@ final class HomeController
     private function healthStatus(array $storageConfig): array
     {
         $ok = true;
-        if ($this->db === null || !$this->db->healthCheck()) {
+        if (!$this->dbHealthy()) {
             $ok = false;
         }
 
@@ -728,6 +841,16 @@ final class HomeController
             'status' => $ok ? 'ok' : 'degraded',
             'ok' => $ok,
         ];
+    }
+
+    private function dbHealthy(): bool
+    {
+        $db = $this->container?->get('db');
+        if (is_object($db) && method_exists($db, 'healthCheck')) {
+            return (bool) $db->healthCheck();
+        }
+
+        return false;
     }
 
     private function formatBytes(int $bytes): string

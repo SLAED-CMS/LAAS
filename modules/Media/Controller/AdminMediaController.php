@@ -5,8 +5,7 @@ namespace Laas\Modules\Media\Controller;
 
 use Laas\Api\ApiCacheInvalidator;
 use Laas\Core\Container\Container;
-use Laas\Database\DatabaseManager;
-use Laas\Database\Repositories\RbacRepository;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Domain\Media\MediaServiceInterface;
 use Laas\Domain\Media\MediaServiceException;
 use Laas\Http\Contract\ContractResponse;
@@ -14,12 +13,11 @@ use Laas\Http\ErrorCode;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\Modules\Media\Repository\MediaRepository;
 use Laas\Modules\Media\Service\MimeSniffer;
 use Laas\Modules\Media\Service\MediaSignedUrlService;
 use Laas\Modules\Media\Service\StorageService;
 use Laas\Security\RateLimiter;
-use Laas\Support\AuditLogger;
+use Laas\Support\Audit;
 use Laas\Support\Search\Highlighter;
 use Laas\Support\Search\SearchNormalizer;
 use Laas\Support\Search\SearchQuery;
@@ -30,9 +28,9 @@ final class AdminMediaController
 {
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null,
         private ?MediaServiceInterface $mediaService = null,
-        private ?Container $container = null
+        private ?Container $container = null,
+        private ?RbacServiceInterface $rbacService = null
     ) {
     }
 
@@ -45,8 +43,8 @@ final class AdminMediaController
             return $this->forbidden($request);
         }
 
-        $repo = $this->repository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             if ($request->wantsJson()) {
                 return $this->contractServiceUnavailable('admin.media.index');
             }
@@ -91,7 +89,7 @@ final class AdminMediaController
             ]);
         }
 
-        $total = $query !== '' ? $repo->countSearch($query) : $repo->count();
+        $total = $query !== '' ? $service->countSearch($query) : $service->count();
         $totalPages = max(1, (int) ceil($total / $perPage));
         if ($page > $totalPages) {
             $page = $totalPages;
@@ -101,10 +99,10 @@ final class AdminMediaController
         $rows = [];
         if ($query !== '') {
             $search = new SearchQuery($query, $perPage, $page, 'media');
-            $rows = $repo->search($search->q, $search->limit, $search->offset);
+            $rows = $service->search($search->q, $search->limit, $search->offset);
             $items = $this->mapRows($rows, $this->mediaConfig(), null, $search->q);
         } else {
-            $rows = $repo->list($perPage, $offset);
+            $rows = $service->list($perPage, $offset);
             $items = $this->mapRows($rows, $this->mediaConfig(), null, $query);
         }
         $showPagination = $totalPages > 1 ? 1 : 0;
@@ -158,8 +156,8 @@ final class AdminMediaController
             return $this->errorResponse($request, 'forbidden', 403);
         }
 
-        $repo = $this->repository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             if ($request->wantsJson()) {
                 return $this->contractServiceUnavailable('admin.media.upload');
             }
@@ -236,19 +234,14 @@ final class AdminMediaController
         $hash = (string) ($media['sha256'] ?? '');
         $successKey = $existing ? 'admin.media.success_deduped' : 'admin.media.success_uploaded';
 
-        (new AuditLogger($this->db, $request->session()))->log(
-            'media.upload',
-            'media_file',
-            $mediaId,
-            [
-                'id' => $mediaId,
-                'original_name' => $originalName,
-                'mime' => $mime,
-                'size' => $size,
-            ],
-            $this->currentUserId($request),
-            $request->ip()
-        );
+        Audit::log('media.upload', 'media_file', $mediaId, [
+            'id' => $mediaId,
+            'original_name' => $originalName,
+            'mime' => $mime,
+            'size' => $size,
+            'actor_user_id' => $this->currentUserId($request),
+            'actor_ip' => $request->ip(),
+        ]);
 
         (new ApiCacheInvalidator())->bumpMedia();
 
@@ -266,7 +259,7 @@ final class AdminMediaController
         }
 
         $success = $this->view->translate($successKey);
-        return $this->tableResponse($request, $repo, $success, [], $mediaId > 0 ? $mediaId : null);
+        return $this->tableResponse($request, $service, $success, [], $mediaId > 0 ? $mediaId : null);
     }
 
     public function delete(Request $request, array $params = []): Response
@@ -275,8 +268,8 @@ final class AdminMediaController
             return $this->errorResponse($request, 'forbidden', 403);
         }
 
-        $repo = $this->repository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
@@ -285,7 +278,7 @@ final class AdminMediaController
             return $this->errorResponse($request, 'invalid_request', 400);
         }
 
-        $row = $repo->findById($id);
+        $row = $service->find($id);
         if ($row !== null) {
             try {
                 $this->storage()->delete((string) ($row['disk_path'] ?? ''));
@@ -308,20 +301,15 @@ final class AdminMediaController
                     'Content-Type' => 'text/plain; charset=utf-8',
                 ]);
             }
-            $repo->delete($id);
-            (new AuditLogger($this->db, $request->session()))->log(
-                'media.delete',
-                'media_file',
-                $id,
-                [
-                    'id' => $id,
-                    'original_name' => (string) ($row['original_name'] ?? ''),
-                    'mime' => (string) ($row['mime_type'] ?? ''),
-                    'size' => (int) ($row['size_bytes'] ?? 0),
-                ],
-                $this->currentUserId($request),
-                $request->ip()
-            );
+            $service->delete($id);
+            Audit::log('media.delete', 'media_file', $id, [
+                'id' => $id,
+                'original_name' => (string) ($row['original_name'] ?? ''),
+                'mime' => (string) ($row['mime_type'] ?? ''),
+                'size' => (int) ($row['size_bytes'] ?? 0),
+                'actor_user_id' => $this->currentUserId($request),
+                'actor_ip' => $request->ip(),
+            ]);
         }
 
         (new ApiCacheInvalidator())->bumpMedia();
@@ -338,7 +326,7 @@ final class AdminMediaController
             ]);
         }
 
-        return $this->tableResponse($request, $repo, $success, []);
+        return $this->tableResponse($request, $service, $success, []);
     }
 
     public function togglePublic(Request $request, array $params = []): Response
@@ -347,8 +335,8 @@ final class AdminMediaController
             return $this->errorResponse($request, 'forbidden', 403);
         }
 
-        $repo = $this->repository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
@@ -357,7 +345,7 @@ final class AdminMediaController
             return $this->errorResponse($request, 'invalid_request', 400);
         }
 
-        $row = $repo->findById($id);
+        $row = $service->find($id);
         if ($row === null) {
             return $this->errorResponse($request, 'not_found', 404);
         }
@@ -366,22 +354,17 @@ final class AdminMediaController
         $newPublic = !$isPublic;
         $token = $newPublic ? bin2hex(random_bytes(16)) : null;
 
-        $repo->setPublic($id, $newPublic, $token);
+        $service->setPublic($id, $newPublic, $token);
 
-        (new AuditLogger($this->db, $request->session()))->log(
-            $newPublic ? 'media.public.enabled' : 'media.public.disabled',
-            'media_file',
-            $id,
-            [
-                'id' => $id,
-            ],
-            $this->currentUserId($request),
-            $request->ip()
-        );
+        Audit::log($newPublic ? 'media.public.enabled' : 'media.public.disabled', 'media_file', $id, [
+            'id' => $id,
+            'actor_user_id' => $this->currentUserId($request),
+            'actor_ip' => $request->ip(),
+        ]);
 
         (new ApiCacheInvalidator())->bumpMedia();
 
-        $updated = $repo->findById($id);
+        $updated = $service->find($id);
         $config = $this->mediaConfig();
         $items = $updated !== null ? $this->mapRows([$updated], $config) : [];
 
@@ -396,7 +379,7 @@ final class AdminMediaController
             ]);
         }
 
-        return $this->tableResponse($request, $repo, $this->view->translate('media.public.toggled'), []);
+        return $this->tableResponse($request, $service, $this->view->translate('media.public.toggled'), []);
     }
 
     public function signed(Request $request, array $params = []): Response
@@ -405,8 +388,8 @@ final class AdminMediaController
             return $this->errorResponse($request, 'forbidden', 403);
         }
 
-        $repo = $this->repository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
@@ -415,7 +398,7 @@ final class AdminMediaController
             return $this->errorResponse($request, 'invalid_request', 400);
         }
 
-        $row = $repo->findById($id);
+        $row = $service->find($id);
         if ($row === null) {
             return $this->errorResponse($request, 'not_found', 404);
         }
@@ -460,18 +443,13 @@ final class AdminMediaController
             if ($url === '') {
                 return $this->signedErrorResponse($request, 400);
             }
-            (new AuditLogger($this->db, $request->session()))->log(
-                'media.signed.issued',
-                'media_file',
-                $id,
-                [
-                    'id' => $id,
-                    'p' => $purpose,
-                    'exp' => $exp,
-                ],
-                $this->currentUserId($request),
-                $request->ip()
-            );
+            Audit::log('media.signed.issued', 'media_file', $id, [
+                'id' => $id,
+                'p' => $purpose,
+                'exp' => $exp,
+                'actor_user_id' => $this->currentUserId($request),
+                'actor_ip' => $request->ip(),
+            ]);
         }
 
         return $this->view->render('partials/media_signed_url.html', [
@@ -484,7 +462,7 @@ final class AdminMediaController
         ]);
     }
 
-    private function tableResponse(Request $request, MediaRepository $repo, ?string $success, array $errors, ?int $flashId = null): Response
+    private function tableResponse(Request $request, MediaServiceInterface $service, ?string $success, array $errors, ?int $flashId = null): Response
     {
         $query = SearchNormalizer::normalize((string) ($request->query('q') ?? ''));
         $page = max(1, (int) ($request->query('page') ?? 1));
@@ -519,7 +497,7 @@ final class AdminMediaController
             ]);
         }
 
-        $total = $query !== '' ? $repo->countSearch($query) : $repo->count();
+        $total = $query !== '' ? $service->countSearch($query) : $service->count();
         $totalPages = max(1, (int) ceil($total / $perPage));
         if ($page > $totalPages) {
             $page = $totalPages;
@@ -528,9 +506,9 @@ final class AdminMediaController
 
         if ($query !== '') {
             $search = new SearchQuery($query, $perPage, $page, 'media');
-            $items = $this->mapRows($repo->search($search->q, $search->limit, $search->offset), $this->mediaConfig(), $flashId, $search->q);
+            $items = $this->mapRows($service->search($search->q, $search->limit, $search->offset), $this->mediaConfig(), $flashId, $search->q);
         } else {
-            $items = $this->mapRows($repo->list($perPage, $offset), $this->mediaConfig(), $flashId, $query);
+            $items = $this->mapRows($service->list($perPage, $offset), $this->mediaConfig(), $flashId, $query);
         }
         $showPagination = $totalPages > 1 ? 1 : 0;
 
@@ -599,8 +577,8 @@ final class AdminMediaController
             ]);
         }
 
-        $repo = $this->repository();
-        $items = $repo !== null ? $this->mapRows($repo->list(20, 0, ''), $this->mediaConfig()) : [];
+        $service = $this->service();
+        $items = $service !== null ? $this->mapRows($service->list(20, 0, ''), $this->mediaConfig()) : [];
         return $this->view->render('pages/media.html', [
             'items' => $items,
             'success' => null,
@@ -640,8 +618,8 @@ final class AdminMediaController
             ]);
         }
 
-        $repo = $this->repository();
-        $items = $repo !== null ? $this->mapRows($repo->list(20, 0, ''), $this->mediaConfig()) : [];
+        $service = $this->service();
+        $items = $service !== null ? $this->mapRows($service->list(20, 0, ''), $this->mediaConfig()) : [];
         return $this->view->render('pages/media.html', [
             'items' => $items,
             'success' => null,
@@ -657,19 +635,6 @@ final class AdminMediaController
         ], 202, [], [
             'theme' => 'admin',
         ]);
-    }
-
-    private function repository(): ?MediaRepository
-    {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
-        }
-
-        try {
-            return new MediaRepository($this->db);
-        } catch (Throwable) {
-            return null;
-        }
     }
 
     private function service(): ?MediaServiceInterface
@@ -690,8 +655,25 @@ final class AdminMediaController
             }
         }
 
-        if ($this->db === null) {
-            return null;
+        return null;
+    }
+
+    private function rbacService(): ?RbacServiceInterface
+    {
+        if ($this->rbacService !== null) {
+            return $this->rbacService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(RbacServiceInterface::class);
+                if ($service instanceof RbacServiceInterface) {
+                    $this->rbacService = $service;
+                    return $this->rbacService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
         }
 
         return null;
@@ -739,21 +721,17 @@ final class AdminMediaController
 
     private function hasPermission(Request $request, string $permission): bool
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return false;
-        }
-
         $userId = $this->currentUserId($request);
         if ($userId === null) {
             return false;
         }
 
-        try {
-            $rbac = new RbacRepository($this->db->pdo());
-            return $rbac->userHasPermission($userId, $permission);
-        } catch (Throwable) {
+        $rbac = $this->rbacService();
+        if ($rbac === null) {
             return false;
         }
+
+        return $rbac->userHasPermission($userId, $permission);
     }
 
     private function currentUserId(Request $request): ?int
@@ -872,14 +850,9 @@ final class AdminMediaController
             $context['user_id'] = $userId;
         }
 
-        (new AuditLogger($this->db, $request->session()))->log(
-            'media.upload.rate_limited',
-            'media_upload',
-            null,
-            $context,
-            $userId,
-            $request->ip()
-        );
+        $context['actor_user_id'] = $userId;
+        $context['actor_ip'] = $request->ip();
+        Audit::log('media.upload.rate_limited', 'media_upload', null, $context);
 
         if ($request->isHtmx()) {
             return $this->view->render('partials/messages.html', [
@@ -987,18 +960,13 @@ final class AdminMediaController
 
     private function auditUploadRejected(string $action, Request $request, ?int $userId, ?int $contentLength, int $maxBytes): void
     {
-        (new AuditLogger($this->db, $request->session()))->log(
-            $action,
-            'media_upload',
-            null,
-            [
-                'ip' => $request->ip(),
-                'content_length' => $contentLength,
-                'max_bytes' => $maxBytes,
-            ],
-            $userId,
-            $request->ip()
-        );
+        Audit::log($action, 'media_upload', null, [
+            'ip' => $request->ip(),
+            'content_length' => $contentLength,
+            'max_bytes' => $maxBytes,
+            'actor_user_id' => $userId,
+            'actor_ip' => $request->ip(),
+        ]);
     }
 
     private function safeDownloadName(string $name, string $mime): string

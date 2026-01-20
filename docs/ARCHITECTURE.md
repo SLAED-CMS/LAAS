@@ -2323,6 +2323,7 @@ $config = $container->get('config');
 - Kernel binds services to interfaces only (concrete bindings reserved for infrastructure like DB, cache, translator, request cache)
 - controllers depend on interfaces only, never concrete services
 - mutating service methods are annotated with `@mutation`; read-only methods do not write, dispatch events, or invalidate caches
+- tests enforce interface-only controller dependencies and `@mutation` markers on mutating methods
 
 **Current services (MVP):**
 - PagesService for page read/create flows.

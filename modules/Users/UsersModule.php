@@ -7,9 +7,12 @@ use Laas\Auth\AuthInterface;
 use Laas\Auth\AuthService;
 use Laas\Auth\NullAuthService;
 use Laas\Auth\TotpService;
+use Laas\Core\Container\Container;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\PasswordResetRepository;
 use Laas\Database\Repositories\UsersRepository;
+use Laas\Domain\Users\UsersService;
+use Laas\Domain\Users\UsersServiceInterface;
 use Laas\Modules\ModuleInterface;
 use Laas\Modules\Users\Controller\AuthController;
 use Laas\Modules\Users\Controller\PasswordResetController;
@@ -27,7 +30,8 @@ final class UsersModule implements ModuleInterface
 {
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null
+        private ?DatabaseManager $db = null,
+        private ?Container $container = null
     ) {
     }
 
@@ -56,25 +60,19 @@ final class UsersModule implements ModuleInterface
     {
         $auth = $this->createAuthService($session);
 
-        if ($this->db === null) {
-            return new $class($this->view, $auth);
-        }
-
-        $pdo = $this->db->pdo();
-        $usersRepo = new UsersRepository($pdo);
+        $usersService = $this->resolveUsersService();
         $logger = new NullLogger();
 
         return match ($class) {
             AuthController::class => new AuthController(
                 $this->view,
                 $auth,
-                $usersRepo,
+                $usersService,
                 new TotpService()
             ),
             PasswordResetController::class => new PasswordResetController(
                 $this->view,
-                $usersRepo,
-                new PasswordResetRepository($pdo),
+                $usersService,
                 new PhpMailer(null, $logger),
                 new RateLimiter(dirname(__DIR__, 2)),
                 dirname(__DIR__, 2),
@@ -83,7 +81,7 @@ final class UsersModule implements ModuleInterface
             TwoFactorController::class => new TwoFactorController(
                 $this->view,
                 $auth,
-                $usersRepo,
+                $usersService,
                 new TotpService(),
                 $logger
             ),
@@ -102,5 +100,25 @@ final class UsersModule implements ModuleInterface
         } catch (\Throwable) {
             return new NullAuthService();
         }
+    }
+
+    private function resolveUsersService(): ?UsersServiceInterface
+    {
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(UsersServiceInterface::class);
+                if ($service instanceof UsersServiceInterface) {
+                    return $service;
+                }
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+
+        if ($this->db === null) {
+            return null;
+        }
+
+        return new UsersService($this->db);
     }
 }

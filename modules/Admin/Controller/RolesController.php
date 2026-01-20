@@ -3,14 +3,12 @@ declare(strict_types=1);
 
 namespace Laas\Modules\Admin\Controller;
 
-use Laas\Database\DatabaseManager;
-use Laas\Database\Repositories\PermissionsRepository;
-use Laas\Database\Repositories\RbacRepository;
-use Laas\Database\Repositories\RolesRepository;
+use Laas\Core\Container\Container;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\Support\AuditLogger;
+use Laas\Support\Audit;
 use Laas\Support\Rbac\PermissionGrouper;
 use Laas\View\View;
 use Throwable;
@@ -19,7 +17,8 @@ final class RolesController
 {
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null
+        private ?RbacServiceInterface $rbacService = null,
+        private ?Container $container = null
     ) {
     }
 
@@ -82,7 +81,8 @@ final class RolesController
             return $this->forbidden($request);
         }
 
-        if ($this->db === null || !$this->db->healthCheck()) {
+        $service = $this->rbacService();
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
@@ -97,10 +97,13 @@ final class RolesController
             $errors[] = $this->view->translate('admin.settings.error_invalid');
         }
 
-        $rolesRepo = new RolesRepository($this->db->pdo());
-        $existingId = $rolesRepo->findIdByName($name);
-        if ($existingId !== null && ($id === null || $existingId !== $id)) {
-            $errors[] = $this->view->translate('admin.settings.error_invalid');
+        try {
+            $existingId = $service->findRoleIdByName($name);
+            if ($existingId !== null && ($id === null || $existingId !== $id)) {
+                $errors[] = $this->view->translate('admin.settings.error_invalid');
+            }
+        } catch (Throwable) {
+            return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
         if ($errors !== []) {
@@ -120,52 +123,37 @@ final class RolesController
             ], $permissionNames, 422, $errors);
         }
 
-        $audit = new AuditLogger($this->db, $request->session());
         $actorId = $this->currentUserId($request);
-        if ($id === null) {
-            $id = $rolesRepo->create($name, $title !== '' ? $title : null);
-            $audit->log('rbac.role.created', 'rbac_role', $id, [
-                'actor_user_id' => $actorId,
-                'target_role_id' => $id,
-            ], $actorId, $request->ip());
-        } else {
-            $rolesRepo->update($id, $name, $title !== '' ? $title : null);
-            $audit->log('rbac.role.updated', 'rbac_role', $id, [
-                'actor_user_id' => $actorId,
-                'target_role_id' => $id,
-            ], $actorId, $request->ip());
-        }
-
-        $permRepo = new PermissionsRepository($this->db->pdo());
-        $allPermissions = $permRepo->listAll();
-        $nameToId = [];
-        foreach ($allPermissions as $perm) {
-            $permName = (string) ($perm['name'] ?? '');
-            $permId = (int) ($perm['id'] ?? 0);
-            if ($permName !== '' && $permId > 0) {
-                $nameToId[$permName] = $permId;
+        try {
+            if ($id === null) {
+                $id = $service->createRole($name, $title !== '' ? $title : null);
+                Audit::log('rbac.role.created', 'rbac_role', $id, [
+                    'actor_user_id' => $actorId,
+                    'target_role_id' => $id,
+                ]);
+            } else {
+                $service->updateRole($id, $name, $title !== '' ? $title : null);
+                Audit::log('rbac.role.updated', 'rbac_role', $id, [
+                    'actor_user_id' => $actorId,
+                    'target_role_id' => $id,
+                ]);
             }
+
+            $permissionIds = $service->resolvePermissionIdsByName($permissionNames);
+            $diff = $service->setRolePermissions($id, $permissionIds);
+        } catch (Throwable) {
+            return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
-        $permissionIds = [];
-        foreach ($permissionNames as $permName) {
-            $permName = (string) $permName;
-            if (isset($nameToId[$permName])) {
-                $permissionIds[] = $nameToId[$permName];
-            }
-        }
-
-        $rbac = new RbacRepository($this->db->pdo());
-        $diff = $rbac->setRolePermissions($id, $permissionIds);
         if (!empty($diff['added']) || !empty($diff['removed'])) {
-            $addedNames = $this->resolvePermissionNames($allPermissions, $diff['added'] ?? []);
-            $removedNames = $this->resolvePermissionNames($allPermissions, $diff['removed'] ?? []);
-            $audit->log('rbac.role.permissions.updated', 'rbac_role', $id, [
+            $addedNames = $service->resolvePermissionNamesByIds($diff['added'] ?? []);
+            $removedNames = $service->resolvePermissionNamesByIds($diff['removed'] ?? []);
+            Audit::log('rbac.role.permissions.updated', 'rbac_role', $id, [
                 'actor_user_id' => $actorId,
                 'target_role_id' => $id,
                 'added_permissions' => $addedNames,
                 'removed_permissions' => $removedNames,
-            ], $actorId, $request->ip());
+            ]);
         }
 
         if ($request->isHtmx()) {
@@ -185,7 +173,8 @@ final class RolesController
             return $this->forbidden($request);
         }
 
-        if ($this->db === null || !$this->db->healthCheck()) {
+        $service = $this->rbacService();
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
@@ -194,17 +183,21 @@ final class RolesController
             return $this->errorResponse($request, 'invalid_request', 400);
         }
 
-        $rolesRepo = new RolesRepository($this->db->pdo());
-        $role = $rolesRepo->findById($id);
+        $role = $this->findRole($id);
         if ($role === null) {
             return $this->errorResponse($request, 'not_found', 404);
         }
 
-        $rolesRepo->delete($id);
-        (new AuditLogger($this->db, $request->session()))->log('rbac.role.deleted', 'rbac_role', $id, [
+        try {
+            $service->deleteRole($id);
+        } catch (Throwable) {
+            return $this->errorResponse($request, 'db_unavailable', 503);
+        }
+
+        Audit::log('rbac.role.deleted', 'rbac_role', $id, [
             'actor_user_id' => $this->currentUserId($request),
             'target_role_id' => $id,
-        ], $this->currentUserId($request), $request->ip());
+        ]);
 
         if ($request->isHtmx()) {
             return new Response('', 200);
@@ -246,7 +239,8 @@ final class RolesController
             return $this->forbidden($request);
         }
 
-        if ($this->db === null || !$this->db->healthCheck()) {
+        $service = $this->rbacService();
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
@@ -260,38 +254,27 @@ final class RolesController
             return $this->errorResponse($request, 'not_found', 404);
         }
 
-        $rolesRepo = new RolesRepository($this->db->pdo());
-        $newName = $this->uniqueCloneName((string) ($role['name'] ?? ''), $rolesRepo);
-        $newId = $rolesRepo->create($newName, (string) ($role['title'] ?? null));
+        try {
+            $newName = $this->uniqueCloneName((string) ($role['name'] ?? ''), $service);
+            $newId = $service->createRole($newName, (string) ($role['title'] ?? null));
+        } catch (Throwable) {
+            return $this->errorResponse($request, 'db_unavailable', 503);
+        }
 
         $permissions = $this->listRolePermissions($id) ?? [];
-        $permRepo = new PermissionsRepository($this->db->pdo());
-        $allPermissions = $permRepo->listAll();
-        $nameToId = [];
-        foreach ($allPermissions as $perm) {
-            $permName = (string) ($perm['name'] ?? '');
-            $permId = (int) ($perm['id'] ?? 0);
-            if ($permName !== '' && $permId > 0) {
-                $nameToId[$permName] = $permId;
-            }
+        $permissionIds = $service->resolvePermissionIdsByName($permissions);
+        try {
+            $service->setRolePermissions($newId, $permissionIds);
+        } catch (Throwable) {
+            return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
-        $permissionIds = [];
-        foreach ($permissions as $permName) {
-            if (isset($nameToId[$permName])) {
-                $permissionIds[] = $nameToId[$permName];
-            }
-        }
-
-        $rbac = new RbacRepository($this->db->pdo());
-        $rbac->setRolePermissions($newId, $permissionIds);
-
-        (new AuditLogger($this->db, $request->session()))->log('rbac.role.cloned', 'rbac_role', $newId, [
+        Audit::log('rbac.role.cloned', 'rbac_role', $newId, [
             'actor_user_id' => $this->currentUserId($request),
             'source_role_id' => $id,
             'new_role_id' => $newId,
             'permission_count' => count($permissionIds),
-        ], $this->currentUserId($request), $request->ip());
+        ]);
 
         if ($request->isHtmx()) {
             return new Response('', 200, [
@@ -360,13 +343,13 @@ final class RolesController
 
     private function listRoles(): ?array
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
+        $service = $this->rbacService();
+        if ($service === null) {
             return null;
         }
 
         try {
-            $repo = new RolesRepository($this->db->pdo());
-            return $repo->listAll();
+            return $service->listRoles();
         } catch (Throwable) {
             return null;
         }
@@ -374,13 +357,13 @@ final class RolesController
 
     private function findRole(int $id): ?array
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
+        $service = $this->rbacService();
+        if ($service === null) {
             return null;
         }
 
         try {
-            $repo = new RolesRepository($this->db->pdo());
-            return $repo->findById($id);
+            return $service->findRole($id);
         } catch (Throwable) {
             return null;
         }
@@ -388,13 +371,13 @@ final class RolesController
 
     private function listPermissions(): ?array
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
+        $service = $this->rbacService();
+        if ($service === null) {
             return null;
         }
 
         try {
-            $repo = new PermissionsRepository($this->db->pdo());
-            return $repo->listAll();
+            return $service->listPermissions();
         } catch (Throwable) {
             return null;
         }
@@ -403,13 +386,13 @@ final class RolesController
     /** @return array<int, string>|null */
     private function listRolePermissions(int $roleId): ?array
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
+        $service = $this->rbacService();
+        if ($service === null) {
             return null;
         }
 
         try {
-            $rbac = new RbacRepository($this->db->pdo());
-            return $rbac->listRolePermissions($roleId);
+            return $service->listRolePermissions($roleId);
         } catch (Throwable) {
             return null;
         }
@@ -472,12 +455,12 @@ final class RolesController
         return $names;
     }
 
-    private function uniqueCloneName(string $baseName, RolesRepository $repo): string
+    private function uniqueCloneName(string $baseName, RbacServiceInterface $service): string
     {
         $base = $baseName !== '' ? $baseName : 'role';
         $name = $base . ' (copy)';
         $suffix = 2;
-        while ($repo->findIdByName($name) !== null) {
+        while ($service->findRoleIdByName($name) !== null) {
             $name = $base . ' (copy ' . $suffix . ')';
             $suffix++;
         }
@@ -499,21 +482,17 @@ final class RolesController
 
     private function canManage(Request $request): bool
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return false;
-        }
-
         $userId = $this->currentUserId($request);
         if ($userId === null) {
             return false;
         }
 
-        try {
-            $rbac = new RbacRepository($this->db->pdo());
-            return $rbac->userHasPermission($userId, 'rbac.manage');
-        } catch (Throwable) {
+        $rbac = $this->rbacService();
+        if ($rbac === null) {
             return false;
         }
+
+        return $rbac->userHasPermission($userId, 'rbac.manage');
     }
 
     private function currentUserId(Request $request): ?int
@@ -546,5 +525,28 @@ final class RolesController
     private function notFound(Request $request): Response
     {
         return ErrorResponse::respondForRequest($request, 'not_found', [], 404, [], 'admin.roles');
+    }
+
+    private function rbacService(): ?RbacServiceInterface
+    {
+        if ($this->rbacService !== null) {
+            return $this->rbacService;
+        }
+
+        if ($this->container === null) {
+            return null;
+        }
+
+        try {
+            $service = $this->container->get(RbacServiceInterface::class);
+            if ($service instanceof RbacServiceInterface) {
+                $this->rbacService = $service;
+                return $this->rbacService;
+            }
+        } catch (Throwable) {
+            return null;
+        }
+
+        return null;
     }
 }

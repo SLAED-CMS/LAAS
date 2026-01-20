@@ -86,6 +86,53 @@ class SecurityReportsService implements SecurityReportsServiceInterface
         return $count;
     }
 
+    /** @return array<string, int> */
+    public function countByStatus(array $filters = []): array
+    {
+        return $this->repository()->countByStatus($this->normalizeFilters($filters));
+    }
+
+    /** @return array<string, int> */
+    public function countByType(array $filters = []): array
+    {
+        return $this->repository()->countByType($this->normalizeFilters($filters));
+    }
+
+    /** @mutation */
+    public function updateStatus(int $id, string $status): bool
+    {
+        if ($id <= 0) {
+            throw new InvalidArgumentException('Report id must be positive.');
+        }
+
+        return $this->repository()->updateStatus($id, $status);
+    }
+
+    /** @mutation */
+    public function delete(int $id): bool
+    {
+        if ($id <= 0) {
+            throw new InvalidArgumentException('Report id must be positive.');
+        }
+
+        return $this->repository()->delete($id);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @mutation
+     */
+    public function insert(array $data): void
+    {
+        $this->repository()->insert($data);
+    }
+
+    /** @mutation */
+    public function prune(int $days): int
+    {
+        return $this->repository()->prune($days);
+    }
+
     private function repository(): SecurityReportsRepository
     {
         if ($this->repository !== null) {

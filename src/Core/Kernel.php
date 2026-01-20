@@ -50,16 +50,22 @@ use Laas\Assets\AssetsManager;
 use Laas\Core\Container\Container;
 use Laas\Domain\AdminSearch\AdminSearchService;
 use Laas\Domain\AdminSearch\AdminSearchServiceInterface;
+use Laas\Domain\Audit\AuditLogService;
+use Laas\Domain\Audit\AuditLogServiceInterface;
 use Laas\Domain\ApiTokens\ApiTokensService;
 use Laas\Domain\ApiTokens\ApiTokensServiceInterface;
 use Laas\Domain\Media\MediaService;
 use Laas\Domain\Media\MediaServiceInterface;
+use Laas\Domain\Modules\ModulesService;
+use Laas\Domain\Modules\ModulesServiceInterface;
 use Laas\Domain\Menus\MenusService;
 use Laas\Domain\Menus\MenusServiceInterface;
 use Laas\Domain\Ops\OpsService;
 use Laas\Domain\Ops\OpsServiceInterface;
 use Laas\Domain\Pages\PagesService;
 use Laas\Domain\Pages\PagesServiceInterface;
+use Laas\Domain\Rbac\RbacService;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Domain\Security\SecurityReportsService;
 use Laas\Domain\Security\SecurityReportsServiceInterface;
 use Laas\Domain\Settings\SettingsService;
@@ -456,12 +462,24 @@ final class Kernel
             );
         });
 
+        $this->container->singleton(RbacServiceInterface::class, function (): RbacServiceInterface {
+            return new RbacService($this->database());
+        });
+
+        $this->container->singleton(AuditLogServiceInterface::class, function (): AuditLogServiceInterface {
+            return new AuditLogService($this->database());
+        });
+
         $this->container->singleton(UsersServiceInterface::class, function (): UsersServiceInterface {
             return new UsersService($this->database());
         });
 
         $this->container->singleton(MenusServiceInterface::class, function (): MenusServiceInterface {
             return new MenusService($this->database());
+        });
+
+        $this->container->singleton(ModulesServiceInterface::class, function () use ($config, $rootPath): ModulesServiceInterface {
+            return new ModulesService($this->database(), $config, $rootPath);
         });
 
         $this->container->singleton(SettingsServiceInterface::class, function (): SettingsServiceInterface {

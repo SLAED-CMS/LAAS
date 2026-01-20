@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace Laas\Modules\Changelog\Controller;
 
-use Laas\Database\DatabaseManager;
-use Laas\Database\Repositories\RbacRepository;
-use Laas\Database\Repositories\SettingsRepository;
+use Laas\Core\Container\Container;
+use Laas\Domain\Rbac\RbacServiceInterface;
+use Laas\Domain\Settings\SettingsServiceInterface;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
@@ -13,7 +13,7 @@ use Laas\Modules\Changelog\Service\ChangelogService;
 use Laas\Modules\Changelog\Support\ChangelogCache;
 use Laas\Modules\Changelog\Support\ChangelogSettings;
 use Laas\Modules\Changelog\Support\ChangelogValidator;
-use Laas\Support\AuditLogger;
+use Laas\Support\Audit;
 use Laas\View\View;
 use RuntimeException;
 use Throwable;
@@ -22,7 +22,9 @@ final class AdminChangelogController
 {
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null
+        private ?SettingsServiceInterface $settingsService = null,
+        private ?Container $container = null,
+        private ?RbacServiceInterface $rbacService = null
     ) {
     }
 
@@ -94,25 +96,20 @@ final class AdminChangelogController
             return $this->renderFormPartial($values, null, $errors, 422);
         }
 
-        $repo = $this->settingsRepository();
-        if ($repo === null) {
+        $settingsService = $this->settingsService();
+        if ($settingsService === null) {
             return $this->renderFormPartial($values, null, ['changelog.admin.validation_failed'], 503);
         }
 
-        $this->persistSettings($repo, $values);
-        (new AuditLogger($this->db, $request->session()))->log(
-            'changelog.settings.update',
-            'changelog',
-            null,
-            [
-                'source_type' => $values['source_type'],
-                'branch' => $values['branch'],
-                'per_page' => $values['per_page'],
-                'cache_ttl_seconds' => $values['cache_ttl_seconds'],
-            ],
-            $this->currentUserId($request),
-            $request->ip()
-        );
+        $this->persistSettings($settingsService, $values);
+        Audit::log('changelog.settings.update', 'changelog', null, [
+            'source_type' => $values['source_type'],
+            'branch' => $values['branch'],
+            'per_page' => $values['per_page'],
+            'cache_ttl_seconds' => $values['cache_ttl_seconds'],
+            'actor_user_id' => $this->currentUserId($request),
+            'actor_ip' => $request->ip(),
+        ]);
 
         return $this->renderFormPartial($values, $this->view->translate('changelog.admin.save_ok'), [], 200);
     }
@@ -150,17 +147,12 @@ final class AdminChangelogController
         $provider = $service->buildProvider($values);
         $testResult = $provider->testConnection();
 
-        (new AuditLogger($this->db, $request->session()))->log(
-            'changelog.source.tested',
-            'changelog',
-            null,
-            [
-                'source_type' => $values['source_type'],
-                'ok' => $testResult->ok,
-            ],
-            $this->currentUserId($request),
-            $request->ip()
-        );
+        Audit::log('changelog.source.tested', 'changelog', null, [
+            'source_type' => $values['source_type'],
+            'ok' => $testResult->ok,
+            'actor_user_id' => $this->currentUserId($request),
+            'actor_ip' => $request->ip(),
+        ]);
 
         if ($testResult->ok) {
             return $this->renderFormPartial($values, $this->view->translate('changelog.admin.test_ok'), [], 200);
@@ -212,14 +204,10 @@ final class AdminChangelogController
         $cache = new ChangelogCache($this->rootPath());
         $cache->clear();
 
-        (new AuditLogger($this->db, $request->session()))->log(
-            'changelog.cache.cleared',
-            'changelog',
-            null,
-            [],
-            $this->currentUserId($request),
-            $request->ip()
-        );
+        Audit::log('changelog.cache.cleared', 'changelog', null, [
+            'actor_user_id' => $this->currentUserId($request),
+            'actor_ip' => $request->ip(),
+        ]);
 
         return $this->renderFormPartial($this->loadSettings(), $this->view->translate('changelog.admin.cache_cleared'), [], 200);
     }
@@ -276,39 +264,48 @@ final class AdminChangelogController
         return $messages;
     }
 
-    private function persistSettings(SettingsRepository $repo, array $values): void
+    private function persistSettings(SettingsServiceInterface $settings, array $values): void
     {
-        $repo->set('changelog.enabled', (bool) $values['enabled'], 'bool');
-        $repo->set('changelog.source_type', (string) $values['source_type'], 'string');
-        $repo->set('changelog.cache_ttl_seconds', (int) $values['cache_ttl_seconds'], 'int');
-        $repo->set('changelog.per_page', (int) $values['per_page'], 'int');
-        $repo->set('changelog.show_merges', (bool) $values['show_merges'], 'bool');
-        $repo->set('changelog.branch', (string) $values['branch'], 'string');
-        $repo->set('changelog.github_owner', (string) $values['github_owner'], 'string');
-        $repo->set('changelog.github_repo', (string) $values['github_repo'], 'string');
-        $repo->set('changelog.github_token_mode', (string) $values['github_token_mode'], 'string');
-        $repo->set('changelog.github_token_env_key', (string) $values['github_token_env_key'], 'string');
-        $repo->set('changelog.git_repo_path', (string) $values['git_repo_path'], 'string');
-        $repo->set('changelog.git_binary_path', (string) $values['git_binary_path'], 'string');
+        $settings->setMany([
+            'changelog.enabled' => (bool) $values['enabled'],
+            'changelog.source_type' => (string) $values['source_type'],
+            'changelog.cache_ttl_seconds' => (int) $values['cache_ttl_seconds'],
+            'changelog.per_page' => (int) $values['per_page'],
+            'changelog.show_merges' => (bool) $values['show_merges'],
+            'changelog.branch' => (string) $values['branch'],
+            'changelog.github_owner' => (string) $values['github_owner'],
+            'changelog.github_repo' => (string) $values['github_repo'],
+            'changelog.github_token_mode' => (string) $values['github_token_mode'],
+            'changelog.github_token_env_key' => (string) $values['github_token_env_key'],
+            'changelog.git_repo_path' => (string) $values['git_repo_path'],
+            'changelog.git_binary_path' => (string) $values['git_binary_path'],
+        ]);
     }
 
     private function loadSettings(): array
     {
-        $repo = $this->settingsRepository();
-        return ChangelogSettings::load($this->rootPath(), $repo);
+        return ChangelogSettings::load($this->rootPath(), $this->settingsService());
     }
 
-    private function settingsRepository(): ?SettingsRepository
+    private function settingsService(): ?SettingsServiceInterface
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
+        if ($this->settingsService !== null) {
+            return $this->settingsService;
         }
 
-        try {
-            return new SettingsRepository($this->db->pdo());
-        } catch (Throwable) {
-            return null;
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(SettingsServiceInterface::class);
+                if ($service instanceof SettingsServiceInterface) {
+                    $this->settingsService = $service;
+                    return $this->settingsService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
         }
+
+        return null;
     }
 
     private function canAdmin(Request $request): bool
@@ -323,21 +320,38 @@ final class AdminChangelogController
 
     private function canPermission(Request $request, string $permission): bool
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return false;
-        }
-
         $userId = $this->currentUserId($request);
         if ($userId === null) {
             return false;
         }
 
-        try {
-            $rbac = new RbacRepository($this->db->pdo());
-            return $rbac->userHasPermission($userId, $permission);
-        } catch (Throwable) {
+        $rbac = $this->rbacService();
+        if ($rbac === null) {
             return false;
         }
+
+        return $rbac->userHasPermission($userId, $permission);
+    }
+
+    private function rbacService(): ?RbacServiceInterface
+    {
+        if ($this->rbacService !== null) {
+            return $this->rbacService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(RbacServiceInterface::class);
+                if ($service instanceof RbacServiceInterface) {
+                    $this->rbacService = $service;
+                    return $this->rbacService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
     }
 
     private function currentUserId(Request $request): ?int

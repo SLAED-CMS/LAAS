@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Laas\Modules\DemoEnv;
 
-use Laas\Database\DatabaseManager;
 use Laas\Modules\ModuleInterface;
 use Laas\Routing\Router;
 use Laas\View\View;
@@ -11,8 +10,7 @@ use Laas\View\View;
 final class DemoEnvModule implements ModuleInterface
 {
     public function __construct(
-        private View $view,
-        private ?DatabaseManager $db = null
+        private View $view
     ) {
     }
 
@@ -31,7 +29,7 @@ final class DemoEnvModule implements ModuleInterface
             }
 
             $router->addRoute($method, $path, function ($request, array $vars = []) use ($class, $action) {
-                $controller = new $class($this->view, $this->db);
+                $controller = new $class($this->view);
                 return $controller->{$action}($request, $vars);
             });
         }

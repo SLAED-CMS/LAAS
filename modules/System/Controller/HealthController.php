@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Laas\Modules\System\Controller;
 
-use Laas\Database\DatabaseManager;
+use Laas\Core\Container\Container;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\I18n\Translator;
@@ -14,6 +14,7 @@ use Laas\Support\HealthService;
 use Laas\Support\HealthStatusTracker;
 use Laas\Support\LoggerFactory;
 use Laas\Support\SessionConfigValidator;
+use Laas\View\View;
 
 final class HealthController
 {
@@ -22,7 +23,12 @@ final class HealthController
     private ?HealthStatusTracker $tracker = null;
     private array $securityConfig = [];
 
-    public function __construct(?HealthService $healthService = null, ?Translator $translator = null)
+    public function __construct(
+        private ?View $view = null,
+        ?HealthService $healthService = null,
+        private ?Container $container = null,
+        ?Translator $translator = null
+    )
     {
         $rootPath = dirname(__DIR__, 3);
         $appConfig = $this->loadConfig($rootPath . '/config/app.php');
@@ -35,30 +41,13 @@ final class HealthController
         $theme = (string) ($appConfig['theme'] ?? 'default');
         $this->translator = $translator ?? new Translator($rootPath, $theme, $locale);
 
-        if ($healthService !== null) {
-            $this->healthService = $healthService;
-            return;
-        }
-
-        $dbConfig = $this->loadConfig($rootPath . '/config/database.php');
-        $db = new DatabaseManager($dbConfig);
-        $storage = new StorageService($rootPath);
-        $checker = new ConfigSanityChecker();
-        $config = [
-            'media' => $mediaConfig,
-            'storage' => $storageConfig,
-            'session' => is_array($securityConfig['session'] ?? null) ? $securityConfig['session'] : [],
-        ];
-        $writeCheck = (bool) ($appConfig['health_write_check'] ?? false);
-
-        $this->healthService = new HealthService(
+        $this->healthService = $this->resolveHealthService(
+            $healthService,
             $rootPath,
-            static fn (): bool => $db->healthCheck(),
-            $storage,
-            $checker,
-            $config,
-            $writeCheck,
-            new SessionConfigValidator()
+            $mediaConfig,
+            $storageConfig,
+            $securityConfig,
+            $appConfig
         );
 
         $logger = (new LoggerFactory($rootPath))->create($appConfig);
@@ -105,6 +94,57 @@ final class HealthController
         }
         $config = require $path;
         return is_array($config) ? $config : [];
+    }
+
+    private function resolveHealthService(
+        ?HealthService $provided,
+        string $rootPath,
+        array $mediaConfig,
+        array $storageConfig,
+        array $securityConfig,
+        array $appConfig
+    ): HealthService {
+        if ($provided !== null) {
+            return $provided;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(HealthService::class);
+                if ($service instanceof HealthService) {
+                    return $service;
+                }
+            } catch (\Throwable) {
+                // fall through to local construction
+            }
+        }
+
+        $storage = new StorageService($rootPath);
+        $checker = new ConfigSanityChecker();
+        $config = [
+            'media' => $mediaConfig,
+            'storage' => $storageConfig,
+            'session' => is_array($securityConfig['session'] ?? null) ? $securityConfig['session'] : [],
+        ];
+        $writeCheck = (bool) ($appConfig['health_write_check'] ?? false);
+
+        $dbCheck = function (): bool {
+            $db = $this->container?->get('db');
+            if (is_object($db) && method_exists($db, 'healthCheck')) {
+                return (bool) $db->healthCheck();
+            }
+            return false;
+        };
+
+        return new HealthService(
+            $rootPath,
+            $dbCheck,
+            $storage,
+            $checker,
+            $config,
+            $writeCheck,
+            new SessionConfigValidator()
+        );
     }
 
     /** @param array<string, bool> $checks */

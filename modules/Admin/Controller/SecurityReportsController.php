@@ -4,11 +4,9 @@ declare(strict_types=1);
 namespace Laas\Modules\Admin\Controller;
 
 use Laas\Core\Container\Container;
-use Laas\Database\DatabaseManager;
-use Laas\Database\Repositories\SecurityReportsRepository;
-use Laas\Database\Repositories\RbacRepository;
-use Laas\Database\Repositories\UsersRepository;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Domain\Security\SecurityReportsServiceInterface;
+use Laas\Domain\Users\UsersServiceInterface;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
@@ -20,9 +18,10 @@ use Throwable;
 
 final class SecurityReportsController
 {
+    private ?UsersServiceInterface $usersService = null;
+
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null,
         private ?SecurityReportsServiceInterface $reportsService = null,
         private ?Container $container = null
     ) {
@@ -124,12 +123,12 @@ final class SecurityReportsController
             return $this->notFound($request, 'admin.security_reports.show');
         }
 
-        $repo = $this->repository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503, 'admin.security_reports.show');
         }
 
-        $row = $repo->findById($id);
+        $row = $service->find((string) $id);
         if ($row === null) {
             return $this->notFound($request, 'admin.security_reports.show');
         }
@@ -180,17 +179,17 @@ final class SecurityReportsController
             return $this->notFound($request, 'admin.security_reports.delete');
         }
 
-        $repo = $this->repository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503, 'admin.security_reports.delete');
         }
 
-        $row = $repo->findById($id);
+        $row = $service->find((string) $id);
         if ($row === null) {
             return $this->notFound($request, 'admin.security_reports.delete');
         }
 
-        $repo->delete($id);
+        $service->delete($id);
         $this->logAudit($request, $id, 'deleted');
 
         if ($request->wantsJson()) {
@@ -226,23 +225,23 @@ final class SecurityReportsController
             return $this->notFound($request, $route);
         }
 
-        $repo = $this->repository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503, $route);
         }
 
-        $row = $repo->findById($id);
+        $row = $service->find((string) $id);
         if ($row === null) {
             return $this->notFound($request, $route);
         }
 
-        $updated = $repo->updateStatus($id, $status);
+        $updated = $service->updateStatus($id, $status);
         if (!$updated) {
             return $this->notFound($request, $route);
         }
 
         $this->logAudit($request, $id, $status);
-        $fresh = $repo->findById($id) ?? $row;
+        $fresh = $service->find((string) $id) ?? $row;
 
         if ($request->wantsJson()) {
             UiToast::registerInfo($this->view->translate($toastKey), $toastKey);
@@ -269,19 +268,6 @@ final class SecurityReportsController
         ]);
     }
 
-    private function repository(): ?SecurityReportsRepository
-    {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
-        }
-
-        try {
-            return new SecurityReportsRepository($this->db);
-        } catch (Throwable) {
-            return null;
-        }
-    }
-
     private function canView(Request $request): bool
     {
         return $this->hasPermission($request, 'security_reports.view');
@@ -294,21 +280,17 @@ final class SecurityReportsController
 
     private function hasPermission(Request $request, string $permission): bool
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return false;
-        }
-
         $userId = $this->currentUserId($request);
         if ($userId === null) {
             return false;
         }
 
-        try {
-            $rbac = new RbacRepository($this->db->pdo());
-            return $rbac->userHasPermission($userId, $permission);
-        } catch (Throwable) {
+        $rbac = $this->rbacService();
+        if ($rbac === null) {
             return false;
         }
+
+        return $rbac->userHasPermission($userId, $permission);
     }
 
     private function currentUserId(Request $request): ?int
@@ -451,6 +433,41 @@ final class SecurityReportsController
                 if ($service instanceof SecurityReportsServiceInterface) {
                     $this->reportsService = $service;
                     return $this->reportsService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function rbacService(): ?RbacServiceInterface
+    {
+        if ($this->container === null) {
+            return null;
+        }
+
+        try {
+            $service = $this->container->get(RbacServiceInterface::class);
+            return $service instanceof RbacServiceInterface ? $service : null;
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    private function usersService(): ?UsersServiceInterface
+    {
+        if ($this->usersService !== null) {
+            return $this->usersService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(UsersServiceInterface::class);
+                if ($service instanceof UsersServiceInterface) {
+                    $this->usersService = $service;
+                    return $this->usersService;
                 }
             } catch (Throwable) {
                 return null;
@@ -634,18 +651,18 @@ final class SecurityReportsController
 
     private function resolveUsername(?int $userId): ?string
     {
-        if ($userId === null || $userId <= 0 || $this->db === null) {
+        if ($userId === null || $userId <= 0) {
             return null;
         }
 
-        try {
-            $repo = new UsersRepository($this->db->pdo());
-            $user = $repo->findById($userId);
-            $name = is_array($user) ? (string) ($user['username'] ?? '') : '';
-            return $name !== '' ? $name : null;
-        } catch (Throwable) {
+        $users = $this->usersService();
+        if ($users === null) {
             return null;
         }
+
+        $user = $users->find($userId);
+        $name = is_array($user) ? (string) ($user['username'] ?? '') : '';
+        return $name !== '' ? $name : null;
     }
 
     private function forbidden(Request $request, string $route): Response

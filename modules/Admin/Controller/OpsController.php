@@ -4,8 +4,7 @@ declare(strict_types=1);
 namespace Laas\Modules\Admin\Controller;
 
 use Laas\Core\Container\Container;
-use Laas\Database\DatabaseManager;
-use Laas\Database\Repositories\RbacRepository;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Domain\Ops\OpsServiceInterface;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
@@ -18,7 +17,6 @@ final class OpsController
 {
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null,
         private ?OpsServiceInterface $opsService = null,
         private ?Container $container = null
     ) {
@@ -85,21 +83,17 @@ final class OpsController
 
     private function canView(Request $request): bool
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return false;
-        }
-
         $userId = $this->currentUserId($request);
         if ($userId === null) {
             return false;
         }
 
-        try {
-            $rbac = new RbacRepository($this->db->pdo());
-            return $rbac->userHasPermission($userId, 'ops.view');
-        } catch (Throwable) {
+        $rbac = $this->rbac();
+        if ($rbac === null) {
             return false;
         }
+
+        return $rbac->userHasPermission($userId, 'ops.view');
     }
 
     private function currentUserId(Request $request): ?int
@@ -170,5 +164,19 @@ final class OpsController
         }
 
         return null;
+    }
+
+    private function rbac(): ?RbacServiceInterface
+    {
+        if ($this->container === null) {
+            return null;
+        }
+
+        try {
+            $service = $this->container->get(RbacServiceInterface::class);
+            return $service instanceof RbacServiceInterface ? $service : null;
+        } catch (Throwable) {
+            return null;
+        }
     }
 }

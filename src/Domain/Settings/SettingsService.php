@@ -51,6 +51,16 @@ class SettingsService implements SettingsServiceInterface
         return $repo->get($this->storageKey($key), $defaultValue);
     }
 
+    public function has(string $key): bool
+    {
+        $repo = $this->tryRepository();
+        if ($repo === null) {
+            return false;
+        }
+
+        return $repo->has($this->storageKey($key));
+    }
+
     /** @mutation */
     public function set(string $key, mixed $value): void
     {
@@ -227,6 +237,14 @@ class SettingsService implements SettingsServiceInterface
 
     private function typeForKey(string $key): string
     {
+        if (str_starts_with($key, 'changelog.')) {
+            return match ($key) {
+                'changelog.enabled', 'changelog.show_merges' => 'bool',
+                'changelog.cache_ttl_seconds', 'changelog.per_page' => 'int',
+                default => 'string',
+            };
+        }
+
         return match ($key) {
             'site_name', 'default_locale', 'theme', 'api_token_issue_mode' => 'string',
             default => 'string',

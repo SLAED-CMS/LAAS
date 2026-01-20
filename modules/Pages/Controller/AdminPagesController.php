@@ -4,18 +4,18 @@ declare(strict_types=1);
 namespace Laas\Modules\Pages\Controller;
 
 use Laas\Api\ApiCacheInvalidator;
-use Laas\Database\DatabaseManager;
+use Laas\Core\Container\Container;
+use Laas\Core\Validation\Rules;
 use Laas\Core\Validation\Validator;
 use Laas\Core\Validation\ValidationResult;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Http\ErrorCode;
 use Laas\Http\ErrorResponse;
-use Laas\Modules\Pages\Repository\PagesRepository;
-use Laas\Modules\Pages\Repository\PagesRevisionsRepository;
-use Laas\Database\Repositories\RbacRepository;
+use Laas\Domain\Pages\PagesServiceInterface;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Security\HtmlSanitizer;
-use Laas\Support\AuditLogger;
+use Laas\Support\Audit;
 use Laas\Support\Search\Highlighter;
 use Laas\Support\Search\SearchNormalizer;
 use Laas\Support\Search\SearchQuery;
@@ -45,7 +45,9 @@ final class AdminPagesController
 
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null
+        private ?PagesServiceInterface $pagesService = null,
+        private ?Container $container = null,
+        private ?RbacServiceInterface $rbacService = null
     ) {
     }
 
@@ -55,8 +57,8 @@ final class AdminPagesController
             return $this->forbidden($request);
         }
 
-        $repo = $this->getRepository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
@@ -92,15 +94,30 @@ final class AdminPagesController
 
         $rows = [];
         $canEdit = true;
-        if ($query !== '') {
-            $search = new SearchQuery($query, 50, 1, 'pages');
-            foreach ($repo->search($search->q, $search->limit, $search->offset, $status) as $page) {
-                $rows[] = $this->buildPageRow($page, $canEdit, $search->q);
+        try {
+            if ($query !== '') {
+                $search = new SearchQuery($query, 50, 1, 'pages');
+                $pages = $service->list([
+                    'query' => $search->q,
+                    'status' => $status,
+                    'limit' => $search->limit,
+                    'offset' => $search->offset,
+                ]);
+                foreach ($pages as $page) {
+                    $rows[] = $this->buildPageRow($page, $canEdit, $search->q);
+                }
+            } else {
+                $pages = $service->list([
+                    'status' => $status,
+                    'limit' => 100,
+                    'offset' => 0,
+                ]);
+                foreach ($pages as $page) {
+                    $rows[] = $this->buildPageRow($page, $canEdit);
+                }
             }
-        } else {
-            foreach ($repo->listForAdmin(100, 0, $query, $status) as $page) {
-                $rows[] = $this->buildPageRow($page, $canEdit);
-            }
+        } catch (Throwable) {
+            return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
         $viewData = [
@@ -155,12 +172,16 @@ final class AdminPagesController
             return $this->notFound();
         }
 
-        $repo = $this->getRepository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
-        $page = $repo->findById($id);
+        try {
+            $page = $service->find($id);
+        } catch (Throwable) {
+            return $this->errorResponse($request, 'db_unavailable', 503);
+        }
         if ($page === null) {
             return $this->notFound();
         }
@@ -191,8 +212,8 @@ final class AdminPagesController
             return $this->forbidden($request);
         }
 
-        $repo = $this->getRepository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
@@ -241,23 +262,19 @@ final class AdminPagesController
             'status' => $status,
         ];
 
-        $uniqueRule = 'unique:pages,slug';
-        if ($id !== null) {
-            $uniqueRule .= ',' . $id;
-        }
-
         $validator = new Validator();
         $reservedRule = 'reserved_slug:' . implode(',', self::RESERVED);
         $result = $validator->validate($data, [
             'title' => ['required', 'string', 'max:255'],
-            'slug' => ['required', 'slug', 'max:255', $uniqueRule, $reservedRule],
+            'slug' => ['required', 'slug', 'max:255', $reservedRule],
             'status' => ['required', 'in:draft,published'],
             'content' => ['string'],
         ], [
-            'db' => $this->db,
             'label_prefix' => 'pages',
             'translator' => $this->view->getTranslator(),
         ]);
+
+        $this->applyUniqueSlugCheck($result, $slug, $id, $service);
 
         if (!$result->isValid()) {
             return $this->formErrorResponse($request, $result, [
@@ -270,55 +287,45 @@ final class AdminPagesController
             ]);
         }
 
-        $sanitizedContent = (new HtmlSanitizer())->sanitize($content);
-
-        $audit = new AuditLogger($this->db, $request->session());
-
-        $revisionRepo = $this->revisionsRepository();
-        if ($id === null) {
-            $newId = $repo->create([
-                'title' => $title,
-                'slug' => $slug,
-                'content' => $sanitizedContent,
-                'status' => $status,
-            ]);
-            if ($blocksData !== null && $revisionRepo !== null) {
-                $revisionRepo->createRevision($newId, $blocksData, $this->currentUserId($request));
-            }
-            $audit->log(
-                'pages.create',
-                'page',
-                $newId,
-                [
+        try {
+            if ($id === null) {
+                $created = $service->create([
+                    'title' => $title,
+                    'slug' => $slug,
+                    'content' => $content,
+                    'status' => $status,
+                ]);
+                $newId = (int) ($created['id'] ?? 0);
+                if ($blocksData !== null) {
+                    $service->createRevision($newId, $blocksData, $this->currentUserId($request));
+                }
+                Audit::log('pages.create', 'page', $newId, [
                     'title' => $title,
                     'slug' => $slug,
                     'status' => $status,
-                ],
-                $this->currentUserId($request),
-                $request->ip()
-            );
-        } else {
-            $repo->update($id, [
-                'title' => $title,
-                'slug' => $slug,
-                'content' => $sanitizedContent,
-                'status' => $status,
-            ]);
-            if ($blocksData !== null && $revisionRepo !== null) {
-                $revisionRepo->createRevision($id, $blocksData, $this->currentUserId($request));
-            }
-            $audit->log(
-                'pages.update',
-                'page',
-                $id,
-                [
+                    'actor_user_id' => $this->currentUserId($request),
+                    'actor_ip' => $request->ip(),
+                ]);
+            } else {
+                $service->update($id, [
+                    'title' => $title,
+                    'slug' => $slug,
+                    'content' => $content,
+                    'status' => $status,
+                ]);
+                if ($blocksData !== null) {
+                    $service->createRevision($id, $blocksData, $this->currentUserId($request));
+                }
+                Audit::log('pages.update', 'page', $id, [
                     'title' => $title,
                     'slug' => $slug,
                     'status' => $status,
-                ],
-                $this->currentUserId($request),
-                $request->ip()
-            );
+                    'actor_user_id' => $this->currentUserId($request),
+                    'actor_ip' => $request->ip(),
+                ]);
+            }
+        } catch (Throwable) {
+            return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
         (new ApiCacheInvalidator())->bumpPages();
@@ -414,32 +421,33 @@ final class AdminPagesController
             return $this->notFound($request);
         }
 
-        $repo = $this->getRepository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
-        $page = $repo->findById($id);
+        try {
+            $page = $service->find($id);
+        } catch (Throwable) {
+            return $this->errorResponse($request, 'db_unavailable', 503);
+        }
         if ($page === null) {
             return $this->notFound();
         }
 
-        $revisions = $this->revisionsRepository();
-        if ($revisions !== null) {
-            $revisions->deleteByPageId($id);
+        try {
+            $service->deleteRevisionsByPageId($id);
+            $service->delete($id);
+        } catch (Throwable) {
+            return $this->errorResponse($request, 'db_unavailable', 503);
         }
-        $repo->delete($id);
-        (new AuditLogger($this->db, $request->session()))->log(
-            'pages.delete',
-            'page',
-            $id,
-            [
-                'title' => (string) ($page['title'] ?? ''),
-                'slug' => (string) ($page['slug'] ?? ''),
-            ],
-            $this->currentUserId($request),
-            $request->ip()
-        );
+
+        Audit::log('pages.delete', 'page', $id, [
+            'title' => (string) ($page['title'] ?? ''),
+            'slug' => (string) ($page['slug'] ?? ''),
+            'actor_user_id' => $this->currentUserId($request),
+            'actor_ip' => $request->ip(),
+        ]);
 
         (new ApiCacheInvalidator())->bumpPages();
 
@@ -463,19 +471,27 @@ final class AdminPagesController
             return $this->errorResponse($request, 'invalid_request', 400);
         }
 
-        $repo = $this->getRepository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
-        $page = $repo->findById($id);
+        try {
+            $page = $service->find($id);
+        } catch (Throwable) {
+            return $this->errorResponse($request, 'db_unavailable', 503);
+        }
         if ($page === null) {
             return $this->errorResponse($request, 'not_found', 404);
         }
 
         $status = (string) ($page['status'] ?? 'draft');
         $nextStatus = $status === 'published' ? 'draft' : 'published';
-        $repo->updateStatus($id, $nextStatus);
+        try {
+            $service->updateStatus($id, $nextStatus);
+        } catch (Throwable) {
+            return $this->errorResponse($request, 'db_unavailable', 503);
+        }
 
         $page['status'] = $nextStatus;
         $row = $this->buildPageRow($page, true);
@@ -498,19 +514,6 @@ final class AdminPagesController
         ]);
     }
 
-    private function getRepository(): ?PagesRepository
-    {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
-        }
-
-        try {
-            return new PagesRepository($this->db);
-        } catch (Throwable) {
-            return null;
-        }
-    }
-
     private function canEdit(Request $request): bool
     {
         $userId = $this->currentUserId($request);
@@ -518,7 +521,7 @@ final class AdminPagesController
             return false;
         }
 
-        $rbac = $this->rbacRepository();
+        $rbac = $this->rbacService();
         if ($rbac === null) {
             return false;
         }
@@ -557,27 +560,61 @@ final class AdminPagesController
 
     private function loadBlocksJson(int $pageId): string
     {
-        $repo = $this->revisionsRepository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return '[]';
         }
-        $row = $repo->findLatestByPageId($pageId);
+        try {
+            $row = $service->findLatestRevision($pageId);
+        } catch (Throwable) {
+            return '[]';
+        }
         if ($row === null) {
             return '[]';
         }
         return $this->formatBlocksJson((string) ($row['blocks_json'] ?? ''));
     }
 
-    private function revisionsRepository(): ?PagesRevisionsRepository
+    private function service(): ?PagesServiceInterface
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
+        if ($this->pagesService !== null) {
+            return $this->pagesService;
         }
-        try {
-            return new PagesRevisionsRepository($this->db);
-        } catch (Throwable) {
-            return null;
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(PagesServiceInterface::class);
+                if ($service instanceof PagesServiceInterface) {
+                    $this->pagesService = $service;
+                    return $this->pagesService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
         }
+
+        return null;
+    }
+
+    private function rbacService(): ?RbacServiceInterface
+    {
+        if ($this->rbacService !== null) {
+            return $this->rbacService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(RbacServiceInterface::class);
+                if ($service instanceof RbacServiceInterface) {
+                    $this->rbacService = $service;
+                    return $this->rbacService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
     }
 
     private function blocksRegistry(): BlockRegistry
@@ -636,25 +673,12 @@ final class AdminPagesController
             return false;
         }
 
-        $rbac = $this->rbacRepository();
+        $rbac = $this->rbacService();
         if ($rbac === null) {
             return false;
         }
 
         return $rbac->userHasRole($userId, 'admin');
-    }
-
-    private function rbacRepository(): ?RbacRepository
-    {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
-        }
-
-        try {
-            return new RbacRepository($this->db->pdo());
-        } catch (Throwable) {
-            return null;
-        }
     }
 
     private function isAppDebug(): bool
@@ -770,6 +794,68 @@ final class AdminPagesController
         ], 422, [], [
             'theme' => 'admin',
         ]);
+    }
+
+    private function applyUniqueSlugCheck(
+        ValidationResult $result,
+        string $slug,
+        ?int $ignoreId,
+        PagesServiceInterface $service
+    ): void {
+        if (!$result->isValid()) {
+            return;
+        }
+
+        $slug = trim($slug);
+        if ($slug === '') {
+            return;
+        }
+
+        try {
+            $matches = $service->list([
+                'slug' => $slug,
+                'status' => 'all',
+                'limit' => 1,
+                'offset' => 0,
+            ]);
+        } catch (Throwable) {
+            $result->addError('slug', 'validation.unique', [
+                'field' => $this->fieldLabel('slug'),
+            ]);
+            return;
+        }
+
+        $existing = $matches[0] ?? null;
+        if (!is_array($existing)) {
+            return;
+        }
+
+        $existingId = (int) ($existing['id'] ?? 0);
+        if ($existingId <= 0) {
+            return;
+        }
+
+        if ($ignoreId === null || $existingId !== $ignoreId) {
+            $result->addError('slug', 'validation.unique', [
+                'field' => $this->fieldLabel('slug'),
+            ]);
+        }
+    }
+
+    private function fieldLabel(string $field): string
+    {
+        $key = Rules::fieldLabelKeys()['pages.' . $field] ?? '';
+        if ($key !== '') {
+            $translator = $this->view->getTranslator();
+            if (is_object($translator) && method_exists($translator, 'trans')) {
+                $label = (string) $translator->trans($key);
+                if ($label !== '') {
+                    return $label;
+                }
+            }
+        }
+
+        return ucfirst($field);
     }
 
     private function blocksJsonErrorResponse(Request $request, array $page, string $detail): Response

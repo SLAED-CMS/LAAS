@@ -3,28 +3,33 @@ declare(strict_types=1);
 
 namespace Laas\Modules\System\Controller;
 
-use Laas\Database\DatabaseManager;
-use Laas\Database\Repositories\SecurityReportsRepository;
+use Laas\Core\Container\Container;
+use Laas\Domain\Security\SecurityReportsServiceInterface;
 use Laas\DevTools\DevToolsContext;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\I18n\Translator;
 use Laas\Support\LoggerFactory;
 use Laas\Support\RequestScope;
+use Laas\View\View;
 use Psr\Log\LoggerInterface;
 
 final class CspReportController
 {
-    private ?DatabaseManager $db;
     private Translator $translator;
     private LoggerInterface $logger;
 
-    public function __construct(?DatabaseManager $db = null, ?Translator $translator = null, ?LoggerInterface $logger = null)
+    public function __construct(
+        private ?View $view = null,
+        private ?SecurityReportsServiceInterface $reportsService = null,
+        private ?Container $container = null,
+        ?Translator $translator = null,
+        ?LoggerInterface $logger = null
+    )
     {
         $rootPath = dirname(__DIR__, 3);
         $appConfig = $this->loadConfig($rootPath . '/config/app.php');
 
-        $this->db = $db ?? new DatabaseManager($this->loadConfig($rootPath . '/config/database.php'));
         $locale = (string) ($appConfig['default_locale'] ?? 'en');
         $theme = (string) ($appConfig['theme'] ?? 'default');
         $this->translator = $translator ?? new Translator($rootPath, $theme, $locale);
@@ -46,10 +51,10 @@ final class CspReportController
         $ip = $request->ip();
         $requestId = $this->resolveRequestId();
 
-        if ($this->db !== null && $this->db->healthCheck()) {
+        $service = $this->reportsService();
+        if ($service !== null) {
             try {
-                $repo = new SecurityReportsRepository($this->db);
-                $repo->insert([
+                $service->insert([
                     'type' => 'csp',
                     'created_at' => date('Y-m-d H:i:s'),
                     'document_uri' => $documentUri,
@@ -193,5 +198,26 @@ final class CspReportController
         }
         $config = require $path;
         return is_array($config) ? $config : [];
+    }
+
+    private function reportsService(): ?SecurityReportsServiceInterface
+    {
+        if ($this->reportsService !== null) {
+            return $this->reportsService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(SecurityReportsServiceInterface::class);
+                if ($service instanceof SecurityReportsServiceInterface) {
+                    $this->reportsService = $service;
+                    return $this->reportsService;
+                }
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+
+        return null;
     }
 }

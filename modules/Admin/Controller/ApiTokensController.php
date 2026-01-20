@@ -4,8 +4,7 @@ declare(strict_types=1);
 namespace Laas\Modules\Admin\Controller;
 
 use Laas\Core\Container\Container;
-use Laas\Database\DatabaseManager;
-use Laas\Database\Repositories\RbacRepository;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Domain\ApiTokens\ApiTokensServiceInterface;
 use Laas\Domain\ApiTokens\ApiTokensServiceException;
 use Laas\Http\Contract\ContractResponse;
@@ -21,7 +20,6 @@ final class ApiTokensController
 {
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null,
         private ?ApiTokensServiceInterface $apiTokensService = null,
         private ?Container $container = null
     ) {
@@ -453,6 +451,20 @@ final class ApiTokensController
         return null;
     }
 
+    private function rbac(): ?RbacServiceInterface
+    {
+        if ($this->container === null) {
+            return null;
+        }
+
+        try {
+            $service = $this->container->get(RbacServiceInterface::class);
+            return $service instanceof RbacServiceInterface ? $service : null;
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
     /** @return array<int, string> */
     private function selectScopes(array $scopesInput, ApiTokensServiceInterface $service): array
     {
@@ -567,24 +579,21 @@ final class ApiTokensController
 
     private function canPermission(Request $request, string $permission): bool
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return false;
-        }
-
         $userId = $this->currentUserId($request);
         if ($userId === null) {
             return false;
         }
 
-        try {
-            $rbac = new RbacRepository($this->db->pdo());
-            if ($rbac->userHasPermission($userId, $permission)) {
-                return true;
-            }
-            return $rbac->userHasPermission($userId, 'api.tokens.manage');
-        } catch (Throwable) {
+        $rbac = $this->rbac();
+        if ($rbac === null) {
             return false;
         }
+
+        if ($rbac->userHasPermission($userId, $permission)) {
+            return true;
+        }
+
+        return $rbac->userHasPermission($userId, 'api.tokens.manage');
     }
 
     private function currentUserId(Request $request): ?int

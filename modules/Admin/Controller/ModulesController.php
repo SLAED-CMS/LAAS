@@ -3,14 +3,13 @@ declare(strict_types=1);
 
 namespace Laas\Modules\Admin\Controller;
 
-use Laas\Database\DatabaseManager;
-use Laas\Database\Repositories\ModulesRepository;
-use Laas\Database\Repositories\RbacRepository;
+use Laas\Core\Container\Container;
+use Laas\Domain\Modules\ModulesServiceInterface;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\Modules\ModuleCatalog;
 use Laas\Security\RateLimiter;
 use Laas\Support\Audit;
 use Laas\View\View;
@@ -20,7 +19,8 @@ final class ModulesController
 {
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null
+        private ?ModulesServiceInterface $modulesService = null,
+        private ?Container $container = null
     ) {
     }
 
@@ -30,8 +30,16 @@ final class ModulesController
             return $this->forbidden($request, 'admin.modules.index');
         }
 
-        $catalog = new ModuleCatalog(dirname(__DIR__, 3), $this->db);
-        $modules = $catalog->listAll();
+        $service = $this->service();
+        if ($service === null) {
+            return $this->errorResponse($request, 'db_unavailable', 503, 'admin.modules.index');
+        }
+
+        try {
+            $modules = $service->listModules();
+        } catch (Throwable) {
+            return $this->errorResponse($request, 'db_unavailable', 503, 'admin.modules.index');
+        }
         $filters = $this->normalizeFilters($request);
         $modules = $this->filterModules($modules, $filters);
 
@@ -82,20 +90,17 @@ final class ModulesController
             return $rateLimited;
         }
 
+        $service = $this->service();
+        if ($service === null) {
+            return $this->renderDetailsError('Module not found.', 404);
+        }
+
         $moduleId = trim((string) ($request->query('module') ?? ''));
         if ($moduleId === '' || !preg_match('/^[a-z0-9\\-]+$/', $moduleId)) {
             return $this->renderDetailsError('Invalid module id.', 400);
         }
 
-        $catalog = new ModuleCatalog(dirname(__DIR__, 3), $this->db);
-        $modules = $catalog->listAll();
-        $module = null;
-        foreach ($modules as $item) {
-            if (is_array($item) && ($item['module_id'] ?? null) === $moduleId) {
-                $module = $item;
-                break;
-            }
-        }
+        $module = $service->findModuleById($moduleId);
 
         if ($module === null) {
             return $this->renderDetailsError('Module not found.', 404);
@@ -127,39 +132,39 @@ final class ModulesController
             return $this->errorResponse($request, 'invalid_request', 400, 'admin.modules.toggle');
         }
 
-        $discovered = $this->discoverModules();
-        $type = $discovered[$name]['type'] ?? 'feature';
+        $service = $this->service();
+        if ($service === null) {
+            return $this->errorResponse($request, 'db_unavailable', 503, 'admin.modules.toggle');
+        }
+
+        $moduleMeta = $service->findModuleByName($name);
+        $type = is_array($moduleMeta) ? (string) ($moduleMeta['type'] ?? 'feature') : 'feature';
         if ($type !== 'feature') {
             return $this->errorResponse($request, 'protected_module', 400, 'admin.modules.toggle');
         }
 
-        if ($this->db === null || !$this->db->healthCheck()) {
+        try {
+            $toggle = $service->toggleModule($name);
+        } catch (Throwable) {
             return $this->errorResponse($request, 'db_unavailable', 503, 'admin.modules.toggle');
         }
 
-        $repo = new ModulesRepository($this->db->pdo());
-        $current = $repo->all();
-        $enabled = !empty($current[$name]['enabled']);
-        if ($enabled) {
-            $repo->disable($name);
-        } else {
-            $repo->enable($name);
-        }
+        $enabled = (bool) ($toggle['enabled'] ?? false);
+        $row = is_array($toggle['row'] ?? null) ? $toggle['row'] : [];
 
         Audit::log('modules.toggle', 'module', null, [
             'actor_user_id' => $this->currentUserId($request),
             'module' => $name,
-            'from_enabled' => $enabled,
-            'to_enabled' => !$enabled,
+            'from_enabled' => !$enabled,
+            'to_enabled' => $enabled,
         ]);
 
-        $row = $current[$name] ?? ['enabled' => !$enabled, 'version' => null];
         $typeLabel = $this->typeLabel($type);
         $protected = $type !== 'feature';
         $module = [
             'name' => $name,
-            'enabled' => !$enabled,
-            'version' => $discovered[$name]['version'] ?? null,
+            'enabled' => $enabled,
+            'version' => is_array($moduleMeta) ? ($moduleMeta['version'] ?? null) : null,
             'type' => $type,
             'type_label' => $typeLabel,
             'type_is_internal' => $type === 'internal',
@@ -172,7 +177,7 @@ final class ModulesController
         if ($request->wantsJson()) {
             return ContractResponse::ok([
                 'name' => $name,
-                'enabled' => !$enabled,
+                'enabled' => $enabled,
                 'protected' => $protected,
             ], [
                 'status' => 'ok',
@@ -186,7 +191,7 @@ final class ModulesController
             ], 200, [], [
                 'theme' => 'admin',
             ]);
-            $messageKey = $enabled ? 'admin.modules.disable' : 'admin.modules.enable';
+            $messageKey = $enabled ? 'admin.modules.enable' : 'admin.modules.disable';
             return $this->withSuccessTrigger($response, $messageKey);
         }
 
@@ -314,21 +319,17 @@ final class ModulesController
 
     private function hasPermission(Request $request, string $permission): bool
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return false;
-        }
-
         $userId = $this->currentUserId($request);
         if ($userId === null) {
             return false;
         }
 
-        try {
-            $rbac = new RbacRepository($this->db->pdo());
-            return $rbac->userHasPermission($userId, $permission);
-        } catch (Throwable) {
+        $rbac = $this->rbac();
+        if ($rbac === null) {
             return false;
         }
+
+        return $rbac->userHasPermission($userId, $permission);
     }
 
     private function forbidden(Request $request, string $route): Response
@@ -470,6 +471,43 @@ final class ModulesController
     private function withSuccessTrigger(Response $response, string $messageKey): Response
     {
         return $response->withToastSuccess($messageKey, $this->view->translate($messageKey));
+    }
+
+    private function service(): ?ModulesServiceInterface
+    {
+        if ($this->modulesService !== null) {
+            return $this->modulesService;
+        }
+
+        if ($this->container === null) {
+            return null;
+        }
+
+        try {
+            $service = $this->container->get(ModulesServiceInterface::class);
+            if ($service instanceof ModulesServiceInterface) {
+                $this->modulesService = $service;
+                return $this->modulesService;
+            }
+        } catch (Throwable) {
+            return null;
+        }
+
+        return null;
+    }
+
+    private function rbac(): ?RbacServiceInterface
+    {
+        if ($this->container === null) {
+            return null;
+        }
+
+        try {
+            $service = $this->container->get(RbacServiceInterface::class);
+            return $service instanceof RbacServiceInterface ? $service : null;
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     /** @return array<int, array{name: string, enabled: bool, version: string|null, type: string, protected: bool}> */

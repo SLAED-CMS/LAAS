@@ -4,13 +4,11 @@ declare(strict_types=1);
 namespace Laas\Modules\Pages\Controller;
 
 use Laas\Core\Container\Container;
-use Laas\Database\DatabaseManager;
 use Laas\Domain\Pages\PagesServiceInterface;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\Modules\Pages\Repository\PagesRevisionsRepository;
 use Laas\Modules\Pages\ViewModel\PagePublicViewModel;
 use Laas\Support\Search\Highlighter;
 use Laas\Support\Search\SearchNormalizer;
@@ -36,7 +34,6 @@ final class PagesController
 
     public function __construct(
         private View $view,
-        private ?DatabaseManager $db = null,
         private ?PagesServiceInterface $pagesService = null,
         private ?Container $container = null
     ) {
@@ -163,10 +160,6 @@ final class PagesController
             }
         }
 
-        if ($this->db === null) {
-            return null;
-        }
-
         return null;
     }
 
@@ -210,13 +203,17 @@ final class PagesController
      */
     private function loadLatestBlocks(int $pageId): array
     {
-        if ($pageId <= 0 || $this->db === null || !$this->db->healthCheck()) {
+        if ($pageId <= 0) {
+            return [];
+        }
+
+        $service = $this->service();
+        if ($service === null) {
             return [];
         }
 
         try {
-            $repo = new PagesRevisionsRepository($this->db);
-            $blocks = $repo->findLatestBlocksByPageId($pageId);
+            $blocks = $service->findLatestBlocks($pageId);
             return is_array($blocks) ? $blocks : [];
         } catch (Throwable) {
             return [];

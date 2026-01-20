@@ -38,12 +38,12 @@ final class AdminModule implements ModuleInterface
             $useContainer = $this->container !== null;
 
             $router->addRoute($method, $path, function ($request, array $vars = []) use ($class, $action, $paramCount, $useContainer) {
-                if ($useContainer && $paramCount >= 4) {
-                    $controller = new $class($this->view, $this->db, null, $this->container);
-                } elseif ($useContainer && $paramCount >= 3) {
-                    $controller = new $class($this->view, $this->db, $this->container);
+                if ($useContainer && $paramCount >= 3) {
+                    $controller = new $class($this->view, null, $this->container);
+                } elseif ($useContainer && $paramCount >= 2) {
+                    $controller = new $class($this->view, $this->container);
                 } elseif ($paramCount >= 2) {
-                    $controller = new $class($this->view, $this->db);
+                    $controller = new $class($this->view, null);
                 } else {
                     $controller = new $class($this->view);
                 }
