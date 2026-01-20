@@ -926,6 +926,61 @@ function policy_make_finding(
 }
 
 /**
+ * @return array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>
+ */
+function policy_check_container_audit(): array
+{
+    $findings = [];
+    $root = policy_root_path();
+    $auditPath = $root . '/tools/container-audit.php';
+    if (!is_file($auditPath)) {
+        $findings[] = [
+            'level' => 'error',
+            'code' => 'C0',
+            'file' => $auditPath,
+            'line' => 1,
+            'message' => 'container.audit: tool missing',
+            'snippet' => '',
+        ];
+        return $findings;
+    }
+
+    require_once $auditPath;
+    $audit = container_audit_collect($root);
+    $byId = $audit['by_id'] ?? [];
+    $kernelPath = $root . '/src/Core/Kernel.php';
+
+    foreach ($audit['duplicates'] ?? [] as $id) {
+        $findings[] = [
+            'level' => 'error',
+            'code' => 'C1',
+            'file' => $kernelPath,
+            'line' => 1,
+            'message' => 'container.audit: duplicate binding id ' . $id,
+            'snippet' => '',
+        ];
+    }
+
+    $required = function_exists('container_audit_required_ids')
+        ? container_audit_required_ids()
+        : [];
+    foreach ($required as $id) {
+        if (!isset($byId[$id])) {
+            $findings[] = [
+                'level' => 'error',
+                'code' => 'C2',
+                'file' => $kernelPath,
+                'line' => 1,
+                'message' => 'container.audit: missing binding ' . $id,
+                'snippet' => '',
+            ];
+        }
+    }
+
+    return $findings;
+}
+
+/**
  * @param array<int, string> $paths
  * @return array{
  *   errors: array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>,
@@ -936,6 +991,7 @@ function policy_make_finding(
 function policy_analyze(array $paths): array
 {
     $findings = policy_check_git_hygiene();
+    $findings = array_merge($findings, policy_check_container_audit());
     $findings = array_merge($findings, policy_check_paths($paths));
     $findings = array_merge($findings, policy_check_php_paths($paths));
     $findings = array_merge($findings, policy_check_theme_layouts($paths));

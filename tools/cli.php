@@ -2594,6 +2594,13 @@ $commands['git:lf:fix'] = function () use ($rootPath): int {
     return 0;
 };
 
+$commands['container:audit'] = function () use ($rootPath, $args): int {
+    require_once $rootPath . '/tools/container-audit.php';
+    $quiet = hasFlag($args, 'quiet') || hasFlag($args, 'q');
+    container_audit_run($rootPath, $quiet);
+    return 0;
+};
+
 $commands['policy:check'] = function () use ($rootPath): int {
     require_once $rootPath . '/tools/policy-check.php';
     $policyCode = policy_run([

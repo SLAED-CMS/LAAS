@@ -2296,6 +2296,12 @@ $container->bind('cache', fn () => new FileCache($path));
 $config = $container->get('config');
 ```
 
+### Composition Root
+
+- Kernel owns all container bindings in `registerBindings()`.
+- Modules/controllers never bind services at runtime.
+- Use `php tools/cli.php container:audit` for a deterministic bindings list.
+
 ---
 
 ## Service Layer (v4.0.20)

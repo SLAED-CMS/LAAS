@@ -115,7 +115,7 @@ final class Kernel
         $this->config = $this->loadConfig();
         $this->ensureStorage();
         $this->container = new Container();
-        $this->registerContainerServices();
+        $this->registerBindings($this->container);
     }
 
     public function handle(Request $request): Response
@@ -407,111 +407,150 @@ final class Kernel
         return $this->databaseManager;
     }
 
-    private function registerContainerServices(): void
+    private function registerBindings(Container $container): void
     {
         $config = $this->config;
         $rootPath = $this->rootPath;
 
-        $this->container->singleton('config', static function () use ($config): array {
+        $bindSingleton = static function (
+            Container $container,
+            string $id,
+            callable|string $factory,
+            ?string $concrete = null,
+            bool $readOnly = false
+        ): void {
+            $container->singleton($id, $factory, [
+                'concrete' => $concrete ?? (is_string($factory) ? $factory : 'callable'),
+                'read_only' => $readOnly,
+            ]);
+        };
+
+        $bindSingleton($container, 'config', static function () use ($config): array {
             return $config;
-        });
+        }, 'array');
 
-        $this->container->singleton('db', function (): DatabaseManager {
+        $bindSingleton($container, 'db', function (): DatabaseManager {
             return $this->database();
-        });
+        }, DatabaseManager::class);
 
-        $this->container->singleton('translator', static function () use ($config, $rootPath): Translator {
+        $bindSingleton($container, 'translator', static function () use ($config, $rootPath): Translator {
             $appConfig = $config['app'] ?? [];
             $theme = $appConfig['theme'] ?? 'default';
             $locale = $appConfig['default_locale'] ?? 'en';
 
             return new Translator($rootPath, $theme, $locale);
-        });
+        }, Translator::class);
 
-        $this->container->singleton(PagesServiceInterface::class, function (): PagesServiceInterface {
+        $bindSingleton($container, PagesServiceInterface::class, function (): PagesServiceInterface {
             return new PagesService($this->database());
-        });
+        }, PagesService::class);
 
-        $this->container->singleton(PagesReadServiceInterface::class, function (): PagesReadServiceInterface {
-            $service = $this->container->get(PagesServiceInterface::class);
+        $bindSingleton($container, PagesReadServiceInterface::class, function (): PagesReadServiceInterface {
+            $service = $container->get(PagesServiceInterface::class);
             return ReadOnlyProxy::wrap($service, PagesReadServiceInterface::class);
-        });
+        }, PagesService::class, true);
 
-        $this->container->singleton(PagesWriteServiceInterface::class, function (): PagesWriteServiceInterface {
-            return $this->container->get(PagesServiceInterface::class);
-        });
+        $bindSingleton(
+            $container,
+            PagesWriteServiceInterface::class,
+            function (): PagesWriteServiceInterface {
+                return $container->get(PagesServiceInterface::class);
+            },
+            PagesService::class
+        );
 
-        $this->container->singleton(MediaServiceInterface::class, function () use ($config, $rootPath): MediaServiceInterface {
+        $bindSingleton($container, MediaServiceInterface::class, function () use ($config, $rootPath): MediaServiceInterface {
             return new MediaService(
                 $this->database(),
                 $config['media'] ?? [],
                 $rootPath
             );
-        });
+        }, MediaService::class);
 
-        $this->container->singleton(StorageService::class, function () use ($rootPath): StorageService {
+        $bindSingleton($container, StorageService::class, function () use ($rootPath): StorageService {
             return new StorageService($rootPath);
-        });
+        }, StorageService::class);
 
-        $this->container->singleton(MediaSignedUrlService::class, function () use ($config): MediaSignedUrlService {
+        $bindSingleton($container, MediaSignedUrlService::class, function () use ($config): MediaSignedUrlService {
             return new MediaSignedUrlService($config['media'] ?? []);
-        });
+        }, MediaSignedUrlService::class);
 
-        $this->container->singleton(MediaThumbnailService::class, function (): MediaThumbnailService {
-            $storage = $this->container->get(StorageService::class);
+        $bindSingleton($container, MediaThumbnailService::class, function (): MediaThumbnailService {
+            $storage = $container->get(StorageService::class);
             return new MediaThumbnailService($storage);
-        });
+        }, MediaThumbnailService::class);
 
-        $this->container->singleton(ChangelogCache::class, function () use ($rootPath): ChangelogCache {
+        $bindSingleton($container, ChangelogCache::class, function () use ($rootPath): ChangelogCache {
             return new ChangelogCache($rootPath);
-        });
+        }, ChangelogCache::class);
 
-        $this->container->singleton(ChangelogService::class, function () use ($rootPath): ChangelogService {
-            $cache = $this->container->get(ChangelogCache::class);
+        $bindSingleton($container, ChangelogService::class, function () use ($rootPath): ChangelogService {
+            $cache = $container->get(ChangelogCache::class);
             return new ChangelogService($rootPath, $cache);
-        });
+        }, ChangelogService::class);
 
-        $this->container->singleton(MediaReadServiceInterface::class, function (): MediaReadServiceInterface {
-            $service = $this->container->get(MediaServiceInterface::class);
+        $bindSingleton($container, MediaReadServiceInterface::class, function (): MediaReadServiceInterface {
+            $service = $container->get(MediaServiceInterface::class);
             return ReadOnlyProxy::wrap($service, MediaReadServiceInterface::class);
-        });
+        }, MediaService::class, true);
 
-        $this->container->singleton(MediaWriteServiceInterface::class, function (): MediaWriteServiceInterface {
-            return $this->container->get(MediaServiceInterface::class);
-        });
+        $bindSingleton(
+            $container,
+            MediaWriteServiceInterface::class,
+            function (): MediaWriteServiceInterface {
+                return $container->get(MediaServiceInterface::class);
+            },
+            MediaService::class
+        );
 
-        $this->container->singleton(SecurityReportsServiceInterface::class, function (): SecurityReportsServiceInterface {
+        $bindSingleton($container, SecurityReportsServiceInterface::class, function (): SecurityReportsServiceInterface {
             return new SecurityReportsService($this->database());
-        });
+        }, SecurityReportsService::class);
 
-        $this->container->singleton(SecurityReportsReadServiceInterface::class, function (): SecurityReportsReadServiceInterface {
-            $service = $this->container->get(SecurityReportsServiceInterface::class);
+        $bindSingleton(
+            $container,
+            SecurityReportsReadServiceInterface::class,
+            function (): SecurityReportsReadServiceInterface {
+                $service = $container->get(SecurityReportsServiceInterface::class);
             return ReadOnlyProxy::wrap($service, SecurityReportsReadServiceInterface::class);
-        });
+            },
+            SecurityReportsService::class,
+            true
+        );
 
-        $this->container->singleton(SecurityReportsWriteServiceInterface::class, function (): SecurityReportsWriteServiceInterface {
-            return $this->container->get(SecurityReportsServiceInterface::class);
-        });
+        $bindSingleton(
+            $container,
+            SecurityReportsWriteServiceInterface::class,
+            function (): SecurityReportsWriteServiceInterface {
+                return $container->get(SecurityReportsServiceInterface::class);
+            },
+            SecurityReportsService::class
+        );
 
-        $this->container->singleton(ApiTokensServiceInterface::class, function () use ($config, $rootPath): ApiTokensServiceInterface {
+        $bindSingleton($container, ApiTokensServiceInterface::class, function () use ($config, $rootPath): ApiTokensServiceInterface {
             return new ApiTokensService(
                 $this->database(),
                 $config['api'] ?? [],
                 $rootPath
             );
-        });
+        }, ApiTokensService::class);
 
-        $this->container->singleton(ApiTokensReadServiceInterface::class, function (): ApiTokensReadServiceInterface {
-            $service = $this->container->get(ApiTokensServiceInterface::class);
+        $bindSingleton($container, ApiTokensReadServiceInterface::class, function (): ApiTokensReadServiceInterface {
+            $service = $container->get(ApiTokensServiceInterface::class);
             return ReadOnlyProxy::wrap($service, ApiTokensReadServiceInterface::class);
-        });
+        }, ApiTokensService::class, true);
 
-        $this->container->singleton(ApiTokensWriteServiceInterface::class, function (): ApiTokensWriteServiceInterface {
-            return $this->container->get(ApiTokensServiceInterface::class);
-        });
+        $bindSingleton(
+            $container,
+            ApiTokensWriteServiceInterface::class,
+            function (): ApiTokensWriteServiceInterface {
+                return $container->get(ApiTokensServiceInterface::class);
+            },
+            ApiTokensService::class
+        );
 
-        $this->container->singleton(OpsServiceInterface::class, function () use ($config, $rootPath): OpsServiceInterface {
-            $securityReports = $this->container->get(SecurityReportsServiceInterface::class);
+        $bindSingleton($container, OpsServiceInterface::class, function () use ($config, $rootPath): OpsServiceInterface {
+            $securityReports = $container->get(SecurityReportsServiceInterface::class);
 
             return new OpsService(
                 $this->database(),
@@ -519,19 +558,19 @@ final class Kernel
                 $rootPath,
                 $securityReports
             );
-        });
+        }, OpsService::class);
 
-        $this->container->singleton(OpsReadServiceInterface::class, function (): OpsReadServiceInterface {
-            $service = $this->container->get(OpsServiceInterface::class);
+        $bindSingleton($container, OpsReadServiceInterface::class, function (): OpsReadServiceInterface {
+            $service = $container->get(OpsServiceInterface::class);
             return ReadOnlyProxy::wrap($service, OpsReadServiceInterface::class);
-        });
+        }, OpsService::class, true);
 
-        $this->container->singleton(AdminSearchServiceInterface::class, function () use ($config, $rootPath): AdminSearchServiceInterface {
-            $pages = $this->container->get(PagesServiceInterface::class);
-            $media = $this->container->get(MediaServiceInterface::class);
-            $users = $this->container->get(UsersServiceInterface::class);
-            $menus = $this->container->get(MenusServiceInterface::class);
-            $securityReports = $this->container->get(SecurityReportsServiceInterface::class);
+        $bindSingleton($container, AdminSearchServiceInterface::class, function () use ($config, $rootPath): AdminSearchServiceInterface {
+            $pages = $container->get(PagesServiceInterface::class);
+            $media = $container->get(MediaServiceInterface::class);
+            $users = $container->get(UsersServiceInterface::class);
+            $menus = $container->get(MenusServiceInterface::class);
+            $securityReports = $container->get(SecurityReportsServiceInterface::class);
             $moduleCatalog = new ModuleCatalog(
                 $rootPath,
                 $this->database(),
@@ -547,59 +586,69 @@ final class Kernel
                 $moduleCatalog,
                 $securityReports
             );
-        });
+        }, AdminSearchService::class);
 
-        $this->container->singleton(RbacServiceInterface::class, function (): RbacServiceInterface {
+        $bindSingleton($container, RbacServiceInterface::class, function (): RbacServiceInterface {
             return new RbacService($this->database());
-        });
+        }, RbacService::class);
 
-        $this->container->singleton(AuditLogServiceInterface::class, function (): AuditLogServiceInterface {
+        $bindSingleton($container, AuditLogServiceInterface::class, function (): AuditLogServiceInterface {
             return new AuditLogService($this->database());
-        });
+        }, AuditLogService::class);
 
-        $this->container->singleton(UsersServiceInterface::class, function (): UsersServiceInterface {
+        $bindSingleton($container, UsersServiceInterface::class, function (): UsersServiceInterface {
             return new UsersService($this->database());
-        });
+        }, UsersService::class);
 
-        $this->container->singleton(UsersReadServiceInterface::class, function (): UsersReadServiceInterface {
-            $service = $this->container->get(UsersServiceInterface::class);
+        $bindSingleton($container, UsersReadServiceInterface::class, function (): UsersReadServiceInterface {
+            $service = $container->get(UsersServiceInterface::class);
             return ReadOnlyProxy::wrap($service, UsersReadServiceInterface::class);
-        });
+        }, UsersService::class, true);
 
-        $this->container->singleton(UsersWriteServiceInterface::class, function (): UsersWriteServiceInterface {
-            return $this->container->get(UsersServiceInterface::class);
-        });
+        $bindSingleton(
+            $container,
+            UsersWriteServiceInterface::class,
+            function (): UsersWriteServiceInterface {
+                return $container->get(UsersServiceInterface::class);
+            },
+            UsersService::class
+        );
 
-        $this->container->singleton(MenusServiceInterface::class, function (): MenusServiceInterface {
+        $bindSingleton($container, MenusServiceInterface::class, function (): MenusServiceInterface {
             return new MenusService($this->database());
-        });
+        }, MenusService::class);
 
-        $this->container->singleton(MenusReadServiceInterface::class, function (): MenusReadServiceInterface {
-            $service = $this->container->get(MenusServiceInterface::class);
+        $bindSingleton($container, MenusReadServiceInterface::class, function (): MenusReadServiceInterface {
+            $service = $container->get(MenusServiceInterface::class);
             return ReadOnlyProxy::wrap($service, MenusReadServiceInterface::class);
-        });
+        }, MenusService::class, true);
 
-        $this->container->singleton(MenusWriteServiceInterface::class, function (): MenusWriteServiceInterface {
-            return $this->container->get(MenusServiceInterface::class);
-        });
+        $bindSingleton(
+            $container,
+            MenusWriteServiceInterface::class,
+            function (): MenusWriteServiceInterface {
+                return $container->get(MenusServiceInterface::class);
+            },
+            MenusService::class
+        );
 
-        $this->container->singleton(ModulesServiceInterface::class, function () use ($config, $rootPath): ModulesServiceInterface {
+        $bindSingleton($container, ModulesServiceInterface::class, function () use ($config, $rootPath): ModulesServiceInterface {
             return new ModulesService($this->database(), $config, $rootPath);
-        });
+        }, ModulesService::class);
 
-        $this->container->singleton(SettingsServiceInterface::class, function (): SettingsServiceInterface {
+        $bindSingleton($container, SettingsServiceInterface::class, function (): SettingsServiceInterface {
             return new SettingsService($this->database());
-        });
+        }, SettingsService::class);
 
-        $this->container->singleton(RbacDiagnosticsService::class, function (): RbacDiagnosticsService {
-            $rbac = $this->container->get(RbacServiceInterface::class);
-            $users = $this->container->get(UsersServiceInterface::class);
+        $bindSingleton($container, RbacDiagnosticsService::class, function (): RbacDiagnosticsService {
+            $rbac = $container->get(RbacServiceInterface::class);
+            $users = $container->get(UsersServiceInterface::class);
 
             return new RbacDiagnosticsService($rbac, $users);
-        });
+        }, RbacDiagnosticsService::class);
 
-        $this->container->singleton(HealthService::class, function () use ($config, $rootPath): HealthService {
-            $storage = $this->container->get(StorageService::class);
+        $bindSingleton($container, HealthService::class, function () use ($config, $rootPath): HealthService {
+            $storage = $container->get(StorageService::class);
             $checker = new ConfigSanityChecker();
             $securityConfig = $config['security'] ?? [];
             $storageConfig = $config['storage'] ?? [];
@@ -613,7 +662,7 @@ final class Kernel
             $writeCheck = (bool) ($appConfig['health_write_check'] ?? false);
 
             $dbCheck = function (): bool {
-                $db = $this->container->get('db');
+                $db = $container->get('db');
                 if (is_object($db) && method_exists($db, 'healthCheck')) {
                     return (bool) $db->healthCheck();
                 }
@@ -629,20 +678,25 @@ final class Kernel
                 $writeCheck,
                 new SessionConfigValidator()
             );
-        });
+        }, HealthService::class);
 
-        $this->container->singleton(SettingsReadServiceInterface::class, function (): SettingsReadServiceInterface {
-            $service = $this->container->get(SettingsServiceInterface::class);
+        $bindSingleton($container, SettingsReadServiceInterface::class, function (): SettingsReadServiceInterface {
+            $service = $container->get(SettingsServiceInterface::class);
             return ReadOnlyProxy::wrap($service, SettingsReadServiceInterface::class);
-        });
+        }, SettingsService::class, true);
 
-        $this->container->singleton(SettingsWriteServiceInterface::class, function (): SettingsWriteServiceInterface {
-            return $this->container->get(SettingsServiceInterface::class);
-        });
+        $bindSingleton(
+            $container,
+            SettingsWriteServiceInterface::class,
+            function (): SettingsWriteServiceInterface {
+                return $container->get(SettingsServiceInterface::class);
+            },
+            SettingsService::class
+        );
 
-        $this->container->singleton(BlockRegistry::class, static function (): BlockRegistry {
+        $bindSingleton($container, BlockRegistry::class, static function (): BlockRegistry {
             return BlockRegistry::default();
-        });
+        }, BlockRegistry::class);
     }
 
     private function loadConfig(): array
