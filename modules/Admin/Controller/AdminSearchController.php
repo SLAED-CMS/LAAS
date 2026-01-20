@@ -6,7 +6,7 @@ namespace Laas\Modules\Admin\Controller;
 use Laas\Core\Container\Container;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
-use Laas\Domain\AdminSearch\AdminSearchService;
+use Laas\Domain\AdminSearch\AdminSearchServiceInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\View\View;
@@ -17,7 +17,7 @@ final class AdminSearchController
     public function __construct(
         private View $view,
         private ?DatabaseManager $db = null,
-        private ?AdminSearchService $searchService = null,
+        private ?AdminSearchServiceInterface $searchService = null,
         private ?Container $container = null
     ) {
     }
@@ -135,7 +135,7 @@ final class AdminSearchController
         return false;
     }
 
-    private function service(): ?AdminSearchService
+    private function service(): ?AdminSearchServiceInterface
     {
         if ($this->searchService !== null) {
             return $this->searchService;
@@ -143,8 +143,8 @@ final class AdminSearchController
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(AdminSearchService::class);
-                if ($service instanceof AdminSearchService) {
+                $service = $this->container->get(AdminSearchServiceInterface::class);
+                if ($service instanceof AdminSearchServiceInterface) {
                     $this->searchService = $service;
                     return $this->searchService;
                 }

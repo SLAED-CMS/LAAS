@@ -16,7 +16,9 @@
 ## Preconditions
 - `vendor/bin/phpunit` is green
 - `php tools/cli.php policy:check` is green
+- `php tools/cli.php assets:verify` is green
 - `php tools/cli.php templates:raw:check --path=themes` is green
+- `git status` is clean; ensure no `nul` file exists
 
 ## Config notes
 - Remote AI provider is disabled by default (`ai_remote_enabled=false`)
@@ -41,6 +43,7 @@
 ## Verification commands
 ```bash
 php tools/cli.php policy:check
+php tools/cli.php assets:verify
 php tools/cli.php templates:raw:check --path=themes
 php tools/cli.php contracts:fixtures:check
 php tools/cli.php contracts:check

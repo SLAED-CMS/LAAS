@@ -23,6 +23,9 @@ public/.htaccess
 # OS
 .DS_Store
 Thumbs.db
+nul
+NUL
+*.stackdump
 
 # Backups
 *.backup.md

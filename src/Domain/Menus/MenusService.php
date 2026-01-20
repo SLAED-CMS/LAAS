@@ -10,7 +10,7 @@ use Laas\Modules\Menu\Repository\MenusRepository;
 use RuntimeException;
 use Throwable;
 
-class MenusService
+class MenusService implements MenusServiceInterface
 {
     private ?MenusRepository $menus = null;
     private ?MenuItemsRepository $items = null;
@@ -67,11 +67,13 @@ class MenusService
         return $row === null ? null : $this->normalizeMenu($row);
     }
 
+    /** @mutation */
     public function create(array $data): int
     {
         return $this->menusRepository()->saveMenu($data);
     }
 
+    /** @mutation */
     public function update(int $id, array $data): int
     {
         if ($id <= 0) {
@@ -83,6 +85,7 @@ class MenusService
         return $this->menusRepository()->saveMenu($payload);
     }
 
+    /** @mutation */
     public function delete(int $id): void
     {
         if ($id <= 0) {
@@ -116,11 +119,13 @@ class MenusService
         return $row === null ? null : $this->normalizeItem($row);
     }
 
+    /** @mutation */
     public function createItem(array $data): int
     {
         return $this->menuItemsRepository()->saveItem($data);
     }
 
+    /** @mutation */
     public function updateItem(int $id, array $data): int
     {
         if ($id <= 0) {
@@ -132,6 +137,7 @@ class MenusService
         return $this->menuItemsRepository()->saveItem($payload);
     }
 
+    /** @mutation */
     public function deleteItem(int $id): void
     {
         if ($id <= 0) {
@@ -141,6 +147,7 @@ class MenusService
         $this->menuItemsRepository()->deleteItem($id);
     }
 
+    /** @mutation */
     public function setItemEnabled(int $id, int $enabled): void
     {
         if ($id <= 0) {

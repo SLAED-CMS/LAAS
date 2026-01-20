@@ -7,7 +7,7 @@ use Laas\Api\ApiCacheInvalidator;
 use Laas\Core\Container\Container;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
-use Laas\Domain\Media\MediaService;
+use Laas\Domain\Media\MediaServiceInterface;
 use Laas\Domain\Media\MediaServiceException;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorCode;
@@ -31,7 +31,7 @@ final class AdminMediaController
     public function __construct(
         private View $view,
         private ?DatabaseManager $db = null,
-        private ?MediaService $mediaService = null,
+        private ?MediaServiceInterface $mediaService = null,
         private ?Container $container = null
     ) {
     }
@@ -672,7 +672,7 @@ final class AdminMediaController
         }
     }
 
-    private function service(): ?MediaService
+    private function service(): ?MediaServiceInterface
     {
         if ($this->mediaService !== null) {
             return $this->mediaService;
@@ -680,8 +680,8 @@ final class AdminMediaController
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(MediaService::class);
-                if ($service instanceof MediaService) {
+                $service = $this->container->get(MediaServiceInterface::class);
+                if ($service instanceof MediaServiceInterface) {
                     $this->mediaService = $service;
                     return $this->mediaService;
                 }

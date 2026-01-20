@@ -6,7 +6,7 @@ namespace Laas\Modules\Admin\Controller;
 use Laas\Core\Container\Container;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
-use Laas\Domain\Settings\SettingsService;
+use Laas\Domain\Settings\SettingsServiceInterface;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
@@ -21,7 +21,7 @@ final class SettingsController
     public function __construct(
         private View $view,
         private ?DatabaseManager $db = null,
-        private ?SettingsService $settingsService = null,
+        private ?SettingsServiceInterface $settingsService = null,
         private ?Container $container = null
     ) {
     }
@@ -384,7 +384,7 @@ final class SettingsController
         return $response->withToastSuccess($messageKey, $this->view->translate($messageKey));
     }
 
-    private function service(): ?SettingsService
+    private function service(): ?SettingsServiceInterface
     {
         if ($this->settingsService !== null) {
             return $this->settingsService;
@@ -392,8 +392,8 @@ final class SettingsController
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(SettingsService::class);
-                if ($service instanceof SettingsService) {
+                $service = $this->container->get(SettingsServiceInterface::class);
+                if ($service instanceof SettingsServiceInterface) {
                     $this->settingsService = $service;
                     return $this->settingsService;
                 }

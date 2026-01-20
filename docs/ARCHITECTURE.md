@@ -2314,6 +2314,12 @@ $config = $container->get('config');
 - maps service result -> view/JSON
 - contains no business logic
 
+**Service Contracts & Stability:**
+- each `*Service` in `src/Domain` exposes a matching `*ServiceInterface`
+- Kernel binds services to interfaces only (concrete bindings reserved for infrastructure like DB, cache, translator, request cache)
+- controllers depend on interfaces only, never concrete services
+- mutating service methods are annotated with `@mutation`; read-only methods do not write, dispatch events, or invalidate caches
+
 **Current services (MVP):**
 - PagesService for page read/create flows.
 - MediaService for uploads and media lookup.

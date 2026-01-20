@@ -6,7 +6,7 @@ namespace Laas\Modules\Admin\Controller;
 use Laas\Core\Container\Container;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
-use Laas\Domain\ApiTokens\ApiTokensService;
+use Laas\Domain\ApiTokens\ApiTokensServiceInterface;
 use Laas\Domain\ApiTokens\ApiTokensServiceException;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
@@ -22,7 +22,7 @@ final class ApiTokensController
     public function __construct(
         private View $view,
         private ?DatabaseManager $db = null,
-        private ?ApiTokensService $apiTokensService = null,
+        private ?ApiTokensServiceInterface $apiTokensService = null,
         private ?Container $container = null
     ) {
     }
@@ -432,7 +432,7 @@ final class ApiTokensController
         return $response->withToastSuccess($messageKey, $this->view->translate($messageKey));
     }
 
-    private function service(): ?ApiTokensService
+    private function service(): ?ApiTokensServiceInterface
     {
         if ($this->apiTokensService !== null) {
             return $this->apiTokensService;
@@ -440,8 +440,8 @@ final class ApiTokensController
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(ApiTokensService::class);
-                if ($service instanceof ApiTokensService) {
+                $service = $this->container->get(ApiTokensServiceInterface::class);
+                if ($service instanceof ApiTokensServiceInterface) {
                     $this->apiTokensService = $service;
                     return $this->apiTokensService;
                 }
@@ -454,7 +454,7 @@ final class ApiTokensController
     }
 
     /** @return array<int, string> */
-    private function selectScopes(array $scopesInput, ApiTokensService $service): array
+    private function selectScopes(array $scopesInput, ApiTokensServiceInterface $service): array
     {
         $allowed = $service->allowedScopes();
         $selected = [];

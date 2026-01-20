@@ -85,6 +85,82 @@ function policy_normalize_path(string $path): string
 }
 
 /**
+ * @return array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>
+ */
+function policy_check_git_hygiene(?string $root = null, ?string $nulMarker = null): array
+{
+    $findings = [];
+    $root = $root ?? policy_root_path();
+    $root = rtrim($root, '/\\');
+    $marker = $nulMarker ?? 'nul';
+
+    $entries = @scandir($root);
+    $entryLookup = null;
+    if (is_array($entries)) {
+        $entryLookup = array_fill_keys($entries, true);
+    }
+
+    foreach (policy_git_hygiene_markers($marker) as $name) {
+        $path = $root . '/' . $name;
+        $exists = $entryLookup !== null ? isset($entryLookup[$name]) : file_exists($path);
+        if (!$exists) {
+            continue;
+        }
+        $findings[] = [
+            'level' => 'error',
+            'code' => 'G1',
+            'file' => $path,
+            'line' => 1,
+            'message' => 'git.hygiene: forbidden file name "' . $name . '" present',
+            'snippet' => '',
+        ];
+    }
+
+    $autocrlf = policy_git_autocrlf_value($root);
+    if ($autocrlf !== null && strtolower($autocrlf) === 'true') {
+        $message = 'git.hygiene: core.autocrlf=true; LF is enforced via .gitattributes';
+        $findings[] = [
+            'level' => 'warning',
+            'code' => 'G2',
+            'file' => $root . '/.git/config',
+            'line' => 1,
+            'message' => $message,
+            'snippet' => $message,
+        ];
+    }
+
+    return $findings;
+}
+
+/**
+ * @return array<int, string>
+ */
+function policy_git_hygiene_markers(string $marker): array
+{
+    $markers = [$marker];
+    if (strtolower($marker) === 'nul') {
+        $markers[] = 'NUL';
+    }
+    return array_values(array_unique($markers));
+}
+
+function policy_git_autocrlf_value(string $root): ?string
+{
+    if (!function_exists('exec')) {
+        return null;
+    }
+    $cmd = 'git -C ' . escapeshellarg($root) . ' config --get core.autocrlf';
+    $output = [];
+    $code = 0;
+    @exec($cmd, $output, $code);
+    if ($code !== 0) {
+        return null;
+    }
+    $value = trim(implode("\n", $output));
+    return $value === '' ? null : $value;
+}
+
+/**
  * @param array<int, string> $paths
  * @return array<int, string>
  */
@@ -558,7 +634,8 @@ function policy_make_finding(
  */
 function policy_analyze(array $paths): array
 {
-    $findings = policy_check_paths($paths);
+    $findings = policy_check_git_hygiene();
+    $findings = array_merge($findings, policy_check_paths($paths));
     $findings = array_merge($findings, policy_check_php_paths($paths));
     $findings = array_merge($findings, policy_check_theme_layouts($paths));
     $findings = array_merge($findings, policy_check_theme_manifests($paths));

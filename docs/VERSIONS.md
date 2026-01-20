@@ -14,6 +14,7 @@
   - Admin Ops migrated to OpsService
   - ApiTokens moved to service layer (DI)
   - Admin search moved to service layer + grouped results
+  - Service layer hardened with explicit contracts (non-breaking)
   - Admin: Modules dropdown search + sections + quick actions
   - Theme API v2: theme.json validation + capability gating (with compat toggle)
   - Admin Pages: dev-only Blocks JSON editor + preview (validated, revisions)

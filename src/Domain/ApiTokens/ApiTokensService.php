@@ -11,7 +11,7 @@ use Laas\Database\Repositories\ApiTokensRepository;
 use RuntimeException;
 use Throwable;
 
-class ApiTokensService
+class ApiTokensService implements ApiTokensServiceInterface
 {
     private ?ApiTokensRepository $repository = null;
     private ?ApiTokenService $tokenService = null;
@@ -68,6 +68,7 @@ class ApiTokensService
      *   scopes: array<int, string>,
      *   expires_at: string|null
      * }
+     * @mutation
      */
     public function createToken(
         int $userId,
@@ -115,6 +116,7 @@ class ApiTokensService
      *   name: string,
      *   revoked_old: bool
      * }
+     * @mutation
      */
     public function rotateToken(
         int $userId,
@@ -170,6 +172,7 @@ class ApiTokensService
         ];
     }
 
+    /** @mutation */
     public function revokeToken(int $tokenId, int $userId): void
     {
         $ok = $this->repository()->revoke($tokenId, $userId);

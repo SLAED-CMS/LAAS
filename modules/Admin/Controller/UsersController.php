@@ -6,7 +6,7 @@ namespace Laas\Modules\Admin\Controller;
 use Laas\Core\Container\Container;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
-use Laas\Domain\Users\UsersService;
+use Laas\Domain\Users\UsersServiceInterface;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
@@ -26,7 +26,7 @@ final class UsersController
     public function __construct(
         private View $view,
         private ?DatabaseManager $db = null,
-        private ?UsersService $usersService = null,
+        private ?UsersServiceInterface $usersService = null,
         private ?Container $container = null
     ) {
     }
@@ -610,7 +610,7 @@ final class UsersController
         return $response->withToastSuccess($messageKey, $this->view->translate($messageKey));
     }
 
-    private function service(): ?UsersService
+    private function service(): ?UsersServiceInterface
     {
         if ($this->usersService !== null) {
             return $this->usersService;
@@ -618,8 +618,8 @@ final class UsersController
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(UsersService::class);
-                if ($service instanceof UsersService) {
+                $service = $this->container->get(UsersServiceInterface::class);
+                if ($service instanceof UsersServiceInterface) {
                     $this->usersService = $service;
                     return $this->usersService;
                 }

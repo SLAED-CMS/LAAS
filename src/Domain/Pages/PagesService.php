@@ -10,7 +10,7 @@ use Laas\Security\HtmlSanitizer;
 use RuntimeException;
 use Throwable;
 
-class PagesService
+class PagesService implements PagesServiceInterface
 {
     private ?PagesRepository $repository = null;
 
@@ -61,7 +61,10 @@ class PagesService
         return $repo->listByStatus($statusFilter, $limit, $offset);
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * @return array<string, mixed>
+     * @mutation
+     */
     public function create(array $data): array
     {
         $title = trim((string) ($data['title'] ?? ''));

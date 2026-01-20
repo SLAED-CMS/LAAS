@@ -10,7 +10,7 @@ use Laas\Database\Repositories\UsersRepository;
 use RuntimeException;
 use Throwable;
 
-class UsersService
+class UsersService implements UsersServiceInterface
 {
     private ?UsersRepository $users = null;
     private ?RbacRepository $rbac = null;
@@ -83,17 +83,20 @@ class UsersService
         return $this->rbacRepository()->userHasRole($userId, 'admin');
     }
 
+    /** @mutation */
     public function setStatus(int $userId, int $status): void
     {
         $status = $status === 1 ? 1 : 0;
         $this->usersRepository()->setStatus($userId, $status);
     }
 
+    /** @mutation */
     public function setPasswordHash(int $userId, string $hash): void
     {
         $this->usersRepository()->setPasswordHash($userId, $hash);
     }
 
+    /** @mutation */
     public function setAdminRole(int $userId, bool $isAdmin): void
     {
         $rbac = $this->rbacRepository();
@@ -105,6 +108,7 @@ class UsersService
         $rbac->revokeRoleFromUser($userId, 'admin');
     }
 
+    /** @mutation */
     public function delete(int $userId): void
     {
         $pdo = $this->db->pdo();

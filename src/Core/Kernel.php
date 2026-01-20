@@ -49,14 +49,23 @@ use Laas\Perf\PerfBudgetEnforcer;
 use Laas\Assets\AssetsManager;
 use Laas\Core\Container\Container;
 use Laas\Domain\AdminSearch\AdminSearchService;
+use Laas\Domain\AdminSearch\AdminSearchServiceInterface;
 use Laas\Domain\ApiTokens\ApiTokensService;
+use Laas\Domain\ApiTokens\ApiTokensServiceInterface;
 use Laas\Domain\Media\MediaService;
+use Laas\Domain\Media\MediaServiceInterface;
 use Laas\Domain\Menus\MenusService;
+use Laas\Domain\Menus\MenusServiceInterface;
 use Laas\Domain\Ops\OpsService;
+use Laas\Domain\Ops\OpsServiceInterface;
 use Laas\Domain\Pages\PagesService;
+use Laas\Domain\Pages\PagesServiceInterface;
 use Laas\Domain\Security\SecurityReportsService;
+use Laas\Domain\Security\SecurityReportsServiceInterface;
 use Laas\Domain\Settings\SettingsService;
+use Laas\Domain\Settings\SettingsServiceInterface;
 use Laas\Domain\Users\UsersService;
+use Laas\Domain\Users\UsersServiceInterface;
 use Laas\View\AssetManager;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
@@ -389,11 +398,11 @@ final class Kernel
             return new Translator($rootPath, $theme, $locale);
         });
 
-        $this->container->singleton(PagesService::class, function (): PagesService {
+        $this->container->singleton(PagesServiceInterface::class, function (): PagesServiceInterface {
             return new PagesService($this->database());
         });
 
-        $this->container->singleton(MediaService::class, function () use ($config, $rootPath): MediaService {
+        $this->container->singleton(MediaServiceInterface::class, function () use ($config, $rootPath): MediaServiceInterface {
             return new MediaService(
                 $this->database(),
                 $config['media'] ?? [],
@@ -401,11 +410,11 @@ final class Kernel
             );
         });
 
-        $this->container->singleton(SecurityReportsService::class, function (): SecurityReportsService {
+        $this->container->singleton(SecurityReportsServiceInterface::class, function (): SecurityReportsServiceInterface {
             return new SecurityReportsService($this->database());
         });
 
-        $this->container->singleton(ApiTokensService::class, function () use ($config, $rootPath): ApiTokensService {
+        $this->container->singleton(ApiTokensServiceInterface::class, function () use ($config, $rootPath): ApiTokensServiceInterface {
             return new ApiTokensService(
                 $this->database(),
                 $config['api'] ?? [],
@@ -413,8 +422,8 @@ final class Kernel
             );
         });
 
-        $this->container->singleton(OpsService::class, function () use ($config, $rootPath): OpsService {
-            $securityReports = $this->container->get(SecurityReportsService::class);
+        $this->container->singleton(OpsServiceInterface::class, function () use ($config, $rootPath): OpsServiceInterface {
+            $securityReports = $this->container->get(SecurityReportsServiceInterface::class);
 
             return new OpsService(
                 $this->database(),
@@ -424,12 +433,12 @@ final class Kernel
             );
         });
 
-        $this->container->singleton(AdminSearchService::class, function () use ($config, $rootPath): AdminSearchService {
-            $pages = $this->container->get(PagesService::class);
-            $media = $this->container->get(MediaService::class);
-            $users = $this->container->get(UsersService::class);
-            $menus = $this->container->get(MenusService::class);
-            $securityReports = $this->container->get(SecurityReportsService::class);
+        $this->container->singleton(AdminSearchServiceInterface::class, function () use ($config, $rootPath): AdminSearchServiceInterface {
+            $pages = $this->container->get(PagesServiceInterface::class);
+            $media = $this->container->get(MediaServiceInterface::class);
+            $users = $this->container->get(UsersServiceInterface::class);
+            $menus = $this->container->get(MenusServiceInterface::class);
+            $securityReports = $this->container->get(SecurityReportsServiceInterface::class);
             $moduleCatalog = new ModuleCatalog(
                 $rootPath,
                 $this->database(),
@@ -447,15 +456,15 @@ final class Kernel
             );
         });
 
-        $this->container->singleton(UsersService::class, function (): UsersService {
+        $this->container->singleton(UsersServiceInterface::class, function (): UsersServiceInterface {
             return new UsersService($this->database());
         });
 
-        $this->container->singleton(MenusService::class, function (): MenusService {
+        $this->container->singleton(MenusServiceInterface::class, function (): MenusServiceInterface {
             return new MenusService($this->database());
         });
 
-        $this->container->singleton(SettingsService::class, function (): SettingsService {
+        $this->container->singleton(SettingsServiceInterface::class, function (): SettingsServiceInterface {
             return new SettingsService($this->database());
         });
 

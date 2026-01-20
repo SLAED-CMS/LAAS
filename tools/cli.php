@@ -2568,13 +2568,23 @@ $commands['preflight'] = function () use (&$commands, $args, $rootPath, $securit
     return $result['code'];
 };
 
+$commands['assets:verify'] = function () use ($rootPath, $args): int {
+    require_once $rootPath . '/tools/assets-verify.php';
+    $override = (string) (getOption($args, 'root') ?? '');
+    $root = $override !== '' ? $override : $rootPath;
+    return assets_verify_run($root);
+};
+
 $commands['policy:check'] = function () use ($rootPath): int {
     require_once $rootPath . '/tools/policy-check.php';
-    return policy_run([
+    require_once $rootPath . '/tools/assets-verify.php';
+    $assetsCode = assets_verify_run($rootPath);
+    $policyCode = policy_run([
         $rootPath . '/themes',
         $rootPath . '/src',
         $rootPath . '/modules',
     ]);
+    return max($assetsCode, $policyCode);
 };
 
 $commands['theme:validate'] = function () use ($rootPath, $appConfig, $dbManager, $args): int {

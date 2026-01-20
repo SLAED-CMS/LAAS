@@ -8,7 +8,7 @@ use Laas\Database\Repositories\SettingsRepository;
 use RuntimeException;
 use Throwable;
 
-class SettingsService
+class SettingsService implements SettingsServiceInterface
 {
     private const DEFAULT_SITE_NAME = 'LAAS CMS';
     private const DEFAULT_LOCALE = 'en';
@@ -51,12 +51,14 @@ class SettingsService
         return $repo->get($this->storageKey($key), $defaultValue);
     }
 
+    /** @mutation */
     public function set(string $key, mixed $value): void
     {
         $repo = $this->repository();
         $repo->set($this->storageKey($key), $value, $this->typeForKey($key));
     }
 
+    /** @mutation */
     public function setMany(array $pairs): void
     {
         $repo = $this->repository();

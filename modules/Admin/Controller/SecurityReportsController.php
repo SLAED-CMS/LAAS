@@ -8,7 +8,7 @@ use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\SecurityReportsRepository;
 use Laas\Database\Repositories\RbacRepository;
 use Laas\Database\Repositories\UsersRepository;
-use Laas\Domain\Security\SecurityReportsService;
+use Laas\Domain\Security\SecurityReportsServiceInterface;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
@@ -23,7 +23,7 @@ final class SecurityReportsController
     public function __construct(
         private View $view,
         private ?DatabaseManager $db = null,
-        private ?SecurityReportsService $reportsService = null,
+        private ?SecurityReportsServiceInterface $reportsService = null,
         private ?Container $container = null
     ) {
     }
@@ -439,7 +439,7 @@ final class SecurityReportsController
         return $sum;
     }
 
-    private function service(): ?SecurityReportsService
+    private function service(): ?SecurityReportsServiceInterface
     {
         if ($this->reportsService !== null) {
             return $this->reportsService;
@@ -447,8 +447,8 @@ final class SecurityReportsController
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(SecurityReportsService::class);
-                if ($service instanceof SecurityReportsService) {
+                $service = $this->container->get(SecurityReportsServiceInterface::class);
+                if ($service instanceof SecurityReportsServiceInterface) {
                     $this->reportsService = $service;
                     return $this->reportsService;
                 }
@@ -461,7 +461,7 @@ final class SecurityReportsController
     }
 
     /** @return array{new: int, triaged: int, ignored: int} */
-    private function countStatusFilters(SecurityReportsService $service, array $filters): array
+    private function countStatusFilters(SecurityReportsServiceInterface $service, array $filters): array
     {
         $status = $filters['status'] ?? 'all';
         $statusCounts = [
@@ -483,7 +483,7 @@ final class SecurityReportsController
     }
 
     /** @return array{csp: int, other: int} */
-    private function countTypeFilters(SecurityReportsService $service, array $filters): array
+    private function countTypeFilters(SecurityReportsServiceInterface $service, array $filters): array
     {
         $type = $filters['type'] ?? 'all';
         $typeCounts = [

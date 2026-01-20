@@ -6,6 +6,11 @@
 - reduce direct repository usage inside controllers
 - enable consistent DI container wiring
 
+## Why interfaces are mandatory
+- controllers depend on `*ServiceInterface` only (no concrete service types)
+- Kernel binds services against interfaces for stable contracts and test isolation
+- contract tests fail if a service is missing its interface
+
 ## How to migrate an existing controller
 1) Identify the domain/system logic in the controller.
 2) Move that logic into a `*Service` class in `src/Domain/*`.

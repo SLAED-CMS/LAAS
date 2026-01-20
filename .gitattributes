@@ -8,3 +8,10 @@
 *.md       text eol=lf
 *.yml      text eol=lf
 *.yaml     text eol=lf
+
+*.png      binary
+*.jpg      binary
+*.woff2    binary
+*.woff     binary
+*.ttf      binary
+*.zip      binary

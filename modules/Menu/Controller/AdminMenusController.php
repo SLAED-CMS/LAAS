@@ -9,7 +9,7 @@ use Laas\Core\Validation\Validator;
 use Laas\Core\Validation\ValidationResult;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\RbacRepository;
-use Laas\Domain\Menus\MenusService;
+use Laas\Domain\Menus\MenusServiceInterface;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
@@ -25,7 +25,7 @@ final class AdminMenusController
     public function __construct(
         private View $view,
         private ?DatabaseManager $db = null,
-        private ?MenusService $menusService = null,
+        private ?MenusServiceInterface $menusService = null,
         private ?Container $container = null
     ) {
     }
@@ -525,7 +525,7 @@ final class AdminMenusController
         return $messages;
     }
 
-    private function service(): ?MenusService
+    private function service(): ?MenusServiceInterface
     {
         if ($this->menusService !== null) {
             return $this->menusService;
@@ -533,8 +533,8 @@ final class AdminMenusController
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(MenusService::class);
-                if ($service instanceof MenusService) {
+                $service = $this->container->get(MenusServiceInterface::class);
+                if ($service instanceof MenusServiceInterface) {
                     $this->menusService = $service;
                     return $this->menusService;
                 }

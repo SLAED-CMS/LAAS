@@ -18,7 +18,7 @@ use Laas\Support\SessionConfigValidator;
 use RuntimeException;
 use Throwable;
 
-class OpsService
+class OpsService implements OpsServiceInterface
 {
     public function __construct(
         private DatabaseManager $db,

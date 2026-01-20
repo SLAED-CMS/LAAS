@@ -5,7 +5,7 @@ namespace Laas\Modules\Pages\Controller;
 
 use Laas\Core\Container\Container;
 use Laas\Database\DatabaseManager;
-use Laas\Domain\Pages\PagesService;
+use Laas\Domain\Pages\PagesServiceInterface;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
@@ -37,7 +37,7 @@ final class PagesController
     public function __construct(
         private View $view,
         private ?DatabaseManager $db = null,
-        private ?PagesService $pagesService = null,
+        private ?PagesServiceInterface $pagesService = null,
         private ?Container $container = null
     ) {
     }
@@ -145,7 +145,7 @@ final class PagesController
         ], $status);
     }
 
-    private function service(): ?PagesService
+    private function service(): ?PagesServiceInterface
     {
         if ($this->pagesService !== null) {
             return $this->pagesService;
@@ -153,8 +153,8 @@ final class PagesController
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(PagesService::class);
-                if ($service instanceof PagesService) {
+                $service = $this->container->get(PagesServiceInterface::class);
+                if ($service instanceof PagesServiceInterface) {
                     $this->pagesService = $service;
                     return $this->pagesService;
                 }

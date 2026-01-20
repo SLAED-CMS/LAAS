@@ -13,7 +13,7 @@ use Laas\Support\Search\Highlighter;
 use Laas\Support\Search\SearchNormalizer;
 use Throwable;
 
-class AdminSearchService
+class AdminSearchService implements AdminSearchServiceInterface
 {
     private const DEFAULT_GROUP_LIMIT = 5;
     private const DEFAULT_GLOBAL_LIMIT = 25;
