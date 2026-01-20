@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Laas\Domain\Support;
 
 use DomainException;
+use Laas\Http\RequestContext;
 use ReflectionClass;
 use ReflectionIntersectionType;
 use ReflectionMethod;
@@ -14,6 +15,9 @@ use ReflectionUnionType;
 
 class ReadOnlyProxy
 {
+    /** @var null|callable */
+    private static $logger = null;
+
     /** @var array<string, true> */
     private array $allowed;
 
@@ -32,6 +36,11 @@ class ReadOnlyProxy
     {
         $class = self::generatedClass($interfaceName);
         return new $class($service, self::allowedMethods($service), $interfaceName);
+    }
+
+    public static function setLogger(?callable $logger): void
+    {
+        self::$logger = $logger;
     }
 
     /**
@@ -68,12 +77,35 @@ class ReadOnlyProxy
     protected function call(string $method, array $args): mixed
     {
         if (!isset($this->allowed[$method])) {
+            if (RequestContext::isDebug()) {
+                self::warnOncePerRequest($this->interfaceName, $method);
+            }
             throw new DomainException(
                 'Read-only service: mutation method ' . $this->interfaceName . '::' . $method . ' is not allowed'
             );
         }
 
         return $this->service->{$method}(...$args);
+    }
+
+    private static function warnOncePerRequest(string $interfaceName, string $method): void
+    {
+        $rid = RequestContext::requestId() ?? 'no-rid';
+        $path = RequestContext::path() ?? 'no-path';
+        $key = $rid . '|' . $path;
+        static $seen = [];
+        if (isset($seen[$key])) {
+            return;
+        }
+        $seen[$key] = true;
+
+        $message = '[ReadOnlyProxy] blocked mutation ' . $interfaceName . '::' . $method
+            . ' req=' . $rid . ' path=' . $path;
+        if (self::$logger !== null) {
+            (self::$logger)($message);
+            return;
+        }
+        error_log($message);
     }
 
     private static function generatedClass(string $interfaceName): string

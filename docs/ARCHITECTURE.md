@@ -2332,6 +2332,7 @@ $config = $container->get('config');
 - Read interfaces resolve to a runtime proxy that blocks `@mutation` methods.
 - Mutation detection relies solely on `@mutation` markers in service methods.
 - If a mutation method is called through a read interface, a `DomainException` is thrown.
+- In `APP_DEBUG`, a blocked mutation emits a single warning per request with request-id and path for diagnostics.
 - Write interfaces always resolve to the real service instance.
 
 **Controller boundary example:**

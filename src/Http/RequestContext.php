@@ -3,34 +3,43 @@ declare(strict_types=1);
 
 namespace Laas\Http;
 
-use Laas\DevTools\DevToolsContext;
-use Laas\Support\RequestScope;
-
 final class RequestContext
 {
-    public static function requestId(): string
+    public static function requestId(): ?string
     {
-        $context = RequestScope::get('devtools.context');
-        if ($context instanceof DevToolsContext) {
-            $id = $context->getRequestId();
-            if ($id !== '') {
-                return $id;
-            }
+        $rid = $_SERVER['HTTP_X_REQUEST_ID'] ?? $_SERVER['X_REQUEST_ID'] ?? null;
+        if (!is_string($rid)) {
+            return null;
         }
-
-        $cached = RequestScope::get('request.id');
-        if (is_string($cached) && $cached !== '') {
-            return $cached;
-        }
-
-        $id = bin2hex(random_bytes(8));
-        RequestScope::set('request.id', $id);
-
-        return $id;
+        $rid = trim($rid);
+        return $rid !== '' ? $rid : null;
     }
 
-    public static function timestamp(): string
+    public static function path(): ?string
     {
-        return gmdate('Y-m-d\\TH:i:s\\Z');
+        $raw = $_SERVER['REQUEST_URI'] ?? null;
+        if (!is_string($raw)) {
+            return null;
+        }
+        $raw = trim($raw);
+        if ($raw === '') {
+            return null;
+        }
+        $pos = strpos($raw, '?');
+        if ($pos === false) {
+            return $raw;
+        }
+        $path = substr($raw, 0, $pos);
+        return $path !== '' ? $path : null;
+    }
+
+    public static function isDebug(): bool
+    {
+        $value = $_ENV['APP_DEBUG'] ?? $_SERVER['APP_DEBUG'] ?? null;
+        if ($value === null || $value === '') {
+            return false;
+        }
+        $parsed = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        return $parsed ?? false;
     }
 }
