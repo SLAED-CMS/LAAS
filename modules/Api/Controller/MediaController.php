@@ -6,27 +6,32 @@ namespace Laas\Modules\Api\Controller;
 use Laas\Api\ApiCache;
 use Laas\Api\ApiPagination;
 use Laas\Api\ApiResponse;
-use Laas\Database\DatabaseManager;
-use Laas\Database\Repositories\RbacRepository;
+use Laas\Core\Container\Container;
+use Laas\Domain\Media\MediaServiceInterface;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\Modules\Media\Repository\MediaRepository;
 use Laas\Modules\Media\Service\MediaSignedUrlService;
 use Laas\Modules\Media\Service\MimeSniffer;
 use Laas\Modules\Media\Service\StorageService;
 use Laas\Support\Search\SearchNormalizer;
+use Laas\View\View;
 use Throwable;
 
 final class MediaController
 {
-    public function __construct(private ?DatabaseManager $db = null)
-    {
+    public function __construct(
+        private ?View $view = null,
+        private ?MediaServiceInterface $mediaService = null,
+        private ?Container $container = null,
+        private ?RbacServiceInterface $rbacService = null
+    ) {
     }
 
     public function index(Request $request): Response
     {
-        $repo = $this->repository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
         }
 
@@ -63,12 +68,16 @@ final class MediaController
         }
 
         $offset = ($page - 1) * $perPage;
-        if ($canView) {
-            $rows = $repo->list($perPage, $offset, $query);
-            $total = $repo->count($query);
-        } else {
-            $rows = $repo->listPublic($perPage, $offset, $query);
-            $total = $repo->countPublic($query);
+        try {
+            if ($canView) {
+                $rows = $service->list($perPage, $offset, $query);
+                $total = $service->count($query);
+            } else {
+                $rows = $service->listPublic($perPage, $offset, $query);
+                $total = $service->countPublic($query);
+            }
+        } catch (Throwable) {
+            return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
         }
 
         $items = array_map([$this, 'mapMedia'], $rows);
@@ -90,8 +99,8 @@ final class MediaController
 
     public function show(Request $request, array $params = []): Response
     {
-        $repo = $this->repository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
         }
 
@@ -100,7 +109,11 @@ final class MediaController
             return ApiResponse::error('not_found', 'Not Found', [], 404);
         }
 
-        $row = $repo->findById($id);
+        try {
+            $row = $service->find($id);
+        } catch (Throwable) {
+            return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
+        }
         if ($row === null) {
             return ApiResponse::error('not_found', 'Not Found', [], 404);
         }
@@ -118,8 +131,8 @@ final class MediaController
 
     public function download(Request $request, array $params = []): Response
     {
-        $repo = $this->repository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
         }
 
@@ -128,7 +141,11 @@ final class MediaController
             return ApiResponse::error('not_found', 'Not Found', [], 404);
         }
 
-        $row = $repo->findById($id);
+        try {
+            $row = $service->find($id);
+        } catch (Throwable) {
+            return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
+        }
         if ($row === null) {
             return ApiResponse::error('not_found', 'Not Found', [], 404);
         }
@@ -195,23 +212,10 @@ final class MediaController
         ]);
     }
 
-    private function repository(): ?MediaRepository
-    {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
-        }
-
-        try {
-            return new MediaRepository($this->db);
-        } catch (Throwable) {
-            return null;
-        }
-    }
-
     private function canView(Request $request): bool
     {
         $user = $request->getAttribute('api.user');
-        if (!is_array($user) || $this->db === null) {
+        if (!is_array($user)) {
             return false;
         }
 
@@ -220,12 +224,54 @@ final class MediaController
             return false;
         }
 
-        try {
-            $rbac = new RbacRepository($this->db->pdo());
-            return $rbac->userHasPermission($userId, 'media.view');
-        } catch (Throwable) {
+        $rbac = $this->rbacService();
+        if ($rbac === null) {
             return false;
         }
+
+        return $rbac->userHasPermission($userId, 'media.view');
+    }
+
+    private function service(): ?MediaServiceInterface
+    {
+        if ($this->mediaService !== null) {
+            return $this->mediaService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(MediaServiceInterface::class);
+                if ($service instanceof MediaServiceInterface) {
+                    $this->mediaService = $service;
+                    return $this->mediaService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function rbacService(): ?RbacServiceInterface
+    {
+        if ($this->rbacService !== null) {
+            return $this->rbacService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(RbacServiceInterface::class);
+                if ($service instanceof RbacServiceInterface) {
+                    $this->rbacService = $service;
+                    return $this->rbacService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
     }
 
     private function mapMedia(array $row): array

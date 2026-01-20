@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use Laas\Database\DatabaseManager;
+use Laas\Domain\Menus\MenusService;
 use Laas\Http\Request;
 use Laas\Modules\Api\Controller\MenusV2Controller;
 use PHPUnit\Framework\Attributes\Group;
@@ -13,7 +14,8 @@ final class HeadlessMenusV2Test extends TestCase
     public function testMenusIndexDefaultsToMinimalFields(): void
     {
         $db = $this->createDb();
-        $controller = new MenusV2Controller($db);
+        $service = new MenusService($db);
+        $controller = new MenusV2Controller(null, $service);
 
         $request = new Request('GET', '/api/v2/menus', [], [], [], '');
         $response = $controller->index($request);
@@ -31,7 +33,8 @@ final class HeadlessMenusV2Test extends TestCase
     public function testIncludeMenuItems(): void
     {
         $db = $this->createDb();
-        $controller = new MenusV2Controller($db);
+        $service = new MenusService($db);
+        $controller = new MenusV2Controller(null, $service);
 
         $request = new Request('GET', '/api/v2/menus', [
             'include' => 'menu',

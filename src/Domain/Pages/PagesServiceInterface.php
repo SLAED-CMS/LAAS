@@ -8,6 +8,9 @@ interface PagesServiceInterface
     /** @return array<int, array<string, mixed>> */
     public function list(array $filters = []): array;
 
+    /** @return array<int, array<string, mixed>> */
+    public function listPublishedAll(): array;
+
     public function count(array $filters = []): int;
 
     /** @return array<string, mixed>|null */
@@ -37,6 +40,11 @@ interface PagesServiceInterface
      * @return array<string, mixed>|null
      */
     public function findLatestRevision(int $pageId): ?array;
+
+    public function findLatestRevisionId(int $pageId): int;
+
+    /** @return array<int, int> */
+    public function findLatestRevisionIds(array $pageIds): array;
 
     /**
      * @param array<int, array<string, mixed>> $blocks

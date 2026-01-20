@@ -30,7 +30,7 @@ final class AiControllerHtmxResponseTest extends TestCase
         );
         $request->setAttribute('api.user', ['id' => 1]);
 
-        $controller = new AiController(null, $this->createView($request), new FakeAiProvider());
+        $controller = new AiController($this->createView($request), new FakeAiProvider());
         $response = $controller->propose($request);
 
         $this->assertSame(200, $response->getStatus());

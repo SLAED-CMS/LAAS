@@ -44,7 +44,14 @@ final class MediaServeController
             return $this->notFound();
         }
 
-        $row = $service->find($id);
+        try {
+            $row = $service->find($id);
+        } catch (Throwable) {
+            if ($request->wantsJson()) {
+                return $this->contractNotFound();
+            }
+            return $this->notFound();
+        }
         if ($row === null) {
             if ($request->wantsJson()) {
                 return $this->contractNotFound();

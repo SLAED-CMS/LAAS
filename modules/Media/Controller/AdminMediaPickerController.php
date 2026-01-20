@@ -37,7 +37,11 @@ final class AdminMediaPickerController
         }
 
         $query = trim((string) ($request->query('q') ?? ''));
-        $items = $this->mapRows($service->list(20, 0, $query));
+        try {
+            $items = $this->mapRows($service->list(20, 0, $query));
+        } catch (Throwable) {
+            return $this->errorResponse($request, 'db_unavailable', 503);
+        }
 
         if ($request->isHtmx()) {
             return $this->view->render('media/picker_table.html', [
@@ -74,7 +78,11 @@ final class AdminMediaPickerController
         }
 
         $id = (int) $raw;
-        $row = $service->find($id);
+        try {
+            $row = $service->find($id);
+        } catch (Throwable) {
+            return $this->errorResponse($request, 'db_unavailable', 503);
+        }
         if ($row === null) {
             return $this->errorResponse($request, 'not_found', 404);
         }

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 use Laas\Auth\AuthorizationService;
 use Laas\Database\DatabaseManager;
+use Laas\Domain\Media\MediaService;
 use Laas\Http\ErrorCode;
 use Laas\Http\Middleware\ApiMiddleware;
 use Laas\Http\Request;
@@ -19,7 +20,8 @@ final class MediaApiTest extends TestCase
         $prev = $this->setEnv('MEDIA_PUBLIC_MODE', 'private');
         try {
             $db = $this->createDb();
-            $controller = new MediaController($db);
+            $service = new MediaService($db, [], dirname(__DIR__, 2));
+            $controller = new MediaController(null, $service);
 
             $request = new Request('GET', '/api/v1/media', [], [], [], '');
             $response = $controller->index($request);
@@ -37,7 +39,8 @@ final class MediaApiTest extends TestCase
         $prev = $this->setEnv('MEDIA_PUBLIC_MODE', 'all');
         try {
             $db = $this->createDb();
-            $controller = new MediaController($db);
+            $service = new MediaService($db, [], dirname(__DIR__, 2));
+            $controller = new MediaController(null, $service);
 
             $request = new Request('GET', '/api/v1/media/1/download', [], [], [], '');
             $response = $controller->download($request, ['id' => 1]);
@@ -54,7 +57,8 @@ final class MediaApiTest extends TestCase
         $prev = $this->setEnv('MEDIA_PUBLIC_MODE', 'all');
         try {
             $db = $this->createDb();
-            $controller = new MediaController($db);
+            $service = new MediaService($db, [], dirname(__DIR__, 2));
+            $controller = new MediaController(null, $service);
             $middleware = new ApiMiddleware($db, new AuthorizationService(null), [
                 'enabled' => true,
                 'cors' => ['enabled' => false],

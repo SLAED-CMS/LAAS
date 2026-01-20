@@ -5,22 +5,28 @@ namespace Laas\Modules\Api\Controller;
 
 use Laas\Api\ApiPagination;
 use Laas\Api\ApiResponse;
-use Laas\Database\DatabaseManager;
-use Laas\Database\Repositories\RbacRepository;
-use Laas\Database\Repositories\UsersRepository;
+use Laas\Core\Container\Container;
+use Laas\Domain\Rbac\RbacServiceInterface;
+use Laas\Domain\Users\UsersServiceInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Throwable;
+use Laas\View\View;
 
 final class UsersController
 {
-    public function __construct(private ?DatabaseManager $db = null)
-    {
+    public function __construct(
+        private ?View $view = null,
+        private ?UsersServiceInterface $usersService = null,
+        private ?Container $container = null,
+        private ?RbacServiceInterface $rbacService = null
+    ) {
     }
 
     public function index(Request $request): Response
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
+        $service = $this->usersService();
+        if ($service === null) {
             return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
         }
 
@@ -32,9 +38,15 @@ final class UsersController
         $perPage = ApiPagination::perPage($request->query('per_page'));
         $offset = ($page - 1) * $perPage;
 
-        $repo = new UsersRepository($this->db->pdo());
-        $rows = $repo->list($perPage, $offset);
-        $total = $repo->countAll();
+        try {
+            $rows = $service->list([
+                'limit' => $perPage,
+                'offset' => $offset,
+            ]);
+            $total = $service->count();
+        } catch (Throwable) {
+            return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
+        }
 
         $items = array_map([$this, 'mapUser'], $rows);
         $meta = ApiPagination::meta($page, $perPage, $total);
@@ -44,7 +56,8 @@ final class UsersController
 
     public function show(Request $request, array $params = []): Response
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
+        $service = $this->usersService();
+        if ($service === null) {
             return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
         }
 
@@ -57,8 +70,11 @@ final class UsersController
             return ApiResponse::error('not_found', 'Not Found', [], 404);
         }
 
-        $repo = new UsersRepository($this->db->pdo());
-        $user = $repo->findById($id);
+        try {
+            $user = $service->find($id);
+        } catch (Throwable) {
+            return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
+        }
         if ($user === null) {
             return ApiResponse::error('not_found', 'Not Found', [], 404);
         }
@@ -69,7 +85,7 @@ final class UsersController
     private function canView(Request $request): bool
     {
         $user = $request->getAttribute('api.user');
-        if (!is_array($user) || $this->db === null) {
+        if (!is_array($user)) {
             return false;
         }
 
@@ -78,13 +94,55 @@ final class UsersController
             return false;
         }
 
-        try {
-            $rbac = new RbacRepository($this->db->pdo());
-            return $rbac->userHasPermission($userId, 'users.view')
-                || $rbac->userHasPermission($userId, 'users.manage');
-        } catch (Throwable) {
+        $rbac = $this->rbacService();
+        if ($rbac === null) {
             return false;
         }
+
+        return $rbac->userHasPermission($userId, 'users.view')
+            || $rbac->userHasPermission($userId, 'users.manage');
+    }
+
+    private function usersService(): ?UsersServiceInterface
+    {
+        if ($this->usersService !== null) {
+            return $this->usersService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(UsersServiceInterface::class);
+                if ($service instanceof UsersServiceInterface) {
+                    $this->usersService = $service;
+                    return $this->usersService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function rbacService(): ?RbacServiceInterface
+    {
+        if ($this->rbacService !== null) {
+            return $this->rbacService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(RbacServiceInterface::class);
+                if ($service instanceof RbacServiceInterface) {
+                    $this->rbacService = $service;
+                    return $this->rbacService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
     }
 
     private function mapUser(array $row): array

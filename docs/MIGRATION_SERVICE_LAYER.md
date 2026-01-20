@@ -12,6 +12,29 @@
 - contract tests fail if a service is missing its interface
 - mutating service methods must include `@mutation` (tests enforce common mutation prefixes)
 
+## Controller boundary (mandatory)
+- no repositories, no DatabaseManager, no SQL literals in controllers
+- controllers may only call service interfaces (and HTTP/view helpers)
+- contract tests enforce this boundary
+
+Before (forbidden):
+```php
+// controller
+$repo = new PagesRepository($db);
+$rows = $repo->search($query, 20, 0, 'published');
+```
+
+After (required):
+```php
+// controller
+$rows = $pagesService->list([
+    'query' => $query,
+    'status' => 'published',
+    'limit' => 20,
+    'offset' => 0,
+]);
+```
+
 ## How to migrate an existing controller
 1) Identify the domain/system logic in the controller.
 2) Move that logic into a `*Service` class in `src/Domain/*`.

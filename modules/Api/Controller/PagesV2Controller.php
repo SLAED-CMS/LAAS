@@ -5,13 +5,13 @@ namespace Laas\Modules\Api\Controller;
 
 use Laas\Api\ApiResponse;
 use Laas\Content\Blocks\BlockRegistry;
-use Laas\Database\DatabaseManager;
+use Laas\Core\Container\Container;
+use Laas\Domain\Media\MediaServiceInterface;
+use Laas\Domain\Pages\PagesServiceInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\Modules\Media\Repository\MediaRepository;
-use Laas\Modules\Pages\Repository\PagesRepository;
-use Laas\Modules\Pages\Repository\PagesRevisionsRepository;
 use Throwable;
+use Laas\View\View;
 
 final class PagesV2Controller
 {
@@ -29,13 +29,18 @@ final class PagesV2Controller
     /** @var array<int, string> */
     private const INCLUDE_ALLOWED = ['blocks', 'media', 'menu'];
 
-    public function __construct(private ?DatabaseManager $db = null)
-    {
+    public function __construct(
+        private ?View $view = null,
+        private ?PagesServiceInterface $pagesService = null,
+        private ?Container $container = null,
+        private ?MediaServiceInterface $mediaService = null
+    ) {
     }
 
     public function index(Request $request): Response
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
+        $service = $this->pagesService();
+        if ($service === null) {
             return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
         }
 
@@ -49,14 +54,13 @@ final class PagesV2Controller
             ], 400);
         }
 
-        $repo = $this->pagesRepo();
-        if ($repo === null) {
+        try {
+            $rows = $service->listPublishedAll();
+        } catch (Throwable) {
             return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
         }
-
-        $rows = $repo->listPublishedAll();
         $pageIds = array_map(static fn(array $row): int => (int) ($row['id'] ?? 0), $rows);
-        $revisions = $this->revisionsRepo()?->findLatestRevisionIdsByPageIds($pageIds) ?? [];
+        $revisions = $service->findLatestRevisionIds($pageIds);
         $latestRevisionId = $this->maxRevisionId($revisions);
 
         $includeBlocks = in_array('blocks', $include, true) || in_array('blocks', $fields, true);
@@ -94,7 +98,8 @@ final class PagesV2Controller
 
     public function show(Request $request, array $params = []): Response
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
+        $service = $this->pagesService();
+        if ($service === null) {
             return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
         }
 
@@ -113,12 +118,11 @@ final class PagesV2Controller
             ], 400);
         }
 
-        $repo = $this->pagesRepo();
-        if ($repo === null) {
+        try {
+            $row = $service->find($id);
+        } catch (Throwable) {
             return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
         }
-
-        $row = $repo->findById($id);
         if ($row === null || !$this->isPublished($row)) {
             return ApiResponse::error('not_found', 'Not Found', [], 404);
         }
@@ -126,7 +130,7 @@ final class PagesV2Controller
         $includeBlocks = in_array('blocks', $include, true) || in_array('blocks', $fields, true);
         $includeMedia = in_array('media', $include, true);
 
-        $revId = $this->revisionsRepo()?->findLatestRevisionIdByPageId($id) ?? 0;
+        $revId = $service->findLatestRevisionId($id);
         $etag = $this->buildEtag([
             'page',
             (string) $id,
@@ -154,7 +158,8 @@ final class PagesV2Controller
 
     public function bySlug(Request $request, array $params = []): Response
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
+        $service = $this->pagesService();
+        if ($service === null) {
             return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
         }
 
@@ -173,12 +178,17 @@ final class PagesV2Controller
             ], 400);
         }
 
-        $repo = $this->pagesRepo();
-        if ($repo === null) {
+        try {
+            $pages = $service->list([
+                'slug' => $slug,
+                'status' => 'published',
+                'limit' => 1,
+                'offset' => 0,
+            ]);
+        } catch (Throwable) {
             return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
         }
-
-        $row = $repo->findPublishedBySlug($slug);
+        $row = $pages[0] ?? null;
         if ($row === null) {
             return ApiResponse::error('not_found', 'Not Found', [], 404);
         }
@@ -187,7 +197,7 @@ final class PagesV2Controller
         $includeMedia = in_array('media', $include, true);
 
         $id = (int) ($row['id'] ?? 0);
-        $revId = $id > 0 ? ($this->revisionsRepo()?->findLatestRevisionIdByPageId($id) ?? 0) : 0;
+        $revId = $id > 0 ? $service->findLatestRevisionId($id) : 0;
         $etag = $this->buildEtag([
             'page',
             (string) $id,
@@ -213,43 +223,46 @@ final class PagesV2Controller
         ], [], 200, $headers);
     }
 
-    private function pagesRepo(): ?PagesRepository
+    private function pagesService(): ?PagesServiceInterface
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
+        if ($this->pagesService !== null) {
+            return $this->pagesService;
         }
 
-        try {
-            return new PagesRepository($this->db);
-        } catch (Throwable) {
-            return null;
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(PagesServiceInterface::class);
+                if ($service instanceof PagesServiceInterface) {
+                    $this->pagesService = $service;
+                    return $this->pagesService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
         }
+
+        return null;
     }
 
-    private function revisionsRepo(): ?PagesRevisionsRepository
+    private function mediaService(): ?MediaServiceInterface
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
+        if ($this->mediaService !== null) {
+            return $this->mediaService;
         }
 
-        try {
-            return new PagesRevisionsRepository($this->db);
-        } catch (Throwable) {
-            return null;
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(MediaServiceInterface::class);
+                if ($service instanceof MediaServiceInterface) {
+                    $this->mediaService = $service;
+                    return $this->mediaService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
         }
-    }
 
-    private function mediaRepo(): ?MediaRepository
-    {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
-        }
-
-        try {
-            return new MediaRepository($this->db);
-        } catch (Throwable) {
-            return null;
-        }
+        return null;
     }
 
     /**
@@ -300,13 +313,14 @@ final class PagesV2Controller
             return [];
         }
 
-        $repo = $this->revisionsRepo();
-        if ($repo === null) {
+        $service = $this->pagesService();
+        if ($service === null) {
             return [];
         }
 
-        $blocks = $repo->findLatestBlocksByPageId($pageId);
-        if (!is_array($blocks)) {
+        try {
+            $blocks = $service->findLatestBlocks($pageId);
+        } catch (Throwable) {
             return [];
         }
 
@@ -340,14 +354,18 @@ final class PagesV2Controller
             return [];
         }
 
-        $repo = $this->mediaRepo();
-        if ($repo === null) {
+        $service = $this->mediaService();
+        if ($service === null) {
             return [];
         }
 
         $items = [];
         foreach ($ids as $id) {
-            $row = $repo->findById($id);
+            try {
+                $row = $service->find($id);
+            } catch (Throwable) {
+                $row = null;
+            }
             if ($row === null) {
                 continue;
             }

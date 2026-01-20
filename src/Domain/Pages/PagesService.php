@@ -77,6 +77,12 @@ class PagesService implements PagesServiceInterface
         return $repo->listByStatus($statusFilter, $limit, $offset);
     }
 
+    /** @return array<int, array<string, mixed>> */
+    public function listPublishedAll(): array
+    {
+        return $this->repository()->listPublishedAll();
+    }
+
     /**
      * @return array<string, mixed>
      * @mutation
@@ -188,6 +194,26 @@ class PagesService implements PagesServiceInterface
         }
 
         return $this->revisionsRepository()->findLatestByPageId($pageId);
+    }
+
+    public function findLatestRevisionId(int $pageId): int
+    {
+        if ($pageId <= 0) {
+            throw new InvalidArgumentException('Page id must be positive.');
+        }
+
+        return $this->revisionsRepository()->findLatestRevisionIdByPageId($pageId);
+    }
+
+    /** @return array<int, int> */
+    public function findLatestRevisionIds(array $pageIds): array
+    {
+        $pageIds = array_values(array_unique(array_filter(array_map('intval', $pageIds), static fn(int $id): bool => $id > 0)));
+        if ($pageIds === []) {
+            return [];
+        }
+
+        return $this->revisionsRepository()->findLatestRevisionIdsByPageIds($pageIds);
     }
 
     /**

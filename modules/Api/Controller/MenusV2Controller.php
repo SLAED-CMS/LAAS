@@ -4,12 +4,12 @@ declare(strict_types=1);
 namespace Laas\Modules\Api\Controller;
 
 use Laas\Api\ApiResponse;
-use Laas\Database\DatabaseManager;
+use Laas\Core\Container\Container;
+use Laas\Domain\Menus\MenusServiceInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\Modules\Menu\Repository\MenuItemsRepository;
-use Laas\Modules\Menu\Repository\MenusRepository;
 use Throwable;
+use Laas\View\View;
 
 final class MenusV2Controller
 {
@@ -27,13 +27,17 @@ final class MenusV2Controller
     /** @var array<int, string> */
     private const INCLUDE_ALLOWED = ['menu', 'blocks', 'media'];
 
-    public function __construct(private ?DatabaseManager $db = null)
-    {
+    public function __construct(
+        private ?View $view = null,
+        private ?MenusServiceInterface $menusService = null,
+        private ?Container $container = null
+    ) {
     }
 
     public function index(Request $request): Response
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
+        $service = $this->service();
+        if ($service === null) {
             return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
         }
 
@@ -47,12 +51,11 @@ final class MenusV2Controller
             ], 400);
         }
 
-        $repo = $this->menuRepo();
-        if ($repo === null) {
+        try {
+            $menus = $service->list();
+        } catch (Throwable) {
             return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
         }
-
-        $menus = $repo->listMenus();
         $includeItems = in_array('menu', $include, true) || in_array('items', $fields, true);
 
         $items = [];
@@ -93,7 +96,8 @@ final class MenusV2Controller
 
     public function show(Request $request, array $params = []): Response
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
+        $service = $this->service();
+        if ($service === null) {
             return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
         }
 
@@ -112,12 +116,11 @@ final class MenusV2Controller
             ], 400);
         }
 
-        $repo = $this->menuRepo();
-        if ($repo === null) {
+        try {
+            $menu = $service->findByName($name);
+        } catch (Throwable) {
             return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
         }
-
-        $menu = $repo->findMenuByName($name);
         if ($menu === null) {
             return ApiResponse::error('not_found', 'Not Found', [], 404);
         }
@@ -152,30 +155,25 @@ final class MenusV2Controller
         ], [], 200, $headers);
     }
 
-    private function menuRepo(): ?MenusRepository
+    private function service(): ?MenusServiceInterface
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
+        if ($this->menusService !== null) {
+            return $this->menusService;
         }
 
-        try {
-            return new MenusRepository($this->db);
-        } catch (Throwable) {
-            return null;
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(MenusServiceInterface::class);
+                if ($service instanceof MenusServiceInterface) {
+                    $this->menusService = $service;
+                    return $this->menusService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
         }
-    }
 
-    private function itemsRepo(): ?MenuItemsRepository
-    {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
-        }
-
-        try {
-            return new MenuItemsRepository($this->db);
-        } catch (Throwable) {
-            return null;
-        }
+        return null;
     }
 
     /**
@@ -194,8 +192,15 @@ final class MenusV2Controller
         }
 
         if ($includeItems) {
-            $itemsRepo = $this->itemsRepo();
-            $items = $itemsRepo?->listItems((int) ($menu['id'] ?? 0), true) ?? [];
+            $items = [];
+            $service = $this->service();
+            if ($service !== null) {
+                try {
+                    $items = $service->loadItems((int) ($menu['id'] ?? 0), true);
+                } catch (Throwable) {
+                    $items = [];
+                }
+            }
             $latestItemsUpdated = $this->maxUpdatedAt($items, $latestItemsUpdated);
             $data['items'] = array_map([$this, 'mapItem'], $items);
         }

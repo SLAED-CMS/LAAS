@@ -13,11 +13,11 @@ use Laas\Ai\Provider\RemoteHttpProvider;
 use Laas\Ai\Plan;
 use Laas\Ai\PlanRunner;
 use Laas\Ai\Tools\ToolRegistry;
-use Laas\Database\DatabaseManager;
+use Laas\Core\Container\Container;
 use Laas\Http\ErrorCode;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\Support\AuditLogger;
+use Laas\Support\Audit;
 use Laas\Support\SafeHttpClient;
 use Laas\Support\UrlPolicy;
 use Laas\View\View;
@@ -26,14 +26,11 @@ use RuntimeException;
 
 final class AiController
 {
-    private ?AiProviderInterface $providerOverride;
-
     public function __construct(
-        private ?DatabaseManager $db = null,
         private ?View $view = null,
-        ?AiProviderInterface $providerOverride = null
+        private ?AiProviderInterface $providerOverride = null,
+        private ?Container $container = null
     ) {
-        $this->providerOverride = $providerOverride;
     }
 
     public function propose(Request $request): Response
@@ -87,20 +84,22 @@ final class AiController
             ], 502);
         }
 
-        (new AuditLogger($this->db, $request->session()))->log(
-            'ai.propose_called',
-            'ai',
-            null,
-            [
-                'provider' => $providerName,
-                'prompt_len' => strlen($prompt),
-                'context_field' => $contextField,
-                'context_value_len' => $contextValueLen,
-                'path' => $request->getPath(),
-            ],
-            (int) ($user['id'] ?? 0),
-            $request->ip()
-        );
+        $auditMeta = [
+            'provider' => $providerName,
+            'prompt_len' => strlen($prompt),
+            'context_field' => $contextField,
+            'context_value_len' => $contextValueLen,
+            'path' => $request->getPath(),
+        ];
+        $actorId = (int) ($user['id'] ?? 0);
+        if ($actorId > 0) {
+            $auditMeta['actor_user_id'] = $actorId;
+        }
+        $actorIp = $request->ip();
+        if ($actorIp !== null) {
+            $auditMeta['actor_ip'] = $actorIp;
+        }
+        Audit::log('ai.propose_called', 'ai', null, $auditMeta);
 
         if ($this->isHtmx($request)) {
             $response = $this->renderProposePartial($result);
@@ -209,19 +208,21 @@ final class AiController
         $result = $runner->run($plan, true, false);
         $durationMs = (microtime(true) - $started) * 1000;
 
-        (new AuditLogger($this->db, $request->session()))->log(
-            'ai.tools_run',
-            'ai',
-            null,
-            [
-                'steps_total' => (int) ($result['steps_total'] ?? 0),
-                'steps_run' => (int) ($result['steps_run'] ?? 0),
-                'failed' => (int) ($result['failed'] ?? 0),
-                'duration_ms' => (int) $durationMs,
-            ],
-            (int) ($user['id'] ?? 0),
-            $request->ip()
-        );
+        $auditMeta = [
+            'steps_total' => (int) ($result['steps_total'] ?? 0),
+            'steps_run' => (int) ($result['steps_run'] ?? 0),
+            'failed' => (int) ($result['failed'] ?? 0),
+            'duration_ms' => (int) $durationMs,
+        ];
+        $actorId = (int) ($user['id'] ?? 0);
+        if ($actorId > 0) {
+            $auditMeta['actor_user_id'] = $actorId;
+        }
+        $actorIp = $request->ip();
+        if ($actorIp !== null) {
+            $auditMeta['actor_ip'] = $actorIp;
+        }
+        Audit::log('ai.tools_run', 'ai', null, $auditMeta);
 
         if ($this->isHtmx($request)) {
             $response = $this->renderRunPartial($result);
@@ -249,7 +250,7 @@ final class AiController
                 : [];
             $policy = new UrlPolicy(['http', 'https'], $this->hostsFromAllowlist($allowlist));
             $client = new SafeHttpClient($policy, 8, 3, 0, 300000);
-            return new RemoteHttpProvider($client, new Redactor(), $securityConfig, new AuditLogger($this->db, $request->session()));
+            return new RemoteHttpProvider($client, new Redactor(), $securityConfig);
         }
 
         return new LocalDemoProvider();

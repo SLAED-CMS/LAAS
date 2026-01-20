@@ -6,26 +6,30 @@ namespace Laas\Modules\Api\Controller;
 use Laas\Api\ApiCache;
 use Laas\Api\ApiPagination;
 use Laas\Api\ApiResponse;
-use Laas\Database\DatabaseManager;
-use Laas\Database\Repositories\RbacRepository;
+use Laas\Core\Container\Container;
+use Laas\Domain\Pages\PagesServiceInterface;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\Modules\Pages\Repository\PagesRepository;
-use Laas\Modules\Pages\Repository\PagesRevisionsRepository;
 use Laas\Support\Search\SearchNormalizer;
 use Laas\Content\Blocks\BlockRegistry;
 use Throwable;
+use Laas\View\View;
 
 final class PagesController
 {
-    public function __construct(private ?DatabaseManager $db = null)
-    {
+    public function __construct(
+        private ?View $view = null,
+        private ?PagesServiceInterface $pagesService = null,
+        private ?Container $container = null,
+        private ?RbacServiceInterface $rbacService = null
+    ) {
     }
 
     public function index(Request $request): Response
     {
-        $repo = $this->repository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
         }
 
@@ -62,12 +66,30 @@ final class PagesController
         }
 
         $offset = ($page - 1) * $perPage;
-        if ($query !== '') {
-            $rows = $repo->search($query, $perPage, $offset, $status);
-            $total = $repo->countSearch($query, $status);
-        } else {
-            $rows = $repo->listByStatus($status === 'all' ? null : $status, $perPage, $offset);
-            $total = $repo->countByStatus($status === 'all' ? null : $status);
+        try {
+            if ($query !== '') {
+                $rows = $service->list([
+                    'query' => $query,
+                    'status' => $status,
+                    'limit' => $perPage,
+                    'offset' => $offset,
+                ]);
+                $total = $service->count([
+                    'query' => $query,
+                    'status' => $status,
+                ]);
+            } else {
+                $rows = $service->list([
+                    'status' => $status,
+                    'limit' => $perPage,
+                    'offset' => $offset,
+                ]);
+                $total = $service->count([
+                    'status' => $status,
+                ]);
+            }
+        } catch (Throwable) {
+            return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
         }
 
         $items = array_map([$this, 'mapPage'], $rows);
@@ -89,8 +111,8 @@ final class PagesController
 
     public function show(Request $request, array $params = []): Response
     {
-        $repo = $this->repository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
         }
         $canViewAll = $this->canViewAll($request);
@@ -100,7 +122,11 @@ final class PagesController
             return ApiResponse::error('not_found', 'Not Found', [], 404);
         }
 
-        $page = $repo->findById($id);
+        try {
+            $page = $service->find($id);
+        } catch (Throwable) {
+            return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
+        }
         if ($page === null) {
             return ApiResponse::error('not_found', 'Not Found', [], 404);
         }
@@ -114,8 +140,8 @@ final class PagesController
 
     public function bySlug(Request $request, array $params = []): Response
     {
-        $repo = $this->repository();
-        if ($repo === null) {
+        $service = $this->service();
+        if ($service === null) {
             return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
         }
         $canViewAll = $this->canViewAll($request);
@@ -125,30 +151,23 @@ final class PagesController
             return ApiResponse::error('not_found', 'Not Found', [], 404);
         }
 
-        if ($canViewAll) {
-            $page = $repo->findBySlug($slug);
-        } else {
-            $page = $repo->findPublishedBySlug($slug);
+        try {
+            $pages = $service->list([
+                'slug' => $slug,
+                'status' => $canViewAll ? 'all' : 'published',
+                'limit' => 1,
+                'offset' => 0,
+            ]);
+        } catch (Throwable) {
+            return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
         }
+        $page = $pages[0] ?? null;
 
         if ($page === null) {
             return ApiResponse::error('not_found', 'Not Found', [], 404);
         }
 
         return ApiResponse::ok($this->mapPage($page, true));
-    }
-
-    private function repository(): ?PagesRepository
-    {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return null;
-        }
-
-        try {
-            return new PagesRepository($this->db);
-        } catch (Throwable) {
-            return null;
-        }
     }
 
     private function mapPage(array $row, bool $withBlocks = false): array
@@ -176,12 +195,13 @@ final class PagesController
         if ($pageId <= 0) {
             return [];
         }
-        if ($this->db === null || !$this->db->healthCheck()) {
+        $service = $this->service();
+        if ($service === null) {
             return [];
         }
+
         try {
-            $repo = new PagesRevisionsRepository($this->db);
-            $blocks = $repo->findLatestBlocksByPageId($pageId);
+            $blocks = $service->findLatestBlocks($pageId);
             if (!is_array($blocks)) {
                 return [];
             }
@@ -200,16 +220,57 @@ final class PagesController
         }
 
         $userId = (int) ($user['id'] ?? 0);
-        if ($userId <= 0 || $this->db === null) {
+        if ($userId <= 0) {
+            return false;
+        }
+        $rbac = $this->rbacService();
+        if ($rbac === null) {
             return false;
         }
 
-        try {
-            $rbac = new RbacRepository($this->db->pdo());
-            return $rbac->userHasPermission($userId, 'pages.view');
-        } catch (Throwable) {
-            return false;
+        return $rbac->userHasPermission($userId, 'pages.view');
+    }
+
+    private function service(): ?PagesServiceInterface
+    {
+        if ($this->pagesService !== null) {
+            return $this->pagesService;
         }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(PagesServiceInterface::class);
+                if ($service instanceof PagesServiceInterface) {
+                    $this->pagesService = $service;
+                    return $this->pagesService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function rbacService(): ?RbacServiceInterface
+    {
+        if ($this->rbacService !== null) {
+            return $this->rbacService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(RbacServiceInterface::class);
+                if ($service instanceof RbacServiceInterface) {
+                    $this->rbacService = $service;
+                    return $this->rbacService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
     }
 
     private function isPublished(array $page): bool

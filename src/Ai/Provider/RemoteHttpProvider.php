@@ -5,7 +5,7 @@ namespace Laas\Ai\Provider;
 
 use DomainException;
 use Laas\Ai\Context\Redactor;
-use Laas\Support\AuditLogger;
+use Laas\Support\Audit;
 use Laas\Support\SafeHttpClient;
 use Laas\Support\UrlPolicy;
 use RuntimeException;
@@ -16,8 +16,7 @@ final class RemoteHttpProvider implements AiProviderInterface
     public function __construct(
         private SafeHttpClient $httpClient,
         private Redactor $redactor,
-        private array $config,
-        private ?AuditLogger $auditLogger = null
+        private array $config
     ) {
     }
 
@@ -216,19 +215,12 @@ final class RemoteHttpProvider implements AiProviderInterface
     /** @param array<string, mixed> $context */
     private function audit(string $action, array $context): void
     {
-        if ($this->auditLogger === null) {
-            return;
-        }
-
         $userId = $context['user_id'] ?? null;
         unset($context['user_id']);
-        $this->auditLogger->log(
-            $action,
-            'ai',
-            null,
-            $context,
-            $this->normalizeUserId($userId),
-            null
-        );
+        $actorId = $this->normalizeUserId($userId);
+        if ($actorId !== null) {
+            $context['actor_user_id'] = $actorId;
+        }
+        Audit::log($action, 'ai', null, $context);
     }
 }

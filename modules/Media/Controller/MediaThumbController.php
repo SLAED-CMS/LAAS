@@ -37,7 +37,11 @@ final class MediaThumbController
             return $this->notFound();
         }
 
-        $row = $service->find($id);
+        try {
+            $row = $service->find($id);
+        } catch (Throwable) {
+            return $this->notFound();
+        }
         if ($row === null) {
             return $this->notFound();
         }

@@ -2317,6 +2317,7 @@ $config = $container->get('config');
 - maps Request -> service call
 - maps service result -> view/JSON
 - contains no business logic
+- no repositories, no DatabaseManager, no SQL literals in controllers
 
 **Service Contracts & Stability:**
 - each `*Service` in `src/Domain` exposes a matching `*ServiceInterface`
@@ -2324,6 +2325,32 @@ $config = $container->get('config');
 - controllers depend on interfaces only, never concrete services
 - mutating service methods are annotated with `@mutation`; read-only methods do not write, dispatch events, or invalidate caches
 - tests enforce interface-only controller dependencies and `@mutation` markers on mutating methods
+
+**Controller boundary example:**
+
+```php
+// Before (forbidden)
+final class MediaController
+{
+    public function index(Request $request): Response
+    {
+        $rows = $this->mediaRepository->list(50, 0, '');
+        return ApiResponse::ok($rows);
+    }
+}
+
+// After (required)
+final class MediaController
+{
+    public function __construct(private MediaServiceInterface $media) {}
+
+    public function index(Request $request): Response
+    {
+        $rows = $this->media->list(50, 0, '');
+        return ApiResponse::ok($rows);
+    }
+}
+```
 
 **Current services (MVP):**
 - PagesService for page read/create flows.
