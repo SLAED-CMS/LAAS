@@ -2328,6 +2328,12 @@ $config = $container->get('config');
 - Read/Write split: services with reads + mutations expose `*ReadServiceInterface` and `*WriteServiceInterface` (with `*ServiceInterface` extending both); GET/HEAD-only controllers depend on Read interfaces only
 - tests enforce interface-only controller dependencies and `@mutation` markers on mutating methods
 
+**Read-only proxy barrier:**
+- Read interfaces resolve to a runtime proxy that blocks `@mutation` methods.
+- Mutation detection relies solely on `@mutation` markers in service methods.
+- If a mutation method is called through a read interface, a `DomainException` is thrown.
+- Write interfaces always resolve to the real service instance.
+
 **Controller boundary example:**
 
 ```php

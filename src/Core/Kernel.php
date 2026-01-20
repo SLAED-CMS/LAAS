@@ -54,37 +54,46 @@ use Laas\Domain\Audit\AuditLogService;
 use Laas\Domain\Audit\AuditLogServiceInterface;
 use Laas\Domain\ApiTokens\ApiTokensService;
 use Laas\Domain\ApiTokens\ApiTokensReadServiceInterface;
+use Laas\Domain\ApiTokens\ApiTokensReadServiceProxy;
 use Laas\Domain\ApiTokens\ApiTokensServiceInterface;
 use Laas\Domain\ApiTokens\ApiTokensWriteServiceInterface;
 use Laas\Domain\Media\MediaService;
 use Laas\Domain\Media\MediaReadServiceInterface;
+use Laas\Domain\Media\MediaReadServiceProxy;
 use Laas\Domain\Media\MediaServiceInterface;
 use Laas\Domain\Media\MediaWriteServiceInterface;
 use Laas\Domain\Modules\ModulesService;
 use Laas\Domain\Modules\ModulesServiceInterface;
 use Laas\Domain\Menus\MenusService;
 use Laas\Domain\Menus\MenusReadServiceInterface;
+use Laas\Domain\Menus\MenusReadServiceProxy;
 use Laas\Domain\Menus\MenusServiceInterface;
 use Laas\Domain\Menus\MenusWriteServiceInterface;
 use Laas\Domain\Ops\OpsService;
 use Laas\Domain\Ops\OpsReadServiceInterface;
+use Laas\Domain\Ops\OpsReadServiceProxy;
 use Laas\Domain\Ops\OpsServiceInterface;
 use Laas\Domain\Pages\PagesService;
 use Laas\Domain\Pages\PagesReadServiceInterface;
+use Laas\Domain\Pages\PagesReadServiceProxy;
 use Laas\Domain\Pages\PagesServiceInterface;
 use Laas\Domain\Pages\PagesWriteServiceInterface;
 use Laas\Domain\Rbac\RbacService;
 use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Domain\Security\SecurityReportsService;
 use Laas\Domain\Security\SecurityReportsReadServiceInterface;
+use Laas\Domain\Security\SecurityReportsReadServiceProxy;
 use Laas\Domain\Security\SecurityReportsServiceInterface;
 use Laas\Domain\Security\SecurityReportsWriteServiceInterface;
 use Laas\Domain\Settings\SettingsService;
 use Laas\Domain\Settings\SettingsReadServiceInterface;
+use Laas\Domain\Settings\SettingsReadServiceProxy;
 use Laas\Domain\Settings\SettingsServiceInterface;
 use Laas\Domain\Settings\SettingsWriteServiceInterface;
+use Laas\Domain\Support\ReadOnlyProxy;
 use Laas\Domain\Users\UsersService;
 use Laas\Domain\Users\UsersReadServiceInterface;
+use Laas\Domain\Users\UsersReadServiceProxy;
 use Laas\Domain\Users\UsersServiceInterface;
 use Laas\Domain\Users\UsersWriteServiceInterface;
 use Laas\View\AssetManager;
@@ -424,7 +433,8 @@ final class Kernel
         });
 
         $this->container->singleton(PagesReadServiceInterface::class, function (): PagesReadServiceInterface {
-            return $this->container->get(PagesServiceInterface::class);
+            $service = $this->container->get(PagesServiceInterface::class);
+            return new PagesReadServiceProxy($service, ReadOnlyProxy::allowedMethods($service));
         });
 
         $this->container->singleton(PagesWriteServiceInterface::class, function (): PagesWriteServiceInterface {
@@ -440,7 +450,8 @@ final class Kernel
         });
 
         $this->container->singleton(MediaReadServiceInterface::class, function (): MediaReadServiceInterface {
-            return $this->container->get(MediaServiceInterface::class);
+            $service = $this->container->get(MediaServiceInterface::class);
+            return new MediaReadServiceProxy($service, ReadOnlyProxy::allowedMethods($service));
         });
 
         $this->container->singleton(MediaWriteServiceInterface::class, function (): MediaWriteServiceInterface {
@@ -452,7 +463,8 @@ final class Kernel
         });
 
         $this->container->singleton(SecurityReportsReadServiceInterface::class, function (): SecurityReportsReadServiceInterface {
-            return $this->container->get(SecurityReportsServiceInterface::class);
+            $service = $this->container->get(SecurityReportsServiceInterface::class);
+            return new SecurityReportsReadServiceProxy($service, ReadOnlyProxy::allowedMethods($service));
         });
 
         $this->container->singleton(SecurityReportsWriteServiceInterface::class, function (): SecurityReportsWriteServiceInterface {
@@ -468,7 +480,8 @@ final class Kernel
         });
 
         $this->container->singleton(ApiTokensReadServiceInterface::class, function (): ApiTokensReadServiceInterface {
-            return $this->container->get(ApiTokensServiceInterface::class);
+            $service = $this->container->get(ApiTokensServiceInterface::class);
+            return new ApiTokensReadServiceProxy($service, ReadOnlyProxy::allowedMethods($service));
         });
 
         $this->container->singleton(ApiTokensWriteServiceInterface::class, function (): ApiTokensWriteServiceInterface {
@@ -487,7 +500,8 @@ final class Kernel
         });
 
         $this->container->singleton(OpsReadServiceInterface::class, function (): OpsReadServiceInterface {
-            return $this->container->get(OpsServiceInterface::class);
+            $service = $this->container->get(OpsServiceInterface::class);
+            return new OpsReadServiceProxy($service, ReadOnlyProxy::allowedMethods($service));
         });
 
         $this->container->singleton(AdminSearchServiceInterface::class, function () use ($config, $rootPath): AdminSearchServiceInterface {
@@ -526,7 +540,8 @@ final class Kernel
         });
 
         $this->container->singleton(UsersReadServiceInterface::class, function (): UsersReadServiceInterface {
-            return $this->container->get(UsersServiceInterface::class);
+            $service = $this->container->get(UsersServiceInterface::class);
+            return new UsersReadServiceProxy($service, ReadOnlyProxy::allowedMethods($service));
         });
 
         $this->container->singleton(UsersWriteServiceInterface::class, function (): UsersWriteServiceInterface {
@@ -538,7 +553,8 @@ final class Kernel
         });
 
         $this->container->singleton(MenusReadServiceInterface::class, function (): MenusReadServiceInterface {
-            return $this->container->get(MenusServiceInterface::class);
+            $service = $this->container->get(MenusServiceInterface::class);
+            return new MenusReadServiceProxy($service, ReadOnlyProxy::allowedMethods($service));
         });
 
         $this->container->singleton(MenusWriteServiceInterface::class, function (): MenusWriteServiceInterface {
@@ -554,7 +570,8 @@ final class Kernel
         });
 
         $this->container->singleton(SettingsReadServiceInterface::class, function (): SettingsReadServiceInterface {
-            return $this->container->get(SettingsServiceInterface::class);
+            $service = $this->container->get(SettingsServiceInterface::class);
+            return new SettingsReadServiceProxy($service, ReadOnlyProxy::allowedMethods($service));
         });
 
         $this->container->singleton(SettingsWriteServiceInterface::class, function (): SettingsWriteServiceInterface {

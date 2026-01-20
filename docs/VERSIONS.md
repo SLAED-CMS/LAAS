@@ -24,6 +24,7 @@
   - Release notes: compat + stability checklist
   - Service layer: Read/Write interfaces for GET-only controllers (safer dependencies).
   - Tooling: policy check hardened; LF fix command; optional HTTP assets smoke.
+  - Service layer: enforced read-only proxy blocks mutation methods in GET controllers.
 
 - v4.0.1: Admin UI Polish (Released 2026-01-19)
   - Admin UI: Bootstrap 5 wired + modern layout for /admin/ai and page editor AI panel

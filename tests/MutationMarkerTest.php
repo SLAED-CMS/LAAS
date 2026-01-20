@@ -47,6 +47,29 @@ final class MutationMarkerTest extends TestCase
         }
     }
 
+    public function testWriteInterfacesRequireMutationMarkers(): void
+    {
+        $root = dirname(__DIR__);
+        $interfaces = $this->interfaceFiles($root . '/src/Domain', 'WriteServiceInterface.php');
+        $this->assertNotEmpty($interfaces);
+
+        foreach ($interfaces as $path) {
+            $class = $this->classNameFromFile($path, 'interface');
+            if ($class === '') {
+                continue;
+            }
+            $this->assertTrue(interface_exists($class), 'Missing interface class ' . $class);
+            $reflection = new ReflectionClass($class);
+
+            foreach ($reflection->getMethods() as $method) {
+                $doc = $method->getDocComment() ?: '';
+                if (stripos($doc, '@mutation') === false) {
+                    $this->fail($class . '::' . $method->getName() . ' must declare @mutation');
+                }
+            }
+        }
+    }
+
     /**
      * @return array<string, array<int, string>>
      */
@@ -87,6 +110,34 @@ final class MutationMarkerTest extends TestCase
                 continue;
             }
             if (str_ends_with($name, 'ServiceInterface.php') || str_ends_with($name, 'ServiceException.php')) {
+                continue;
+            }
+            $files[] = $file->getPathname();
+        }
+
+        sort($files);
+        return $files;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function interfaceFiles(string $root, string $suffix): array
+    {
+        $files = [];
+        if (!is_dir($root)) {
+            return $files;
+        }
+
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS)
+        );
+
+        foreach ($iterator as $file) {
+            if (!$file->isFile()) {
+                continue;
+            }
+            if (!str_ends_with($file->getFilename(), $suffix)) {
                 continue;
             }
             $files[] = $file->getPathname();
