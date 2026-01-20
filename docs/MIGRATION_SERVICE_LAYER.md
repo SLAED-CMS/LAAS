@@ -11,6 +11,7 @@
 - Kernel binds services against interfaces for stable contracts and test isolation
 - contract tests fail if a service is missing its interface
 - mutating service methods must include `@mutation` (tests enforce common mutation prefixes)
+- Read/Write split: services with reads + mutations expose `*ReadServiceInterface` and `*WriteServiceInterface`; GET/HEAD-only controllers depend on Read interfaces only
 
 ## Controller boundary (mandatory)
 - no repositories, no DatabaseManager, no SQL literals in controllers
@@ -33,6 +34,15 @@ $rows = $pagesService->list([
     'limit' => 20,
     'offset' => 0,
 ]);
+```
+
+Read-only controller example:
+```php
+// controller
+final class PagesController
+{
+    public function __construct(private PagesReadServiceInterface $pages) {}
+}
 ```
 
 ## How to migrate an existing controller

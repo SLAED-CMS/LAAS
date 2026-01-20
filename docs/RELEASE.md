@@ -20,6 +20,12 @@
 - Local only: `php tools/cli.php assets:http:smoke --base=https://laas.loc` (Content-Type: js contains "javascript", css contains "text/css", woff2 is "font/woff2" or "application/font-woff2" or "application/octet-stream")
 - `php tools/cli.php templates:raw:check --path=themes` is green
 - `git status` is clean; ensure no `nul` file exists
+- Windows note: first run may require `php tools/cli.php git:lf:fix` to normalize tracked CRLF after LF enforcement
+
+## Policy checks
+- HTTP smoke is opt-in: set `POLICY_HTTP_SMOKE=1` only when the local server is up.
+- `policy:check` remains strict; `assets:verify` always runs.
+- CRLF violations fail the check; run `php tools/cli.php git:lf:fix` to remediate.
 
 ## Config notes
 - Remote AI provider is disabled by default (`ai_remote_enabled=false`)

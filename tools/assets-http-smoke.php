@@ -92,7 +92,8 @@ function assets_http_smoke_run(string $rootPath, array $args = []): int
         } catch (RuntimeException $e) {
             $issues[] = [
                 'path' => $path,
-                'message' => 'HTTP request failed: ' . $e->getMessage(),
+                'message' => 'HTTP request failed for ' . $url . ': ' . $e->getMessage()
+                    . ' (enable POLICY_HTTP_SMOKE=1 only when server is up)',
             ];
             continue;
         }

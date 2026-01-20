@@ -1,6 +1,6 @@
 # LAAS Versions
 
-- v4.0.20: Service Layer + Theme API v2 + Headless v2 (Released 2026-01-19)
+- v4.0.20: Service Layer + Theme API v2 + Headless v2 (Unreleased)
   - DI Container MVP (foundation for service layer)
   - PagesService MVP (Service Layer introduction)
   - MediaService MVP + Upload Pipeline
@@ -22,6 +22,8 @@
   - Compat mode toggles for Theme API v2 and Blocks legacy content
   - Admin modules: request-scope caching, rate-limited details, explicit headers
   - Release notes: compat + stability checklist
+  - Service layer: Read/Write interfaces for GET-only controllers (safer dependencies).
+  - Tooling: policy check hardened; LF fix command; optional HTTP assets smoke.
 
 - v4.0.1: Admin UI Polish (Released 2026-01-19)
   - Admin UI: Bootstrap 5 wired + modern layout for /admin/ai and page editor AI panel

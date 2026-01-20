@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Laas\Modules\System\Controller;
 
 use Laas\Core\Container\Container;
-use Laas\Domain\Security\SecurityReportsServiceInterface;
+use Laas\Domain\Security\SecurityReportsWriteServiceInterface;
 use Laas\DevTools\DevToolsContext;
 use Laas\Http\Request;
 use Laas\Http\Response;
@@ -21,7 +21,7 @@ final class CspReportController
 
     public function __construct(
         private ?View $view = null,
-        private ?SecurityReportsServiceInterface $reportsService = null,
+        private ?SecurityReportsWriteServiceInterface $reportsService = null,
         private ?Container $container = null,
         ?Translator $translator = null,
         ?LoggerInterface $logger = null
@@ -200,7 +200,7 @@ final class CspReportController
         return is_array($config) ? $config : [];
     }
 
-    private function reportsService(): ?SecurityReportsServiceInterface
+    private function reportsService(): ?SecurityReportsWriteServiceInterface
     {
         if ($this->reportsService !== null) {
             return $this->reportsService;
@@ -208,8 +208,8 @@ final class CspReportController
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(SecurityReportsServiceInterface::class);
-                if ($service instanceof SecurityReportsServiceInterface) {
+                $service = $this->container->get(SecurityReportsWriteServiceInterface::class);
+                if ($service instanceof SecurityReportsWriteServiceInterface) {
                     $this->reportsService = $service;
                     return $this->reportsService;
                 }

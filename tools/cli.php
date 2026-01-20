@@ -2580,6 +2580,20 @@ $commands['assets:http:smoke'] = function () use ($rootPath, $args): int {
     return assets_http_smoke_run($rootPath, $args);
 };
 
+$commands['git:lf:fix'] = function () use ($rootPath): int {
+    require_once $rootPath . '/tools/policy-check.php';
+    $fixed = policy_git_lf_fix($rootPath);
+    if ($fixed === []) {
+        echo "git.lf.fix.ok (no changes)\n";
+        return 0;
+    }
+    echo "git.lf.fix.ok\n";
+    foreach ($fixed as $path) {
+        echo $path . "\n";
+    }
+    return 0;
+};
+
 $commands['policy:check'] = function () use ($rootPath): int {
     require_once $rootPath . '/tools/policy-check.php';
     $policyCode = policy_run([

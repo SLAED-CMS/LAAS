@@ -69,6 +69,9 @@ final class GitHygieneCheckTest extends TestCase
             $findings = policy_check_git_hygiene($root, 'nul');
             $errors = $this->filterFindings($findings, 'error');
             $this->assertNotEmpty($errors);
+            $messages = array_column($errors, 'message');
+            $joined = implode("\n", array_map('strval', $messages));
+            $this->assertStringContainsString('Run: php tools/cli.php git:lf:fix', $joined);
         });
     }
 

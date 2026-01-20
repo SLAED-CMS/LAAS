@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Laas\Modules\Media\Controller;
 
 use Laas\Core\Container\Container;
-use Laas\Domain\Media\MediaServiceInterface;
+use Laas\Domain\Media\MediaReadServiceInterface;
 use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
@@ -19,7 +19,7 @@ final class AdminMediaPickerController
 {
     public function __construct(
         private View $view,
-        private ?MediaServiceInterface $mediaService = null,
+        private ?MediaReadServiceInterface $mediaService = null,
         private ?Container $container = null,
         private ?RbacServiceInterface $rbacService = null
     ) {
@@ -138,7 +138,7 @@ final class AdminMediaPickerController
         }, $rows);
     }
 
-    private function service(): ?MediaServiceInterface
+    private function service(): ?MediaReadServiceInterface
     {
         if ($this->mediaService !== null) {
             return $this->mediaService;
@@ -146,8 +146,8 @@ final class AdminMediaPickerController
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(MediaServiceInterface::class);
-                if ($service instanceof MediaServiceInterface) {
+                $service = $this->container->get(MediaReadServiceInterface::class);
+                if ($service instanceof MediaReadServiceInterface) {
                     $this->mediaService = $service;
                     return $this->mediaService;
                 }

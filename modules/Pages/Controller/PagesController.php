@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Laas\Modules\Pages\Controller;
 
 use Laas\Core\Container\Container;
-use Laas\Domain\Pages\PagesServiceInterface;
+use Laas\Domain\Pages\PagesReadServiceInterface;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
@@ -34,7 +34,7 @@ final class PagesController
 
     public function __construct(
         private View $view,
-        private ?PagesServiceInterface $pagesService = null,
+        private ?PagesReadServiceInterface $pagesService = null,
         private ?Container $container = null
     ) {
     }
@@ -142,7 +142,7 @@ final class PagesController
         ], $status);
     }
 
-    private function service(): ?PagesServiceInterface
+    private function service(): ?PagesReadServiceInterface
     {
         if ($this->pagesService !== null) {
             return $this->pagesService;
@@ -150,8 +150,8 @@ final class PagesController
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(PagesServiceInterface::class);
-                if ($service instanceof PagesServiceInterface) {
+                $service = $this->container->get(PagesReadServiceInterface::class);
+                if ($service instanceof PagesReadServiceInterface) {
                     $this->pagesService = $service;
                     return $this->pagesService;
                 }

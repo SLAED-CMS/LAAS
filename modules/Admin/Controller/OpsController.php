@@ -5,7 +5,7 @@ namespace Laas\Modules\Admin\Controller;
 
 use Laas\Core\Container\Container;
 use Laas\Domain\Rbac\RbacServiceInterface;
-use Laas\Domain\Ops\OpsServiceInterface;
+use Laas\Domain\Ops\OpsReadServiceInterface;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
@@ -17,7 +17,7 @@ final class OpsController
 {
     public function __construct(
         private View $view,
-        private ?OpsServiceInterface $opsService = null,
+        private ?OpsReadServiceInterface $opsService = null,
         private ?Container $container = null
     ) {
     }
@@ -145,7 +145,7 @@ final class OpsController
         return str_ends_with($request->getPath(), '.json');
     }
 
-    private function service(): ?OpsServiceInterface
+    private function service(): ?OpsReadServiceInterface
     {
         if ($this->opsService !== null) {
             return $this->opsService;
@@ -153,8 +153,8 @@ final class OpsController
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(OpsServiceInterface::class);
-                if ($service instanceof OpsServiceInterface) {
+                $service = $this->container->get(OpsReadServiceInterface::class);
+                if ($service instanceof OpsReadServiceInterface) {
                     $this->opsService = $service;
                     return $this->opsService;
                 }

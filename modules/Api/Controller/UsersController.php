@@ -7,7 +7,7 @@ use Laas\Api\ApiPagination;
 use Laas\Api\ApiResponse;
 use Laas\Core\Container\Container;
 use Laas\Domain\Rbac\RbacServiceInterface;
-use Laas\Domain\Users\UsersServiceInterface;
+use Laas\Domain\Users\UsersReadServiceInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Throwable;
@@ -17,7 +17,7 @@ final class UsersController
 {
     public function __construct(
         private ?View $view = null,
-        private ?UsersServiceInterface $usersService = null,
+        private ?UsersReadServiceInterface $usersService = null,
         private ?Container $container = null,
         private ?RbacServiceInterface $rbacService = null
     ) {
@@ -103,7 +103,7 @@ final class UsersController
             || $rbac->userHasPermission($userId, 'users.manage');
     }
 
-    private function usersService(): ?UsersServiceInterface
+    private function usersService(): ?UsersReadServiceInterface
     {
         if ($this->usersService !== null) {
             return $this->usersService;
@@ -111,8 +111,8 @@ final class UsersController
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(UsersServiceInterface::class);
-                if ($service instanceof UsersServiceInterface) {
+                $service = $this->container->get(UsersReadServiceInterface::class);
+                if ($service instanceof UsersReadServiceInterface) {
                     $this->usersService = $service;
                     return $this->usersService;
                 }

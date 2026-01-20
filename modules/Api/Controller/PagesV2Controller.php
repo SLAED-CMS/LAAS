@@ -6,8 +6,8 @@ namespace Laas\Modules\Api\Controller;
 use Laas\Api\ApiResponse;
 use Laas\Content\Blocks\BlockRegistry;
 use Laas\Core\Container\Container;
-use Laas\Domain\Media\MediaServiceInterface;
-use Laas\Domain\Pages\PagesServiceInterface;
+use Laas\Domain\Media\MediaReadServiceInterface;
+use Laas\Domain\Pages\PagesReadServiceInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Throwable;
@@ -31,9 +31,9 @@ final class PagesV2Controller
 
     public function __construct(
         private ?View $view = null,
-        private ?PagesServiceInterface $pagesService = null,
+        private ?PagesReadServiceInterface $pagesService = null,
         private ?Container $container = null,
-        private ?MediaServiceInterface $mediaService = null
+        private ?MediaReadServiceInterface $mediaService = null
     ) {
     }
 
@@ -223,7 +223,7 @@ final class PagesV2Controller
         ], [], 200, $headers);
     }
 
-    private function pagesService(): ?PagesServiceInterface
+    private function pagesService(): ?PagesReadServiceInterface
     {
         if ($this->pagesService !== null) {
             return $this->pagesService;
@@ -231,8 +231,8 @@ final class PagesV2Controller
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(PagesServiceInterface::class);
-                if ($service instanceof PagesServiceInterface) {
+                $service = $this->container->get(PagesReadServiceInterface::class);
+                if ($service instanceof PagesReadServiceInterface) {
                     $this->pagesService = $service;
                     return $this->pagesService;
                 }
@@ -244,7 +244,7 @@ final class PagesV2Controller
         return null;
     }
 
-    private function mediaService(): ?MediaServiceInterface
+    private function mediaService(): ?MediaReadServiceInterface
     {
         if ($this->mediaService !== null) {
             return $this->mediaService;
@@ -252,8 +252,8 @@ final class PagesV2Controller
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(MediaServiceInterface::class);
-                if ($service instanceof MediaServiceInterface) {
+                $service = $this->container->get(MediaReadServiceInterface::class);
+                if ($service instanceof MediaReadServiceInterface) {
                     $this->mediaService = $service;
                     return $this->mediaService;
                 }

@@ -11,7 +11,7 @@ use Laas\Database\Repositories\SecurityReportsRepository;
 use RuntimeException;
 use Throwable;
 
-class SecurityReportsService implements SecurityReportsServiceInterface
+class SecurityReportsService implements SecurityReportsServiceInterface, SecurityReportsReadServiceInterface, SecurityReportsWriteServiceInterface
 {
     private ?SecurityReportsRepository $repository = null;
 

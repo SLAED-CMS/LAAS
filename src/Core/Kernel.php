@@ -53,25 +53,40 @@ use Laas\Domain\AdminSearch\AdminSearchServiceInterface;
 use Laas\Domain\Audit\AuditLogService;
 use Laas\Domain\Audit\AuditLogServiceInterface;
 use Laas\Domain\ApiTokens\ApiTokensService;
+use Laas\Domain\ApiTokens\ApiTokensReadServiceInterface;
 use Laas\Domain\ApiTokens\ApiTokensServiceInterface;
+use Laas\Domain\ApiTokens\ApiTokensWriteServiceInterface;
 use Laas\Domain\Media\MediaService;
+use Laas\Domain\Media\MediaReadServiceInterface;
 use Laas\Domain\Media\MediaServiceInterface;
+use Laas\Domain\Media\MediaWriteServiceInterface;
 use Laas\Domain\Modules\ModulesService;
 use Laas\Domain\Modules\ModulesServiceInterface;
 use Laas\Domain\Menus\MenusService;
+use Laas\Domain\Menus\MenusReadServiceInterface;
 use Laas\Domain\Menus\MenusServiceInterface;
+use Laas\Domain\Menus\MenusWriteServiceInterface;
 use Laas\Domain\Ops\OpsService;
+use Laas\Domain\Ops\OpsReadServiceInterface;
 use Laas\Domain\Ops\OpsServiceInterface;
 use Laas\Domain\Pages\PagesService;
+use Laas\Domain\Pages\PagesReadServiceInterface;
 use Laas\Domain\Pages\PagesServiceInterface;
+use Laas\Domain\Pages\PagesWriteServiceInterface;
 use Laas\Domain\Rbac\RbacService;
 use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Domain\Security\SecurityReportsService;
+use Laas\Domain\Security\SecurityReportsReadServiceInterface;
 use Laas\Domain\Security\SecurityReportsServiceInterface;
+use Laas\Domain\Security\SecurityReportsWriteServiceInterface;
 use Laas\Domain\Settings\SettingsService;
+use Laas\Domain\Settings\SettingsReadServiceInterface;
 use Laas\Domain\Settings\SettingsServiceInterface;
+use Laas\Domain\Settings\SettingsWriteServiceInterface;
 use Laas\Domain\Users\UsersService;
+use Laas\Domain\Users\UsersReadServiceInterface;
 use Laas\Domain\Users\UsersServiceInterface;
+use Laas\Domain\Users\UsersWriteServiceInterface;
 use Laas\View\AssetManager;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
@@ -408,6 +423,14 @@ final class Kernel
             return new PagesService($this->database());
         });
 
+        $this->container->singleton(PagesReadServiceInterface::class, function (): PagesReadServiceInterface {
+            return $this->container->get(PagesServiceInterface::class);
+        });
+
+        $this->container->singleton(PagesWriteServiceInterface::class, function (): PagesWriteServiceInterface {
+            return $this->container->get(PagesServiceInterface::class);
+        });
+
         $this->container->singleton(MediaServiceInterface::class, function () use ($config, $rootPath): MediaServiceInterface {
             return new MediaService(
                 $this->database(),
@@ -416,8 +439,24 @@ final class Kernel
             );
         });
 
+        $this->container->singleton(MediaReadServiceInterface::class, function (): MediaReadServiceInterface {
+            return $this->container->get(MediaServiceInterface::class);
+        });
+
+        $this->container->singleton(MediaWriteServiceInterface::class, function (): MediaWriteServiceInterface {
+            return $this->container->get(MediaServiceInterface::class);
+        });
+
         $this->container->singleton(SecurityReportsServiceInterface::class, function (): SecurityReportsServiceInterface {
             return new SecurityReportsService($this->database());
+        });
+
+        $this->container->singleton(SecurityReportsReadServiceInterface::class, function (): SecurityReportsReadServiceInterface {
+            return $this->container->get(SecurityReportsServiceInterface::class);
+        });
+
+        $this->container->singleton(SecurityReportsWriteServiceInterface::class, function (): SecurityReportsWriteServiceInterface {
+            return $this->container->get(SecurityReportsServiceInterface::class);
         });
 
         $this->container->singleton(ApiTokensServiceInterface::class, function () use ($config, $rootPath): ApiTokensServiceInterface {
@@ -426,6 +465,14 @@ final class Kernel
                 $config['api'] ?? [],
                 $rootPath
             );
+        });
+
+        $this->container->singleton(ApiTokensReadServiceInterface::class, function (): ApiTokensReadServiceInterface {
+            return $this->container->get(ApiTokensServiceInterface::class);
+        });
+
+        $this->container->singleton(ApiTokensWriteServiceInterface::class, function (): ApiTokensWriteServiceInterface {
+            return $this->container->get(ApiTokensServiceInterface::class);
         });
 
         $this->container->singleton(OpsServiceInterface::class, function () use ($config, $rootPath): OpsServiceInterface {
@@ -437,6 +484,10 @@ final class Kernel
                 $rootPath,
                 $securityReports
             );
+        });
+
+        $this->container->singleton(OpsReadServiceInterface::class, function (): OpsReadServiceInterface {
+            return $this->container->get(OpsServiceInterface::class);
         });
 
         $this->container->singleton(AdminSearchServiceInterface::class, function () use ($config, $rootPath): AdminSearchServiceInterface {
@@ -474,8 +525,24 @@ final class Kernel
             return new UsersService($this->database());
         });
 
+        $this->container->singleton(UsersReadServiceInterface::class, function (): UsersReadServiceInterface {
+            return $this->container->get(UsersServiceInterface::class);
+        });
+
+        $this->container->singleton(UsersWriteServiceInterface::class, function (): UsersWriteServiceInterface {
+            return $this->container->get(UsersServiceInterface::class);
+        });
+
         $this->container->singleton(MenusServiceInterface::class, function (): MenusServiceInterface {
             return new MenusService($this->database());
+        });
+
+        $this->container->singleton(MenusReadServiceInterface::class, function (): MenusReadServiceInterface {
+            return $this->container->get(MenusServiceInterface::class);
+        });
+
+        $this->container->singleton(MenusWriteServiceInterface::class, function (): MenusWriteServiceInterface {
+            return $this->container->get(MenusServiceInterface::class);
         });
 
         $this->container->singleton(ModulesServiceInterface::class, function () use ($config, $rootPath): ModulesServiceInterface {
@@ -484,6 +551,14 @@ final class Kernel
 
         $this->container->singleton(SettingsServiceInterface::class, function (): SettingsServiceInterface {
             return new SettingsService($this->database());
+        });
+
+        $this->container->singleton(SettingsReadServiceInterface::class, function (): SettingsReadServiceInterface {
+            return $this->container->get(SettingsServiceInterface::class);
+        });
+
+        $this->container->singleton(SettingsWriteServiceInterface::class, function (): SettingsWriteServiceInterface {
+            return $this->container->get(SettingsServiceInterface::class);
         });
 
         $this->container->singleton(BlockRegistry::class, static function (): BlockRegistry {

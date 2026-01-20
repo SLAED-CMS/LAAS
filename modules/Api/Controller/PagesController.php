@@ -7,7 +7,7 @@ use Laas\Api\ApiCache;
 use Laas\Api\ApiPagination;
 use Laas\Api\ApiResponse;
 use Laas\Core\Container\Container;
-use Laas\Domain\Pages\PagesServiceInterface;
+use Laas\Domain\Pages\PagesReadServiceInterface;
 use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
@@ -20,7 +20,7 @@ final class PagesController
 {
     public function __construct(
         private ?View $view = null,
-        private ?PagesServiceInterface $pagesService = null,
+        private ?PagesReadServiceInterface $pagesService = null,
         private ?Container $container = null,
         private ?RbacServiceInterface $rbacService = null
     ) {
@@ -231,7 +231,7 @@ final class PagesController
         return $rbac->userHasPermission($userId, 'pages.view');
     }
 
-    private function service(): ?PagesServiceInterface
+    private function service(): ?PagesReadServiceInterface
     {
         if ($this->pagesService !== null) {
             return $this->pagesService;
@@ -239,8 +239,8 @@ final class PagesController
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(PagesServiceInterface::class);
-                if ($service instanceof PagesServiceInterface) {
+                $service = $this->container->get(PagesReadServiceInterface::class);
+                if ($service instanceof PagesReadServiceInterface) {
                     $this->pagesService = $service;
                     return $this->pagesService;
                 }

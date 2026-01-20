@@ -11,7 +11,7 @@ use Laas\Security\HtmlSanitizer;
 use RuntimeException;
 use Throwable;
 
-class PagesService implements PagesServiceInterface
+class PagesService implements PagesServiceInterface, PagesReadServiceInterface, PagesWriteServiceInterface
 {
     private ?PagesRepository $repository = null;
     private ?PagesRevisionsRepository $revisions = null;

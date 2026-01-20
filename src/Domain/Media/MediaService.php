@@ -13,7 +13,7 @@ use PDOException;
 use RuntimeException;
 use Throwable;
 
-class MediaService implements MediaServiceInterface
+class MediaService implements MediaServiceInterface, MediaReadServiceInterface, MediaWriteServiceInterface
 {
     private ?MediaRepository $repository = null;
     private StorageService $storage;

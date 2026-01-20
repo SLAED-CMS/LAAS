@@ -2325,6 +2325,7 @@ $config = $container->get('config');
 - Kernel binds services to interfaces only (concrete bindings reserved for infrastructure like DB, cache, translator, request cache)
 - controllers depend on interfaces only, never concrete services
 - mutating service methods are annotated with `@mutation`; read-only methods do not write, dispatch events, or invalidate caches
+- Read/Write split: services with reads + mutations expose `*ReadServiceInterface` and `*WriteServiceInterface` (with `*ServiceInterface` extending both); GET/HEAD-only controllers depend on Read interfaces only
 - tests enforce interface-only controller dependencies and `@mutation` markers on mutating methods
 
 **Controller boundary example:**
@@ -2349,6 +2350,21 @@ final class MediaController
     {
         $rows = $this->media->list(50, 0, '');
         return ApiResponse::ok($rows);
+    }
+}
+```
+
+**Read/Write split example:**
+
+```php
+final class PagesController
+{
+    public function __construct(private PagesReadServiceInterface $pages) {}
+
+    public function show(Request $request): Response
+    {
+        $page = $this->pages->find((int) $request->query('id'));
+        return ApiResponse::ok($page);
     }
 }
 ```

@@ -5,12 +5,12 @@ namespace Laas\Modules\System\Controller;
 
 use Laas\Core\Container\Container;
 use Laas\Domain\Audit\AuditLogServiceInterface;
-use Laas\Domain\Menus\MenusServiceInterface;
-use Laas\Domain\Media\MediaServiceInterface;
-use Laas\Domain\Pages\PagesServiceInterface;
+use Laas\Domain\Menus\MenusReadServiceInterface;
+use Laas\Domain\Media\MediaReadServiceInterface;
+use Laas\Domain\Pages\PagesReadServiceInterface;
 use Laas\Domain\Rbac\RbacServiceInterface;
-use Laas\Domain\Settings\SettingsServiceInterface;
-use Laas\Domain\Users\UsersServiceInterface;
+use Laas\Domain\Settings\SettingsReadServiceInterface;
+use Laas\Domain\Users\UsersReadServiceInterface;
 use Laas\DevTools\DevToolsContext;
 use Laas\Http\Request;
 use Laas\Http\Response;
@@ -27,11 +27,11 @@ use Throwable;
 
 final class HomeController
 {
-    private ?PagesServiceInterface $pagesService = null;
-    private ?MediaServiceInterface $mediaService = null;
-    private ?MenusServiceInterface $menusService = null;
-    private ?SettingsServiceInterface $settingsService = null;
-    private ?UsersServiceInterface $usersService = null;
+    private ?PagesReadServiceInterface $pagesService = null;
+    private ?MediaReadServiceInterface $mediaService = null;
+    private ?MenusReadServiceInterface $menusService = null;
+    private ?SettingsReadServiceInterface $settingsService = null;
+    private ?UsersReadServiceInterface $usersService = null;
     private ?RbacServiceInterface $rbacService = null;
     private ?AuditLogServiceInterface $auditService = null;
 
@@ -557,7 +557,7 @@ final class HomeController
         return ChangelogSettings::load($this->rootPath(), $this->settingsService());
     }
 
-    private function pagesService(): ?PagesServiceInterface
+    private function pagesService(): ?PagesReadServiceInterface
     {
         if ($this->pagesService !== null) {
             return $this->pagesService;
@@ -565,8 +565,8 @@ final class HomeController
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(PagesServiceInterface::class);
-                if ($service instanceof PagesServiceInterface) {
+                $service = $this->container->get(PagesReadServiceInterface::class);
+                if ($service instanceof PagesReadServiceInterface) {
                     $this->pagesService = $service;
                     return $this->pagesService;
                 }
@@ -578,7 +578,7 @@ final class HomeController
         return null;
     }
 
-    private function mediaService(): ?MediaServiceInterface
+    private function mediaService(): ?MediaReadServiceInterface
     {
         if ($this->mediaService !== null) {
             return $this->mediaService;
@@ -586,8 +586,8 @@ final class HomeController
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(MediaServiceInterface::class);
-                if ($service instanceof MediaServiceInterface) {
+                $service = $this->container->get(MediaReadServiceInterface::class);
+                if ($service instanceof MediaReadServiceInterface) {
                     $this->mediaService = $service;
                     return $this->mediaService;
                 }
@@ -599,7 +599,7 @@ final class HomeController
         return null;
     }
 
-    private function menusService(): ?MenusServiceInterface
+    private function menusService(): ?MenusReadServiceInterface
     {
         if ($this->menusService !== null) {
             return $this->menusService;
@@ -607,8 +607,8 @@ final class HomeController
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(MenusServiceInterface::class);
-                if ($service instanceof MenusServiceInterface) {
+                $service = $this->container->get(MenusReadServiceInterface::class);
+                if ($service instanceof MenusReadServiceInterface) {
                     $this->menusService = $service;
                     return $this->menusService;
                 }
@@ -620,7 +620,7 @@ final class HomeController
         return null;
     }
 
-    private function settingsService(): ?SettingsServiceInterface
+    private function settingsService(): ?SettingsReadServiceInterface
     {
         if ($this->settingsService !== null) {
             return $this->settingsService;
@@ -628,8 +628,8 @@ final class HomeController
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(SettingsServiceInterface::class);
-                if ($service instanceof SettingsServiceInterface) {
+                $service = $this->container->get(SettingsReadServiceInterface::class);
+                if ($service instanceof SettingsReadServiceInterface) {
                     $this->settingsService = $service;
                     return $this->settingsService;
                 }
@@ -641,7 +641,7 @@ final class HomeController
         return null;
     }
 
-    private function usersService(): ?UsersServiceInterface
+    private function usersService(): ?UsersReadServiceInterface
     {
         if ($this->usersService !== null) {
             return $this->usersService;
@@ -649,8 +649,8 @@ final class HomeController
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(UsersServiceInterface::class);
-                if ($service instanceof UsersServiceInterface) {
+                $service = $this->container->get(UsersReadServiceInterface::class);
+                if ($service instanceof UsersReadServiceInterface) {
                     $this->usersService = $service;
                     return $this->usersService;
                 }

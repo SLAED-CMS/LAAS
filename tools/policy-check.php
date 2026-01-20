@@ -152,7 +152,7 @@ function policy_check_git_hygiene(?string $root = null, ?string $nulMarker = nul
             'code' => 'G3',
             'file' => $path,
             'line' => 1,
-            'message' => 'git.hygiene: CRLF detected in tracked file',
+            'message' => 'git.hygiene: CRLF detected in tracked file. Run: php tools/cli.php git:lf:fix',
             'snippet' => '',
         ];
     }
@@ -274,6 +274,9 @@ function policy_git_crlf_files(string $root, array $extensions): array
             continue;
         }
         $path = $root . '/' . ltrim($file, '/');
+        if (policy_git_crlf_excluded($path)) {
+            continue;
+        }
         if (!is_file($path)) {
             continue;
         }
@@ -287,6 +290,65 @@ function policy_git_crlf_files(string $root, array $extensions): array
     }
 
     return $crlf;
+}
+
+function policy_git_crlf_excluded(string $path): bool
+{
+    $normalized = policy_normalize_path($path);
+    if (str_contains($normalized, '/public/assets/vendor/')) {
+        return true;
+    }
+    $base = basename($normalized);
+    return preg_match('/\\.min\\./i', $base) === 1;
+}
+
+function policy_git_lf_fix_excluded(string $path): bool
+{
+    $normalized = policy_normalize_path($path);
+    if (str_contains($normalized, '/vendor/')) {
+        return true;
+    }
+    if (str_contains($normalized, '/public/assets/vendor/')) {
+        return true;
+    }
+    $base = basename($normalized);
+    return preg_match('/\\.min\\./i', $base) === 1;
+}
+
+/**
+ * @return array<int, string>
+ */
+function policy_git_lf_fix(string $root): array
+{
+    $root = rtrim($root, '/\\');
+    $extensions = policy_git_hygiene_extensions();
+    $crlfFiles = policy_git_crlf_files($root, $extensions);
+    $fixed = [];
+
+    foreach ($crlfFiles as $path) {
+        if (policy_git_lf_fix_excluded($path)) {
+            continue;
+        }
+        if (!is_file($path)) {
+            continue;
+        }
+        $contents = @file_get_contents($path);
+        if ($contents === false) {
+            continue;
+        }
+        $normalized = str_replace("\r\n", "\n", $contents);
+        $normalized = str_replace("\r", "\n", $normalized);
+        if ($normalized === $contents) {
+            continue;
+        }
+        if (@file_put_contents($path, $normalized) === false) {
+            continue;
+        }
+        $fixed[] = policy_git_relative_path($root, $path);
+    }
+
+    sort($fixed);
+    return $fixed;
 }
 
 function policy_git_has_extension(string $path, array $extensions): bool
@@ -619,14 +681,8 @@ function policy_run_assets_checks(): array
 
     $assetsCode = assets_verify_run($root);
 
-    $env = strtolower((string) ($_ENV['APP_ENV'] ?? ''));
-    $httpSmoke = false;
-    if ($env === 'local') {
-        $httpSmoke = true;
-    } else {
-        $policySmoke = $_ENV['POLICY_HTTP_SMOKE'] ?? '';
-        $httpSmoke = filter_var($policySmoke, FILTER_VALIDATE_BOOLEAN) === true;
-    }
+    $policySmoke = $_ENV['POLICY_HTTP_SMOKE'] ?? '';
+    $httpSmoke = filter_var($policySmoke, FILTER_VALIDATE_BOOLEAN) === true;
 
     if ($httpSmoke) {
         $httpCode = assets_http_smoke_run($root, []);

@@ -8,7 +8,7 @@ use Laas\Database\Repositories\SettingsRepository;
 use RuntimeException;
 use Throwable;
 
-class SettingsService implements SettingsServiceInterface
+class SettingsService implements SettingsServiceInterface, SettingsReadServiceInterface, SettingsWriteServiceInterface
 {
     private const DEFAULT_SITE_NAME = 'LAAS CMS';
     private const DEFAULT_LOCALE = 'en';

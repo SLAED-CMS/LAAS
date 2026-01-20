@@ -5,7 +5,7 @@ namespace Laas\Modules\Api\Controller;
 
 use Laas\Api\ApiResponse;
 use Laas\Core\Container\Container;
-use Laas\Domain\Menus\MenusServiceInterface;
+use Laas\Domain\Menus\MenusReadServiceInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Throwable;
@@ -29,7 +29,7 @@ final class MenusV2Controller
 
     public function __construct(
         private ?View $view = null,
-        private ?MenusServiceInterface $menusService = null,
+        private ?MenusReadServiceInterface $menusService = null,
         private ?Container $container = null
     ) {
     }
@@ -155,7 +155,7 @@ final class MenusV2Controller
         ], [], 200, $headers);
     }
 
-    private function service(): ?MenusServiceInterface
+    private function service(): ?MenusReadServiceInterface
     {
         if ($this->menusService !== null) {
             return $this->menusService;
@@ -163,8 +163,8 @@ final class MenusV2Controller
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(MenusServiceInterface::class);
-                if ($service instanceof MenusServiceInterface) {
+                $service = $this->container->get(MenusReadServiceInterface::class);
+                if ($service instanceof MenusReadServiceInterface) {
                     $this->menusService = $service;
                     return $this->menusService;
                 }

@@ -11,7 +11,7 @@ use Laas\Database\Repositories\UsersRepository;
 use RuntimeException;
 use Throwable;
 
-class UsersService implements UsersServiceInterface
+class UsersService implements UsersServiceInterface, UsersReadServiceInterface, UsersWriteServiceInterface
 {
     private ?UsersRepository $users = null;
     private ?RbacRepository $rbac = null;

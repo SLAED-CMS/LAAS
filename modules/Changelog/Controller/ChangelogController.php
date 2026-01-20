@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Laas\Modules\Changelog\Controller;
 
 use Laas\Core\Container\Container;
-use Laas\Domain\Settings\SettingsServiceInterface;
+use Laas\Domain\Settings\SettingsReadServiceInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Changelog\Service\ChangelogService;
@@ -18,7 +18,7 @@ final class ChangelogController
 {
     public function __construct(
         private View $view,
-        private ?SettingsServiceInterface $settingsService = null,
+        private ?SettingsReadServiceInterface $settingsService = null,
         private ?Container $container = null
     ) {
     }
@@ -97,7 +97,7 @@ final class ChangelogController
         return ChangelogSettings::load($this->rootPath(), $this->settingsService());
     }
 
-    private function settingsService(): ?SettingsServiceInterface
+    private function settingsService(): ?SettingsReadServiceInterface
     {
         if ($this->settingsService !== null) {
             return $this->settingsService;
@@ -105,8 +105,8 @@ final class ChangelogController
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(SettingsServiceInterface::class);
-                if ($service instanceof SettingsServiceInterface) {
+                $service = $this->container->get(SettingsReadServiceInterface::class);
+                if ($service instanceof SettingsReadServiceInterface) {
                     $this->settingsService = $service;
                     return $this->settingsService;
                 }

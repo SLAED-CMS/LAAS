@@ -10,7 +10,7 @@ use Laas\Modules\Menu\Repository\MenusRepository;
 use RuntimeException;
 use Throwable;
 
-class MenusService implements MenusServiceInterface
+class MenusService implements MenusServiceInterface, MenusReadServiceInterface, MenusWriteServiceInterface
 {
     private ?MenusRepository $menus = null;
     private ?MenuItemsRepository $items = null;

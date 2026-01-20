@@ -11,7 +11,7 @@ use Laas\Database\Repositories\ApiTokensRepository;
 use RuntimeException;
 use Throwable;
 
-class ApiTokensService implements ApiTokensServiceInterface
+class ApiTokensService implements ApiTokensServiceInterface, ApiTokensReadServiceInterface, ApiTokensWriteServiceInterface
 {
     private ?ApiTokensRepository $repository = null;
     private ?ApiTokenService $tokenService = null;

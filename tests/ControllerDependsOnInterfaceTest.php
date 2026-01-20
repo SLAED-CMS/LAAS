@@ -156,7 +156,12 @@ final class ControllerDependsOnInterfaceTest extends TestCase
             if (!str_ends_with($name, 'Service.php')) {
                 continue;
             }
-            if (str_ends_with($name, 'ServiceInterface.php') || str_ends_with($name, 'ServiceException.php')) {
+            if (
+                str_ends_with($name, 'ServiceInterface.php')
+                || str_ends_with($name, 'ReadServiceInterface.php')
+                || str_ends_with($name, 'WriteServiceInterface.php')
+                || str_ends_with($name, 'ServiceException.php')
+            ) {
                 continue;
             }
             $files[] = $file->getPathname();
