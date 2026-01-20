@@ -15,7 +15,7 @@
 
 ## Preconditions
 - `vendor/bin/phpunit` is green
-- `php tools/cli.php policy:check` is green
+- `php tools/cli.php policy:check` is green (Summary warnings=0)
 - `php tools/cli.php assets:verify` is green
 - `php tools/cli.php templates:raw:check --path=themes` is green
 - `git status` is clean; ensure no `nul` file exists

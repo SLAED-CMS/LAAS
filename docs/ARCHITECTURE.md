@@ -2019,6 +2019,10 @@ if (!$validator->validate()) {
 }
 ```
 
+### 6. Line Endings
+
+- Repository enforces LF via `.gitattributes`; avoid CRLF in tracked text files.
+
 ---
 
 ## Design Patterns

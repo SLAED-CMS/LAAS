@@ -93,6 +93,7 @@ function policy_check_git_hygiene(?string $root = null, ?string $nulMarker = nul
     $root = $root ?? policy_root_path();
     $root = rtrim($root, '/\\');
     $marker = $nulMarker ?? 'nul';
+    $extensions = policy_git_hygiene_extensions();
 
     $entries = @scandir($root);
     $entryLookup = null;
@@ -116,16 +117,56 @@ function policy_check_git_hygiene(?string $root = null, ?string $nulMarker = nul
         ];
     }
 
-    $autocrlf = policy_git_autocrlf_value($root);
-    if ($autocrlf !== null && strtolower($autocrlf) === 'true') {
-        $message = 'git.hygiene: core.autocrlf=true; LF is enforced via .gitattributes';
+    $attributesPath = $root . '/.gitattributes';
+    if (!is_file($attributesPath)) {
         $findings[] = [
-            'level' => 'warning',
+            'level' => 'error',
             'code' => 'G2',
-            'file' => $root . '/.git/config',
+            'file' => $attributesPath,
+            'line' => 1,
+            'message' => 'git.hygiene: missing .gitattributes (LF enforcement required)',
+            'snippet' => '',
+        ];
+        $attributesOk = false;
+    } else {
+        $missing = policy_gitattributes_missing_lf($attributesPath, $extensions);
+        if ($missing !== []) {
+            $findings[] = [
+                'level' => 'error',
+                'code' => 'G2',
+                'file' => $attributesPath,
+                'line' => 1,
+                'message' => 'git.hygiene: missing eol=lf for ' . implode(', ', $missing),
+                'snippet' => '',
+            ];
+            $attributesOk = false;
+        } else {
+            $attributesOk = true;
+        }
+    }
+
+    $crlfFiles = policy_git_crlf_files($root, $extensions);
+    foreach ($crlfFiles as $path) {
+        $findings[] = [
+            'level' => 'error',
+            'code' => 'G3',
+            'file' => $path,
+            'line' => 1,
+            'message' => 'git.hygiene: CRLF detected in tracked file',
+            'snippet' => '',
+        ];
+    }
+
+    $autocrlf = policy_git_autocrlf_value($root);
+    if ($autocrlf !== null && strtolower($autocrlf) === 'true' && $attributesOk && $crlfFiles === []) {
+        $message = 'git.hygiene: core.autocrlf=true; enforced by .gitattributes; working tree OK';
+        $findings[] = [
+            'level' => 'info',
+            'code' => 'GI',
+            'file' => '',
             'line' => 1,
             'message' => $message,
-            'snippet' => $message,
+            'snippet' => '',
         ];
     }
 
@@ -144,12 +185,71 @@ function policy_git_hygiene_markers(string $marker): array
     return array_values(array_unique($markers));
 }
 
+/**
+ * @return array<int, string>
+ */
+function policy_git_hygiene_extensions(): array
+{
+    return ['php', 'md', 'html', 'js', 'css'];
+}
+
+/**
+ * @param array<int, string> $extensions
+ * @return array<int, string>
+ */
+function policy_gitattributes_missing_lf(string $path, array $extensions): array
+{
+    $lines = @file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if (!is_array($lines)) {
+        return $extensions;
+    }
+
+    $globalLf = false;
+    $covered = array_fill_keys($extensions, false);
+
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line === '' || str_starts_with($line, '#')) {
+            continue;
+        }
+        if (preg_match('/^\\*\\s+.*\\beol=lf\\b/i', $line) === 1) {
+            $globalLf = true;
+        }
+        foreach ($extensions as $ext) {
+            if (stripos($line, '*.' . $ext) === false) {
+                continue;
+            }
+            if (stripos($line, 'eol=lf') !== false) {
+                $covered[$ext] = true;
+            }
+        }
+    }
+
+    if ($globalLf) {
+        return [];
+    }
+
+    $missing = [];
+    foreach ($covered as $ext => $ok) {
+        if (!$ok) {
+            $missing[] = '*.' . $ext;
+        }
+    }
+
+    return $missing;
+}
+
 function policy_git_autocrlf_value(string $root): ?string
 {
+    $override = $_ENV['POLICY_GIT_AUTOCRLF'] ?? null;
+    if (is_string($override) && trim($override) !== '') {
+        $value = trim($override);
+        return strtolower($value) === 'unset' ? null : $value;
+    }
     if (!function_exists('exec')) {
         return null;
     }
-    $cmd = 'git -C ' . escapeshellarg($root) . ' config --get core.autocrlf';
+    $cmd = 'git -C ' . escapeshellarg($root) . ' config --get core.autocrlf' . policy_git_silence_suffix();
     $output = [];
     $code = 0;
     @exec($cmd, $output, $code);
@@ -158,6 +258,117 @@ function policy_git_autocrlf_value(string $root): ?string
     }
     $value = trim(implode("\n", $output));
     return $value === '' ? null : $value;
+}
+
+/**
+ * @param array<int, string> $extensions
+ * @return array<int, string>
+ */
+function policy_git_crlf_files(string $root, array $extensions): array
+{
+    $files = policy_git_tracked_files($root);
+    $crlf = [];
+
+    foreach ($files as $file) {
+        if (!policy_git_has_extension($file, $extensions)) {
+            continue;
+        }
+        $path = $root . '/' . ltrim($file, '/');
+        if (!is_file($path)) {
+            continue;
+        }
+        $contents = @file_get_contents($path);
+        if ($contents === false) {
+            continue;
+        }
+        if (strpos($contents, "\r") !== false) {
+            $crlf[] = $path;
+        }
+    }
+
+    return $crlf;
+}
+
+function policy_git_has_extension(string $path, array $extensions): bool
+{
+    $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+    return $ext !== '' && in_array($ext, $extensions, true);
+}
+
+/**
+ * @return array<int, string>
+ */
+function policy_git_tracked_files(string $root): array
+{
+    $override = $_ENV['POLICY_GIT_TRACKED_FILES'] ?? null;
+    if (is_string($override) && trim($override) !== '') {
+        $raw = str_replace([';', "\r\n", "\r"], ["\n", "\n", "\n"], $override);
+        $parts = array_filter(array_map('trim', explode("\n", $raw)));
+        return array_values(array_unique($parts));
+    }
+
+    if (function_exists('exec')) {
+        $cmd = 'git -C ' . escapeshellarg($root) . ' ls-files' . policy_git_silence_suffix();
+        $output = [];
+        $code = 0;
+        @exec($cmd, $output, $code);
+        if ($code === 0) {
+            $files = array_values(array_filter(array_map('trim', $output), static fn(string $value): bool => $value !== ''));
+            if ($files !== []) {
+                return $files;
+            }
+        }
+    }
+
+    return policy_git_fallback_files($root);
+}
+
+function policy_git_silence_suffix(): string
+{
+    return stripos(PHP_OS_FAMILY, 'Windows') !== false ? ' 2>nul' : ' 2>/dev/null';
+}
+
+/**
+ * @return array<int, string>
+ */
+function policy_git_fallback_files(string $root): array
+{
+    $root = rtrim($root, '/\\');
+    $files = [];
+
+    if (!is_dir($root)) {
+        return $files;
+    }
+
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS)
+    );
+
+    foreach ($iterator as $file) {
+        if (!$file->isFile()) {
+            continue;
+        }
+        $path = policy_normalize_path($file->getPathname());
+        if (str_contains($path, '/.git/')
+            || str_contains($path, '/vendor/')
+            || str_contains($path, '/storage/')
+            || str_contains($path, '/public/assets/')) {
+            continue;
+        }
+        $files[] = policy_git_relative_path($root, $path);
+    }
+
+    return array_values(array_unique($files));
+}
+
+function policy_git_relative_path(string $root, string $path): string
+{
+    $root = rtrim(policy_normalize_path($root), '/');
+    $path = policy_normalize_path($path);
+    if (str_starts_with($path, $root . '/')) {
+        return substr($path, strlen($root) + 1);
+    }
+    return $path;
 }
 
 /**
@@ -630,7 +841,11 @@ function policy_make_finding(
 
 /**
  * @param array<int, string> $paths
- * @return array{errors: array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>, warnings: array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>}
+ * @return array{
+ *   errors: array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>,
+ *   warnings: array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>,
+ *   info: array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>
+ * }
  */
 function policy_analyze(array $paths): array
 {
@@ -641,8 +856,12 @@ function policy_analyze(array $paths): array
     $findings = array_merge($findings, policy_check_theme_manifests($paths));
     $errors = [];
     $warnings = [];
+    $info = [];
     foreach ($findings as $finding) {
-        if (($finding['level'] ?? '') === 'warning') {
+        $level = $finding['level'] ?? '';
+        if ($level === 'info') {
+            $info[] = $finding;
+        } elseif ($level === 'warning') {
             $warnings[] = $finding;
         } else {
             $errors[] = $finding;
@@ -666,11 +885,16 @@ function policy_analyze(array $paths): array
     return [
         'errors' => $errors,
         'warnings' => $warnings,
+        'info' => $info,
     ];
 }
 
 /**
- * @param array{errors: array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>, warnings: array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>} $analysis
+ * @param array{
+ *   errors: array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>,
+ *   warnings: array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>,
+ *   info: array<int, array{level: string, code: string, file: string, line: int, message: string, snippet: string}>
+ * } $analysis
  */
 function policy_exit_code(array $analysis): int
 {
@@ -700,6 +924,13 @@ function policy_run(array $paths): int
     foreach ($analysis['warnings'] as $warning) {
         $snippet = $warning['snippet'] !== '' ? (' | ' . $warning['snippet']) : '';
         echo '[' . $warning['code'] . '] ' . $warning['file'] . ':' . $warning['line'] . $snippet . "\n";
+    }
+    foreach ($analysis['info'] as $info) {
+        $message = (string) ($info['message'] ?? '');
+        if ($message === '') {
+            continue;
+        }
+        echo '[' . $info['code'] . '] ' . $message . "\n";
     }
 
     $errorsCount = count($analysis['errors']);
