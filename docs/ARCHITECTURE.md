@@ -322,7 +322,8 @@ laas/
 │   ├── Api/               # API utilities
 │   ├── Ai/                # AI proposal system
 │   ├── Support/           # URL validation, HTTP client
-│   └── Domain/            # Service layer (Pages, Media)
+│   ├── Domain/            # Service layer (Pages, Media)
+│   └── Content/           # Blocks system
 ├── modules/               # Feature modules
 │   ├── System/            # Core system module
 │   ├── Admin/             # Admin panel
