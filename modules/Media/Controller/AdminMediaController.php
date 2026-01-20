@@ -30,7 +30,9 @@ final class AdminMediaController
         private View $view,
         private ?MediaServiceInterface $mediaService = null,
         private ?Container $container = null,
-        private ?RbacServiceInterface $rbacService = null
+        private ?RbacServiceInterface $rbacService = null,
+        private ?MediaSignedUrlService $signedUrlService = null,
+        private ?StorageService $storageService = null
     ) {
     }
 
@@ -122,7 +124,11 @@ final class AdminMediaController
         ];
 
         if ($request->wantsJson()) {
-            $disk = $this->storage()->driverName();
+            $storage = $this->storage();
+            if ($storage === null) {
+                return ErrorResponse::respond($request, 'storage_error', [], 503, [], 'admin.media.index');
+            }
+            $disk = $storage->driverName();
             return ContractResponse::ok([
                 'items' => $this->mapContractItems($rows, $disk),
                 'counts' => [
@@ -278,10 +284,15 @@ final class AdminMediaController
             return $this->errorResponse($request, 'invalid_request', 400);
         }
 
+        $storage = $this->storage();
+        if ($storage === null) {
+            return $this->errorResponse($request, 'storage_error', 503);
+        }
+
         $row = $service->find($id);
         if ($row !== null) {
             try {
-                $this->storage()->delete((string) ($row['disk_path'] ?? ''));
+                $storage->delete((string) ($row['disk_path'] ?? ''));
             } catch (Throwable) {
                 $message = $this->view->translate('storage.s3.delete_failed');
                 if ($request->isHtmx()) {
@@ -433,7 +444,10 @@ final class AdminMediaController
             if ($mode !== 'signed' || empty($row['is_public'])) {
                 return $this->signedErrorResponse($request, 403);
             }
-            $signer = new MediaSignedUrlService($config);
+            $signer = $this->signedUrlService();
+            if ($signer === null) {
+                return $this->signedErrorResponse($request, 503);
+            }
             $path = $this->publicUrl($row, $purpose);
             if (!$signer->isEnabled() || $path === '') {
                 return $this->signedErrorResponse($request, 400);
@@ -679,9 +693,46 @@ final class AdminMediaController
         return null;
     }
 
-    private function storage(): StorageService
+    private function signedUrlService(): ?MediaSignedUrlService
     {
-        return new StorageService($this->rootPath());
+        if ($this->signedUrlService !== null) {
+            return $this->signedUrlService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(MediaSignedUrlService::class);
+                if ($service instanceof MediaSignedUrlService) {
+                    $this->signedUrlService = $service;
+                    return $this->signedUrlService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function storage(): ?StorageService
+    {
+        if ($this->storageService !== null) {
+            return $this->storageService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(StorageService::class);
+                if ($service instanceof StorageService) {
+                    $this->storageService = $service;
+                    return $this->storageService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
     }
 
     private function rootPath(): string

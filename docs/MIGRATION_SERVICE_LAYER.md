@@ -57,6 +57,11 @@ final class PagesController
    - service test for core behavior
    - controller test that asserts service usage
 
+## Enforced rules
+- Controllers must not touch repositories or DatabaseManager directly.
+- Controllers must not instantiate services via `new`.
+- GET-only controllers must not depend on `*WriteServiceInterface`.
+
 ## Before / After (short)
 
 Before (controller has logic):

@@ -24,7 +24,8 @@ final class AdminChangelogController
         private View $view,
         private ?SettingsServiceInterface $settingsService = null,
         private ?Container $container = null,
-        private ?RbacServiceInterface $rbacService = null
+        private ?RbacServiceInterface $rbacService = null,
+        private ?ChangelogService $changelogService = null
     ) {
     }
 
@@ -143,7 +144,10 @@ final class AdminChangelogController
             return $this->renderFormPartial($values, null, $errors, 422);
         }
 
-        $service = new ChangelogService($this->rootPath(), new ChangelogCache($this->rootPath()));
+        $service = $this->changelogService();
+        if ($service === null) {
+            return $this->renderFormPartial($values, null, ['changelog.admin.test_fail'], 503);
+        }
         $provider = $service->buildProvider($values);
         $testResult = $provider->testConnection();
 
@@ -169,7 +173,20 @@ final class AdminChangelogController
 
         $settings = $this->loadSettings();
         $includeMerges = (bool) ($settings['show_merges'] ?? false);
-        $service = new ChangelogService($this->rootPath(), new ChangelogCache($this->rootPath()));
+        $service = $this->changelogService();
+        if ($service === null) {
+            return $this->view->render('changelog/preview_list.html', [
+                'commits' => [],
+                'groups' => [],
+                'error' => $this->view->translate('changelog.admin.test_fail'),
+                'source_type' => (string) ($settings['source_type'] ?? 'github'),
+                'source_is_github' => (string) ($settings['source_type'] ?? 'github') === 'github',
+                'source_is_git' => (string) ($settings['source_type'] ?? 'github') === 'git',
+            ], 503, [], [
+                'theme' => 'admin',
+                'render_partial' => true,
+            ]);
+        }
 
         $commits = [];
         $error = null;
@@ -299,6 +316,27 @@ final class AdminChangelogController
                 if ($service instanceof SettingsServiceInterface) {
                     $this->settingsService = $service;
                     return $this->settingsService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function changelogService(): ?ChangelogService
+    {
+        if ($this->changelogService !== null) {
+            return $this->changelogService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(ChangelogService::class);
+                if ($service instanceof ChangelogService) {
+                    $this->changelogService = $service;
+                    return $this->changelogService;
                 }
             } catch (Throwable) {
                 return null;

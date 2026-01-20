@@ -19,7 +19,8 @@ final class RbacDiagnosticsController
         private View $view,
         private ?UsersServiceInterface $usersService = null,
         private ?Container $container = null,
-        private ?RbacServiceInterface $rbacService = null
+        private ?RbacServiceInterface $rbacService = null,
+        private ?RbacDiagnosticsService $diagnosticsService = null
     ) {
     }
 
@@ -163,13 +164,23 @@ final class RbacDiagnosticsController
 
     private function service(): ?RbacDiagnosticsService
     {
-        $rbac = $this->rbacService();
-        $users = $this->usersService();
-        if ($rbac === null || $users === null) {
-            return null;
+        if ($this->diagnosticsService !== null) {
+            return $this->diagnosticsService;
         }
 
-        return new RbacDiagnosticsService($rbac, $users);
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(RbacDiagnosticsService::class);
+                if ($service instanceof RbacDiagnosticsService) {
+                    $this->diagnosticsService = $service;
+                    return $this->diagnosticsService;
+                }
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+
+        return null;
     }
 
     private function usersService(): ?UsersServiceInterface

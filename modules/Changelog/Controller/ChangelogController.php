@@ -8,7 +8,6 @@ use Laas\Domain\Settings\SettingsReadServiceInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Changelog\Service\ChangelogService;
-use Laas\Modules\Changelog\Support\ChangelogCache;
 use Laas\Modules\Changelog\Support\ChangelogSettings;
 use Laas\View\View;
 use RuntimeException;
@@ -19,7 +18,8 @@ final class ChangelogController
     public function __construct(
         private View $view,
         private ?SettingsReadServiceInterface $settingsService = null,
-        private ?Container $container = null
+        private ?Container $container = null,
+        private ?ChangelogService $changelogService = null
     ) {
     }
 
@@ -38,7 +38,10 @@ final class ChangelogController
             : (bool) ($settings['show_merges'] ?? false);
         $filters = $this->filtersFromRequest($request);
 
-        $service = new ChangelogService($this->rootPath(), new ChangelogCache($this->rootPath()));
+        $service = $this->changelogService();
+        if ($service === null) {
+            return $this->renderList($request, [], $page, (int) ($settings['per_page'] ?? 20), false, $includeMerges, $filters);
+        }
 
         try {
             $pageData = $service->fetchPage($settings, $page, $includeMerges, $filters);
@@ -109,6 +112,27 @@ final class ChangelogController
                 if ($service instanceof SettingsReadServiceInterface) {
                     $this->settingsService = $service;
                     return $this->settingsService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function changelogService(): ?ChangelogService
+    {
+        if ($this->changelogService !== null) {
+            return $this->changelogService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(ChangelogService::class);
+                if ($service instanceof ChangelogService) {
+                    $this->changelogService = $service;
+                    return $this->changelogService;
                 }
             } catch (Throwable) {
                 return null;

@@ -15,7 +15,6 @@ use Laas\DevTools\DevToolsContext;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Changelog\Service\ChangelogService;
-use Laas\Modules\Changelog\Support\ChangelogCache;
 use Laas\Modules\Changelog\Support\ChangelogSettings;
 use Laas\Modules\Media\Service\StorageService;
 use Laas\Support\Search\Highlighter;
@@ -34,6 +33,8 @@ final class HomeController
     private ?UsersReadServiceInterface $usersService = null;
     private ?RbacServiceInterface $rbacService = null;
     private ?AuditLogServiceInterface $auditService = null;
+    private ?StorageService $storageService = null;
+    private ?ChangelogService $changelogService = null;
 
     public function __construct(
         private View $view,
@@ -481,14 +482,15 @@ final class HomeController
 
     private function featuresData(): array
     {
-        $storage = new StorageService($this->rootPath());
+        $storage = $this->storageService();
         $cache = $this->cacheConfig();
         $cacheEnabled = (bool) ($cache['enabled'] ?? true);
         $backupReady = is_dir($this->rootPath() . '/storage/backups');
+        $storageMisconfigured = $storage === null || $storage->isMisconfigured();
 
         $features = [
             ['name' => 'Pages', 'status' => 'production-ready', 'variant' => 'success', 'hint' => 'Pages + search + slugs'],
-            ['name' => 'Media', 'status' => $storage->isMisconfigured() ? 'enabled' : 'production-ready', 'variant' => $storage->isMisconfigured() ? 'secondary' : 'success', 'hint' => 'Uploads + thumbs + signed URLs'],
+            ['name' => 'Media', 'status' => $storageMisconfigured ? 'enabled' : 'production-ready', 'variant' => $storageMisconfigured ? 'secondary' : 'success', 'hint' => 'Uploads + thumbs + signed URLs'],
             ['name' => 'Search', 'status' => 'enabled', 'variant' => 'primary', 'hint' => 'Pages + media search'],
             ['name' => 'Changelog', 'status' => 'enabled', 'variant' => 'primary', 'hint' => 'GitHub/local git feed'],
             ['name' => 'RBAC', 'status' => 'production-ready', 'variant' => 'success', 'hint' => 'Roles + permissions'],
@@ -526,7 +528,17 @@ final class HomeController
         $perPage = (int) ($settings['per_page'] ?? 5);
         $settings['per_page'] = min(5, max(1, $perPage));
 
-        $service = new ChangelogService($this->rootPath(), new ChangelogCache($this->rootPath()));
+        $service = $this->changelogService();
+        if ($service === null) {
+            return [
+                'enabled' => true,
+                'commits' => [],
+                'groups' => [],
+                'source_is_git' => (string) ($settings['source_type'] ?? 'github') === 'git',
+                'source_is_github' => (string) ($settings['source_type'] ?? 'github') === 'github',
+                'error' => $this->view->translate('changelog.admin.test_fail'),
+            ];
+        }
         try {
             $page = $service->fetchPage($settings, 1, $includeMerges, []);
             $data = $page->toArray();
@@ -704,6 +716,48 @@ final class HomeController
         return null;
     }
 
+    private function storageService(): ?StorageService
+    {
+        if ($this->storageService !== null) {
+            return $this->storageService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(StorageService::class);
+                if ($service instanceof StorageService) {
+                    $this->storageService = $service;
+                    return $this->storageService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function changelogService(): ?ChangelogService
+    {
+        if ($this->changelogService !== null) {
+            return $this->changelogService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(ChangelogService::class);
+                if ($service instanceof ChangelogService) {
+                    $this->changelogService = $service;
+                    return $this->changelogService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
     private function currentUser(Request $request): ?array
     {
         $session = $request->session();
@@ -832,8 +886,8 @@ final class HomeController
             $ok = false;
         }
 
-        $storage = new StorageService($this->rootPath());
-        if ($storage->isMisconfigured()) {
+        $storage = $this->storageService();
+        if ($storage === null || $storage->isMisconfigured()) {
             $ok = false;
         }
 

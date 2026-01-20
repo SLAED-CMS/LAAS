@@ -21,7 +21,9 @@ final class AdminMediaPickerController
         private View $view,
         private ?MediaReadServiceInterface $mediaService = null,
         private ?Container $container = null,
-        private ?RbacServiceInterface $rbacService = null
+        private ?RbacServiceInterface $rbacService = null,
+        private ?StorageService $storageService = null,
+        private ?MediaThumbnailService $thumbsService = null
     ) {
     }
 
@@ -106,8 +108,11 @@ final class AdminMediaPickerController
 
     private function mapRows(array $rows): array
     {
-        $storage = new StorageService($this->rootPath());
-        $thumbs = new MediaThumbnailService($storage);
+        $storage = $this->storageService();
+        $thumbs = $this->thumbsService();
+        if ($storage === null || $thumbs === null) {
+            return [];
+        }
         $config = $this->mediaConfig();
 
         return array_map(function (array $row) use ($storage, $thumbs, $config): array {
@@ -171,6 +176,48 @@ final class AdminMediaPickerController
                 if ($service instanceof RbacServiceInterface) {
                     $this->rbacService = $service;
                     return $this->rbacService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function storageService(): ?StorageService
+    {
+        if ($this->storageService !== null) {
+            return $this->storageService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(StorageService::class);
+                if ($service instanceof StorageService) {
+                    $this->storageService = $service;
+                    return $this->storageService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function thumbsService(): ?MediaThumbnailService
+    {
+        if ($this->thumbsService !== null) {
+            return $this->thumbsService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(MediaThumbnailService::class);
+                if ($service instanceof MediaThumbnailService) {
+                    $this->thumbsService = $service;
+                    return $this->thumbsService;
                 }
             } catch (Throwable) {
                 return null;

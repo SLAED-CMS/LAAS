@@ -7,13 +7,10 @@ use Laas\Core\Container\Container;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\I18n\Translator;
-use Laas\Modules\Media\Service\StorageService;
 use Laas\Ops\Checks\SecurityHeadersCheck;
-use Laas\Support\ConfigSanityChecker;
 use Laas\Support\HealthService;
 use Laas\Support\HealthStatusTracker;
 use Laas\Support\LoggerFactory;
-use Laas\Support\SessionConfigValidator;
 use Laas\View\View;
 
 final class HealthController
@@ -115,36 +112,11 @@ final class HealthController
                     return $service;
                 }
             } catch (\Throwable) {
-                // fall through to local construction
+                // fall through to error
             }
         }
 
-        $storage = new StorageService($rootPath);
-        $checker = new ConfigSanityChecker();
-        $config = [
-            'media' => $mediaConfig,
-            'storage' => $storageConfig,
-            'session' => is_array($securityConfig['session'] ?? null) ? $securityConfig['session'] : [],
-        ];
-        $writeCheck = (bool) ($appConfig['health_write_check'] ?? false);
-
-        $dbCheck = function (): bool {
-            $db = $this->container?->get('db');
-            if (is_object($db) && method_exists($db, 'healthCheck')) {
-                return (bool) $db->healthCheck();
-            }
-            return false;
-        };
-
-        return new HealthService(
-            $rootPath,
-            $dbCheck,
-            $storage,
-            $checker,
-            $config,
-            $writeCheck,
-            new SessionConfigValidator()
-        );
+        throw new RuntimeException('HealthService unavailable.');
     }
 
     /** @param array<string, bool> $checks */

@@ -20,7 +20,10 @@ final class MediaThumbController
         private ?View $view = null,
         private ?MediaReadServiceInterface $mediaService = null,
         private ?Container $container = null,
-        private ?RbacServiceInterface $rbacService = null
+        private ?RbacServiceInterface $rbacService = null,
+        private ?MediaSignedUrlService $signedUrlService = null,
+        private ?StorageService $storageService = null,
+        private ?MediaThumbnailService $thumbsService = null
     ) {
     }
 
@@ -59,12 +62,14 @@ final class MediaThumbController
         } elseif ($mode === 'signed' && $isPublic) {
             $expected = 'thumb:' . $variant;
             if ($purpose === $expected) {
-                $signer = new MediaSignedUrlService($config);
-                $validation = $signer->validate($row, $purpose, $request->query('exp'), $request->query('sig'));
-                $signatureValid = (bool) ($validation['valid'] ?? false);
-                $signatureExp = $validation['exp'] ?? null;
-                if ($signatureValid) {
-                    $accessMode = 'signed';
+                $signer = $this->signedUrlService();
+                if ($signer !== null) {
+                    $validation = $signer->validate($row, $purpose, $request->query('exp'), $request->query('sig'));
+                    $signatureValid = (bool) ($validation['valid'] ?? false);
+                    $signatureExp = $validation['exp'] ?? null;
+                    if ($signatureValid) {
+                        $accessMode = 'signed';
+                    }
                 }
             }
         }
@@ -75,11 +80,14 @@ final class MediaThumbController
             ]);
         }
 
-        $storage = new StorageService($this->rootPath());
-        if ($storage->isMisconfigured()) {
+        $storage = $this->storageService();
+        if ($storage === null || $storage->isMisconfigured()) {
             return $this->storageError();
         }
-        $service = new MediaThumbnailService($storage);
+        $service = $this->thumbsService();
+        if ($service === null) {
+            return $this->storageError();
+        }
         $resolved = $service->resolveThumbPath($row, $variant, $config);
         if ($resolved === null) {
             return $this->notFound();
@@ -209,6 +217,69 @@ final class MediaThumbController
                 if ($service instanceof RbacServiceInterface) {
                     $this->rbacService = $service;
                     return $this->rbacService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function signedUrlService(): ?MediaSignedUrlService
+    {
+        if ($this->signedUrlService !== null) {
+            return $this->signedUrlService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(MediaSignedUrlService::class);
+                if ($service instanceof MediaSignedUrlService) {
+                    $this->signedUrlService = $service;
+                    return $this->signedUrlService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function storageService(): ?StorageService
+    {
+        if ($this->storageService !== null) {
+            return $this->storageService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(StorageService::class);
+                if ($service instanceof StorageService) {
+                    $this->storageService = $service;
+                    return $this->storageService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function thumbsService(): ?MediaThumbnailService
+    {
+        if ($this->thumbsService !== null) {
+            return $this->thumbsService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(MediaThumbnailService::class);
+                if ($service instanceof MediaThumbnailService) {
+                    $this->thumbsService = $service;
+                    return $this->thumbsService;
                 }
             } catch (Throwable) {
                 return null;

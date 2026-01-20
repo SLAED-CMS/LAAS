@@ -30,6 +30,11 @@ use Laas\I18n\LocaleResolver;
 use Laas\I18n\Translator;
 use Laas\Modules\ModuleManager;
 use Laas\Modules\ModuleCatalog;
+use Laas\Modules\Media\Service\MediaSignedUrlService;
+use Laas\Modules\Media\Service\MediaThumbnailService;
+use Laas\Modules\Media\Service\StorageService;
+use Laas\Modules\Changelog\Service\ChangelogService;
+use Laas\Modules\Changelog\Support\ChangelogCache;
 use Laas\Routing\Router;
 use Laas\Security\RateLimiter;
 use Laas\Security\SecurityHeaders;
@@ -40,10 +45,13 @@ use Laas\Support\LoggerFactory;
 use Laas\Support\ConfigSanityChecker;
 use Laas\Support\LogSpamGuard;
 use Laas\Support\RequestScope;
+use Laas\Support\HealthService;
+use Laas\Support\SessionConfigValidator;
 use Laas\DevTools\DevToolsContext;
 use Laas\DevTools\RequestCollector;
 use Laas\DevTools\PerformanceCollector;
 use Laas\DevTools\DbCollector;
+use Laas\Support\Rbac\RbacDiagnosticsService;
 use Laas\Theme\ThemeValidator;
 use Laas\Perf\PerfBudgetEnforcer;
 use Laas\Assets\AssetsManager;
@@ -441,6 +449,28 @@ final class Kernel
             );
         });
 
+        $this->container->singleton(StorageService::class, function () use ($rootPath): StorageService {
+            return new StorageService($rootPath);
+        });
+
+        $this->container->singleton(MediaSignedUrlService::class, function () use ($config): MediaSignedUrlService {
+            return new MediaSignedUrlService($config['media'] ?? []);
+        });
+
+        $this->container->singleton(MediaThumbnailService::class, function (): MediaThumbnailService {
+            $storage = $this->container->get(StorageService::class);
+            return new MediaThumbnailService($storage);
+        });
+
+        $this->container->singleton(ChangelogCache::class, function () use ($rootPath): ChangelogCache {
+            return new ChangelogCache($rootPath);
+        });
+
+        $this->container->singleton(ChangelogService::class, function () use ($rootPath): ChangelogService {
+            $cache = $this->container->get(ChangelogCache::class);
+            return new ChangelogService($rootPath, $cache);
+        });
+
         $this->container->singleton(MediaReadServiceInterface::class, function (): MediaReadServiceInterface {
             $service = $this->container->get(MediaServiceInterface::class);
             return ReadOnlyProxy::wrap($service, MediaReadServiceInterface::class);
@@ -559,6 +589,46 @@ final class Kernel
 
         $this->container->singleton(SettingsServiceInterface::class, function (): SettingsServiceInterface {
             return new SettingsService($this->database());
+        });
+
+        $this->container->singleton(RbacDiagnosticsService::class, function (): RbacDiagnosticsService {
+            $rbac = $this->container->get(RbacServiceInterface::class);
+            $users = $this->container->get(UsersServiceInterface::class);
+
+            return new RbacDiagnosticsService($rbac, $users);
+        });
+
+        $this->container->singleton(HealthService::class, function () use ($config, $rootPath): HealthService {
+            $storage = $this->container->get(StorageService::class);
+            $checker = new ConfigSanityChecker();
+            $securityConfig = $config['security'] ?? [];
+            $storageConfig = $config['storage'] ?? [];
+            $mediaConfig = $config['media'] ?? [];
+            $appConfig = $config['app'] ?? [];
+            $configData = [
+                'media' => $mediaConfig,
+                'storage' => $storageConfig,
+                'session' => is_array($securityConfig['session'] ?? null) ? $securityConfig['session'] : [],
+            ];
+            $writeCheck = (bool) ($appConfig['health_write_check'] ?? false);
+
+            $dbCheck = function (): bool {
+                $db = $this->container->get('db');
+                if (is_object($db) && method_exists($db, 'healthCheck')) {
+                    return (bool) $db->healthCheck();
+                }
+                return false;
+            };
+
+            return new HealthService(
+                $rootPath,
+                $dbCheck,
+                $storage,
+                $checker,
+                $configData,
+                $writeCheck,
+                new SessionConfigValidator()
+            );
         });
 
         $this->container->singleton(SettingsReadServiceInterface::class, function (): SettingsReadServiceInterface {
