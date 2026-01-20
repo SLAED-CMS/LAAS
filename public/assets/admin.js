@@ -504,6 +504,52 @@
   window.laasSlugify = laasSlugify;
   window.laasInitSlugForm = laasInitSlugForm;
 
+  function laasInitBlocksPreview(root) {
+    var scope = root || document;
+    var button = scope.querySelector('[data-preview-blocks="1"]');
+    if (!button || button.dataset.previewReady === '1') {
+      return;
+    }
+    var form = button.closest('form');
+    if (!form) {
+      return;
+    }
+    button.dataset.previewReady = '1';
+
+    button.addEventListener('click', function () {
+      var action = button.getAttribute('data-preview-action') || '/admin/pages/preview-blocks';
+      var target = button.getAttribute('data-preview-target') || '_blank';
+      var previewForm = document.createElement('form');
+      previewForm.method = 'post';
+      previewForm.action = action;
+      previewForm.target = target;
+      var data = new FormData(form);
+      data.forEach(function (value, key) {
+        if (value instanceof File) {
+          return;
+        }
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = String(value);
+        previewForm.appendChild(input);
+      });
+      document.body.appendChild(previewForm);
+      previewForm.submit();
+      document.body.removeChild(previewForm);
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    laasInitBlocksPreview(document);
+  });
+
+  document.body.addEventListener('htmx:afterSwap', function (e) {
+    laasInitBlocksPreview(e.target);
+  });
+
+  window.laasInitBlocksPreview = laasInitBlocksPreview;
+
   function laasInitAiAssist(root) {
     var scope = root || document;
     var form = scope.querySelector('[data-page-form="1"]');

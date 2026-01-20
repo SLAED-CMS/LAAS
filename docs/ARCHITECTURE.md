@@ -1085,6 +1085,8 @@ public function render(string $template, array $data): string
 - Pages can store revisions in `pages_revisions.blocks_json` (canonical format).
 - Latest revision is used for rendering; legacy `pages.content` remains fallback.
 - Block rendering is allowlisted via `BlockRegistry` with strict validation.
+- Admin Pages exposes a dev-only Blocks JSON editor (APP_DEBUG or admin) that validates before saving.
+- Blocks preview renders with the current theme without persisting.
 - HTML rendering is done in the theme using rendered block fragments.
 - JSON output returns structured blocks for headless usage.
 

@@ -1,10 +1,10 @@
-# Release Checklist (v4.0.0)
+# Release Checklist (v4.0.20)
 
 ## Highlights
-- Safe AI runtime with Proposal → Plan → Diff → explicit CLI apply (`--yes`)
-- Admin AI Assistant UI with HTMX, Diff Viewer, and Dev Autopilot Preview
-- Cursor-aware AI panel in page editor
-- Tools API (read-only) and Remote AI provider (disabled by default)
+- DI-backed service layer (Pages/Media/Menus/Users/Ops)
+- Theme API v2 with capability gating and compat toggle
+- Dev-only Blocks JSON editor + preview
+- Headless v2 (field selection + ETag/304)
 
 ## Safety model
 - No apply over HTTP
@@ -23,13 +23,16 @@
 - Optional strict raw mode for dev: `config/security.local.php` with `template_raw_mode=strict`
 
 ## Upgrade notes
+- Compat mode defaults on (`config/compat.php`), blocks remain optional until strict mode
+- Headless v2 is opt-in (`APP_HEADLESS=true`), JSON contracts support field selection + ETag/304
 - Legacy content sanitize:
   - `php tools/cli.php content:sanitize-pages --dry-run --limit=100 --offset=0`
   - `php tools/cli.php content:sanitize-pages --yes --limit=100 --offset=0`
-- Raw allowlist now lives in `config/template_raw_allowlist.php`
+- Raw allowlist lives in `config/template_raw_allowlist.php`
 
 ## Stability checklist (v4.0.20)
 - Compat toggles verified (`config/compat.php`) and strict mode smoke-tested
+- Blocks JSON editor is gated (APP_DEBUG or admin) and preview is no-store
 - Admin modules page: no duplicate queries (list + navbar) in a single request
 - Admin modules details: rate-limited + no-store + content-type header
 - Headless v2: ETag/304 has cache headers and empty body
@@ -39,6 +42,8 @@
 ```bash
 php tools/cli.php policy:check
 php tools/cli.php templates:raw:check --path=themes
+php tools/cli.php contracts:fixtures:check
+php tools/cli.php contracts:check
 php tools/cli.php ai:doctor
 php tools/cli.php ai:plan:demo
 vendor/bin/phpunit
@@ -47,3 +52,4 @@ vendor/bin/phpunit
 ## Apply safety
 - UI is preview-only; no apply over HTTP
 - CLI apply requires explicit `--yes`
+

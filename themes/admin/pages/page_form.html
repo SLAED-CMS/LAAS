@@ -58,9 +58,34 @@
             <div class="form-text text-warning">{% t 'admin.pages.legacy_content_hint' %}</div>
             {% endif %}
           </div>
-          <textarea name="blocks_json" class="d-none">{% page.blocks_json %}</textarea>
+          {% if blocks_json_allowed %}
+          <div class="card mb-3">
+            <div class="card-header">
+              <button class="btn btn-link p-0 text-decoration-none" type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#page-blocks-json"
+                      aria-expanded="false"
+                      aria-controls="page-blocks-json">
+                Blocks (JSON)
+              </button>
+            </div>
+            <div class="collapse" id="page-blocks-json">
+              <div class="card-body">
+                <textarea class="form-control font-monospace" name="blocks_json" rows="10" spellcheck="false">{% page.blocks_json %}</textarea>
+              </div>
+            </div>
+          </div>
+          {% endif %}
           <div class="d-flex gap-2 flex-wrap">
             <button class="btn btn-primary" type="submit">{% t 'admin.pages.form.save' %}</button>
+            {% if blocks_json_allowed %}
+            <button class="btn btn-outline-secondary" type="button"
+                    data-preview-blocks="1"
+                    data-preview-action="/admin/pages/preview-blocks"
+                    data-preview-target="_blank">
+              Preview blocks
+            </button>
+            {% endif %}
             <a class="btn btn-outline-secondary disabled" id="page-preview" href="#" target="_blank" rel="noopener" aria-disabled="true" tabindex="-1">{% t 'admin.pages.form.preview' %}</a>
           </div>
         </form>

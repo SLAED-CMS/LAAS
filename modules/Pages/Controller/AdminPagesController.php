@@ -25,6 +25,8 @@ use Laas\View\SanitizedHtml;
 use Laas\View\View;
 use Laas\Content\Blocks\BlockRegistry;
 use Laas\Content\Blocks\BlockValidationException;
+use Laas\Content\Blocks\ThemeContext;
+use Laas\Modules\Pages\ViewModel\PagePublicViewModel;
 use Throwable;
 
 final class AdminPagesController
@@ -136,6 +138,7 @@ final class AdminPagesController
             'status_selected_draft' => $this->selectedAttr(true),
             'status_selected_published' => $this->selectedAttr(false),
             'legacy_content' => false,
+            'blocks_json_allowed' => $this->blocksJsonAllowed($request),
         ], 200, [], [
             'theme' => 'admin',
         ]);
@@ -162,8 +165,11 @@ final class AdminPagesController
             return $this->notFound();
         }
 
-        $page['blocks_json'] = $this->loadBlocksJson($id);
-        $legacyDetected = $this->isLegacyContent($page);
+        $blocksJsonAllowed = $this->blocksJsonAllowed($request);
+        $blocksJson = $this->loadBlocksJson($id);
+        $blocks = $this->decodeBlocksJson($blocksJson);
+        $page['blocks_json'] = $blocksJsonAllowed ? $blocksJson : '';
+        $legacyDetected = $this->isLegacyContent($page, $blocks);
         $legacyAllowed = $legacyDetected && $this->compatBlocksLegacyContent();
         $status = (string) ($page['status'] ?? 'draft');
         return $this->view->render('pages/page_form.html', [
@@ -173,6 +179,7 @@ final class AdminPagesController
             'status_selected_draft' => $this->selectedAttr($status === 'draft'),
             'status_selected_published' => $this->selectedAttr($status === 'published'),
             'legacy_content' => $legacyAllowed,
+            'blocks_json_allowed' => $blocksJsonAllowed,
         ], 200, [], [
             'theme' => 'admin',
         ]);
@@ -194,39 +201,36 @@ final class AdminPagesController
         $slug = trim((string) ($request->post('slug') ?? ''));
         $content = (string) ($request->post('content') ?? '');
         $status = (string) ($request->post('status') ?? 'draft');
-        $blocksRaw = trim((string) ($request->post('blocks_json') ?? ''));
+        $blocksRaw = '';
         $blocksData = null;
-
-        if ($blocksRaw !== '') {
+        if ($this->blocksJsonAllowed($request)) {
+            $blocksRaw = trim((string) ($request->post('blocks_json') ?? ''));
+            if ($blocksRaw === '') {
+                $blocksRaw = '[]';
+            }
             $decoded = json_decode($blocksRaw, true);
             if (!is_array($decoded)) {
-                return $this->formErrorResponse($request, [[
-                    'field' => 'blocks_json',
-                    'key' => 'validation.blocks_json_invalid',
-                ]], [
+                return $this->blocksJsonErrorResponse($request, [
                     'id' => $id ?? 0,
                     'title' => $title,
                     'slug' => $slug,
                     'content' => $content,
                     'status' => $status,
                     'blocks_json' => $blocksRaw,
-                ]);
+                ], $this->blocksJsonDecodeDetail());
             }
 
             try {
                 $blocksData = $this->blocksRegistry()->normalizeBlocks($decoded);
-            } catch (BlockValidationException) {
-                return $this->formErrorResponse($request, [[
-                    'field' => 'blocks_json',
-                    'key' => 'validation.blocks_json_invalid',
-                ]], [
+            } catch (BlockValidationException $error) {
+                return $this->blocksJsonErrorResponse($request, [
                     'id' => $id ?? 0,
                     'title' => $title,
                     'slug' => $slug,
                     'content' => $content,
                     'status' => $status,
                     'blocks_json' => $blocksRaw,
-                ]);
+                ], $this->blocksJsonValidationDetail($error));
             }
         }
 
@@ -331,6 +335,72 @@ final class AdminPagesController
         return new Response('', 303, [
             'Location' => '/admin/pages',
         ]);
+    }
+
+    public function previewBlocks(Request $request): Response
+    {
+        if (!$this->canEdit($request)) {
+            return $this->forbidden($request);
+        }
+
+        if (!$this->blocksJsonAllowed($request)) {
+            return $this->forbidden($request);
+        }
+
+        $title = trim((string) ($request->post('title') ?? ''));
+        $slug = trim((string) ($request->post('slug') ?? ''));
+        $content = (string) ($request->post('content') ?? '');
+        $blocksRaw = trim((string) ($request->post('blocks_json') ?? ''));
+        if ($blocksRaw === '') {
+            $blocksRaw = '[]';
+        }
+
+        $decoded = json_decode($blocksRaw, true);
+        if (!is_array($decoded)) {
+            return $this->blocksJsonErrorResponse($request, [
+                'id' => 0,
+                'title' => $title,
+                'slug' => $slug,
+                'content' => $content,
+                'status' => (string) ($request->post('status') ?? 'draft'),
+                'blocks_json' => $blocksRaw,
+            ], $this->blocksJsonDecodeDetail());
+        }
+
+        try {
+            $blocksData = $this->blocksRegistry()->normalizeBlocks($decoded);
+        } catch (BlockValidationException $error) {
+            return $this->blocksJsonErrorResponse($request, [
+                'id' => 0,
+                'title' => $title,
+                'slug' => $slug,
+                'content' => $content,
+                'status' => (string) ($request->post('status') ?? 'draft'),
+                'blocks_json' => $blocksRaw,
+            ], $this->blocksJsonValidationDetail($error));
+        }
+
+        $sanitizedContent = (new HtmlSanitizer())->sanitize($content);
+        $page = [
+            'slug' => $slug,
+            'title' => $title,
+            'content' => $sanitizedContent,
+        ];
+        $vm = PagePublicViewModel::fromArray($page);
+        $blocksHtml = $this->blocksRegistry()->renderHtmlBlocks($blocksData, new ThemeContext(
+            $this->view->getThemeName(),
+            $this->view->getLocale()
+        ));
+        $blocksJson = $this->blocksRegistry()->renderJsonBlocks($blocksData);
+        $legacyDetected = $this->isLegacyContent($page, $blocksData);
+        $legacyAllowed = $legacyDetected && $this->compatBlocksLegacyContent();
+        $viewData = $vm->toArray();
+        $viewData['blocks_html'] = $blocksHtml;
+        $viewData['blocks_json'] = $blocksJson;
+        $viewData['legacy_content_allowed'] = $legacyAllowed;
+        $viewData['legacy_content_detected'] = $legacyDetected;
+
+        return $this->view->render('pages/page.html', $viewData, 200, $this->previewHeaders());
     }
 
     public function delete(Request $request): Response
@@ -443,21 +513,17 @@ final class AdminPagesController
 
     private function canEdit(Request $request): bool
     {
-        if ($this->db === null || !$this->db->healthCheck()) {
-            return false;
-        }
-
         $userId = $this->currentUserId($request);
         if ($userId === null) {
             return false;
         }
 
-        try {
-            $rbac = new RbacRepository($this->db->pdo());
-            return $rbac->userHasPermission($userId, 'pages.edit');
-        } catch (Throwable) {
+        $rbac = $this->rbacRepository();
+        if ($rbac === null) {
             return false;
         }
+
+        return $rbac->userHasPermission($userId, 'pages.edit');
     }
 
     private function currentUserId(Request $request): ?int
@@ -485,7 +551,7 @@ final class AdminPagesController
             'slug' => '',
             'content' => '',
             'status' => 'draft',
-            'blocks_json' => '',
+            'blocks_json' => '[]',
         ];
     }
 
@@ -493,13 +559,13 @@ final class AdminPagesController
     {
         $repo = $this->revisionsRepository();
         if ($repo === null) {
-            return '';
+            return '[]';
         }
         $row = $repo->findLatestByPageId($pageId);
         if ($row === null) {
-            return '';
+            return '[]';
         }
-        return (string) ($row['blocks_json'] ?? '');
+        return $this->formatBlocksJson((string) ($row['blocks_json'] ?? ''));
     }
 
     private function revisionsRepository(): ?PagesRevisionsRepository
@@ -526,10 +592,12 @@ final class AdminPagesController
     /**
      * @param array<string, mixed> $page
      */
-    private function isLegacyContent(array $page): bool
+    private function isLegacyContent(array $page, ?array $blocks = null): bool
     {
-        $blocksRaw = (string) ($page['blocks_json'] ?? '');
-        if (trim($blocksRaw) !== '') {
+        if ($blocks === null) {
+            $blocks = $this->decodeBlocksJson((string) ($page['blocks_json'] ?? ''));
+        }
+        if ($blocks !== []) {
             return false;
         }
         $content = (string) ($page['content'] ?? '');
@@ -544,13 +612,101 @@ final class AdminPagesController
 
     private function compatConfig(): array
     {
-        $root = dirname(__DIR__, 3);
-        $path = $root . '/config/compat.php';
+        $path = $this->rootPath() . '/config/compat.php';
         if (!is_file($path)) {
             return [];
         }
         $data = require $path;
         return is_array($data) ? $data : [];
+    }
+
+    private function rootPath(): string
+    {
+        return dirname(__DIR__, 3);
+    }
+
+    private function blocksJsonAllowed(Request $request): bool
+    {
+        if ($this->isAppDebug()) {
+            return true;
+        }
+
+        $userId = $this->currentUserId($request);
+        if ($userId === null) {
+            return false;
+        }
+
+        $rbac = $this->rbacRepository();
+        if ($rbac === null) {
+            return false;
+        }
+
+        return $rbac->userHasRole($userId, 'admin');
+    }
+
+    private function rbacRepository(): ?RbacRepository
+    {
+        if ($this->db === null || !$this->db->healthCheck()) {
+            return null;
+        }
+
+        try {
+            return new RbacRepository($this->db->pdo());
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    private function isAppDebug(): bool
+    {
+        $config = $this->appConfig();
+        return (bool) ($config['debug'] ?? false);
+    }
+
+    private function appConfig(): array
+    {
+        $path = $this->rootPath() . '/config/app.php';
+        if (!is_file($path)) {
+            return [];
+        }
+        $config = require $path;
+        return is_array($config) ? $config : [];
+    }
+
+    /**
+     * @return array<int, array{type: string, data: array<string, mixed>}>
+     */
+    private function decodeBlocksJson(string $raw): array
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            return [];
+        }
+        $decoded = json_decode($raw, true);
+        if (!is_array($decoded)) {
+            return [];
+        }
+        return $decoded;
+    }
+
+    private function formatBlocksJson(string $raw): string
+    {
+        $decoded = $this->decodeBlocksJson($raw);
+        $pretty = json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        if (!is_string($pretty)) {
+            return '[]';
+        }
+        return $pretty;
+    }
+
+    /** @return array<string, string> */
+    private function previewHeaders(): array
+    {
+        return [
+            'Cache-Control' => 'no-store, no-cache, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+        ];
     }
 
     private function readId(Request $request): ?int
@@ -610,9 +766,22 @@ final class AdminPagesController
             'status_selected_published' => $this->selectedAttr($status === 'published'),
             'errors' => $messages,
             'legacy_content' => $legacyAllowed,
+            'blocks_json_allowed' => $this->blocksJsonAllowed($request),
         ], 422, [], [
             'theme' => 'admin',
         ]);
+    }
+
+    private function blocksJsonErrorResponse(Request $request, array $page, string $detail): Response
+    {
+        $detail = $detail !== '' ? '. ' . $detail : '';
+        return $this->formErrorResponse($request, [[
+            'field' => 'blocks_json',
+            'key' => 'validation.blocks_json_invalid',
+            'params' => [
+                'detail' => $detail,
+            ],
+        ]], $page);
     }
 
     private function forbidden(Request $request): Response
@@ -650,6 +819,44 @@ final class AdminPagesController
         }
 
         return $messages;
+    }
+
+    private function blocksJsonDecodeDetail(): string
+    {
+        if (json_last_error() === JSON_ERROR_NONE) {
+            return 'Expected a JSON array of blocks';
+        }
+        $message = json_last_error_msg();
+        $message = $message !== '' ? $message : 'Invalid JSON';
+        return 'Invalid JSON (' . $message . ')';
+    }
+
+    private function blocksJsonValidationDetail(BlockValidationException $error): string
+    {
+        $errors = $error->getErrors();
+        if ($errors === []) {
+            return '';
+        }
+
+        $parts = [];
+        $limit = 3;
+        foreach (array_slice($errors, 0, $limit) as $item) {
+            $index = (int) ($item['index'] ?? 0) + 1;
+            $field = (string) ($item['field'] ?? '');
+            $message = (string) ($item['message'] ?? '');
+            $label = 'Block ' . $index;
+            if ($field !== '') {
+                $label .= ' ' . $field;
+            }
+            $parts[] = trim($label . ': ' . $message);
+        }
+
+        $extra = count($errors) - $limit;
+        if ($extra > 0) {
+            $parts[] = '(+' . $extra . ' more)';
+        }
+
+        return implode('; ', $parts);
     }
 
     private function buildPageRow(array $page, bool $canEdit, ?string $query = null): array

@@ -1,6 +1,6 @@
 # LAAS Versions
 
-- v4.0.20: Service Layer + API v2 (Released 2026-01-19)
+- v4.0.20: Service Layer + Theme API v2 + Headless v2 (Released 2026-01-19)
   - DI Container MVP (foundation for service layer)
   - PagesService MVP (Service Layer introduction)
   - MediaService MVP + Upload Pipeline
@@ -15,8 +15,10 @@
   - ApiTokens moved to service layer (DI)
   - Admin search moved to service layer + grouped results
   - Admin: Modules dropdown search + sections + quick actions
+  - Theme API v2: theme.json validation + capability gating (with compat toggle)
+  - Admin Pages: dev-only Blocks JSON editor + preview (validated, revisions)
+  - Headless v2: field selection + content_html compat fallback + 304 cache headers
   - Compat mode toggles for Theme API v2 and Blocks legacy content
-  - Headless v2: content_html compat fallback + 304 cache headers
   - Admin modules: request-scope caching, rate-limited details, explicit headers
   - Release notes: compat + stability checklist
 
