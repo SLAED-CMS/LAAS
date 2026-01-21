@@ -8,7 +8,13 @@ final class ContainerBindingsSingleRootTest extends TestCase
     public function testBindingsOnlyInKernel(): void
     {
         $root = dirname(__DIR__);
-        $allowed = [$this->normalizePath($root . '/src/Core/Kernel.php')];
+        $allowed = [
+            $this->normalizePath($root . '/src/Core/Kernel.php'),
+            $this->normalizePath($root . '/src/Core/Bindings/CoreBindings.php'),
+            $this->normalizePath($root . '/src/Core/Bindings/DomainBindings.php'),
+            $this->normalizePath($root . '/src/Core/Bindings/ModuleBindings.php'),
+            $this->normalizePath($root . '/src/Core/Bindings/DevBindings.php'),
+        ];
 
         $violations = [];
         foreach ([$root . '/src', $root . '/modules'] as $path) {
@@ -37,7 +43,40 @@ final class ContainerBindingsSingleRootTest extends TestCase
             }
         }
 
-        $this->assertSame([], $violations, 'Bindings must live only in src/Core/Kernel.php');
+        $this->assertSame([], $violations, 'Bindings must live only in Kernel or binding providers.');
+    }
+
+    public function testKernelRegistersBindingProvidersInOrder(): void
+    {
+        $root = dirname(__DIR__);
+        $kernelPath = $root . '/src/Core/Kernel.php';
+        $contents = @file_get_contents($kernelPath);
+        $this->assertIsString($contents);
+        $scanned = $this->stripComments($contents);
+        $start = strpos($scanned, 'private function registerBindings');
+        $this->assertNotFalse($start, 'Kernel registerBindings method not found.');
+        $scanned = substr($scanned, (int) $start);
+
+        $needles = [
+            'CoreBindings::register',
+            'DomainBindings::register',
+            'ModuleBindings::register',
+            'DevBindings::register',
+        ];
+
+        $positions = [];
+        foreach ($needles as $needle) {
+            $pos = strpos($scanned, $needle);
+            $this->assertNotFalse($pos, 'Missing provider call: ' . $needle);
+            $positions[] = $pos;
+        }
+
+        $sorted = $positions;
+        sort($sorted);
+        $this->assertSame($sorted, $positions, 'Provider calls must be in deterministic order.');
+
+        $this->assertSame(false, strpos($scanned, '->bind('), 'Kernel must not register bindings directly.');
+        $this->assertSame(false, strpos($scanned, '->singleton('), 'Kernel must not register bindings directly.');
     }
 
     private function normalizePath(string $path): string
