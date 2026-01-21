@@ -16,6 +16,8 @@ abstract class PerfBudgetTestCase extends TestCase
     {
         parent::setUp();
         $this->envBackup = $_ENV;
+        $_ENV['STORAGE_DISK'] = 'local';
+        putenv('STORAGE_DISK=local');
     }
 
     protected function tearDown(): void
@@ -90,6 +92,16 @@ abstract class PerfBudgetTestCase extends TestCase
         $pdo->exec("INSERT INTO pages_revisions (page_id, blocks_json, created_at, created_by) VALUES (1, '[]', '2026-01-01', 1)");
     }
 
+    protected function seedMenusTables(PDO $pdo): void
+    {
+        SecurityTestHelper::seedMenusTables($pdo);
+    }
+
+    protected function seedMediaTable(PDO $pdo): void
+    {
+        SecurityTestHelper::seedMediaTable($pdo);
+    }
+
     protected function setDatabaseEnv(string $path): void
     {
         $_ENV['DB_DRIVER'] = 'sqlite';
@@ -105,7 +117,11 @@ abstract class PerfBudgetTestCase extends TestCase
         if (session_status() === PHP_SESSION_ACTIVE) {
             session_write_close();
         }
-        session_id('perf-' . uniqid('', true));
+        $name = $_ENV['SESSION_NAME'] ?? 'LAASID';
+        if (is_string($name) && $name !== '') {
+            session_name($name);
+        }
+        session_id('perf-' . bin2hex(random_bytes(8)));
         session_start();
         $_SESSION = [];
         $_SESSION['user_id'] = $userId;
@@ -129,6 +145,9 @@ abstract class PerfBudgetTestCase extends TestCase
         $headers = array_change_key_case($headers, CASE_LOWER);
         if (!isset($headers['accept'])) {
             $headers['accept'] = 'text/html';
+        }
+        if (!isset($headers['cookie']) && session_status() === PHP_SESSION_ACTIVE) {
+            $headers['cookie'] = session_name() . '=' . session_id();
         }
         return new Request('GET', $path, [], [], $headers, '');
     }
@@ -171,7 +190,7 @@ abstract class PerfBudgetTestCase extends TestCase
         }
 
         if (is_file($this->dbPath)) {
-            unlink($this->dbPath);
+            @unlink($this->dbPath);
         }
 
         $dir = dirname($this->dbPath);

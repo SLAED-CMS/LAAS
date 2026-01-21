@@ -280,17 +280,10 @@ final class PagesV2Controller
      */
     private function mapPage(PageView $pageView, array $fields, bool $includeBlocks, bool $includeMedia): array
     {
+        $data = $this->toArray($pageView);
         $page = [];
         foreach ($fields as $field) {
-            $page[$field] = match ($field) {
-                'id' => $pageView->id(),
-                'slug' => $pageView->slug(),
-                'title' => $pageView->title(),
-                'content' => $pageView->content(),
-                'status' => $pageView->status(),
-                'updated_at' => $pageView->updatedAt(),
-                default => null,
-            };
+            $page[$field] = $data[$field] ?? null;
         }
 
         $blocks = [];
@@ -311,6 +304,24 @@ final class PagesV2Controller
         }
 
         return $page;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function toArray(PageView $pageView): array
+    {
+        return [
+            'id' => $pageView->id(),
+            'slug' => $pageView->slug(),
+            'title' => $pageView->title(),
+            'content' => $pageView->content(),
+            'status' => $pageView->status(),
+            'updated_at' => $pageView->updatedAt(),
+            'locale' => $pageView->locale(),
+            'blocks' => $pageView->blocks(),
+            'media' => $pageView->media(),
+        ];
     }
 
     /**

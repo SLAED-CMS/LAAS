@@ -183,6 +183,7 @@ final class Kernel
             'request_id' => $requestId,
         ]);
         RequestScope::set('devtools.context', $devtoolsContext);
+        RequestContext::setStartTime($devtoolsContext->getStartedAt());
 
         $dbProfileCollector = new DbProfileCollector();
         RequestScope::set('db.profile', $dbProfileCollector);
@@ -396,6 +397,8 @@ final class Kernel
         $devtoolsContext->finalize();
         RequestContext::setMetrics([
             'total_ms' => $devtoolsContext->getDurationMs(),
+            'memory_mb' => $devtoolsContext->getMemoryPeakMb(),
+            'sql_count' => $devtoolsContext->getDbCount(),
             'sql_unique' => $devtoolsContext->getDbUniqueCount(),
             'sql_dup' => $devtoolsContext->getDbDuplicateCount(),
             'sql_ms' => $devtoolsContext->getDbTotalMs(),

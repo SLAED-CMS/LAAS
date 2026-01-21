@@ -1113,7 +1113,46 @@ function policy_run(array $paths): int
     }
     echo 'Summary: errors=' . $errorsCount . ' warnings=' . $warningsCount . ' w3a=' . $w3aCount . ' w3b=' . $w3bCount . ' w4=' . $w4Count . ' w5=' . $w5Count . ' w6=' . $w6Count . "\n";
 
-    return max($assetsResult['assets'], $assetsResult['http'], $assetsResult['admin_smoke'], policy_exit_code($analysis));
+    $exitCode = max($assetsResult['assets'], $assetsResult['http'], $assetsResult['admin_smoke'], policy_exit_code($analysis));
+
+    if (policy_env_bool('POLICY_FULL_TESTS', false)) {
+        echo "policy.full_tests.enabled\n";
+        if (function_exists('passthru')) {
+            $cmd = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg(policy_root_path() . '/vendor/bin/phpunit');
+            passthru($cmd, $phpunitCode);
+            $exitCode = max($exitCode, (int) $phpunitCode);
+        } else {
+            echo "policy.full_tests.unavailable (passthru disabled)\n";
+            $exitCode = max($exitCode, 1);
+        }
+    }
+
+    if (!policy_env_bool('POLICY_PERF', false)) {
+        echo "perf.budgets.skipped (set POLICY_PERF=1)\n";
+        return $exitCode;
+    }
+
+    $perfExit = 0;
+    if (function_exists('passthru')) {
+        $root = policy_root_path();
+        $filters = ['PerfBudget', 'AdminModulesPerf', 'HeadlessV2Perf', 'AdminSearchPerf'];
+        foreach ($filters as $filter) {
+            $cmd = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($root . '/vendor/bin/phpunit')
+                . ' --filter ' . escapeshellarg($filter);
+            passthru($cmd, $code);
+            $perfExit = max($perfExit, (int) $code);
+        }
+    } else {
+        echo "perf.budgets.unavailable (passthru disabled)\n";
+        $perfExit = 1;
+    }
+
+    if ($perfExit === 0) {
+        echo "perf.budgets.ok\n";
+    }
+    $exitCode = max($exitCode, $perfExit);
+
+    return $exitCode;
 }
 
 if (PHP_SAPI === 'cli' && realpath($argv[0] ?? '') === realpath(__FILE__)) {

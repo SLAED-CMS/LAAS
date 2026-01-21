@@ -8,6 +8,7 @@ use Laas\Support\RequestScope;
 
 final class RequestContext
 {
+    private static ?float $startedAt = null;
     private static array $metrics = [];
 
     public static function resetForTests(): void
@@ -18,6 +19,7 @@ final class RequestContext
 
         RequestScope::setRequest(null);
         RequestScope::reset();
+        self::$startedAt = null;
         self::resetMetrics();
         unset($_SERVER['REQUEST_URI'], $_SERVER['HTTP_X_REQUEST_ID'], $_SERVER['X_REQUEST_ID']);
     }
@@ -127,6 +129,16 @@ final class RequestContext
         return gmdate('c');
     }
 
+    public static function setStartTime(float $startedAt): void
+    {
+        self::$startedAt = $startedAt;
+    }
+
+    public static function startTime(): ?float
+    {
+        return self::$startedAt;
+    }
+
     /**
      * @return array<string, float|int>
      */
@@ -168,12 +180,14 @@ final class RequestContext
 
     /**
      * @param array<string, mixed> $metrics
-     * @return array{total_ms: float, sql_unique: int, sql_dup: int, sql_ms: float}
+     * @return array{total_ms: float, memory_mb: float, sql_count: int, sql_unique: int, sql_dup: int, sql_ms: float}
      */
     private static function normalizeMetrics(array $metrics): array
     {
         return [
             'total_ms' => (float) ($metrics['total_ms'] ?? 0),
+            'memory_mb' => (float) ($metrics['memory_mb'] ?? 0),
+            'sql_count' => (int) ($metrics['sql_count'] ?? 0),
             'sql_unique' => (int) ($metrics['sql_unique'] ?? 0),
             'sql_dup' => (int) ($metrics['sql_dup'] ?? 0),
             'sql_ms' => (float) ($metrics['sql_ms'] ?? 0),

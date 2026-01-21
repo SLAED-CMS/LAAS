@@ -135,6 +135,16 @@ final class DevToolsContext
         return $count;
     }
 
+    public function getMemoryPeakBytes(): int
+    {
+        return $this->memoryPeak;
+    }
+
+    public function getMemoryPeakMb(): float
+    {
+        return $this->memoryPeak > 0 ? ($this->memoryPeak / 1048576) : 0.0;
+    }
+
     public function setRequest(array $data): void
     {
         $this->request = $data;

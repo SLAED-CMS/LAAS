@@ -130,27 +130,34 @@ final class RbacRepository
 
     public function userHasRole(int $userId, string $roleName): bool
     {
-        $stmt = $this->pdo->prepare(
-            'SELECT 1 FROM roles r JOIN role_user ru ON ru.role_id = r.id WHERE ru.user_id = :user_id AND r.name = :name LIMIT 1'
-        );
-        $stmt->execute([
-            'user_id' => $userId,
-            'name' => $roleName,
-        ]);
-        return (bool) $stmt->fetch();
+        $cacheKey = 'rbac.role.' . $userId . '.' . $roleName;
+        $value = RequestCache::remember($cacheKey, function () use ($userId, $roleName): bool {
+            $stmt = $this->pdo->prepare(
+                'SELECT 1 FROM roles r JOIN role_user ru ON ru.role_id = r.id WHERE ru.user_id = :user_id AND r.name = :name LIMIT 1'
+            );
+            $stmt->execute([
+                'user_id' => $userId,
+                'name' => $roleName,
+            ]);
+            return (bool) $stmt->fetch();
+        });
+
+        return $value === true;
     }
 
     /** @return array<int, int> */
     private function listUserRoleIds(int $userId): array
     {
-        $stmt = $this->pdo->prepare('SELECT role_id FROM role_user WHERE user_id = :user_id');
-        $stmt->execute(['user_id' => $userId]);
-        $rows = $stmt->fetchAll();
-        if (!is_array($rows)) {
-            return [];
-        }
+        return RequestCache::remember('rbac.user_role_ids.' . $userId, function () use ($userId): array {
+            $stmt = $this->pdo->prepare('SELECT role_id FROM role_user WHERE user_id = :user_id');
+            $stmt->execute(['user_id' => $userId]);
+            $rows = $stmt->fetchAll();
+            if (!is_array($rows)) {
+                return [];
+            }
 
-        return array_values(array_filter(array_map(static fn(array $row): int => (int) ($row['role_id'] ?? 0), $rows)));
+            return array_values(array_filter(array_map(static fn(array $row): int => (int) ($row['role_id'] ?? 0), $rows)));
+        });
     }
 
     /** @return array<int, string> */
@@ -174,28 +181,30 @@ final class RbacRepository
     /** @return array<int, string> */
     public function listRolePermissions(int $roleId): array
     {
-        if ($this->usePermissionsCache) {
-            $cached = $this->cache->get(CacheKey::permissionsRole($roleId));
-            if (is_array($cached)) {
-                return array_values(array_filter(array_map(static fn($name): string => (string) $name, $cached)));
+        return RequestCache::remember('rbac.role_permissions.' . $roleId, function () use ($roleId): array {
+            if ($this->usePermissionsCache) {
+                $cached = $this->cache->get(CacheKey::permissionsRole($roleId));
+                if (is_array($cached)) {
+                    return array_values(array_filter(array_map(static fn($name): string => (string) $name, $cached)));
+                }
             }
-        }
 
-        $stmt = $this->pdo->prepare(
-            'SELECT p.name FROM permissions p JOIN permission_role pr ON pr.permission_id = p.id WHERE pr.role_id = :role_id'
-        );
-        $stmt->execute(['role_id' => $roleId]);
-        $rows = $stmt->fetchAll();
+            $stmt = $this->pdo->prepare(
+                'SELECT p.name FROM permissions p JOIN permission_role pr ON pr.permission_id = p.id WHERE pr.role_id = :role_id'
+            );
+            $stmt->execute(['role_id' => $roleId]);
+            $rows = $stmt->fetchAll();
 
-        if (!is_array($rows)) {
-            return [];
-        }
+            if (!is_array($rows)) {
+                return [];
+            }
 
-        $names = array_values(array_filter(array_map(static fn(array $row): string => (string) ($row['name'] ?? ''), $rows)));
-        if ($this->usePermissionsCache) {
-            $this->cache->set(CacheKey::permissionsRole($roleId), $names, $this->ttlPermissions);
-        }
-        return $names;
+            $names = array_values(array_filter(array_map(static fn(array $row): string => (string) ($row['name'] ?? ''), $rows)));
+            if ($this->usePermissionsCache) {
+                $this->cache->set(CacheKey::permissionsRole($roleId), $names, $this->ttlPermissions);
+            }
+            return $names;
+        });
     }
 
     /** @param array<int, int> $permissionIds */

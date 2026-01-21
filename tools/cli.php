@@ -2565,6 +2565,9 @@ $commands['preflight'] = function () use (&$commands, $args, $rootPath, $securit
 
     $result = $runner->run($steps);
     $runner->printReport($result['results']);
+    if (filter_var($_ENV['POLICY_PERF'] ?? null, FILTER_VALIDATE_BOOLEAN) === true) {
+        echo "- Perf gate: enabled (policy:check runs perf budgets)\n";
+    }
     return $result['code'];
 };
 

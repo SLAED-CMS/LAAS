@@ -38,6 +38,26 @@ final class DatabaseManager
         return $this->devtoolsContext;
     }
 
+    /**
+     * @return array{sql_count?: int, sql_unique?: int, sql_dup?: int, sql_ms?: float}
+     */
+    public function metrics(): array
+    {
+        $context = $this->devtoolsContext;
+        if (!$context instanceof DevToolsContext) {
+            return [];
+        }
+
+        $context->finalize();
+
+        return [
+            'sql_count' => $context->getDbCount(),
+            'sql_unique' => $context->getDbUniqueCount(),
+            'sql_dup' => $context->getDbDuplicateCount(),
+            'sql_ms' => $context->getDbTotalMs(),
+        ];
+    }
+
     public function pdo(): PDO
     {
         if ($this->pdo !== null) {
