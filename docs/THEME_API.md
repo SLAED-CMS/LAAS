@@ -1,9 +1,11 @@
 # Theme API
 
-Theme API v2 — текущий контракт для тем LAAS.
+## Purpose / Goals
+- Define a stable contract for theme capabilities and structure.
+- Make validation deterministic and CI-friendly.
+- Keep rendering rules explicit and auditable.
 
 ## Contract (theme.json)
-
 Required fields:
 - `name` (string)
 - `version` (semver)
@@ -14,56 +16,43 @@ Optional fields:
 - `provides` (array<string>)
 - `meta` (object)
 
-## Capabilities
-
-Allowlisted capabilities:
-- `toasts`
-- `devtools`
-- `headless`
-- `blocks`
-
-If a theme does not declare a capability, the feature is treated as disabled.
-
 ## Theme Structure
-
-Обязательные файлы:
+Required files:
 - `themes/<theme>/theme.json`
 - `themes/<theme>/layouts/base.html`
 - `themes/<theme>/partials/header.html`
 
-Стандартные каталоги:
+Recommended directories:
 - `layouts/*`
 - `pages/*`
 - `partials/*`
 
-## Provided Variables (globals)
-
+## Provided variables
 - `app.name`, `app.version`, `app.env`, `app.debug`
 - `user.id`, `user.username`, `user.roles`
 - `csrf_token`
-- `assets` и asset helpers
+- `assets` and asset helpers
 - `locale`
 - `t()` (i18n)
 
-## Slots & Blocks
+## UI Tokens contract
+- UI tokens are mapped by controllers and views.
+- Tokens are stable and must not leak presentation logic into services.
+- Enforced by controller boundary tests and token mappers.
 
-Обязательный слот: `content`
+## Slots & blocks
+- Required slot: `content`
+- Optional slots: `header`, `footer`, `sidebar`
 
-Опциональные: `header`, `footer`, `sidebar`
-
-## HTMX Rules
-
-- `hx-*` атрибуты только в templates
-- Partial rendering для HTMX запросов (без layout)
+## HTMX rules
+- `hx-*` attributes live in templates only.
+- HTMX requests render partials (no layout).
 
 ## Forbidden
+- Inline style
+- Inline JS
+- CDN usage in templates
 
-- inline style
-- inline JS
-- CDN in templates
-
-## Validation
-
-- `php tools/cli.php themes:validate` — валидация всех тем
-- `policy:check` включает проверку Theme API
-- Изменения `theme.json` требуют явного подтверждения snapshot
+## Migration notes
+- Changes to `theme.json` require snapshot acceptance.
+- Validation runs via `php tools/cli.php themes:validate`.

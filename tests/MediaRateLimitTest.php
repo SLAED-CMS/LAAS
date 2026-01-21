@@ -9,6 +9,7 @@ use Laas\I18n\Translator;
 use Laas\Modules\Media\Controller\AdminMediaController;
 use Laas\Security\RateLimiter;
 use Laas\Settings\SettingsProvider;
+use Laas\Support\RequestScope;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
 use Laas\View\Theme\ThemeManager;
@@ -32,6 +33,7 @@ final class MediaRateLimitTest extends TestCase
         $this->ipUpload = '127.0.0.101';
         $this->ipDelete = '127.0.0.102';
         $_SERVER['REQUEST_TIME_FLOAT'] = microtime(true);
+        RequestScope::reset();
     }
 
     protected function tearDown(): void

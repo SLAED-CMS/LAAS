@@ -25,15 +25,25 @@ final class ThemeValidator
     public function __construct(
         private string $themesRoot,
         private ?string $snapshotPath = null,
-        private ?array $compatConfig = null
+        private array|string|null $compatConfig = null,
+        ?array $compatOverride = null
     ) {
+        $compatCandidate = $this->compatConfig;
+        if ($this->snapshotPath === null && is_string($compatCandidate)) {
+            $this->snapshotPath = $compatCandidate;
+            $compatCandidate = null;
+        }
+        if (is_array($compatOverride)) {
+            $compatCandidate = $compatOverride;
+        }
         if ($this->snapshotPath === null) {
             $root = dirname(__DIR__, 2);
             $this->snapshotPath = $root . '/config/theme_snapshot.php';
         }
-        if ($this->compatConfig === null) {
-            $this->compatConfig = $this->loadCompatConfig();
+        if (!is_array($compatCandidate)) {
+            $compatCandidate = $this->loadCompatConfig();
         }
+        $this->compatConfig = $compatCandidate;
     }
 
     public function validateTheme(string $themeName, bool $acceptSnapshot = false): ThemeValidationResult

@@ -25,6 +25,7 @@ final class RbacDiagnosticsTest extends TestCase
     protected function setUp(): void
     {
         $this->rootPath = dirname(__DIR__);
+        RequestScope::reset();
     }
 
     public function testDiagnosticsRequiresPermission(): void

@@ -3,13 +3,16 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/Support/SecurityTestHelper.php';
 
+use Laas\Core\Container\Container;
 use Laas\Database\DatabaseManager;
+use Laas\Database\Repositories\RbacRepository;
 use Laas\Domain\ApiTokens\ApiTokensService;
+use Laas\Domain\Rbac\RbacService;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Http\Request;
 use Laas\Modules\Admin\Controller\ApiTokensController;
 use Laas\Support\RequestScope;
 use Laas\View\View;
-use Laas\Database\Repositories\RbacRepository;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Tests\Security\Support\SecurityTestHelper;
@@ -47,7 +50,7 @@ final class AuditConsistencyTest extends TestCase
         $revokeRequest = $this->makeRequest('POST', '/admin/api-tokens/revoke', [
             'id' => (string) $tokenId,
         ]);
-        RequestScope::forget('db.healthcheck');
+        RequestScope::reset();
         RequestScope::setRequest($revokeRequest);
         RequestScope::set('db.manager', $db);
         $revokeResponse = $controller->revoke($revokeRequest);
@@ -118,7 +121,10 @@ final class AuditConsistencyTest extends TestCase
     {
         $view = $this->createView($db, $request);
         $service = $this->createService($db);
-        $container = SecurityTestHelper::createContainer($db);
+        $container = new Container();
+        $container->singleton(RbacServiceInterface::class, static function () use ($db): RbacServiceInterface {
+            return new RbacService($db);
+        });
         return new ApiTokensController($view, $service, $service, $container);
     }
 

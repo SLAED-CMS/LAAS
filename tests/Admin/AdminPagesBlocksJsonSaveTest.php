@@ -7,6 +7,7 @@ use Laas\Http\Request;
 use Laas\I18n\Translator;
 use Laas\Modules\Pages\Controller\AdminPagesController;
 use Laas\Settings\SettingsProvider;
+use Laas\Support\RequestScope;
 use Laas\View\AssetManager;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
@@ -26,6 +27,7 @@ final class AdminPagesBlocksJsonSaveTest extends TestCase
         $this->rootPath = dirname(__DIR__, 2);
         $this->previousDebug = $_ENV['APP_DEBUG'] ?? null;
         $_ENV['APP_DEBUG'] = 'true';
+        RequestScope::reset();
     }
 
     protected function tearDown(): void

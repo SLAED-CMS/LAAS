@@ -58,6 +58,9 @@ final class ServiceInterfaceCoverageTest extends TestCase
         $kernelPath = $root . '/src/Core/Kernel.php';
         $kernelContents = file_get_contents($kernelPath);
         $this->assertNotFalse($kernelContents, 'Unable to read ' . $kernelPath);
+        $bindingsPath = $root . '/src/Core/Bindings/DomainBindings.php';
+        $bindingsContents = file_get_contents($bindingsPath);
+        $this->assertNotFalse($bindingsContents, 'Unable to read ' . $bindingsPath);
 
         foreach ($interfaceFiles as $interfaceFile) {
             $serviceFile = substr($interfaceFile, 0, -strlen('ServiceInterface.php')) . 'Service.php';
@@ -85,8 +88,11 @@ final class ServiceInterfaceCoverageTest extends TestCase
             $interfaceNeedle = $interfaceClass . '::class';
             $shortNeedle = $this->shortName($interfaceClass) . '::class';
             $this->assertTrue(
-                str_contains($kernelContents, $interfaceNeedle) || str_contains($kernelContents, $shortNeedle),
-                'Kernel must bind ' . $interfaceClass
+                str_contains($kernelContents, $interfaceNeedle)
+                    || str_contains($kernelContents, $shortNeedle)
+                    || str_contains($bindingsContents, $interfaceNeedle)
+                    || str_contains($bindingsContents, $shortNeedle),
+                'Kernel or DomainBindings must bind ' . $interfaceClass
             );
         }
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 use Laas\Http\Request;
 use Laas\Http\RequestContext;
 use Laas\Perf\PerfBudgetResult;
+use Laas\Session\NativeSession;
 use PHPUnit\Framework\TestCase;
 use Tests\Security\Support\SecurityTestHelper;
 
@@ -11,6 +12,7 @@ abstract class PerfBudgetTestCase extends TestCase
 {
     protected array $envBackup = [];
     private ?string $dbPath = null;
+    private ?NativeSession $session = null;
 
     protected function setUp(): void
     {
@@ -18,6 +20,8 @@ abstract class PerfBudgetTestCase extends TestCase
         $this->envBackup = $_ENV;
         $_ENV['STORAGE_DISK'] = 'local';
         putenv('STORAGE_DISK=local');
+        $_ENV['CACHE_ENABLED'] = 'false';
+        putenv('CACHE_ENABLED=false');
     }
 
     protected function tearDown(): void
@@ -122,9 +126,10 @@ abstract class PerfBudgetTestCase extends TestCase
             session_name($name);
         }
         session_id('perf-' . bin2hex(random_bytes(8)));
-        session_start();
-        $_SESSION = [];
-        $_SESSION['user_id'] = $userId;
+        $this->session = new NativeSession();
+        $this->session->start();
+        $this->session->clear();
+        $this->session->set('user_id', $userId);
     }
 
     protected function stopSession(): void
@@ -133,8 +138,10 @@ abstract class PerfBudgetTestCase extends TestCase
             return;
         }
 
-        $_SESSION = [];
+        $session = $this->session ?? new NativeSession();
+        $session->clear();
         session_write_close();
+        $this->session = null;
     }
 
     /**

@@ -7,6 +7,7 @@ use Laas\Http\Request;
 use Laas\I18n\Translator;
 use Laas\Modules\Admin\Controller\AuditController;
 use Laas\Settings\SettingsProvider;
+use Laas\Support\RequestScope;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
 use Laas\View\Theme\ThemeManager;
@@ -24,6 +25,7 @@ final class AuditControllerInvalidRangeTest extends TestCase
     protected function setUp(): void
     {
         $this->rootPath = dirname(__DIR__);
+        RequestScope::reset();
     }
 
     public function testInvalidDateRangeReturns422(): void
