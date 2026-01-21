@@ -58,7 +58,7 @@ final class AdminSearchPerfBudgetTest extends PerfBudgetTestCase
         $featuresPath = dirname(__DIR__, 2) . '/config/admin_features.php';
         $features = is_file($featuresPath) ? require $featuresPath : [];
         if (!is_array($features) || !($features['devtools_palette'] ?? false)) {
-            $this->markTestSkipped('Admin search palette disabled.');
+            $this->markTestSkipped('Admin search palette disabled (config/admin_features.php: devtools_palette=false).');
         }
 
         $dbPath = $this->prepareDatabase('admin-search-palette-perf', function (PDO $pdo): void {

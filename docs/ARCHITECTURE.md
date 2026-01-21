@@ -2,6 +2,8 @@
 
 **Complete architectural guide** This document describes the system design, core components, request lifecycle, and architectural principles.
 
+Architectural rules (one pager): `docs/ARCHITECTURE_RULES.md`.
+
 ---
 
 ## Table of Contents

@@ -18,6 +18,7 @@
 - `php tools/cli.php policy:check` is green (Summary warnings=0)
 - After DTO/contract changes: `php tools/cli.php policy:check` + full `vendor/bin/phpunit` mandatory
 - Perf budgets gate: `POLICY_PERF=1 php tools/cli.php policy:check` is green; profile via `POLICY_PERF_PROFILE=ci|strict` (default `ci`; recommended CI: `POLICY_PERF=1 POLICY_PERF_PROFILE=ci`)
+- Feature-flagged test suites must either run or explicitly skip with a reason (no silent pass)
 - `php tools/cli.php assets:verify` is green
 - Local only: `php tools/cli.php assets:http:smoke --base=https://laas.loc` (Content-Type: js contains "javascript", css contains "text/css", woff2 is "font/woff2" or "application/font-woff2" or "application/octet-stream")
 - `php tools/cli.php templates:raw:check --path=themes` is green
