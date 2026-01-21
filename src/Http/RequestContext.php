@@ -8,6 +8,35 @@ use Laas\Support\RequestScope;
 
 final class RequestContext
 {
+    public static function resetForTests(): void
+    {
+        if (!self::allowTestOverrides()) {
+            return;
+        }
+
+        RequestScope::setRequest(null);
+        RequestScope::reset();
+        unset($_SERVER['REQUEST_URI'], $_SERVER['HTTP_X_REQUEST_ID'], $_SERVER['X_REQUEST_ID']);
+    }
+
+    public static function setForTests(string $requestId, string $path): void
+    {
+        if (!self::allowTestOverrides()) {
+            return;
+        }
+
+        $requestId = trim($requestId);
+        if ($requestId !== '') {
+            RequestScope::set('request.id', $requestId);
+            $_SERVER['HTTP_X_REQUEST_ID'] = $requestId;
+        }
+
+        $path = trim($path);
+        if ($path !== '') {
+            $_SERVER['REQUEST_URI'] = $path;
+        }
+    }
+
     public static function requestId(): ?string
     {
         $fromScope = RequestScope::get('request.id');
@@ -93,5 +122,15 @@ final class RequestContext
     public static function timestamp(): string
     {
         return gmdate('c');
+    }
+
+    private static function allowTestOverrides(): bool
+    {
+        $env = $_ENV['APP_ENV'] ?? $_SERVER['APP_ENV'] ?? null;
+        if (is_string($env) && strtolower($env) === 'test') {
+            return true;
+        }
+
+        return php_sapi_name() === 'cli';
     }
 }

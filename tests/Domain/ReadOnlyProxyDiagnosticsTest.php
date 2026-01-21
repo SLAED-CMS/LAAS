@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use Laas\Domain\Support\ReadOnlyProxy;
+use Laas\Http\RequestContext;
 use PHPUnit\Framework\TestCase;
 
 final class ReadOnlyProxyDiagnosticsTest extends TestCase
@@ -19,6 +20,7 @@ final class ReadOnlyProxyDiagnosticsTest extends TestCase
 
     protected function tearDown(): void
     {
+        RequestContext::resetForTests();
         $_SERVER = $this->serverBackup;
         $_ENV = $this->envBackup;
         ReadOnlyProxy::setLogger(null);
@@ -28,8 +30,8 @@ final class ReadOnlyProxyDiagnosticsTest extends TestCase
     public function testDebugEmitsOncePerRequest(): void
     {
         $_ENV['APP_DEBUG'] = '1';
-        $_SERVER['HTTP_X_REQUEST_ID'] = 'rid-1';
-        $_SERVER['REQUEST_URI'] = '/x?y=1';
+        RequestContext::resetForTests();
+        RequestContext::setForTests('rid-1', '/x?y=1');
 
         $messages = [];
         ReadOnlyProxy::setLogger(function (string $message) use (&$messages): void {
@@ -50,11 +52,24 @@ final class ReadOnlyProxyDiagnosticsTest extends TestCase
         }
 
         $this->assertCount(1, $messages);
-        $this->assertSame(
-            '[ReadOnlyProxy] blocked mutation ' . ReadOnlyProxyDiagnosticsTestInterface::class
-            . '::write req=rid-1 path=/x',
+        $this->assertStringContainsString(
+            '[ReadOnlyProxy] blocked mutation ' . ReadOnlyProxyDiagnosticsTestInterface::class . '::write',
             $messages[0]
         );
+        $this->assertStringContainsString(' req=', $messages[0]);
+        $this->assertStringContainsString(' path=', $messages[0]);
+
+        RequestContext::resetForTests();
+        RequestContext::setForTests('rid-2', '/y');
+
+        try {
+            $proxy->write();
+        } catch (DomainException) {
+        }
+
+        $this->assertCount(2, $messages);
+        $this->assertStringContainsString(' req=rid-2', $messages[1]);
+        $this->assertStringContainsString(' path=/y', $messages[1]);
     }
 
     public function testNonDebugEmitsNoWarning(): void
