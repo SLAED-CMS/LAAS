@@ -7,6 +7,7 @@ use Laas\Http\Request;
 use Laas\I18n\Translator;
 use Laas\Modules\Admin\Controller\RbacDiagnosticsController;
 use Laas\Settings\SettingsProvider;
+use Laas\Support\RequestScope;
 use Laas\Support\Rbac\RbacDiagnosticsService;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
@@ -14,6 +15,7 @@ use Laas\View\Theme\ThemeManager;
 use Laas\View\AssetManager;
 use Laas\View\View;
 use PHPUnit\Framework\TestCase;
+use Tests\Security\Support\SecurityTestHelper;
 use Tests\Support\InMemorySession;
 
 final class RbacDiagnosticsTest extends TestCase
@@ -38,7 +40,9 @@ final class RbacDiagnosticsTest extends TestCase
         $request = new Request('GET', '/admin/rbac/diagnostics', [], [], [], '');
         $this->attachSession($request, 1);
         $view = $this->createView($db, $request);
-        $controller = new RbacDiagnosticsController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        $usersService = new \Laas\Domain\Users\UsersService($db);
+        $controller = new RbacDiagnosticsController($view, $usersService, $container);
 
         $response = $controller->index($request);
         $this->assertSame(403, $response->getStatus());
@@ -55,7 +59,9 @@ final class RbacDiagnosticsTest extends TestCase
         $pdo->exec("INSERT INTO role_user (user_id, role_id) VALUES (1, 1)");
         $pdo->exec("INSERT INTO permission_role (role_id, permission_id) VALUES (1, 1)");
 
-        $service = new RbacDiagnosticsService($db);
+        $rbacService = new \Laas\Domain\Rbac\RbacService($db);
+        $usersService = new \Laas\Domain\Users\UsersService($db);
+        $service = new RbacDiagnosticsService($rbacService, $usersService);
         $result = $service->explainPermission(1, 'rbac.diagnostics');
 
         $this->assertTrue($result['allowed']);
@@ -77,7 +83,9 @@ final class RbacDiagnosticsTest extends TestCase
         $request = new Request('GET', '/admin/rbac/diagnostics', ['user_id' => '1'], [], ['hx-request' => 'true'], '');
         $this->attachSession($request, 1);
         $view = $this->createView($db, $request);
-        $controller = new RbacDiagnosticsController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        $usersService = new \Laas\Domain\Users\UsersService($db);
+        $controller = new RbacDiagnosticsController($view, $usersService, $container);
 
         $response = $controller->index($request);
         $this->assertSame(200, $response->getStatus());
@@ -118,6 +126,9 @@ final class RbacDiagnosticsTest extends TestCase
 
     private function createView(DatabaseManager $db, Request $request): View
     {
+        $hasRequestId = RequestScope::has('request.id');
+        $requestId = RequestScope::get('request.id');
+        RequestScope::reset();
         $settings = new SettingsProvider($db, [
             'site_name' => 'LAAS',
             'default_locale' => 'en',
@@ -145,6 +156,10 @@ final class RbacDiagnosticsTest extends TestCase
             $db
         );
         $view->setRequest($request);
+        RequestScope::set('db.manager', $db);
+        if ($hasRequestId) {
+            RequestScope::set('request.id', $requestId);
+        }
 
         return $view;
     }

@@ -76,8 +76,9 @@ final class AdminApiTokensRevokeJsonTest extends TestCase
     {
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = $this->createView($db, $request);
+        $container = SecurityTestHelper::createContainer($db);
         $service = $this->createService($db);
-        return new ApiTokensController($view, $db, $service);
+        return new ApiTokensController($view, $service, $service, $container);
     }
 
     private function createView(DatabaseManager $db, Request $request): View

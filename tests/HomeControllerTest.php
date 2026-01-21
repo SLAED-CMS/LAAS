@@ -7,12 +7,14 @@ use Laas\Http\Request;
 use Laas\I18n\Translator;
 use Laas\Modules\System\Controller\HomeController;
 use Laas\Settings\SettingsProvider;
+use Laas\Support\RequestScope;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
 use Laas\View\Theme\ThemeManager;
 use Laas\View\AssetManager;
 use Laas\View\View;
 use PHPUnit\Framework\TestCase;
+use Tests\Security\Support\SecurityTestHelper;
 use Tests\Support\InMemorySession;
 
 final class HomeControllerTest extends TestCase
@@ -37,7 +39,8 @@ final class HomeControllerTest extends TestCase
         $db = $this->createDatabase();
         $request = new Request('GET', '/', [], [], [], '', new InMemorySession());
         $view = $this->createView($db, $request, true);
-        $controller = new HomeController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        $controller = new HomeController($view, $container);
 
         $response = $controller->index($request);
         $body = $response->getBody();
@@ -67,7 +70,8 @@ final class HomeControllerTest extends TestCase
 
         $request = new Request('GET', '/', [], [], [], '', $session);
         $view = $this->createView($db, $request, true);
-        $controller = new HomeController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        $controller = new HomeController($view, $container);
 
         $response = $controller->index($request);
         $body = $response->getBody();
@@ -83,7 +87,8 @@ final class HomeControllerTest extends TestCase
         $db = $this->createDatabase();
         $request = new Request('GET', '/', [], [], [], '', new InMemorySession());
         $view = $this->createView($db, $request, false);
-        $controller = new HomeController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        $controller = new HomeController($view, $container);
 
         $response = $controller->index($request);
         $body = $response->getBody();
@@ -125,6 +130,9 @@ final class HomeControllerTest extends TestCase
 
     private function createView(DatabaseManager $db, Request $request, bool $debug): View
     {
+        $hasRequestId = RequestScope::has('request.id');
+        $requestId = RequestScope::get('request.id');
+        RequestScope::reset();
         $settings = new SettingsProvider($db, [
             'site_name' => 'LAAS',
             'default_locale' => 'en',
@@ -152,6 +160,10 @@ final class HomeControllerTest extends TestCase
             $db
         );
         $view->setRequest($request);
+        RequestScope::set('db.manager', $db);
+        if ($hasRequestId) {
+            RequestScope::set('request.id', $requestId);
+        }
 
         return $view;
     }

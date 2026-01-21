@@ -77,7 +77,7 @@ final class ReadOnlyMiddlewareTest extends TestCase
 
         $this->assertSame(503, $response->getStatus());
         $this->assertNotNull($response->getHeader('HX-Trigger'));
-        $this->assertStringContainsString('Service Unavailable', $response->getBody());
+        $this->assertStringContainsString('Read-only mode', $response->getBody());
     }
 
     private function createDatabase(): DatabaseManager

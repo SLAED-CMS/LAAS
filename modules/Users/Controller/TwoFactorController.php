@@ -7,7 +7,8 @@ use Laas\Auth\AuthInterface;
 use Laas\Auth\TotpService;
 use Laas\Core\Validation\Validator;
 use Laas\Core\Validation\ValidationResult;
-use Laas\Domain\Users\UsersServiceInterface;
+use Laas\Domain\Users\UsersReadServiceInterface;
+use Laas\Domain\Users\UsersWriteServiceInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\View\View;
@@ -21,7 +22,8 @@ final class TwoFactorController
     public function __construct(
         private View $view,
         private AuthInterface $auth,
-        private ?UsersServiceInterface $users,
+        private ?UsersReadServiceInterface $usersRead,
+        private ?UsersWriteServiceInterface $usersWrite,
         private TotpService $totp,
         ?LoggerInterface $logger = null
     ) {
@@ -30,7 +32,7 @@ final class TwoFactorController
 
     public function showSetup(Request $request): Response
     {
-        if ($this->users === null) {
+        if ($this->usersRead === null || $this->usersWrite === null) {
             return new Response('', 503);
         }
 
@@ -40,7 +42,7 @@ final class TwoFactorController
         }
 
         $userId = (int) $user['id'];
-        $totpData = $this->users->getTotpData($userId);
+        $totpData = $this->usersRead->getTotpData($userId);
 
         $isEnabled = (int) ($totpData['totp_enabled'] ?? 0) === 1;
         $hasBackupCodes = !empty($totpData['backup_codes']);
@@ -53,7 +55,7 @@ final class TwoFactorController
 
     public function enableTotp(Request $request): Response
     {
-        if ($this->users === null) {
+        if ($this->usersRead === null || $this->usersWrite === null) {
             return new Response('', 503);
         }
 
@@ -63,7 +65,7 @@ final class TwoFactorController
         }
 
         $userId = (int) $user['id'];
-        $totpData = $this->users->getTotpData($userId);
+        $totpData = $this->usersRead->getTotpData($userId);
 
         if ((int) ($totpData['totp_enabled'] ?? 0) === 1) {
             $errorMessage = $this->view->translate('users.2fa.already_enabled');
@@ -74,7 +76,7 @@ final class TwoFactorController
         }
 
         $secret = $this->totp->generateSecret();
-        $this->users->setTotpSecret($userId, $secret);
+        $this->usersWrite->setTotpSecret($userId, $secret);
 
         $email = (string) ($user['email'] ?? $user['username']);
         $qrCodeUrl = $this->totp->getQRCodeUrl($secret, $email);
@@ -90,7 +92,7 @@ final class TwoFactorController
 
     public function verifyAndEnable(Request $request): Response
     {
-        if ($this->users === null) {
+        if ($this->usersRead === null || $this->usersWrite === null) {
             return new Response('', 503);
         }
 
@@ -140,8 +142,8 @@ final class TwoFactorController
 
         $userId = (int) $user['id'];
         $backupCodes = $this->totp->generateBackupCodes(10);
-        $this->users->setBackupCodes($userId, json_encode($backupCodes));
-        $this->users->setTotpEnabled($userId, true);
+        $this->usersWrite->setBackupCodes($userId, json_encode($backupCodes));
+        $this->usersWrite->setTotpEnabled($userId, true);
 
         $session->delete('_totp_setup_secret');
 
@@ -156,7 +158,7 @@ final class TwoFactorController
 
     public function disable(Request $request): Response
     {
-        if ($this->users === null) {
+        if ($this->usersRead === null || $this->usersWrite === null) {
             return new Response('', 503);
         }
 
@@ -195,9 +197,9 @@ final class TwoFactorController
             ], 422);
         }
 
-        $this->users->setTotpSecret($userId, null);
-        $this->users->setTotpEnabled($userId, false);
-        $this->users->setBackupCodes($userId, null);
+        $this->usersWrite->setTotpSecret($userId, null);
+        $this->usersWrite->setTotpEnabled($userId, false);
+        $this->usersWrite->setBackupCodes($userId, null);
 
         $this->logger->info('2FA disabled for user', [
             'user_id' => $userId,
@@ -212,7 +214,7 @@ final class TwoFactorController
 
     public function regenerateBackupCodes(Request $request): Response
     {
-        if ($this->users === null) {
+        if ($this->usersRead === null || $this->usersWrite === null) {
             return new Response('', 503);
         }
 
@@ -222,7 +224,7 @@ final class TwoFactorController
         }
 
         $userId = (int) $user['id'];
-        $totpData = $this->users->getTotpData($userId);
+        $totpData = $this->usersRead->getTotpData($userId);
 
         if ((int) ($totpData['totp_enabled'] ?? 0) !== 1) {
             $errorMessage = $this->view->translate('users.2fa.not_enabled');
@@ -232,7 +234,7 @@ final class TwoFactorController
         }
 
         $backupCodes = $this->totp->generateBackupCodes(10);
-        $this->users->setBackupCodes($userId, json_encode($backupCodes));
+        $this->usersWrite->setBackupCodes($userId, json_encode($backupCodes));
 
         $this->logger->info('Backup codes regenerated for user', [
             'user_id' => $userId,

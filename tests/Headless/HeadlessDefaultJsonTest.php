@@ -26,7 +26,8 @@ final class HeadlessDefaultJsonTest extends TestCase
             RequestScope::setRequest($request);
             $view = SecurityTestHelper::createView($db, $request, 'default');
 
-            $controller = new HomeController($view, $db);
+            $container = SecurityTestHelper::createContainer($db);
+            $controller = new HomeController($view, $container);
             $response = $controller->index($request);
 
             $this->assertSame(200, $response->getStatus());

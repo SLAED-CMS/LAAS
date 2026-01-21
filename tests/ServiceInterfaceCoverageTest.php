@@ -25,6 +25,26 @@ final class ServiceInterfaceCoverageTest extends TestCase
                 is_subclass_of($serviceClass, $interfaceClass),
                 $serviceClass . ' must implement ' . $interfaceClass
             );
+
+            $readInterfaceFile = substr($serviceFile, 0, -strlen('Service.php')) . 'ReadServiceInterface.php';
+            if (is_file($readInterfaceFile)) {
+                $readInterfaceClass = $this->classNameFromFile($readInterfaceFile, 'interface');
+                $this->assertTrue(interface_exists($readInterfaceClass), 'Missing interface ' . $readInterfaceClass);
+                $this->assertTrue(
+                    is_subclass_of($serviceClass, $readInterfaceClass),
+                    $serviceClass . ' must implement ' . $readInterfaceClass
+                );
+            }
+
+            $writeInterfaceFile = substr($serviceFile, 0, -strlen('Service.php')) . 'WriteServiceInterface.php';
+            if (is_file($writeInterfaceFile)) {
+                $writeInterfaceClass = $this->classNameFromFile($writeInterfaceFile, 'interface');
+                $this->assertTrue(interface_exists($writeInterfaceClass), 'Missing interface ' . $writeInterfaceClass);
+                $this->assertTrue(
+                    is_subclass_of($serviceClass, $writeInterfaceClass),
+                    $serviceClass . ' must implement ' . $writeInterfaceClass
+                );
+            }
         }
     }
 
@@ -122,6 +142,10 @@ final class ServiceInterfaceCoverageTest extends TestCase
                 continue;
             }
             if (!str_ends_with($file->getFilename(), 'ServiceInterface.php')) {
+                continue;
+            }
+            $name = $file->getFilename();
+            if (str_ends_with($name, 'ReadServiceInterface.php') || str_ends_with($name, 'WriteServiceInterface.php')) {
                 continue;
             }
             $files[] = $file->getPathname();

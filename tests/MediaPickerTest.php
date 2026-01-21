@@ -7,12 +7,14 @@ use Laas\Http\Request;
 use Laas\I18n\Translator;
 use Laas\Modules\Media\Controller\AdminMediaPickerController;
 use Laas\Settings\SettingsProvider;
+use Laas\Support\RequestScope;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
 use Laas\View\Theme\ThemeManager;
 use Laas\View\AssetManager;
 use Laas\View\View;
 use PHPUnit\Framework\TestCase;
+use Tests\Security\Support\SecurityTestHelper;
 use Tests\Support\InMemorySession;
 
 final class MediaPickerTest extends TestCase
@@ -36,7 +38,9 @@ final class MediaPickerTest extends TestCase
         $request = new Request('GET', '/admin/media/picker', [], [], [], '');
         $this->attachSession($request);
         $view = $this->createView($db, $request);
-        $controller = new AdminMediaPickerController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        $service = new \Laas\Domain\Media\MediaService($db, [], $this->rootPath);
+        $controller = new AdminMediaPickerController($view, $service, $container);
 
         $response = $controller->index($request);
         $this->assertSame(200, $response->getStatus());
@@ -57,7 +61,9 @@ final class MediaPickerTest extends TestCase
         ], '');
         $this->attachSession($request);
         $view = $this->createView($db, $request);
-        $controller = new AdminMediaPickerController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        $service = new \Laas\Domain\Media\MediaService($db, [], $this->rootPath);
+        $controller = new AdminMediaPickerController($view, $service, $container);
 
         $response = $controller->index($request);
         $this->assertSame(200, $response->getStatus());
@@ -80,7 +86,9 @@ final class MediaPickerTest extends TestCase
         ], '');
         $this->attachSession($request);
         $view = $this->createView($db, $request);
-        $controller = new AdminMediaPickerController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        $service = new \Laas\Domain\Media\MediaService($db, [], $this->rootPath);
+        $controller = new AdminMediaPickerController($view, $service, $container);
 
         $response = $controller->select($request);
         $this->assertSame(200, $response->getStatus());
@@ -94,7 +102,9 @@ final class MediaPickerTest extends TestCase
         $request = new Request('GET', '/admin/media/picker', [], [], [], '');
         $this->attachSession($request);
         $view = $this->createView($db, $request);
-        $controller = new AdminMediaPickerController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        $service = new \Laas\Domain\Media\MediaService($db, [], $this->rootPath);
+        $controller = new AdminMediaPickerController($view, $service, $container);
 
         $response = $controller->index($request);
         $this->assertSame(403, $response->getStatus());
@@ -149,6 +159,9 @@ final class MediaPickerTest extends TestCase
 
     private function createView(DatabaseManager $db, Request $request): View
     {
+        $hasRequestId = RequestScope::has('request.id');
+        $requestId = RequestScope::get('request.id');
+        RequestScope::reset();
         $settings = new SettingsProvider($db, [
             'site_name' => 'LAAS',
             'default_locale' => 'en',
@@ -176,6 +189,10 @@ final class MediaPickerTest extends TestCase
             $db
         );
         $view->setRequest($request);
+        RequestScope::set('db.manager', $db);
+        if ($hasRequestId) {
+            RequestScope::set('request.id', $requestId);
+        }
 
         return $view;
     }

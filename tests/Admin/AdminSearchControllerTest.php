@@ -19,6 +19,7 @@ use Laas\View\Theme\ThemeManager;
 use Laas\View\AssetManager;
 use Laas\View\View;
 use PHPUnit\Framework\TestCase;
+use Tests\Security\Support\SecurityTestHelper;
 use Tests\Support\InMemorySession;
 
 final class AdminSearchControllerTest extends TestCase
@@ -48,7 +49,8 @@ final class AdminSearchControllerTest extends TestCase
         $request->setSession($session);
         $view = $this->createView($db, $request);
         $service = $this->createService($db);
-        $controller = new AdminSearchController($view, $db, $service);
+        $container = SecurityTestHelper::createContainer($db);
+        $controller = new AdminSearchController($view, $service, $container);
 
         $response = $controller->index($request);
         $body = $response->getBody();
@@ -64,7 +66,8 @@ final class AdminSearchControllerTest extends TestCase
         $request = new Request('GET', '/admin/search', ['q' => 'a'], [], ['hx-request' => 'true'], '');
         $view = $this->createView($db, $request);
         $service = $this->createService($db);
-        $controller = new AdminSearchController($view, $db, $service);
+        $container = SecurityTestHelper::createContainer($db);
+        $controller = new AdminSearchController($view, $service, $container);
 
         $response = $controller->index($request);
 

@@ -5,8 +5,9 @@ namespace Laas\Modules\Admin\Controller;
 
 use Laas\Core\Container\Container;
 use Laas\Domain\Rbac\RbacServiceInterface;
-use Laas\Domain\ApiTokens\ApiTokensServiceInterface;
+use Laas\Domain\ApiTokens\ApiTokensReadServiceInterface;
 use Laas\Domain\ApiTokens\ApiTokensServiceException;
+use Laas\Domain\ApiTokens\ApiTokensWriteServiceInterface;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
@@ -20,7 +21,8 @@ final class ApiTokensController
 {
     public function __construct(
         private View $view,
-        private ?ApiTokensServiceInterface $apiTokensService = null,
+        private ?ApiTokensReadServiceInterface $apiTokensReadService = null,
+        private ?ApiTokensWriteServiceInterface $apiTokensWriteService = null,
         private ?Container $container = null
     ) {
     }
@@ -36,14 +38,14 @@ final class ApiTokensController
             return $this->forbidden($request);
         }
 
-        $service = $this->service();
-        if ($service === null) {
+        $readService = $this->readService();
+        if ($readService === null) {
             return $this->errorResponse($request, 'db_unavailable', 503, 'admin.api_tokens.index');
         }
 
         try {
-            $rows = $service->listTokens($userId);
-            $total = $service->countTokens($userId);
+            $rows = $readService->listTokens($userId);
+            $total = $readService->countTokens($userId);
         } catch (Throwable) {
             return $this->errorResponse($request, 'db_unavailable', 503, 'admin.api_tokens.index');
         }
@@ -60,8 +62,8 @@ final class ApiTokensController
         }
 
         $tokens = $this->mapTokensForView($rows);
-        $selectedScopes = $service->defaultScopesSelection();
-        $scopeOptions = $this->buildScopeOptions($selectedScopes, $service->allowedScopes());
+        $selectedScopes = $readService->defaultScopesSelection();
+        $scopeOptions = $this->buildScopeOptions($selectedScopes, $readService->allowedScopes());
 
         [$flashToken, $flashMessageKey] = $this->consumeFlashToken($request);
         $success = $flashMessageKey !== null ? $this->view->translate($flashMessageKey) : null;
@@ -80,8 +82,9 @@ final class ApiTokensController
             return $this->forbidden($request);
         }
 
-        $service = $this->service();
-        if ($service === null) {
+        $readService = $this->readService();
+        $writeService = $this->writeService();
+        if ($readService === null || $writeService === null) {
             return $this->errorResponse($request, 'db_unavailable', 503, 'admin.api_tokens.create');
         }
 
@@ -91,7 +94,7 @@ final class ApiTokensController
         $scopesInput = $this->readScopes($input);
 
         try {
-            $created = $service->createToken($userId, $name, $scopesInput, $expiresRaw);
+            $created = $writeService->createToken($userId, $name, $scopesInput, $expiresRaw);
         } catch (ApiTokensServiceException $e) {
             $code = $e->errorCode();
             $details = $e->details();
@@ -105,12 +108,12 @@ final class ApiTokensController
                 }
 
                 try {
-                    $tokens = $this->mapTokensForView($service->listTokens($userId));
+                    $tokens = $this->mapTokensForView($readService->listTokens($userId));
                 } catch (Throwable) {
                     return $this->errorResponse($request, 'db_unavailable', 503, 'admin.api_tokens.create');
                 }
-                $selectedScopes = $this->selectScopes($scopesInput, $service);
-                $scopeOptions = $this->buildScopeOptions($selectedScopes, $service->allowedScopes());
+                $selectedScopes = $this->selectScopes($scopesInput, $readService);
+                $scopeOptions = $this->buildScopeOptions($selectedScopes, $readService->allowedScopes());
                 $errors = $this->validationErrors($fields);
                 return $this->renderPage($request, $tokens, null, $name, $scopeOptions, null, $errors, 422);
             }
@@ -150,10 +153,10 @@ final class ApiTokensController
         }
 
         if ($request->isHtmx()) {
-            $tokens = $this->mapTokensForView($service->listTokens($userId));
+            $tokens = $this->mapTokensForView($readService->listTokens($userId));
             $plain = (string) ($created['token'] ?? '');
-            $selectedScopes = $service->defaultScopesSelection();
-            $scopeOptions = $this->buildScopeOptions($selectedScopes, $service->allowedScopes());
+            $selectedScopes = $readService->defaultScopesSelection();
+            $scopeOptions = $this->buildScopeOptions($selectedScopes, $readService->allowedScopes());
             $success = $this->view->translate('admin.api_tokens.created');
             $response = $this->renderPage($request, $tokens, $plain, $name, $scopeOptions, $success, [], 200);
             return $this->withSuccessTrigger($response, 'admin.api_tokens.created');
@@ -176,8 +179,9 @@ final class ApiTokensController
             return $this->forbidden($request);
         }
 
-        $service = $this->service();
-        if ($service === null) {
+        $readService = $this->readService();
+        $writeService = $this->writeService();
+        if ($readService === null || $writeService === null) {
             return $this->errorResponse($request, 'db_unavailable', 503, 'admin.api_tokens.rotate');
         }
 
@@ -193,7 +197,7 @@ final class ApiTokensController
         $scopesInput = $this->readScopes($input);
 
         try {
-            $created = $service->rotateToken($userId, $id, $nameRaw, $scopesInput, $expiresRaw, $revokeOld);
+            $created = $writeService->rotateToken($userId, $id, $nameRaw, $scopesInput, $expiresRaw, $revokeOld);
         } catch (ApiTokensServiceException $e) {
             $code = $e->errorCode();
             $details = $e->details();
@@ -207,12 +211,12 @@ final class ApiTokensController
                 }
 
                 try {
-                    $tokens = $this->mapTokensForView($service->listTokens($userId));
+                    $tokens = $this->mapTokensForView($readService->listTokens($userId));
                 } catch (Throwable) {
                     return $this->errorResponse($request, 'db_unavailable', 503, 'admin.api_tokens.rotate');
                 }
-                $selectedScopes = $this->selectScopes($scopesInput, $service);
-                $scopeOptions = $this->buildScopeOptions($selectedScopes, $service->allowedScopes());
+                $selectedScopes = $this->selectScopes($scopesInput, $readService);
+                $scopeOptions = $this->buildScopeOptions($selectedScopes, $readService->allowedScopes());
                 $errors = $this->validationErrors($fields);
                 return $this->renderPage($request, $tokens, null, $nameRaw, $scopeOptions, null, $errors, 422);
             }
@@ -264,10 +268,10 @@ final class ApiTokensController
         }
 
         if ($request->isHtmx()) {
-            $tokens = $this->mapTokensForView($service->listTokens($userId));
+            $tokens = $this->mapTokensForView($readService->listTokens($userId));
             $plain = (string) ($created['token'] ?? '');
-            $selectedScopes = $service->defaultScopesSelection();
-            $scopeOptions = $this->buildScopeOptions($selectedScopes, $service->allowedScopes());
+            $selectedScopes = $readService->defaultScopesSelection();
+            $scopeOptions = $this->buildScopeOptions($selectedScopes, $readService->allowedScopes());
             $success = $this->view->translate('admin.api_tokens.rotated');
             $response = $this->renderPage($request, $tokens, $plain, $name, $scopeOptions, $success, [], 200);
             return $this->withSuccessTrigger($response, 'admin.api_tokens.rotated');
@@ -290,8 +294,9 @@ final class ApiTokensController
             return $this->forbidden($request);
         }
 
-        $service = $this->service();
-        if ($service === null) {
+        $readService = $this->readService();
+        $writeService = $this->writeService();
+        if ($readService === null || $writeService === null) {
             return $this->errorResponse($request, 'db_unavailable', 503, 'admin.api_tokens.revoke');
         }
 
@@ -303,7 +308,7 @@ final class ApiTokensController
 
         $ok = true;
         try {
-            $service->revokeToken($id, $userId);
+            $writeService->revokeToken($id, $userId);
         } catch (ApiTokensServiceException $e) {
             if ($e->errorCode() === 'not_found') {
                 $ok = false;
@@ -339,12 +344,12 @@ final class ApiTokensController
         }
 
         try {
-            $tokens = $this->mapTokensForView($service->listTokens($userId));
+            $tokens = $this->mapTokensForView($readService->listTokens($userId));
         } catch (Throwable) {
             return $this->errorResponse($request, 'db_unavailable', 503, 'admin.api_tokens.revoke');
         }
-        $selectedScopes = $service->defaultScopesSelection();
-        $scopeOptions = $this->buildScopeOptions($selectedScopes, $service->allowedScopes());
+        $selectedScopes = $readService->defaultScopesSelection();
+        $scopeOptions = $this->buildScopeOptions($selectedScopes, $readService->allowedScopes());
         $success = $ok ? $this->view->translate('admin.api_tokens.revoked_ok') : null;
         $response = $this->renderPage($request, $tokens, null, null, $scopeOptions, $success, [], 200);
         if ($request->isHtmx() && $ok) {
@@ -430,18 +435,39 @@ final class ApiTokensController
         return $response->withToastSuccess($messageKey, $this->view->translate($messageKey));
     }
 
-    private function service(): ?ApiTokensServiceInterface
+    private function readService(): ?ApiTokensReadServiceInterface
     {
-        if ($this->apiTokensService !== null) {
-            return $this->apiTokensService;
+        if ($this->apiTokensReadService !== null) {
+            return $this->apiTokensReadService;
         }
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(ApiTokensServiceInterface::class);
-                if ($service instanceof ApiTokensServiceInterface) {
-                    $this->apiTokensService = $service;
-                    return $this->apiTokensService;
+                $service = $this->container->get(ApiTokensReadServiceInterface::class);
+                if ($service instanceof ApiTokensReadServiceInterface) {
+                    $this->apiTokensReadService = $service;
+                    return $this->apiTokensReadService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function writeService(): ?ApiTokensWriteServiceInterface
+    {
+        if ($this->apiTokensWriteService !== null) {
+            return $this->apiTokensWriteService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(ApiTokensWriteServiceInterface::class);
+                if ($service instanceof ApiTokensWriteServiceInterface) {
+                    $this->apiTokensWriteService = $service;
+                    return $this->apiTokensWriteService;
                 }
             } catch (Throwable) {
                 return null;
@@ -466,7 +492,7 @@ final class ApiTokensController
     }
 
     /** @return array<int, string> */
-    private function selectScopes(array $scopesInput, ApiTokensServiceInterface $service): array
+    private function selectScopes(array $scopesInput, ApiTokensReadServiceInterface $service): array
     {
         $allowed = $service->allowedScopes();
         $selected = [];

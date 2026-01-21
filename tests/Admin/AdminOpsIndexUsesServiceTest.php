@@ -23,7 +23,8 @@ final class AdminOpsIndexUsesServiceTest extends TestCase
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = $this->createView($db, $request);
         $service = new SpyOpsService($db, $this->config(), SecurityTestHelper::rootPath(), new SecurityReportsService($db));
-        $controller = new OpsController($view, $db, $service);
+        $container = SecurityTestHelper::createContainer($db);
+        $controller = new OpsController($view, $service, $container);
 
         $response = $controller->index($request);
 

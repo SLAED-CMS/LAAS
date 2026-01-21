@@ -111,7 +111,9 @@ final class SettingsControllerAccessTest extends TestCase
     {
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = $this->createView($db, $request);
-        return new SettingsController($view, $db, new SettingsService($db));
+        $container = SecurityTestHelper::createContainer($db);
+        $service = new SettingsService($db);
+        return new SettingsController($view, $service, $service, $container);
     }
 
     private function createView(DatabaseManager $db, Request $request): View

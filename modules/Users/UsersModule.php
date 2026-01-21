@@ -12,7 +12,8 @@ use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\PasswordResetRepository;
 use Laas\Database\Repositories\UsersRepository;
 use Laas\Domain\Users\UsersService;
-use Laas\Domain\Users\UsersServiceInterface;
+use Laas\Domain\Users\UsersReadServiceInterface;
+use Laas\Domain\Users\UsersWriteServiceInterface;
 use Laas\Modules\ModuleInterface;
 use Laas\Modules\Users\Controller\AuthController;
 use Laas\Modules\Users\Controller\PasswordResetController;
@@ -60,19 +61,22 @@ final class UsersModule implements ModuleInterface
     {
         $auth = $this->createAuthService($session);
 
-        $usersService = $this->resolveUsersService();
+        $usersReadService = $this->resolveUsersReadService();
+        $usersWriteService = $this->resolveUsersWriteService();
         $logger = new NullLogger();
 
         return match ($class) {
             AuthController::class => new AuthController(
                 $this->view,
                 $auth,
-                $usersService,
+                $usersReadService,
+                $usersWriteService,
                 new TotpService()
             ),
             PasswordResetController::class => new PasswordResetController(
                 $this->view,
-                $usersService,
+                $usersReadService,
+                $usersWriteService,
                 new PhpMailer(null, $logger),
                 new RateLimiter(dirname(__DIR__, 2)),
                 dirname(__DIR__, 2),
@@ -81,7 +85,8 @@ final class UsersModule implements ModuleInterface
             TwoFactorController::class => new TwoFactorController(
                 $this->view,
                 $auth,
-                $usersService,
+                $usersReadService,
+                $usersWriteService,
                 new TotpService(),
                 $logger
             ),
@@ -102,12 +107,32 @@ final class UsersModule implements ModuleInterface
         }
     }
 
-    private function resolveUsersService(): ?UsersServiceInterface
+    private function resolveUsersReadService(): ?UsersReadServiceInterface
     {
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(UsersServiceInterface::class);
-                if ($service instanceof UsersServiceInterface) {
+                $service = $this->container->get(UsersReadServiceInterface::class);
+                if ($service instanceof UsersReadServiceInterface) {
+                    return $service;
+                }
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+
+        if ($this->db === null) {
+            return null;
+        }
+
+        return new UsersService($this->db);
+    }
+
+    private function resolveUsersWriteService(): ?UsersWriteServiceInterface
+    {
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(UsersWriteServiceInterface::class);
+                if ($service instanceof UsersWriteServiceInterface) {
                     return $service;
                 }
             } catch (\Throwable) {

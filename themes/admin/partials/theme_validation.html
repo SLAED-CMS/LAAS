@@ -1,0 +1,33 @@
+{% if theme_validation.violations %}
+  <div class="alert alert-danger mb-2">Theme validation failed.</div>
+  <ul class="list-group mb-3">
+    {% foreach theme_validation.violations as item %}
+      <li class="list-group-item d-flex justify-content-between gap-2">
+        <div>
+          <div class="fw-semibold">{% item.code %}</div>
+          <div class="text-muted small">{% item.message %}</div>
+          <div class="text-muted small">{% item.file %}</div>
+        </div>
+      </li>
+    {% endforeach %}
+  </ul>
+{% endif %}
+
+{% if theme_validation.warnings %}
+  <div class="alert alert-warning mb-2">Theme validation warnings.</div>
+  <ul class="list-group mb-3">
+    {% foreach theme_validation.warnings as item %}
+      <li class="list-group-item d-flex justify-content-between gap-2">
+        <div>
+          <div class="fw-semibold">{% item.code %}</div>
+          <div class="text-muted small">{% item.message %}</div>
+          <div class="text-muted small">{% item.file %}</div>
+        </div>
+      </li>
+    {% endforeach %}
+  </ul>
+{% endif %}
+
+{% if theme_validation_ok %}
+  <div class="alert alert-success mb-0">Theme validation OK.</div>
+{% endif %}

@@ -58,7 +58,8 @@ final class AdminOpsHtmxPartialTest extends TestCase
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = $this->createView($db, $request);
         $service = $this->createOpsService($db);
-        return new OpsController($view, $db, $service);
+        $container = SecurityTestHelper::createContainer($db);
+        return new OpsController($view, $service, $container);
     }
 
     private function createView(DatabaseManager $db, Request $request): View

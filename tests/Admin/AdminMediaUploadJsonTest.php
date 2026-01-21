@@ -129,6 +129,7 @@ final class AdminMediaUploadJsonTest extends TestCase
     {
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = $this->createView($db, $request);
+        $container = SecurityTestHelper::createContainer($db);
         $root = SecurityTestHelper::rootPath();
         $configPath = $root . '/config/media.php';
         $config = is_file($configPath) ? require $configPath : [];
@@ -136,7 +137,7 @@ final class AdminMediaUploadJsonTest extends TestCase
             $config = [];
         }
         $service = new MediaService($db, $config, $root);
-        return new AdminMediaController($view, $db, $service);
+        return new AdminMediaController($view, $service, $service, $container);
     }
 
     private function createView(DatabaseManager $db, Request $request): View

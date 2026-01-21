@@ -5,7 +5,7 @@ require_once __DIR__ . '/Support/SecurityTestHelper.php';
 
 use Laas\Auth\AuthInterface;
 use Laas\Auth\TotpService;
-use Laas\Database\Repositories\UsersRepository;
+use Laas\Domain\Users\UsersService;
 use Laas\Http\Request;
 use Laas\Modules\Users\Controller\AuthController;
 use PHPUnit\Framework\Attributes\Group;
@@ -33,8 +33,8 @@ final class OpenRedirectSecurityTest extends TestCase
         SecurityTestHelper::insertUser($pdo, 1, 'admin', password_hash('secret', PASSWORD_DEFAULT));
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = SecurityTestHelper::createView($db, $request, 'default');
-        $usersRepo = new UsersRepository($pdo);
-        $controller = new AuthController($view, $auth, $usersRepo, new TotpService());
+        $usersService = new UsersService($db);
+        $controller = new AuthController($view, $auth, $usersService, $usersService, new TotpService());
 
         $response = $controller->doLogin($request);
         $this->assertSame('/admin', $response->getHeader('Location'));
@@ -53,8 +53,8 @@ final class OpenRedirectSecurityTest extends TestCase
         $pdo = SecurityTestHelper::createSqlitePdo();
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = SecurityTestHelper::createView($db, $request, 'default');
-        $usersRepo = new UsersRepository($pdo);
-        $controller = new AuthController($view, $auth, $usersRepo, new TotpService());
+        $usersService = new UsersService($db);
+        $controller = new AuthController($view, $auth, $usersService, $usersService, new TotpService());
 
         $response = $controller->doLogout($request);
         $this->assertSame('/', $response->getHeader('Location'));

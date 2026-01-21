@@ -38,6 +38,7 @@ final class AdminSearchServiceTest extends TestCase
         ]);
 
         $groups = $result['groups'] ?? [];
+        $this->assertArrayHasKey('commands', $groups);
         $this->assertArrayHasKey('pages', $groups);
         $this->assertArrayHasKey('media', $groups);
         $this->assertArrayHasKey('users', $groups);
@@ -63,8 +64,30 @@ final class AdminSearchServiceTest extends TestCase
             'global_limit' => 4,
         ]);
 
+        $commands = $result['groups']['commands']['items'] ?? [];
+        $this->assertLessThanOrEqual(3, count($commands));
+
         $pages = $result['groups']['pages']['items'] ?? [];
-        $this->assertCount(3, $pages);
+        $this->assertLessThanOrEqual(3, count($pages));
+    }
+
+    public function testCommandsRespectAllowlist(): void
+    {
+        $service = $this->createService($this->createDb());
+        $result = $service->search('page', [
+            'can_pages' => false,
+            'can_media' => false,
+            'can_users' => false,
+            'can_menus' => false,
+            'can_modules' => false,
+            'can_security_reports' => false,
+            'can_ops' => false,
+            'can_settings' => false,
+            'can_access' => false,
+        ]);
+
+        $commands = $result['groups']['commands']['items'] ?? [];
+        $this->assertCount(0, $commands);
     }
 
     public function testModuleCatalogHits(): void

@@ -47,7 +47,7 @@ final class CompatBlocksVsLegacyTest extends TestCase
         $pdo->exec("INSERT INTO pages_revisions (page_id, blocks_json, created_at, created_by) VALUES (2, '[]', '2026-01-01 00:00:00', 1)");
 
         $view = $this->createView($db);
-        $controller = new PagesController($view, $db, new PagesService($db));
+        $controller = new PagesController($view, new PagesService($db));
 
         $blocksRequest = new Request('GET', '/blocks', [], [], [], '');
         $view->setRequest($blocksRequest);

@@ -6,10 +6,12 @@ namespace Laas\Modules\Api\Controller;
 use Laas\Api\ApiResponse;
 use Laas\Core\Container\Container;
 use Laas\Domain\ApiTokens\ApiTokensServiceException;
-use Laas\Domain\ApiTokens\ApiTokensServiceInterface;
+use Laas\Domain\ApiTokens\ApiTokensReadServiceInterface;
+use Laas\Domain\ApiTokens\ApiTokensWriteServiceInterface;
 use Laas\Domain\Rbac\RbacServiceInterface;
-use Laas\Domain\Settings\SettingsServiceInterface;
-use Laas\Domain\Users\UsersServiceInterface;
+use Laas\Domain\Settings\SettingsReadServiceInterface;
+use Laas\Domain\Users\UsersReadServiceInterface;
+use Laas\Domain\Users\UsersWriteServiceInterface;
 use Laas\Http\ErrorCode;
 use Laas\Http\Request;
 use Laas\Http\Response;
@@ -22,18 +24,21 @@ final class AuthController
 {
     public function __construct(
         private ?View $view = null,
-        private ?ApiTokensServiceInterface $tokensService = null,
+        private ?ApiTokensReadServiceInterface $tokensReadService = null,
+        private ?ApiTokensWriteServiceInterface $tokensWriteService = null,
         private ?Container $container = null,
-        private ?UsersServiceInterface $usersService = null,
-        private ?SettingsServiceInterface $settingsService = null,
+        private ?UsersReadServiceInterface $usersReadService = null,
+        private ?UsersWriteServiceInterface $usersWriteService = null,
+        private ?SettingsReadServiceInterface $settingsService = null,
         private ?RbacServiceInterface $rbacService = null
     ) {
     }
 
     public function token(Request $request): Response
     {
-        $tokensService = $this->tokensService();
-        if ($tokensService === null) {
+        $tokensRead = $this->tokensReadService();
+        $tokensWrite = $this->tokensWriteService();
+        if ($tokensRead === null || $tokensWrite === null) {
             return ApiResponse::error(ErrorCode::SERVICE_UNAVAILABLE, 'Service Unavailable', [], 503);
         }
 
@@ -55,7 +60,7 @@ final class AuthController
             }
         }
 
-        $allowedScopes = $tokensService->allowedScopes();
+        $allowedScopes = $tokensRead->allowedScopes();
         $invalidScopes = $this->invalidScopes($scopesInput, $allowedScopes);
         $scopes = $this->normalizeScopes($scopesInput, $allowedScopes);
         if ($scopesInput === [] && $allowedScopes !== []) {
@@ -98,7 +103,7 @@ final class AuthController
         }
 
         try {
-            $result = $tokensService->createToken($userId, $name, $scopes, $expiresAt);
+            $result = $tokensWrite->createToken($userId, $name, $scopes, $expiresAt);
         } catch (ApiTokensServiceException $e) {
             if ($e->errorCode() === 'validation') {
                 $details = $e->details();
@@ -173,7 +178,7 @@ final class AuthController
             return ApiResponse::error(ErrorCode::AUTH_REQUIRED, 'Unauthorized', [], 401);
         }
 
-        $tokensService = $this->tokensService();
+        $tokensService = $this->tokensWriteService();
         if ($tokensService === null) {
             return ApiResponse::error(ErrorCode::SERVICE_UNAVAILABLE, 'Service Unavailable', [], 503);
         }
@@ -407,18 +412,18 @@ final class AuthController
         return array_values(array_unique($out));
     }
 
-    private function tokensService(): ?ApiTokensServiceInterface
+    private function tokensReadService(): ?ApiTokensReadServiceInterface
     {
-        if ($this->tokensService !== null) {
-            return $this->tokensService;
+        if ($this->tokensReadService !== null) {
+            return $this->tokensReadService;
         }
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(ApiTokensServiceInterface::class);
-                if ($service instanceof ApiTokensServiceInterface) {
-                    $this->tokensService = $service;
-                    return $this->tokensService;
+                $service = $this->container->get(ApiTokensReadServiceInterface::class);
+                if ($service instanceof ApiTokensReadServiceInterface) {
+                    $this->tokensReadService = $service;
+                    return $this->tokensReadService;
                 }
             } catch (Throwable) {
                 return null;
@@ -428,18 +433,18 @@ final class AuthController
         return null;
     }
 
-    private function usersService(): ?UsersServiceInterface
+    private function tokensWriteService(): ?ApiTokensWriteServiceInterface
     {
-        if ($this->usersService !== null) {
-            return $this->usersService;
+        if ($this->tokensWriteService !== null) {
+            return $this->tokensWriteService;
         }
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(UsersServiceInterface::class);
-                if ($service instanceof UsersServiceInterface) {
-                    $this->usersService = $service;
-                    return $this->usersService;
+                $service = $this->container->get(ApiTokensWriteServiceInterface::class);
+                if ($service instanceof ApiTokensWriteServiceInterface) {
+                    $this->tokensWriteService = $service;
+                    return $this->tokensWriteService;
                 }
             } catch (Throwable) {
                 return null;
@@ -449,7 +454,28 @@ final class AuthController
         return null;
     }
 
-    private function settingsService(): ?SettingsServiceInterface
+    private function usersService(): ?UsersReadServiceInterface
+    {
+        if ($this->usersReadService !== null) {
+            return $this->usersReadService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(UsersReadServiceInterface::class);
+                if ($service instanceof UsersReadServiceInterface) {
+                    $this->usersReadService = $service;
+                    return $this->usersReadService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function settingsService(): ?SettingsReadServiceInterface
     {
         if ($this->settingsService !== null) {
             return $this->settingsService;
@@ -457,8 +483,8 @@ final class AuthController
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(SettingsServiceInterface::class);
-                if ($service instanceof SettingsServiceInterface) {
+                $service = $this->container->get(SettingsReadServiceInterface::class);
+                if ($service instanceof SettingsReadServiceInterface) {
                     $this->settingsService = $service;
                     return $this->settingsService;
                 }

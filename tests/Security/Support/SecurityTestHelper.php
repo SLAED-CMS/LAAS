@@ -4,12 +4,15 @@ declare(strict_types=1);
 namespace Tests\Security\Support;
 
 use Laas\Auth\NullAuthService;
+use Laas\Core\Container\Container;
+use Laas\Core\Kernel;
 use Laas\Database\DatabaseManager;
 use Laas\Http\Request;
 use Laas\Http\Session\SessionManager;
 use Laas\I18n\Translator;
 use Laas\Session\SessionFactory;
 use Laas\Settings\SettingsProvider;
+use Laas\Support\RequestScope;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
 use Laas\View\Theme\ThemeManager;
@@ -39,7 +42,23 @@ final class SecurityTestHelper
         $ref = new ReflectionProperty($db, 'pdo');
         $ref->setAccessible(true);
         $ref->setValue($db, $pdo);
+        RequestScope::forget('db.healthcheck');
         return $db;
+    }
+
+    public static function createKernel(DatabaseManager $db): Kernel
+    {
+        $kernel = new Kernel(self::rootPath());
+        $ref = new ReflectionProperty($kernel, 'databaseManager');
+        $ref->setAccessible(true);
+        $ref->setValue($kernel, $db);
+        return $kernel;
+    }
+
+    public static function createContainer(DatabaseManager $db): Container
+    {
+        $kernel = self::createKernel($db);
+        return $kernel->container();
     }
 
     public static function startSession(string $rootPath, array $config = []): void
@@ -51,6 +70,9 @@ final class SecurityTestHelper
 
     public static function createView(DatabaseManager $db, Request $request, string $theme, string $locale = 'en'): View
     {
+        $hasRequestId = RequestScope::has('request.id');
+        $requestId = RequestScope::get('request.id');
+        RequestScope::reset();
         $settings = new SettingsProvider($db, [
             'site_name' => 'LAAS',
             'default_locale' => $locale,
@@ -79,6 +101,10 @@ final class SecurityTestHelper
             $db
         );
         $view->setRequest($request);
+        RequestScope::set('db.manager', $db);
+        if ($hasRequestId) {
+            RequestScope::set('request.id', $requestId);
+        }
 
         return $view;
     }

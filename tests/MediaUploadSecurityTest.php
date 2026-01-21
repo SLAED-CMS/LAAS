@@ -27,12 +27,14 @@ namespace {
     use Laas\Modules\Media\Repository\MediaRepository;
     use Laas\Modules\Media\Service\StorageService;
     use Laas\Settings\SettingsProvider;
+    use Laas\Support\RequestScope;
     use Laas\View\Template\TemplateCompiler;
     use Laas\View\Template\TemplateEngine;
     use Laas\View\Theme\ThemeManager;
     use Laas\View\AssetManager;
     use Laas\View\View;
     use PHPUnit\Framework\TestCase;
+    use Tests\Security\Support\SecurityTestHelper;
     use Tests\Support\InMemorySession;
 
     final class MediaUploadSecurityTest extends TestCase
@@ -225,6 +227,9 @@ namespace {
 
         private function createView(DatabaseManager $db, Request $request): View
         {
+            $hasRequestId = RequestScope::has('request.id');
+            $requestId = RequestScope::get('request.id');
+            RequestScope::reset();
             $settings = new SettingsProvider($db, [
                 'site_name' => 'LAAS',
                 'default_locale' => 'en',
@@ -252,6 +257,10 @@ namespace {
                 $db
             );
             $view->setRequest($request);
+            RequestScope::set('db.manager', $db);
+            if ($hasRequestId) {
+                RequestScope::set('request.id', $requestId);
+            }
 
             return $view;
         }
@@ -259,13 +268,14 @@ namespace {
         private function createController(DatabaseManager $db, Request $request): AdminMediaController
         {
             $view = $this->createView($db, $request);
+            $container = SecurityTestHelper::createContainer($db);
             $config = require $this->rootPath . '/config/media.php';
             if (!is_array($config)) {
                 $config = [];
             }
             $service = new MediaService($db, $config, $this->rootPath);
 
-            return new AdminMediaController($view, $db, $service);
+            return new AdminMediaController($view, $service, $service, $container);
         }
 
         private function clearRateLimit(): void

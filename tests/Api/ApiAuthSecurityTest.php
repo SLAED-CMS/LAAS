@@ -89,7 +89,9 @@ final class ApiAuthSecurityTest extends TestCase
         $request->setAttribute('api.user', ['id' => 1, 'status' => 1]);
         $request->setAttribute('api.token', (new ApiTokensRepository($db->pdo()))->findById((int) $issued['token_id']));
 
-        $controller = new AuthController($db);
+        $tokensService = new \Laas\Domain\ApiTokens\ApiTokensService($db, [], $root);
+        $usersService = new \Laas\Domain\Users\UsersService($db);
+        $controller = new AuthController(null, $tokensService, $tokensService, null, $usersService, $usersService);
         $response = $controller->revoke($request);
 
         $this->assertSame(200, $response->getStatus());
@@ -112,7 +114,9 @@ final class ApiAuthSecurityTest extends TestCase
         putenv('API_TOKEN_ISSUE_MODE=admin_or_password');
         $_ENV['API_TOKEN_ISSUE_MODE'] = 'admin_or_password';
 
-        $controller = new AuthController($db);
+        $tokensService = new \Laas\Domain\ApiTokens\ApiTokensService($db, [], $root);
+        $usersService = new \Laas\Domain\Users\UsersService($db);
+        $controller = new AuthController(null, $tokensService, $tokensService, null, $usersService, $usersService);
         $payload = json_encode([
             'name' => 'CLI',
             'username' => 'admin',

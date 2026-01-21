@@ -7,12 +7,14 @@ use Laas\Http\Request;
 use Laas\I18n\Translator;
 use Laas\Modules\Changelog\Controller\AdminChangelogController;
 use Laas\Settings\SettingsProvider;
+use Laas\Support\RequestScope;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
 use Laas\View\Theme\ThemeManager;
 use Laas\View\AssetManager;
 use Laas\View\View;
 use PHPUnit\Framework\TestCase;
+use Tests\Security\Support\SecurityTestHelper;
 use Tests\Support\InMemorySession;
 
 final class AdminControllerTest extends TestCase
@@ -31,7 +33,9 @@ final class AdminControllerTest extends TestCase
         $request->setSession($this->buildSession(1));
         $view = $this->createView($db, $request);
 
-        $controller = new AdminChangelogController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        $service = new \Laas\Domain\Settings\SettingsService($db);
+        $controller = new AdminChangelogController($view, $service, $service, $container);
         $response = $controller->index($request);
 
         $this->assertSame(403, $response->getStatus());
@@ -47,7 +51,9 @@ final class AdminControllerTest extends TestCase
         $request->setSession($this->buildSession(1));
         $view = $this->createView($db, $request);
 
-        $controller = new AdminChangelogController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        $service = new \Laas\Domain\Settings\SettingsService($db);
+        $controller = new AdminChangelogController($view, $service, $service, $container);
         $response = $controller->save($request);
 
         $this->assertSame(422, $response->getStatus());
@@ -62,7 +68,9 @@ final class AdminControllerTest extends TestCase
         $request->setSession($this->buildSession(1));
         $view = $this->createView($db, $request);
 
-        $controller = new AdminChangelogController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        $service = new \Laas\Domain\Settings\SettingsService($db);
+        $controller = new AdminChangelogController($view, $service, $service, $container);
         $response = $controller->clearCache($request);
 
         $this->assertSame(200, $response->getStatus());
@@ -94,6 +102,9 @@ final class AdminControllerTest extends TestCase
 
     private function createView(DatabaseManager $db, Request $request): View
     {
+        $hasRequestId = RequestScope::has('request.id');
+        $requestId = RequestScope::get('request.id');
+        RequestScope::reset();
         $settings = new SettingsProvider($db, [
             'site_name' => 'LAAS',
             'default_locale' => 'en',
@@ -121,6 +132,10 @@ final class AdminControllerTest extends TestCase
             $db
         );
         $view->setRequest($request);
+        RequestScope::set('db.manager', $db);
+        if ($hasRequestId) {
+            RequestScope::set('request.id', $requestId);
+        }
 
         return $view;
     }

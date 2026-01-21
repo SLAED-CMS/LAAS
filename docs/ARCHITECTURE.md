@@ -2341,6 +2341,11 @@ $config = $container->get('config');
 - In `APP_DEBUG`, a blocked mutation emits a single warning per request with request-id and path for diagnostics.
 - Write interfaces always resolve to the real service instance.
 
+**Admin UX tools (v4.0.20):**
+- Command Palette (Ctrl+K) provides admin search + allowlisted commands via `AdminSearchService`.
+- Blocks Studio (MVP) renders a list editor for Blocks JSON; the textarea remains the source of truth.
+- Both are admin-only UI helpers and do not change public rendering or service behavior.
+
 **Controller boundary example:**
 
 ```php

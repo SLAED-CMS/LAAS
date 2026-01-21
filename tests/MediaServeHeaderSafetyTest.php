@@ -65,7 +65,8 @@ final class MediaServeHeaderSafetyTest extends TestCase
         ]);
 
         $request = new Request('GET', '/media/1/../evil', ['p' => 'view'], [], [], '');
-        $controller = new MediaServeController(null, $db);
+        $service = new \Laas\Domain\Media\MediaService($db, [], $this->rootPath);
+        $controller = new MediaServeController(null, $service, null, null, null, $storage);
         $response = $controller->serve($request, ['id' => 1, 'name' => '../evil']);
 
         $header = (string) $response->getHeader('Content-Disposition');

@@ -22,7 +22,8 @@ final class AdminSecurityReportsIndexUsesServiceTest extends TestCase
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = $this->createView($db, $request);
         $service = new SpySecurityReportsService($db);
-        $controller = new SecurityReportsController($view, $db, $service);
+        $container = SecurityTestHelper::createContainer($db);
+        $controller = new SecurityReportsController($view, $service, $service, $container);
 
         $response = $controller->index($request);
 

@@ -30,7 +30,7 @@ final class PagesSearchControllerTest extends TestCase
         $request = new Request('GET', '/search', ['q' => 'a'], [], [], '');
         $view = $this->createView($db, $request);
 
-        $controller = new PagesController($view, $db, new PagesService($db));
+        $controller = new PagesController($view, new PagesService($db));
         $response = $controller->search($request);
 
         $this->assertSame(422, $response->getStatus());
@@ -43,7 +43,7 @@ final class PagesSearchControllerTest extends TestCase
         $view = $this->createView($db, $request);
         $service = new SpyPagesService($db);
 
-        $controller = new PagesController($view, $db, $service);
+        $controller = new PagesController($view, $service);
         $response = $controller->search($request);
 
         $this->assertSame(200, $response->getStatus());

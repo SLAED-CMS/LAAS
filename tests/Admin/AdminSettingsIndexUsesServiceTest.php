@@ -23,7 +23,8 @@ final class AdminSettingsIndexUsesServiceTest extends TestCase
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = $this->createView($db, $request);
         $service = new SpySettingsService($db);
-        $controller = new SettingsController($view, $db, $service);
+        $container = SecurityTestHelper::createContainer($db);
+        $controller = new SettingsController($view, $service, $service, $container);
 
         $response = $controller->index($request);
 

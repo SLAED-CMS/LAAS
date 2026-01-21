@@ -5,7 +5,7 @@ require_once __DIR__ . '/Security/Support/SecurityTestHelper.php';
 
 use Laas\Auth\AuthInterface;
 use Laas\Auth\TotpService;
-use Laas\Database\Repositories\UsersRepository;
+use Laas\Domain\Users\UsersService;
 use Laas\Http\Request;
 use Laas\Modules\Users\Controller\AuthController;
 use Laas\Auth\NullAuthService;
@@ -47,8 +47,9 @@ final class AuthControllerRedirectTest extends TestCase
         $pdo = SecurityTestHelper::createSqlitePdo();
         SecurityTestHelper::seedRbacTables($pdo);
         SecurityTestHelper::insertUser($pdo, 1, 'admin', password_hash('secret', PASSWORD_DEFAULT));
-        $usersRepo = new UsersRepository($pdo);
-        $controller = new AuthController($view, $auth, $usersRepo, new TotpService());
+        $db = SecurityTestHelper::dbManagerFromPdo($pdo);
+        $usersService = new UsersService($db);
+        $controller = new AuthController($view, $auth, $usersService, $usersService, new TotpService());
         $response = $controller->doLogin($request);
 
         $this->assertSame(303, $response->getStatus());
@@ -67,8 +68,8 @@ final class AuthControllerRedirectTest extends TestCase
         $request = new Request('POST', '/logout', ['next' => 'http://evil.test'], [], [], '');
         $view = $this->createView();
         $db = new DatabaseManager(['driver' => 'sqlite', 'database' => ':memory:']);
-        $usersRepo = new UsersRepository($db->pdo());
-        $controller = new AuthController($view, $auth, $usersRepo, new TotpService());
+        $usersService = new UsersService($db);
+        $controller = new AuthController($view, $auth, $usersService, $usersService, new TotpService());
         $response = $controller->doLogout($request);
 
         $this->assertSame(303, $response->getStatus());

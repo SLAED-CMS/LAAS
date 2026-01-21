@@ -5,7 +5,7 @@ namespace Laas\Modules\Admin\Controller;
 
 use Laas\Core\Container\Container;
 use Laas\Domain\Rbac\RbacServiceInterface;
-use Laas\Domain\Users\UsersServiceInterface;
+use Laas\Domain\Users\UsersReadServiceInterface;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
@@ -17,7 +17,7 @@ final class RbacDiagnosticsController
 {
     public function __construct(
         private View $view,
-        private ?UsersServiceInterface $usersService = null,
+        private ?UsersReadServiceInterface $usersService = null,
         private ?Container $container = null,
         private ?RbacServiceInterface $rbacService = null,
         private ?RbacDiagnosticsService $diagnosticsService = null
@@ -183,7 +183,7 @@ final class RbacDiagnosticsController
         return null;
     }
 
-    private function usersService(): ?UsersServiceInterface
+    private function usersService(): ?UsersReadServiceInterface
     {
         if ($this->usersService !== null) {
             return $this->usersService;
@@ -191,8 +191,8 @@ final class RbacDiagnosticsController
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(UsersServiceInterface::class);
-                if ($service instanceof UsersServiceInterface) {
+                $service = $this->container->get(UsersReadServiceInterface::class);
+                if ($service instanceof UsersReadServiceInterface) {
                     $this->usersService = $service;
                     return $this->usersService;
                 }

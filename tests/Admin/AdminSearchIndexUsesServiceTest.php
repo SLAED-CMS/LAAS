@@ -21,7 +21,8 @@ final class AdminSearchIndexUsesServiceTest extends TestCase
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = $this->createView($db, $request);
         $service = new SpyAdminSearchService();
-        $controller = new AdminSearchController($view, $db, $service);
+        $container = SecurityTestHelper::createContainer($db);
+        $controller = new AdminSearchController($view, $service, $container);
 
         $response = $controller->index($request);
 

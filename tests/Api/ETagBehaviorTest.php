@@ -13,7 +13,8 @@ final class ETagBehaviorTest extends TestCase
     public function testIfNoneMatchReturns304(): void
     {
         $db = $this->createDb();
-        $controller = new PagesV2Controller($db);
+        $service = new \Laas\Domain\Pages\PagesService($db);
+        $controller = new PagesV2Controller(null, $service);
 
         $request = new Request('GET', '/api/v2/pages/1', [], [], [], '');
         $response = $controller->show($request, ['id' => 1]);

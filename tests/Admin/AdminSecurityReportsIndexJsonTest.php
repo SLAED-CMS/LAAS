@@ -103,7 +103,9 @@ final class AdminSecurityReportsIndexJsonTest extends TestCase
     {
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = $this->createView($db, $request);
-        return new SecurityReportsController($view, $db, new SecurityReportsService($db));
+        $container = SecurityTestHelper::createContainer($db);
+        $service = new SecurityReportsService($db);
+        return new SecurityReportsController($view, $service, $service, $container);
     }
 
     private function createView(DatabaseManager $db, Request $request): View

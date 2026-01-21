@@ -441,11 +441,22 @@ final class Kernel
             return new Translator($rootPath, $theme, $locale);
         }, Translator::class);
 
+        $bindSingleton($container, ThemeManager::class, static function () use ($config, $rootPath): ThemeManager {
+            $appConfig = $config['app'] ?? [];
+            $theme = $appConfig['theme'] ?? 'default';
+
+            return new ThemeManager($rootPath . '/themes', $theme, null);
+        }, ThemeManager::class);
+
+        $bindSingleton($container, ThemeValidator::class, static function () use ($rootPath): ThemeValidator {
+            return new ThemeValidator($rootPath . '/themes');
+        }, ThemeValidator::class);
+
         $bindSingleton($container, PagesServiceInterface::class, function (): PagesServiceInterface {
             return new PagesService($this->database());
         }, PagesService::class);
 
-        $bindSingleton($container, PagesReadServiceInterface::class, function (): PagesReadServiceInterface {
+        $bindSingleton($container, PagesReadServiceInterface::class, function () use ($container): PagesReadServiceInterface {
             $service = $container->get(PagesServiceInterface::class);
             return ReadOnlyProxy::wrap($service, PagesReadServiceInterface::class);
         }, PagesService::class, true);
@@ -453,7 +464,7 @@ final class Kernel
         $bindSingleton(
             $container,
             PagesWriteServiceInterface::class,
-            function (): PagesWriteServiceInterface {
+            function () use ($container): PagesWriteServiceInterface {
                 return $container->get(PagesServiceInterface::class);
             },
             PagesService::class
@@ -475,7 +486,7 @@ final class Kernel
             return new MediaSignedUrlService($config['media'] ?? []);
         }, MediaSignedUrlService::class);
 
-        $bindSingleton($container, MediaThumbnailService::class, function (): MediaThumbnailService {
+        $bindSingleton($container, MediaThumbnailService::class, function () use ($container): MediaThumbnailService {
             $storage = $container->get(StorageService::class);
             return new MediaThumbnailService($storage);
         }, MediaThumbnailService::class);
@@ -484,12 +495,12 @@ final class Kernel
             return new ChangelogCache($rootPath);
         }, ChangelogCache::class);
 
-        $bindSingleton($container, ChangelogService::class, function () use ($rootPath): ChangelogService {
+        $bindSingleton($container, ChangelogService::class, function () use ($rootPath, $container): ChangelogService {
             $cache = $container->get(ChangelogCache::class);
             return new ChangelogService($rootPath, $cache);
         }, ChangelogService::class);
 
-        $bindSingleton($container, MediaReadServiceInterface::class, function (): MediaReadServiceInterface {
+        $bindSingleton($container, MediaReadServiceInterface::class, function () use ($container): MediaReadServiceInterface {
             $service = $container->get(MediaServiceInterface::class);
             return ReadOnlyProxy::wrap($service, MediaReadServiceInterface::class);
         }, MediaService::class, true);
@@ -497,7 +508,7 @@ final class Kernel
         $bindSingleton(
             $container,
             MediaWriteServiceInterface::class,
-            function (): MediaWriteServiceInterface {
+            function () use ($container): MediaWriteServiceInterface {
                 return $container->get(MediaServiceInterface::class);
             },
             MediaService::class
@@ -510,7 +521,7 @@ final class Kernel
         $bindSingleton(
             $container,
             SecurityReportsReadServiceInterface::class,
-            function (): SecurityReportsReadServiceInterface {
+            function () use ($container): SecurityReportsReadServiceInterface {
                 $service = $container->get(SecurityReportsServiceInterface::class);
             return ReadOnlyProxy::wrap($service, SecurityReportsReadServiceInterface::class);
             },
@@ -521,7 +532,7 @@ final class Kernel
         $bindSingleton(
             $container,
             SecurityReportsWriteServiceInterface::class,
-            function (): SecurityReportsWriteServiceInterface {
+            function () use ($container): SecurityReportsWriteServiceInterface {
                 return $container->get(SecurityReportsServiceInterface::class);
             },
             SecurityReportsService::class
@@ -535,7 +546,7 @@ final class Kernel
             );
         }, ApiTokensService::class);
 
-        $bindSingleton($container, ApiTokensReadServiceInterface::class, function (): ApiTokensReadServiceInterface {
+        $bindSingleton($container, ApiTokensReadServiceInterface::class, function () use ($container): ApiTokensReadServiceInterface {
             $service = $container->get(ApiTokensServiceInterface::class);
             return ReadOnlyProxy::wrap($service, ApiTokensReadServiceInterface::class);
         }, ApiTokensService::class, true);
@@ -543,13 +554,13 @@ final class Kernel
         $bindSingleton(
             $container,
             ApiTokensWriteServiceInterface::class,
-            function (): ApiTokensWriteServiceInterface {
+            function () use ($container): ApiTokensWriteServiceInterface {
                 return $container->get(ApiTokensServiceInterface::class);
             },
             ApiTokensService::class
         );
 
-        $bindSingleton($container, OpsServiceInterface::class, function () use ($config, $rootPath): OpsServiceInterface {
+        $bindSingleton($container, OpsServiceInterface::class, function () use ($config, $rootPath, $container): OpsServiceInterface {
             $securityReports = $container->get(SecurityReportsServiceInterface::class);
 
             return new OpsService(
@@ -560,12 +571,12 @@ final class Kernel
             );
         }, OpsService::class);
 
-        $bindSingleton($container, OpsReadServiceInterface::class, function (): OpsReadServiceInterface {
+        $bindSingleton($container, OpsReadServiceInterface::class, function () use ($container): OpsReadServiceInterface {
             $service = $container->get(OpsServiceInterface::class);
             return ReadOnlyProxy::wrap($service, OpsReadServiceInterface::class);
         }, OpsService::class, true);
 
-        $bindSingleton($container, AdminSearchServiceInterface::class, function () use ($config, $rootPath): AdminSearchServiceInterface {
+        $bindSingleton($container, AdminSearchServiceInterface::class, function () use ($config, $rootPath, $container): AdminSearchServiceInterface {
             $pages = $container->get(PagesServiceInterface::class);
             $media = $container->get(MediaServiceInterface::class);
             $users = $container->get(UsersServiceInterface::class);
@@ -600,7 +611,7 @@ final class Kernel
             return new UsersService($this->database());
         }, UsersService::class);
 
-        $bindSingleton($container, UsersReadServiceInterface::class, function (): UsersReadServiceInterface {
+        $bindSingleton($container, UsersReadServiceInterface::class, function () use ($container): UsersReadServiceInterface {
             $service = $container->get(UsersServiceInterface::class);
             return ReadOnlyProxy::wrap($service, UsersReadServiceInterface::class);
         }, UsersService::class, true);
@@ -608,7 +619,7 @@ final class Kernel
         $bindSingleton(
             $container,
             UsersWriteServiceInterface::class,
-            function (): UsersWriteServiceInterface {
+            function () use ($container): UsersWriteServiceInterface {
                 return $container->get(UsersServiceInterface::class);
             },
             UsersService::class
@@ -618,7 +629,7 @@ final class Kernel
             return new MenusService($this->database());
         }, MenusService::class);
 
-        $bindSingleton($container, MenusReadServiceInterface::class, function (): MenusReadServiceInterface {
+        $bindSingleton($container, MenusReadServiceInterface::class, function () use ($container): MenusReadServiceInterface {
             $service = $container->get(MenusServiceInterface::class);
             return ReadOnlyProxy::wrap($service, MenusReadServiceInterface::class);
         }, MenusService::class, true);
@@ -626,7 +637,7 @@ final class Kernel
         $bindSingleton(
             $container,
             MenusWriteServiceInterface::class,
-            function (): MenusWriteServiceInterface {
+            function () use ($container): MenusWriteServiceInterface {
                 return $container->get(MenusServiceInterface::class);
             },
             MenusService::class
@@ -640,14 +651,14 @@ final class Kernel
             return new SettingsService($this->database());
         }, SettingsService::class);
 
-        $bindSingleton($container, RbacDiagnosticsService::class, function (): RbacDiagnosticsService {
+        $bindSingleton($container, RbacDiagnosticsService::class, function () use ($container): RbacDiagnosticsService {
             $rbac = $container->get(RbacServiceInterface::class);
             $users = $container->get(UsersServiceInterface::class);
 
             return new RbacDiagnosticsService($rbac, $users);
         }, RbacDiagnosticsService::class);
 
-        $bindSingleton($container, HealthService::class, function () use ($config, $rootPath): HealthService {
+        $bindSingleton($container, HealthService::class, function () use ($config, $rootPath, $container): HealthService {
             $storage = $container->get(StorageService::class);
             $checker = new ConfigSanityChecker();
             $securityConfig = $config['security'] ?? [];
@@ -680,7 +691,7 @@ final class Kernel
             );
         }, HealthService::class);
 
-        $bindSingleton($container, SettingsReadServiceInterface::class, function (): SettingsReadServiceInterface {
+        $bindSingleton($container, SettingsReadServiceInterface::class, function () use ($container): SettingsReadServiceInterface {
             $service = $container->get(SettingsServiceInterface::class);
             return ReadOnlyProxy::wrap($service, SettingsReadServiceInterface::class);
         }, SettingsService::class, true);
@@ -688,7 +699,7 @@ final class Kernel
         $bindSingleton(
             $container,
             SettingsWriteServiceInterface::class,
-            function (): SettingsWriteServiceInterface {
+            function () use ($container): SettingsWriteServiceInterface {
                 return $container->get(SettingsServiceInterface::class);
             },
             SettingsService::class

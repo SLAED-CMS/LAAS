@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 use Laas\Auth\NullAuthService;
 use Laas\Auth\TotpService;
-use Laas\Database\Repositories\UsersRepository;
+use Laas\Domain\Users\UsersService;
 use Laas\Http\Request;
 use Laas\Modules\Users\Controller\AuthController;
 use Laas\Support\RequestScope;
@@ -27,8 +27,8 @@ final class HeadlessHtmlAllowedTest extends TestCase
             RequestScope::setRequest($request);
             $view = SecurityTestHelper::createView($db, $request, 'default');
 
-            $users = new UsersRepository($db->pdo());
-            $controller = new AuthController($view, new NullAuthService(), $users, new TotpService());
+            $usersService = new UsersService($db);
+            $controller = new AuthController($view, new NullAuthService(), $usersService, $usersService, new TotpService());
             $response = $controller->showLogin($request);
 
             $this->assertSame(200, $response->getStatus());

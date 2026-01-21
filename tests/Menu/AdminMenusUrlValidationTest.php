@@ -66,7 +66,9 @@ final class AdminMenusUrlValidationTest extends TestCase
     {
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = $this->createView($db, $request);
-        return new AdminMenusController($view, $db, new MenusService($db));
+        $container = SecurityTestHelper::createContainer($db);
+        $service = new MenusService($db);
+        return new AdminMenusController($view, $service, $service, $container);
     }
 
     private function createView(DatabaseManager $db, Request $request): View

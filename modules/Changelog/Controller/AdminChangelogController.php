@@ -5,7 +5,8 @@ namespace Laas\Modules\Changelog\Controller;
 
 use Laas\Core\Container\Container;
 use Laas\Domain\Rbac\RbacServiceInterface;
-use Laas\Domain\Settings\SettingsServiceInterface;
+use Laas\Domain\Settings\SettingsReadServiceInterface;
+use Laas\Domain\Settings\SettingsWriteServiceInterface;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
@@ -22,7 +23,8 @@ final class AdminChangelogController
 {
     public function __construct(
         private View $view,
-        private ?SettingsServiceInterface $settingsService = null,
+        private ?SettingsReadServiceInterface $settingsReadService = null,
+        private ?SettingsWriteServiceInterface $settingsWriteService = null,
         private ?Container $container = null,
         private ?RbacServiceInterface $rbacService = null,
         private ?ChangelogService $changelogService = null
@@ -97,7 +99,7 @@ final class AdminChangelogController
             return $this->renderFormPartial($values, null, $errors, 422);
         }
 
-        $settingsService = $this->settingsService();
+        $settingsService = $this->writeService();
         if ($settingsService === null) {
             return $this->renderFormPartial($values, null, ['changelog.admin.validation_failed'], 503);
         }
@@ -281,7 +283,7 @@ final class AdminChangelogController
         return $messages;
     }
 
-    private function persistSettings(SettingsServiceInterface $settings, array $values): void
+    private function persistSettings(SettingsWriteServiceInterface $settings, array $values): void
     {
         $settings->setMany([
             'changelog.enabled' => (bool) $values['enabled'],
@@ -301,21 +303,42 @@ final class AdminChangelogController
 
     private function loadSettings(): array
     {
-        return ChangelogSettings::load($this->rootPath(), $this->settingsService());
+        return ChangelogSettings::load($this->rootPath(), $this->readService());
     }
 
-    private function settingsService(): ?SettingsServiceInterface
+    private function readService(): ?SettingsReadServiceInterface
     {
-        if ($this->settingsService !== null) {
-            return $this->settingsService;
+        if ($this->settingsReadService !== null) {
+            return $this->settingsReadService;
         }
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(SettingsServiceInterface::class);
-                if ($service instanceof SettingsServiceInterface) {
-                    $this->settingsService = $service;
-                    return $this->settingsService;
+                $service = $this->container->get(SettingsReadServiceInterface::class);
+                if ($service instanceof SettingsReadServiceInterface) {
+                    $this->settingsReadService = $service;
+                    return $this->settingsReadService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function writeService(): ?SettingsWriteServiceInterface
+    {
+        if ($this->settingsWriteService !== null) {
+            return $this->settingsWriteService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(SettingsWriteServiceInterface::class);
+                if ($service instanceof SettingsWriteServiceInterface) {
+                    $this->settingsWriteService = $service;
+                    return $this->settingsWriteService;
                 }
             } catch (Throwable) {
                 return null;

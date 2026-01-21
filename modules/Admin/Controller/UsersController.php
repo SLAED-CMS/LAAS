@@ -5,7 +5,8 @@ namespace Laas\Modules\Admin\Controller;
 
 use Laas\Core\Container\Container;
 use Laas\Domain\Rbac\RbacServiceInterface;
-use Laas\Domain\Users\UsersServiceInterface;
+use Laas\Domain\Users\UsersReadServiceInterface;
+use Laas\Domain\Users\UsersWriteServiceInterface;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
@@ -24,7 +25,8 @@ final class UsersController
 
     public function __construct(
         private View $view,
-        private ?UsersServiceInterface $usersService = null,
+        private ?UsersReadServiceInterface $usersReadService = null,
+        private ?UsersWriteServiceInterface $usersWriteService = null,
         private ?Container $container = null
     ) {
     }
@@ -38,7 +40,7 @@ final class UsersController
             return $this->forbidden($request);
         }
 
-        $service = $this->service();
+        $service = $this->readService();
         if ($service === null) {
             if ($request->wantsJson()) {
                 return $this->contractServiceUnavailable('admin.users.index');
@@ -165,8 +167,9 @@ final class UsersController
             return $this->errorResponse($request, 'invalid_request', 400);
         }
 
-        $service = $this->service();
-        if ($service === null) {
+        $readService = $this->readService();
+        $writeService = $this->writeService();
+        if ($readService === null || $writeService === null) {
             if ($request->wantsJson()) {
                 return $this->contractServiceUnavailable('admin.users.toggle');
             }
@@ -183,7 +186,7 @@ final class UsersController
             return $this->errorResponse($request, 'self_protected', 400);
         }
 
-        $user = $service->find($userId);
+        $user = $readService->find($userId);
         if ($user === null) {
             if ($request->wantsJson()) {
                 return $this->contractValidationError('admin.users.toggle', [
@@ -195,7 +198,7 @@ final class UsersController
 
         $currentStatus = (int) ($user['status'] ?? 0);
         $nextStatus = $currentStatus === 1 ? 0 : 1;
-        $service->setStatus($userId, $nextStatus);
+        $writeService->setStatus($userId, $nextStatus);
 
         $actorId = $currentUserId;
         Audit::log(
@@ -212,7 +215,7 @@ final class UsersController
             $request->ip()
         );
 
-        $isAdmin = $service->isAdmin($userId);
+        $isAdmin = $readService->isAdmin($userId);
         $row = $this->mapUserRow($user, $isAdmin, $currentUserId);
         $row['status'] = $nextStatus;
 
@@ -245,8 +248,9 @@ final class UsersController
             return $this->errorResponse($request, 'invalid_request', 400);
         }
 
-        $service = $this->service();
-        if ($service === null) {
+        $readService = $this->readService();
+        $writeService = $this->writeService();
+        if ($readService === null || $writeService === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
@@ -255,13 +259,13 @@ final class UsersController
             return $this->errorResponse($request, 'self_protected', 400);
         }
 
-        $user = $service->find($userId);
+        $user = $readService->find($userId);
         if ($user === null) {
             return $this->errorResponse($request, 'not_found', 404);
         }
 
-        $isAdmin = $service->isAdmin($userId);
-        $service->setAdminRole($userId, !$isAdmin);
+        $isAdmin = $readService->isAdmin($userId);
+        $writeService->setAdminRole($userId, !$isAdmin);
 
         $actorId = $currentUserId;
         Audit::log('rbac.user.roles.updated', 'user', $userId, [
@@ -304,12 +308,13 @@ final class UsersController
             return $this->passwordError($request, 'admin.users.password_weak');
         }
 
-        $service = $this->service();
-        if ($service === null) {
+        $readService = $this->readService();
+        $writeService = $this->writeService();
+        if ($readService === null || $writeService === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
-        $user = $service->find($userId);
+        $user = $readService->find($userId);
         if ($user === null) {
             return $this->errorResponse($request, 'not_found', 404);
         }
@@ -319,7 +324,7 @@ final class UsersController
             return $this->errorResponse($request, 'invalid_request', 400);
         }
 
-        $service->setPasswordHash($userId, $hash);
+        $writeService->setPasswordHash($userId, $hash);
 
         $actorId = $this->currentUserId($request);
         Audit::log(
@@ -361,8 +366,9 @@ final class UsersController
             return $this->errorResponse($request, 'invalid_request', 400);
         }
 
-        $service = $this->service();
-        if ($service === null) {
+        $readService = $this->readService();
+        $writeService = $this->writeService();
+        if ($readService === null || $writeService === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
@@ -371,12 +377,12 @@ final class UsersController
             return $this->errorResponse($request, 'self_protected', 400);
         }
 
-        $user = $service->find($userId);
+        $user = $readService->find($userId);
         if ($user === null) {
             return $this->errorResponse($request, 'not_found', 404);
         }
 
-        $service->delete($userId);
+        $writeService->delete($userId);
 
         $actorId = $currentUserId;
         Audit::log(
@@ -603,18 +609,39 @@ final class UsersController
         return $response->withToastSuccess($messageKey, $this->view->translate($messageKey));
     }
 
-    private function service(): ?UsersServiceInterface
+    private function readService(): ?UsersReadServiceInterface
     {
-        if ($this->usersService !== null) {
-            return $this->usersService;
+        if ($this->usersReadService !== null) {
+            return $this->usersReadService;
         }
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(UsersServiceInterface::class);
-                if ($service instanceof UsersServiceInterface) {
-                    $this->usersService = $service;
-                    return $this->usersService;
+                $service = $this->container->get(UsersReadServiceInterface::class);
+                if ($service instanceof UsersReadServiceInterface) {
+                    $this->usersReadService = $service;
+                    return $this->usersReadService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function writeService(): ?UsersWriteServiceInterface
+    {
+        if ($this->usersWriteService !== null) {
+            return $this->usersWriteService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(UsersWriteServiceInterface::class);
+                if ($service instanceof UsersWriteServiceInterface) {
+                    $this->usersWriteService = $service;
+                    return $this->usersWriteService;
                 }
             } catch (Throwable) {
                 return null;

@@ -2,6 +2,8 @@
 declare(strict_types=1);
 
 namespace {
+    require_once __DIR__ . '/Security/Support/SecurityTestHelper.php';
+
     use Laas\Database\DatabaseManager;
     use Laas\Http\Request;
     use Laas\Modules\Media\Controller\MediaServeController;
@@ -10,6 +12,7 @@ namespace {
     use Laas\Modules\Media\Service\MediaSignedUrlService;
     use Laas\Modules\Media\Service\StorageService;
     use PHPUnit\Framework\TestCase;
+    use Tests\Security\Support\SecurityTestHelper;
 
     final class MediaSignedUrlTest extends TestCase
     {
@@ -49,7 +52,8 @@ namespace {
                 $params = $this->parseQuery($url);
 
                 $request = new Request('GET', $media['url'], $params, [], [], '');
-                $controller = new MediaServeController(null, $db);
+                $service = new \Laas\Domain\Media\MediaService($db, [], SecurityTestHelper::rootPath());
+                $controller = new MediaServeController(null, $service, null, null, $signer, $this->storage);
                 $response = $controller->serve($request, ['id' => $media['id'], 'name' => 'file.jpg']);
 
                 $this->assertSame(200, $response->getStatus());
@@ -73,7 +77,8 @@ namespace {
                 $params = $this->parseQuery($url);
 
                 $request = new Request('GET', $media['url'], $params, [], [], '');
-                $controller = new MediaServeController(null, $db);
+                $service = new \Laas\Domain\Media\MediaService($db, [], SecurityTestHelper::rootPath());
+                $controller = new MediaServeController(null, $service, null, null, $signer, $this->storage);
                 $response = $controller->serve($request, ['id' => $media['id'], 'name' => 'file.jpg']);
 
                 $this->assertSame(403, $response->getStatus());
@@ -98,7 +103,9 @@ namespace {
                 ];
 
                 $request = new Request('GET', $media['url'], $params, [], [], '');
-                $controller = new MediaServeController(null, $db);
+                $service = new \Laas\Domain\Media\MediaService($db, [], SecurityTestHelper::rootPath());
+                $signer = new MediaSignedUrlService($this->config());
+                $controller = new MediaServeController(null, $service, null, null, $signer, $this->storage);
                 $response = $controller->serve($request, ['id' => $media['id'], 'name' => 'file.jpg']);
 
                 $this->assertSame(403, $response->getStatus());
@@ -115,7 +122,9 @@ namespace {
                 $media = $this->createMedia($repo, true, 'token4');
 
                 $request = new Request('GET', $media['url'], [], [], [], '');
-                $controller = new MediaServeController(null, $db);
+                $service = new \Laas\Domain\Media\MediaService($db, [], SecurityTestHelper::rootPath());
+                $signer = new MediaSignedUrlService($this->config());
+                $controller = new MediaServeController(null, $service, null, null, $signer, $this->storage);
                 $response = $controller->serve($request, ['id' => $media['id'], 'name' => 'file.jpg']);
 
                 $this->assertSame(403, $response->getStatus());
@@ -132,7 +141,9 @@ namespace {
                 $media = $this->createMedia($repo, false, null);
 
                 $request = new Request('GET', $media['url'], [], [], [], '');
-                $controller = new MediaServeController(null, $db);
+                $service = new \Laas\Domain\Media\MediaService($db, [], SecurityTestHelper::rootPath());
+                $signer = new MediaSignedUrlService($this->config());
+                $controller = new MediaServeController(null, $service, null, null, $signer, $this->storage);
                 $response = $controller->serve($request, ['id' => $media['id'], 'name' => 'file.jpg']);
 
                 $this->assertSame(200, $response->getStatus());
@@ -162,7 +173,9 @@ namespace {
                 $params = $this->parseQuery($url);
 
                 $request = new Request('GET', $thumbUrl, $params, [], [], '');
-                $controller = new MediaThumbController($db);
+                $service = new \Laas\Domain\Media\MediaService($db, [], SecurityTestHelper::rootPath());
+                $thumbs = new \Laas\Modules\Media\Service\MediaThumbnailService($this->storage);
+                $controller = new MediaThumbController(null, $service, null, null, $signer, $this->storage, $thumbs);
                 $response = $controller->serve($request, ['id' => $media['id'], 'variant' => 'sm']);
 
                 $this->assertSame(200, $response->getStatus());

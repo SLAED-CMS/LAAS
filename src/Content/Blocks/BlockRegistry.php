@@ -39,6 +39,16 @@ final class BlockRegistry
     }
 
     /**
+     * @return array<int, string>
+     */
+    public function types(): array
+    {
+        $types = array_keys($this->blocks);
+        sort($types);
+        return $types;
+    }
+
+    /**
      * @return array<int, array{type: string, data: array<string, mixed>}>
      */
     public function normalizeBlocks(array $blocks): array

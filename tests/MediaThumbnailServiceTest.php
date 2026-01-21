@@ -178,7 +178,9 @@ namespace {
             ]);
 
             $request = new Request('GET', '/media/1/thumb/sm', [], [], [], '');
-            $controller = new MediaThumbController($db);
+            $service = new \Laas\Domain\Media\MediaService($db, [], $this->rootPath);
+            $thumbs = new MediaThumbnailService($this->storage, $this->decoder);
+            $controller = new MediaThumbController(null, $service, null, null, null, $this->storage, $thumbs);
             $response = $controller->serve($request, ['id' => 1, 'variant' => 'sm']);
 
             $this->assertSame(404, $response->getStatus());

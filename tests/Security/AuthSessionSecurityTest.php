@@ -6,6 +6,7 @@ require_once __DIR__ . '/Support/SecurityTestHelper.php';
 use Laas\Auth\AuthService;
 use Laas\Auth\TotpService;
 use Laas\Database\Repositories\UsersRepository;
+use Laas\Domain\Users\UsersService;
 use Laas\Http\Request;
 use Laas\Security\RateLimiter;
 use Laas\Modules\Users\Controller\AuthController;
@@ -42,8 +43,8 @@ final class AuthSessionSecurityTest extends TestCase
             'password' => 'wrong',
         ], ['hx-request' => 'true'], '');
         $viewMissing = SecurityTestHelper::createView($db, $requestMissing, 'default');
-        $usersRepo = new UsersRepository($pdo);
-        $controllerMissing = new AuthController($viewMissing, $auth, $usersRepo, new TotpService());
+        $usersService = new UsersService($db);
+        $controllerMissing = new AuthController($viewMissing, $auth, $usersService, $usersService, new TotpService());
         $responseMissing = $controllerMissing->doLogin($requestMissing);
 
         $requestWrong = new Request('POST', '/login', [], [
@@ -51,7 +52,8 @@ final class AuthSessionSecurityTest extends TestCase
             'password' => 'wrong',
         ], ['hx-request' => 'true'], '');
         $viewWrong = SecurityTestHelper::createView($db, $requestWrong, 'default');
-        $controllerWrong = new AuthController($viewWrong, $auth, $usersRepo, new TotpService());
+        $usersService = new UsersService($db);
+        $controllerWrong = new AuthController($viewWrong, $auth, $usersService, $usersService, new TotpService());
         $responseWrong = $controllerWrong->doLogin($requestWrong);
 
         $this->assertSame($responseMissing->getStatus(), $responseWrong->getStatus());

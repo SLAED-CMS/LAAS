@@ -8,6 +8,7 @@ use Laas\I18n\Translator;
 use Laas\Modules\Admin\Controller\ModulesController;
 use Laas\Modules\ModuleCatalog;
 use Laas\Settings\SettingsProvider;
+use Laas\Support\RequestScope;
 use Laas\View\AssetManager;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
@@ -88,12 +89,16 @@ final class AdminModulesPageTest extends TestCase
     {
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = $this->createView($db, $request);
-        return new ModulesController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        return new ModulesController($view, null, $container);
     }
 
     private function createView(DatabaseManager $db, Request $request): View
     {
         $root = SecurityTestHelper::rootPath();
+        $hasRequestId = RequestScope::has('request.id');
+        $requestId = RequestScope::get('request.id');
+        RequestScope::reset();
         $settings = new SettingsProvider($db, [
             'site_name' => 'LAAS',
             'default_locale' => 'en',
@@ -120,6 +125,10 @@ final class AdminModulesPageTest extends TestCase
             $db
         );
         $view->setRequest($request);
+        RequestScope::set('db.manager', $db);
+        if ($hasRequestId) {
+            RequestScope::set('request.id', $requestId);
+        }
         $catalog = new ModuleCatalog($root, $db);
         $view->share('admin_modules_nav', $catalog->listNav());
         $view->share('admin_modules_nav_sections', $catalog->listNavSections());

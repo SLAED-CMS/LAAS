@@ -5,7 +5,8 @@ namespace Laas\Modules\Admin\Controller;
 
 use Laas\Core\Container\Container;
 use Laas\Domain\Rbac\RbacServiceInterface;
-use Laas\Domain\Settings\SettingsServiceInterface;
+use Laas\Domain\Settings\SettingsReadServiceInterface;
+use Laas\Domain\Settings\SettingsWriteServiceInterface;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
@@ -19,7 +20,8 @@ final class SettingsController
 {
     public function __construct(
         private View $view,
-        private ?SettingsServiceInterface $settingsService = null,
+        private ?SettingsReadServiceInterface $settingsReadService = null,
+        private ?SettingsWriteServiceInterface $settingsWriteService = null,
         private ?Container $container = null
     ) {
     }
@@ -30,17 +32,17 @@ final class SettingsController
             return $this->forbidden($request, 'admin.settings.index');
         }
 
-        $service = $this->service();
-        if ($service === null) {
+        $readService = $this->readService();
+        if ($readService === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
-        $defaults = $service->defaultSettings();
-        $locales = $service->availableLocales();
-        $themes = $service->availableThemes();
+        $defaults = $readService->defaultSettings();
+        $locales = $readService->availableLocales();
+        $themes = $readService->availableThemes();
         $tokenIssueModes = $this->apiTokenIssueModes();
 
-        $payload = $service->settingsWithSources();
+        $payload = $readService->settingsWithSources();
         $settings = $payload['settings'];
         $sources = $payload['sources'];
 
@@ -90,14 +92,15 @@ final class SettingsController
             return $this->forbidden($request, 'admin.settings.save');
         }
 
-        $service = $this->service();
-        if ($service === null) {
+        $readService = $this->readService();
+        $writeService = $this->writeService();
+        if ($readService === null || $writeService === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
-        $defaults = $service->defaultSettings();
-        $locales = $service->availableLocales();
-        $themes = $service->availableThemes();
+        $defaults = $readService->defaultSettings();
+        $locales = $readService->availableLocales();
+        $themes = $readService->availableThemes();
         $tokenIssueModes = $this->apiTokenIssueModes();
 
         $siteName = trim((string) ($request->post('site_name') ?? ''));
@@ -124,7 +127,7 @@ final class SettingsController
         }
 
         try {
-            $service->setMany([
+            $writeService->setMany([
                 'site_name' => $siteName,
                 'default_locale' => $defaultLocale,
                 'theme' => $theme,
@@ -201,7 +204,7 @@ final class SettingsController
             'theme' => 'DB',
             'api_token_issue_mode' => 'DB',
         ];
-        $service = $this->service();
+        $service = $this->readService();
         if ($service !== null) {
             $sources = $service->sources(['site_name', 'default_locale', 'theme', 'api_token_issue_mode']);
         }
@@ -378,18 +381,39 @@ final class SettingsController
         return $response->withToastSuccess($messageKey, $this->view->translate($messageKey));
     }
 
-    private function service(): ?SettingsServiceInterface
+    private function readService(): ?SettingsReadServiceInterface
     {
-        if ($this->settingsService !== null) {
-            return $this->settingsService;
+        if ($this->settingsReadService !== null) {
+            return $this->settingsReadService;
         }
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(SettingsServiceInterface::class);
-                if ($service instanceof SettingsServiceInterface) {
-                    $this->settingsService = $service;
-                    return $this->settingsService;
+                $service = $this->container->get(SettingsReadServiceInterface::class);
+                if ($service instanceof SettingsReadServiceInterface) {
+                    $this->settingsReadService = $service;
+                    return $this->settingsReadService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function writeService(): ?SettingsWriteServiceInterface
+    {
+        if ($this->settingsWriteService !== null) {
+            return $this->settingsWriteService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(SettingsWriteServiceInterface::class);
+                if ($service instanceof SettingsWriteServiceInterface) {
+                    $this->settingsWriteService = $service;
+                    return $this->settingsWriteService;
                 }
             } catch (Throwable) {
                 return null;

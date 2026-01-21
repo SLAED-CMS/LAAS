@@ -27,6 +27,10 @@ return [
     ['GET', '/admin/ai', [\Laas\Modules\Admin\Controller\AdminAiController::class, 'index']],
     ['POST', '/admin/ai/save-proposal', [\Laas\Modules\Admin\Controller\AdminAiController::class, 'saveProposal']],
     ['POST', '/admin/ai/dev-autopilot', [\Laas\Modules\Admin\Controller\AdminAiController::class, 'devAutopilot']],
+    ['GET', '/admin/themes', [\Laas\Modules\Admin\Controller\ThemesController::class, 'index']],
+    ['POST', '/admin/themes/validate', [\Laas\Modules\Admin\Controller\ThemesController::class, 'validate']],
+    ['GET', '/admin/headless-playground', [\Laas\Modules\Admin\Controller\HeadlessPlaygroundController::class, 'index']],
+    ['GET', '/admin/headless-playground/fetch', [\Laas\Modules\Admin\Controller\HeadlessPlaygroundController::class, 'fetch']],
     ['GET', '/admin/security-reports', [\Laas\Modules\Admin\Controller\SecurityReportsController::class, 'index']],
     ['GET', '/admin/security-reports/{id:\d+}', [\Laas\Modules\Admin\Controller\SecurityReportsController::class, 'show']],
     ['POST', '/admin/security-reports/{id:\d+}/triage', [\Laas\Modules\Admin\Controller\SecurityReportsController::class, 'triage']],
@@ -41,6 +45,7 @@ return [
     ['POST', '/admin/api/tokens/rotate', [\Laas\Modules\Admin\Controller\ApiTokensController::class, 'rotate']],
     ['POST', '/admin/api/tokens/revoke', [\Laas\Modules\Admin\Controller\ApiTokensController::class, 'revoke']],
     ['GET', '/admin/search', [\Laas\Modules\Admin\Controller\AdminSearchController::class, 'index']],
+    ['GET', '/admin/search/palette', [\Laas\Modules\Admin\Controller\AdminSearchController::class, 'palette']],
     ['GET', '/admin/rbac/diagnostics', [\Laas\Modules\Admin\Controller\RbacDiagnosticsController::class, 'index']],
     ['POST', '/admin/rbac/diagnostics/check', [\Laas\Modules\Admin\Controller\RbacDiagnosticsController::class, 'checkPermission']],
 ];

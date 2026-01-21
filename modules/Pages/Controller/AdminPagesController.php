@@ -12,7 +12,8 @@ use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Http\ErrorCode;
 use Laas\Http\ErrorResponse;
-use Laas\Domain\Pages\PagesServiceInterface;
+use Laas\Domain\Pages\PagesReadServiceInterface;
+use Laas\Domain\Pages\PagesWriteServiceInterface;
 use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Security\HtmlSanitizer;
 use Laas\Support\Audit;
@@ -45,7 +46,8 @@ final class AdminPagesController
 
     public function __construct(
         private View $view,
-        private ?PagesServiceInterface $pagesService = null,
+        private ?PagesReadServiceInterface $pagesReadService = null,
+        private ?PagesWriteServiceInterface $pagesWriteService = null,
         private ?Container $container = null,
         private ?RbacServiceInterface $rbacService = null
     ) {
@@ -57,7 +59,7 @@ final class AdminPagesController
             return $this->forbidden($request);
         }
 
-        $service = $this->service();
+        $service = $this->readService();
         if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
@@ -156,6 +158,7 @@ final class AdminPagesController
             'status_selected_published' => $this->selectedAttr(false),
             'legacy_content' => false,
             'blocks_json_allowed' => $this->blocksJsonAllowed($request),
+            'blocks_registry_types' => $this->blocksRegistry()->types(),
         ], 200, [], [
             'theme' => 'admin',
         ]);
@@ -172,7 +175,7 @@ final class AdminPagesController
             return $this->notFound();
         }
 
-        $service = $this->service();
+        $service = $this->readService();
         if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
@@ -201,6 +204,7 @@ final class AdminPagesController
             'status_selected_published' => $this->selectedAttr($status === 'published'),
             'legacy_content' => $legacyAllowed,
             'blocks_json_allowed' => $blocksJsonAllowed,
+            'blocks_registry_types' => $this->blocksRegistry()->types(),
         ], 200, [], [
             'theme' => 'admin',
         ]);
@@ -212,8 +216,9 @@ final class AdminPagesController
             return $this->forbidden($request);
         }
 
-        $service = $this->service();
-        if ($service === null) {
+        $readService = $this->readService();
+        $writeService = $this->writeService();
+        if ($readService === null || $writeService === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
@@ -274,7 +279,7 @@ final class AdminPagesController
             'translator' => $this->view->getTranslator(),
         ]);
 
-        $this->applyUniqueSlugCheck($result, $slug, $id, $service);
+        $this->applyUniqueSlugCheck($result, $slug, $id, $readService);
 
         if (!$result->isValid()) {
             return $this->formErrorResponse($request, $result, [
@@ -289,7 +294,7 @@ final class AdminPagesController
 
         try {
             if ($id === null) {
-                $created = $service->create([
+                $created = $writeService->create([
                     'title' => $title,
                     'slug' => $slug,
                     'content' => $content,
@@ -297,7 +302,7 @@ final class AdminPagesController
                 ]);
                 $newId = (int) ($created['id'] ?? 0);
                 if ($blocksData !== null) {
-                    $service->createRevision($newId, $blocksData, $this->currentUserId($request));
+                    $writeService->createRevision($newId, $blocksData, $this->currentUserId($request));
                 }
                 Audit::log('pages.create', 'page', $newId, [
                     'title' => $title,
@@ -307,14 +312,14 @@ final class AdminPagesController
                     'actor_ip' => $request->ip(),
                 ]);
             } else {
-                $service->update($id, [
+                $writeService->update($id, [
                     'title' => $title,
                     'slug' => $slug,
                     'content' => $content,
                     'status' => $status,
                 ]);
                 if ($blocksData !== null) {
-                    $service->createRevision($id, $blocksData, $this->currentUserId($request));
+                    $writeService->createRevision($id, $blocksData, $this->currentUserId($request));
                 }
                 Audit::log('pages.update', 'page', $id, [
                     'title' => $title,
@@ -421,13 +426,14 @@ final class AdminPagesController
             return $this->notFound($request);
         }
 
-        $service = $this->service();
-        if ($service === null) {
+        $readService = $this->readService();
+        $writeService = $this->writeService();
+        if ($readService === null || $writeService === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
         try {
-            $page = $service->find($id);
+            $page = $readService->find($id);
         } catch (Throwable) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
@@ -436,8 +442,8 @@ final class AdminPagesController
         }
 
         try {
-            $service->deleteRevisionsByPageId($id);
-            $service->delete($id);
+            $writeService->deleteRevisionsByPageId($id);
+            $writeService->delete($id);
         } catch (Throwable) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
@@ -471,13 +477,14 @@ final class AdminPagesController
             return $this->errorResponse($request, 'invalid_request', 400);
         }
 
-        $service = $this->service();
-        if ($service === null) {
+        $readService = $this->readService();
+        $writeService = $this->writeService();
+        if ($readService === null || $writeService === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
         try {
-            $page = $service->find($id);
+            $page = $readService->find($id);
         } catch (Throwable) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
@@ -488,7 +495,7 @@ final class AdminPagesController
         $status = (string) ($page['status'] ?? 'draft');
         $nextStatus = $status === 'published' ? 'draft' : 'published';
         try {
-            $service->updateStatus($id, $nextStatus);
+            $writeService->updateStatus($id, $nextStatus);
         } catch (Throwable) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
@@ -560,7 +567,7 @@ final class AdminPagesController
 
     private function loadBlocksJson(int $pageId): string
     {
-        $service = $this->service();
+        $service = $this->readService();
         if ($service === null) {
             return '[]';
         }
@@ -575,18 +582,39 @@ final class AdminPagesController
         return $this->formatBlocksJson((string) ($row['blocks_json'] ?? ''));
     }
 
-    private function service(): ?PagesServiceInterface
+    private function readService(): ?PagesReadServiceInterface
     {
-        if ($this->pagesService !== null) {
-            return $this->pagesService;
+        if ($this->pagesReadService !== null) {
+            return $this->pagesReadService;
         }
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(PagesServiceInterface::class);
-                if ($service instanceof PagesServiceInterface) {
-                    $this->pagesService = $service;
-                    return $this->pagesService;
+                $service = $this->container->get(PagesReadServiceInterface::class);
+                if ($service instanceof PagesReadServiceInterface) {
+                    $this->pagesReadService = $service;
+                    return $this->pagesReadService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function writeService(): ?PagesWriteServiceInterface
+    {
+        if ($this->pagesWriteService !== null) {
+            return $this->pagesWriteService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(PagesWriteServiceInterface::class);
+                if ($service instanceof PagesWriteServiceInterface) {
+                    $this->pagesWriteService = $service;
+                    return $this->pagesWriteService;
                 }
             } catch (Throwable) {
                 return null;
@@ -791,6 +819,7 @@ final class AdminPagesController
             'errors' => $messages,
             'legacy_content' => $legacyAllowed,
             'blocks_json_allowed' => $this->blocksJsonAllowed($request),
+            'blocks_registry_types' => $this->blocksRegistry()->types(),
         ], 422, [], [
             'theme' => 'admin',
         ]);
@@ -800,7 +829,7 @@ final class AdminPagesController
         ValidationResult $result,
         string $slug,
         ?int $ignoreId,
-        PagesServiceInterface $service
+        PagesReadServiceInterface $service
     ): void {
         if (!$result->isValid()) {
             return;

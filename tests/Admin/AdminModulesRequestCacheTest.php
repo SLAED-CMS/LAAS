@@ -39,7 +39,8 @@ final class AdminModulesRequestCacheTest extends TestCase
         $view->share('admin_modules_nav', $catalog->listNav());
         $view->share('admin_modules_nav_sections', $catalog->listNavSections());
 
-        $controller = new ModulesController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        $controller = new ModulesController($view, null, $container);
         $response = $controller->index($request);
 
         $this->assertSame(200, $response->getStatus());

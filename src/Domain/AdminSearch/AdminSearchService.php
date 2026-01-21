@@ -36,6 +36,7 @@ class AdminSearchService implements AdminSearchServiceInterface
         $normalized = $this->normalizeQuery($q);
         $groupLimit = $this->normalizeLimit($opts['group_limit'] ?? null, self::DEFAULT_GROUP_LIMIT);
         $globalLimit = $this->normalizeLimit($opts['global_limit'] ?? null, self::DEFAULT_GLOBAL_LIMIT);
+        $includeCommandsOnEmpty = (bool) ($opts['include_commands_on_empty'] ?? false);
 
         $groups = $this->baseGroups();
         $result = [
@@ -45,7 +46,16 @@ class AdminSearchService implements AdminSearchServiceInterface
             'reason' => $normalized['reason'],
         ];
 
-        if ($normalized['reason'] !== null || $normalized['q'] === '') {
+        if ($normalized['reason'] !== null) {
+            return $result;
+        }
+        if ($normalized['q'] === '') {
+            if ($includeCommandsOnEmpty) {
+                $items = $this->searchCommands('', $groupLimit, $opts);
+                $result['groups']['commands']['items'] = $items;
+                $result['groups']['commands']['count'] = count($items);
+                $result['total'] = count($items);
+            }
             return $result;
         }
 
@@ -59,6 +69,14 @@ class AdminSearchService implements AdminSearchServiceInterface
 
         $remaining = $globalLimit;
         $total = 0;
+
+        if ($remaining > 0) {
+            $items = $this->searchCommands($normalized['q'], min($groupLimit, $remaining), $opts);
+            $result['groups']['commands']['items'] = $items;
+            $result['groups']['commands']['count'] = count($items);
+            $total += count($items);
+            $remaining -= count($items);
+        }
 
         if ($canPages && $remaining > 0) {
             $items = $this->searchPages($normalized['q'], min($groupLimit, $remaining));
@@ -155,6 +173,7 @@ class AdminSearchService implements AdminSearchServiceInterface
     private function baseGroups(): array
     {
         return [
+            'commands' => $this->group('commands', 'Commands', 'admin.search.scope.commands'),
             'pages' => $this->group('pages', 'Pages', 'admin.search.scope.pages'),
             'media' => $this->group('media', 'Media', 'admin.search.scope.media'),
             'users' => $this->group('users', 'Users', 'admin.search.scope.users'),
@@ -190,6 +209,169 @@ class AdminSearchService implements AdminSearchServiceInterface
         }
 
         return min($limit, 50);
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function commands(): array
+    {
+        return [
+            [
+                'id' => 'pages.new',
+                'title' => 'New page',
+                'hint' => 'Create a page',
+                'url' => '/admin/pages/new',
+                'icon' => 'file-earmark-plus',
+                'section' => 'Pages',
+                'hotkey' => 'P',
+                'requires' => ['can_pages'],
+            ],
+            [
+                'id' => 'pages.list',
+                'title' => 'Pages',
+                'hint' => 'Manage pages',
+                'url' => '/admin/pages',
+                'icon' => 'file-earmark-text',
+                'section' => 'Pages',
+                'requires' => ['can_pages'],
+            ],
+            [
+                'id' => 'media.library',
+                'title' => 'Media library',
+                'hint' => 'Browse uploads',
+                'url' => '/admin/media',
+                'icon' => 'images',
+                'section' => 'Media',
+                'requires' => ['can_media'],
+            ],
+            [
+                'id' => 'menus.list',
+                'title' => 'Menus',
+                'hint' => 'Navigation menus',
+                'url' => '/admin/menus',
+                'icon' => 'list',
+                'section' => 'Menus',
+                'requires' => ['can_menus'],
+            ],
+            [
+                'id' => 'users.list',
+                'title' => 'Users',
+                'hint' => 'Manage users',
+                'url' => '/admin/users',
+                'icon' => 'people',
+                'section' => 'Users',
+                'requires' => ['can_users'],
+            ],
+            [
+                'id' => 'settings',
+                'title' => 'Settings',
+                'hint' => 'Site settings',
+                'url' => '/admin/settings',
+                'icon' => 'gear',
+                'section' => 'System',
+                'requires' => ['can_settings'],
+            ],
+            [
+                'id' => 'modules',
+                'title' => 'Modules',
+                'hint' => 'Enable/disable modules',
+                'url' => '/admin/modules',
+                'icon' => 'grid',
+                'section' => 'System',
+                'requires' => ['can_modules'],
+            ],
+            [
+                'id' => 'security.reports',
+                'title' => 'Security reports',
+                'hint' => 'Review violations',
+                'url' => '/admin/security-reports',
+                'icon' => 'shield-exclamation',
+                'section' => 'Security',
+                'requires' => ['can_security_reports'],
+            ],
+            [
+                'id' => 'ops',
+                'title' => 'Ops dashboard',
+                'hint' => 'Health and cache',
+                'url' => '/admin/ops',
+                'icon' => 'activity',
+                'section' => 'System',
+                'requires' => ['can_ops'],
+            ],
+            [
+                'id' => 'themes',
+                'title' => 'Theme inspector',
+                'hint' => 'Theme API v2',
+                'url' => '/admin/themes',
+                'icon' => 'palette',
+                'section' => 'System',
+                'requires' => ['can_settings'],
+            ],
+            [
+                'id' => 'headless.playground',
+                'title' => 'Headless playground',
+                'hint' => 'Try /api/v2',
+                'url' => '/admin/headless-playground',
+                'icon' => 'terminal',
+                'section' => 'API',
+                'requires' => ['can_access'],
+            ],
+        ];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    private function searchCommands(string $query, int $limit, array $opts): array
+    {
+        $needle = strtolower($query);
+        $items = [];
+        foreach ($this->commands() as $command) {
+            if (!$this->commandAllowed($command, $opts)) {
+                continue;
+            }
+            $title = (string) ($command['title'] ?? '');
+            $hint = (string) ($command['hint'] ?? '');
+            $section = (string) ($command['section'] ?? '');
+            $searchable = strtolower(trim($title . ' ' . $hint . ' ' . $section));
+            if ($needle !== '' && !str_contains($searchable, $needle)) {
+                continue;
+            }
+            $items[] = [
+                'title' => $title,
+                'subtitle' => $hint !== '' ? $hint : $section,
+                'url' => (string) ($command['url'] ?? ''),
+                'badge' => $section !== '' ? strtoupper($section) : 'CMD',
+                'icon' => (string) ($command['icon'] ?? ''),
+                'section' => $section,
+                'hotkey' => $command['hotkey'] ?? null,
+                'id' => $command['id'] ?? null,
+                'title_segments' => Highlighter::segments($title, $query),
+                'subtitle_segments' => Highlighter::segments($hint !== '' ? $hint : $section, $query),
+            ];
+            if (count($items) >= $limit) {
+                break;
+            }
+        }
+
+        return $items;
+    }
+
+    private function commandAllowed(array $command, array $opts): bool
+    {
+        $requirements = $command['requires'] ?? [];
+        if (is_string($requirements)) {
+            $requirements = [$requirements];
+        }
+        if (!is_array($requirements)) {
+            return true;
+        }
+        foreach ($requirements as $key) {
+            if (!is_string($key) || $key === '') {
+                continue;
+            }
+            if (!isset($opts[$key]) || $opts[$key] !== true) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /** @return array<int, array<string, mixed>> */

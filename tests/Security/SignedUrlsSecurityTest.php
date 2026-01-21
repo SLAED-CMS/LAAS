@@ -52,7 +52,10 @@ final class SignedUrlsSecurityTest extends TestCase
                 'sig' => 'deadbeef',
             ];
             $request = new Request('GET', $media['url'], $params, [], [], '');
-            $controller = new MediaServeController(null, $db);
+            $service = new \Laas\Domain\Media\MediaService($db, [], $this->rootPath);
+            $signer = new MediaSignedUrlService($this->config());
+            $storage = new StorageService($this->rootPath);
+            $controller = new MediaServeController(null, $service, null, null, $signer, $storage);
             $response = $controller->serve($request, ['id' => $media['id'], 'name' => 'file.jpg']);
 
             $this->assertSame(403, $response->getStatus());
@@ -75,7 +78,9 @@ final class SignedUrlsSecurityTest extends TestCase
             $params = $this->parseQuery($url);
 
             $request = new Request('GET', $media['url'], $params, [], [], '');
-            $controller = new MediaServeController(null, $db);
+            $service = new \Laas\Domain\Media\MediaService($db, [], $this->rootPath);
+            $storage = new StorageService($this->rootPath);
+            $controller = new MediaServeController(null, $service, null, null, $signer, $storage);
             $response = $controller->serve($request, ['id' => $media['id'], 'name' => 'file.jpg']);
 
             $this->assertSame(403, $response->getStatus());
@@ -98,7 +103,9 @@ final class SignedUrlsSecurityTest extends TestCase
             $params = $this->parseQuery($url);
 
             $request = new Request('GET', $media['url'], $params, [], [], '');
-            $controller = new MediaServeController(null, $db);
+            $service = new \Laas\Domain\Media\MediaService($db, [], $this->rootPath);
+            $storage = new StorageService($this->rootPath);
+            $controller = new MediaServeController(null, $service, null, null, $signer, $storage);
             $response = $controller->serve($request, ['id' => $media['id'], 'name' => 'file.jpg']);
 
             $this->assertSame(200, $response->getStatus());
@@ -129,12 +136,15 @@ final class SignedUrlsSecurityTest extends TestCase
             $params = $this->parseQuery($signed);
 
             $fileRequest = new Request('GET', $media['url'], $params, [], [], '');
-            $fileController = new MediaServeController(null, $db);
+            $service = new \Laas\Domain\Media\MediaService($db, [], $this->rootPath);
+            $fileController = new MediaServeController(null, $service, null, null, $signer, $storage);
             $fileResponse = $fileController->serve($fileRequest, ['id' => $media['id'], 'name' => 'file.jpg']);
             $this->assertSame(403, $fileResponse->getStatus());
 
             $thumbRequest = new Request('GET', $thumbUrl, $params, [], [], '');
-            $thumbController = new MediaThumbController($db);
+            $thumbService = new \Laas\Domain\Media\MediaService($db, [], $this->rootPath);
+            $thumbs = new \Laas\Modules\Media\Service\MediaThumbnailService($storage);
+            $thumbController = new MediaThumbController(null, $thumbService, null, null, $signer, $storage, $thumbs);
             $thumbResponse = $thumbController->serve($thumbRequest, ['id' => $media['id'], 'variant' => 'sm']);
             $this->assertSame(200, $thumbResponse->getStatus());
         });

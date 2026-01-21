@@ -59,6 +59,25 @@
             {% endif %}
           </div>
           {% if blocks_json_allowed %}
+          <div class="card mb-3" data-blocks-studio="1" data-target-textarea="#blocks-json">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <strong>Blocks Studio (MVP)</strong>
+              <span class="badge text-bg-secondary">JSON source</span>
+            </div>
+            <div class="card-body">
+              <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+                <select class="form-select form-select-sm w-auto" data-blocks-studio-type="1">
+                  {% foreach blocks_registry_types as type %}
+                  <option value="{% type %}">{% type %}</option>
+                  {% endforeach %}
+                </select>
+                <button class="btn btn-sm btn-outline-primary" type="button" data-blocks-studio-add="1">Add block</button>
+                <span class="text-muted small">Edit JSON anytime. Studio stays in sync.</span>
+              </div>
+              <div class="text-muted small mb-2 d-none" data-blocks-studio-error="1"></div>
+              <div class="d-flex flex-column gap-2" data-blocks-studio-list="1"></div>
+            </div>
+          </div>
           <div class="card mb-3">
             <div class="card-header">
               <button class="btn btn-link p-0 text-decoration-none" type="button"
@@ -71,7 +90,7 @@
             </div>
             <div class="collapse" id="page-blocks-json">
               <div class="card-body">
-                <textarea class="form-control font-monospace" name="blocks_json" rows="10" spellcheck="false">{% page.blocks_json %}</textarea>
+                <textarea class="form-control font-monospace" id="blocks-json" name="blocks_json" rows="10" spellcheck="false">{% page.blocks_json %}</textarea>
               </div>
             </div>
           </div>

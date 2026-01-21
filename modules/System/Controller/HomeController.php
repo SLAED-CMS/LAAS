@@ -20,6 +20,7 @@ use Laas\Modules\Media\Service\StorageService;
 use Laas\Support\Search\Highlighter;
 use Laas\Support\Search\SearchNormalizer;
 use Laas\Support\Search\SearchQuery;
+use Laas\Support\RequestScope;
 use Laas\View\View;
 use RuntimeException;
 use Throwable;

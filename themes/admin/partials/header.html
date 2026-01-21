@@ -92,6 +92,14 @@
                  hx-include="[name=q]"
                  hx-indicator="#loading">
         </form>
+        <a class="btn btn-outline-secondary btn-sm"
+           href="/admin/search"
+           data-palette-open="1"
+           data-bs-toggle="modal"
+           data-bs-target="#command-palette"
+           aria-label="Open command palette">
+          Cmd+K / Ctrl+K
+        </a>
         <form method="post" action="/logout">
           <input type="hidden" name="_token" value="{% csrf_token %}">
           <button class="btn btn-outline-secondary btn-sm" type="submit">{% t 'admin.nav.logout' %}</button>
@@ -100,3 +108,25 @@
     </div>
   </div>
 </nav>
+
+<div class="modal fade" id="command-palette" tabindex="-1" aria-labelledby="command-palette-label" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header border-bottom-0 pb-0">
+        <h5 class="modal-title" id="command-palette-label">Command Palette</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-2">
+          <input type="search"
+                 id="palette-input"
+                 class="form-control"
+                 placeholder="Search commands, pages, users..."
+                 aria-label="Command palette search">
+        </div>
+        <div class="palette-hint text-muted small mb-2">Type to filter. Enter to open, Esc to close.</div>
+        <div id="palette-results" class="palette-results" data-palette-results="1"></div>
+      </div>
+    </div>
+  </div>
+</div>

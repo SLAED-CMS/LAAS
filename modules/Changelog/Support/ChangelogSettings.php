@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Laas\Modules\Changelog\Support;
 
-use Laas\Domain\Settings\SettingsServiceInterface;
+use Laas\Domain\Settings\SettingsReadServiceInterface;
 
 final class ChangelogSettings
 {
@@ -48,7 +48,7 @@ final class ChangelogSettings
     }
 
     /** @return array<string, mixed> */
-    public static function load(string $rootPath, ?SettingsServiceInterface $settings): array
+    public static function load(string $rootPath, ?SettingsReadServiceInterface $settings): array
     {
         $values = self::defaults($rootPath);
         if ($settings === null) {

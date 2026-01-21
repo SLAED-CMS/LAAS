@@ -62,7 +62,8 @@ final class RbacAclSecurityTest extends TestCase
         $request = new Request('POST', '/admin/media/upload', [], [], ['accept' => 'application/json'], '');
         $this->attachSession($request, 1);
         $view = SecurityTestHelper::createView($db, $request, 'admin');
-        $controller = new AdminMediaController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        $controller = new AdminMediaController($view, null, null, $container);
 
         $response = $controller->upload($request);
         $this->assertSame(403, $response->getStatus());
@@ -81,7 +82,8 @@ final class RbacAclSecurityTest extends TestCase
         $request = new Request('POST', '/admin/media/delete', [], ['id' => '1'], ['accept' => 'application/json'], '');
         $this->attachSession($request, 1);
         $view = SecurityTestHelper::createView($db, $request, 'admin');
-        $controller = new AdminMediaController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        $controller = new AdminMediaController($view, null, null, $container);
 
         $response = $controller->delete($request);
         $this->assertSame(403, $response->getStatus());
@@ -100,7 +102,9 @@ final class RbacAclSecurityTest extends TestCase
         $request = new Request('GET', '/admin/audit', [], [], ['accept' => 'application/json'], '');
         $this->attachSession($request, 1);
         $view = SecurityTestHelper::createView($db, $request, 'admin');
-        $controller = new AuditController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        $auditService = $container->get(\Laas\Domain\Audit\AuditLogServiceInterface::class);
+        $controller = new AuditController($view, $auditService);
 
         $response = $controller->index($request);
         $this->assertSame(403, $response->getStatus());

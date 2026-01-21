@@ -96,6 +96,7 @@ final class HeadlessOverrideParamTest extends TestCase
     {
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = SecurityTestHelper::createView($db, $request, 'admin');
-        return new ModulesController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        return new ModulesController($view, null, $container);
     }
 }

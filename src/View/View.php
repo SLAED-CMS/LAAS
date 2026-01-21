@@ -65,6 +65,7 @@ final class View
     {
         $this->request = $request;
         RequestScope::set('view', $this);
+        RequestScope::setRequest($request);
     }
 
     public function share(string $key, mixed $value): void

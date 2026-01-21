@@ -67,7 +67,7 @@ final class PagesPublicJsonTest extends TestCase
             $db
         );
 
-        $controller = new PagesController($view, $db, new PagesService($db));
+        $controller = new PagesController($view, new PagesService($db));
         $request = new Request('GET', '/hello', [], [], ['accept' => 'application/json'], '');
         $view->setRequest($request);
 

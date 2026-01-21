@@ -13,6 +13,7 @@ use Laas\View\Template\TemplateEngine;
 use Laas\View\Theme\ThemeManager;
 use Laas\View\View;
 use PHPUnit\Framework\TestCase;
+use Tests\Security\Support\SecurityTestHelper;
 use Tests\Support\InMemorySession;
 
 final class BlocksJsonValidationTest extends TestCase
@@ -61,7 +62,9 @@ final class BlocksJsonValidationTest extends TestCase
         $request->setSession($session);
 
         $view = $this->createView($db, $request);
-        $controller = new AdminPagesController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        $service = new \Laas\Domain\Pages\PagesService($db);
+        $controller = new AdminPagesController($view, $service, $service, $container);
 
         $response = $controller->save($request);
 

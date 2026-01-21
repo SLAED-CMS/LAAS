@@ -81,6 +81,6 @@ final class PerfBudgetHardFailTest extends TestCase
         $response = $enforcer->buildOverBudgetResponse($request);
 
         $this->assertSame(503, $response->getStatus());
-        $this->assertStringContainsString('Service Unavailable', $response->getBody());
+        $this->assertStringContainsString('over budget', $response->getBody());
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/Support/SecurityTestHelper.php';
 
 use Laas\Database\DatabaseManager;
+use Laas\Domain\Security\SecurityReportsService;
 use Laas\Http\Request;
 use Laas\I18n\Translator;
 use Laas\Modules\System\Controller\CspReportController;
@@ -39,7 +40,8 @@ final class CspReportEndpointTest extends TestCase
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $root = SecurityTestHelper::rootPath();
         $translator = new Translator($root, 'default', 'en');
-        $controller = new CspReportController($db, $translator, new NullLogger());
+        $service = new SecurityReportsService($db);
+        $controller = new CspReportController(null, $service, null, $translator, new NullLogger());
 
         $payload = [
             'csp-report' => [

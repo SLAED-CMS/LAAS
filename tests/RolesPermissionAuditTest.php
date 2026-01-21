@@ -7,12 +7,14 @@ use Laas\Http\Request;
 use Laas\I18n\Translator;
 use Laas\Modules\Admin\Controller\RolesController;
 use Laas\Settings\SettingsProvider;
+use Laas\Support\RequestScope;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
 use Laas\View\Theme\ThemeManager;
 use Laas\View\AssetManager;
 use Laas\View\View;
 use PHPUnit\Framework\TestCase;
+use Tests\Security\Support\SecurityTestHelper;
 use Tests\Support\InMemorySession;
 
 final class RolesPermissionAuditTest extends TestCase
@@ -55,7 +57,8 @@ final class RolesPermissionAuditTest extends TestCase
         ], '');
         $request->setSession($session);
         $view = $this->createView($db, $request);
-        $controller = new RolesController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        $controller = new RolesController($view, null, $container);
 
         $response = $controller->save($request);
         $this->assertSame(200, $response->getStatus());
@@ -96,6 +99,9 @@ final class RolesPermissionAuditTest extends TestCase
 
     private function createView(DatabaseManager $db, Request $request): View
     {
+        $hasRequestId = RequestScope::has('request.id');
+        $requestId = RequestScope::get('request.id');
+        RequestScope::reset();
         $settings = new SettingsProvider($db, [
             'site_name' => 'LAAS',
             'default_locale' => 'en',
@@ -123,6 +129,10 @@ final class RolesPermissionAuditTest extends TestCase
             $db
         );
         $view->setRequest($request);
+        RequestScope::set('db.manager', $db);
+        if ($hasRequestId) {
+            RequestScope::set('request.id', $requestId);
+        }
 
         return $view;
     }

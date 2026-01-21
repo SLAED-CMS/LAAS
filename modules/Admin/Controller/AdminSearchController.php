@@ -58,6 +58,41 @@ final class AdminSearchController
         ]);
     }
 
+    public function palette(Request $request): Response
+    {
+        $service = $this->service();
+        if ($service === null) {
+            return Response::json([
+                'groups' => [],
+                'meta' => [
+                    'reason' => 'service_unavailable',
+                ],
+            ], 503);
+        }
+
+        $query = (string) ($request->query('q') ?? '');
+        $options = $this->buildOptions($request);
+        $options['include_commands_on_empty'] = true;
+        $search = $service->search($query, $options);
+        $status = $search['reason'] === 'too_short' ? 422 : 200;
+        $payload = $this->palettePayload($search, $options);
+        $hasItems = $this->paletteHasItems($payload['groups'] ?? []);
+
+        if ($request->wantsJson() || $request->acceptsJson()) {
+            return Response::json($payload, $status);
+        }
+
+        return $this->view->render('partials/admin_search_palette.html', [
+            'q' => $search['q'] ?? '',
+            'groups' => $payload['groups'] ?? [],
+            'has_items' => $hasItems,
+            'reason' => $search['reason'] ?? null,
+        ], $status, [], [
+            'theme' => 'admin',
+            'render_partial' => true,
+        ]);
+    }
+
     /** @return array<string, mixed> */
     private function buildOptions(Request $request): array
     {
@@ -73,6 +108,8 @@ final class AdminSearchController
                 'can_modules' => false,
                 'can_security_reports' => false,
                 'can_ops' => false,
+                'can_settings' => false,
+                'can_access' => false,
             ];
         }
 
@@ -84,6 +121,8 @@ final class AdminSearchController
             'can_modules' => $this->canAny($rbac, $userId, ['admin.modules.manage']),
             'can_security_reports' => $this->canAny($rbac, $userId, ['security_reports.view']),
             'can_ops' => $this->canAny($rbac, $userId, ['ops.view']),
+            'can_settings' => $this->canAny($rbac, $userId, ['admin.settings.manage']),
+            'can_access' => $this->canAny($rbac, $userId, ['admin.access']),
         ];
     }
 
@@ -164,5 +203,49 @@ final class AdminSearchController
             'groups' => [],
             'reason' => null,
         ];
+    }
+
+    /** @return array<string, mixed> */
+    private function palettePayload(array $search, array $options): array
+    {
+        $groups = [];
+        foreach ($search['groups'] ?? [] as $group) {
+            if (!is_array($group)) {
+                continue;
+            }
+            $groups[] = [
+                'key' => $group['key'] ?? '',
+                'title' => $group['title'] ?? '',
+                'count' => $group['count'] ?? 0,
+                'items' => $group['items'] ?? [],
+            ];
+        }
+
+        return [
+            'groups' => $groups,
+            'meta' => [
+                'q' => $search['q'] ?? '',
+                'reason' => $search['reason'] ?? null,
+                'total' => $search['total'] ?? 0,
+                'limit' => [
+                    'group' => $options['group_limit'] ?? null,
+                    'global' => $options['global_limit'] ?? null,
+                ],
+            ],
+        ];
+    }
+
+    private function paletteHasItems(array $groups): bool
+    {
+        foreach ($groups as $group) {
+            if (!is_array($group)) {
+                continue;
+            }
+            $count = (int) ($group['count'] ?? 0);
+            if ($count > 0) {
+                return true;
+            }
+        }
+        return false;
     }
 }

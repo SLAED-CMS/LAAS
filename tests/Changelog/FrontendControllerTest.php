@@ -13,6 +13,7 @@ use Laas\View\Theme\ThemeManager;
 use Laas\View\AssetManager;
 use Laas\View\View;
 use PHPUnit\Framework\TestCase;
+use Tests\Security\Support\SecurityTestHelper;
 
 final class FrontendControllerTest extends TestCase
 {
@@ -28,7 +29,9 @@ final class FrontendControllerTest extends TestCase
         $db = $this->createDatabase();
         $request = new Request('GET', '/changelog', [], [], [], '');
         $view = $this->createView($db, $request);
-        $controller = new ChangelogController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        $service = new \Laas\Domain\Settings\SettingsService($db);
+        $controller = new ChangelogController($view, $service, $container);
 
         $response = $controller->index($request);
 
@@ -49,7 +52,9 @@ final class FrontendControllerTest extends TestCase
 
         $request = new Request('GET', '/changelog', [], [], [], '');
         $view = $this->createView($db, $request);
-        $controller = new ChangelogController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        $service = new \Laas\Domain\Settings\SettingsService($db);
+        $controller = new ChangelogController($view, $service, $container);
 
         $response = $controller->index($request);
         $body = $response->getBody();

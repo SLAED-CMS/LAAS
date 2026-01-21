@@ -1,0 +1,87 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h1 class="h4 mb-0">Theme Inspector</h1>
+  {% if theme_debug %}
+  <form method="post"
+        action="/admin/themes/validate"
+        hx-post="/admin/themes/validate"
+        hx-target="#theme-validation"
+        hx-swap="innerHTML">
+    <input type="hidden" name="_token" value="{% csrf_token %}">
+    <button class="btn btn-outline-primary btn-sm" type="submit">Validate</button>
+  </form>
+  {% endif %}
+</div>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+    <div class="row g-2">
+      <div class="col-12 col-md-6">
+        <div class="text-muted small">Theme</div>
+        <div class="fw-semibold">{% theme_name %}</div>
+      </div>
+      <div class="col-12 col-md-6">
+        <div class="text-muted small">API</div>
+        <div class="fw-semibold">{% theme_api %}</div>
+      </div>
+      <div class="col-12 col-md-6">
+        <div class="text-muted small">Version</div>
+        <div class="fw-semibold">{% theme_version %}</div>
+      </div>
+      <div class="col-12 col-md-6">
+        <div class="text-muted small">Manifest</div>
+        <div class="fw-semibold">{% theme_manifest_path %}</div>
+      </div>
+      <div class="col-12 col-md-6">
+        <div class="text-muted small">Snapshot hash</div>
+        <div class="fw-semibold font-monospace small">{% theme_snapshot_hash %}</div>
+      </div>
+      <div class="col-12 col-md-6">
+        <div class="text-muted small">Current hash</div>
+        <div class="fw-semibold font-monospace small">{% theme_current_hash %}</div>
+      </div>
+    </div>
+    <hr>
+    <div class="row g-2">
+      <div class="col-12 col-md-6">
+        <div class="text-muted small mb-1">Capabilities</div>
+        {% if theme_capabilities %}
+          <div class="d-flex flex-wrap gap-2">
+            {% foreach theme_capabilities as cap %}
+              <span class="badge text-bg-light text-uppercase">{% cap %}</span>
+            {% endforeach %}
+          </div>
+        {% else %}
+          <div class="text-muted small">None</div>
+        {% endif %}
+      </div>
+      <div class="col-12 col-md-6">
+        <div class="text-muted small mb-1">Provides</div>
+        {% if theme_provides %}
+          <div class="d-flex flex-wrap gap-2">
+            {% foreach theme_provides as provide %}
+              <span class="badge text-bg-secondary text-uppercase">{% provide %}</span>
+            {% endforeach %}
+          </div>
+        {% else %}
+          <div class="text-muted small">None</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-header d-flex align-items-center justify-content-between">
+    <strong>Validation</strong>
+    {% if theme_debug %}
+    <span class="badge text-bg-info">dev-only validate</span>
+    {% endif %}
+  </div>
+  <div class="card-body" id="theme-validation">
+    {% include "partials/theme_validation.html" %}
+  </div>
+</div>
+{% endblock %}

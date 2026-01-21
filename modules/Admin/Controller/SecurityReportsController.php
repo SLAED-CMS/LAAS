@@ -5,8 +5,9 @@ namespace Laas\Modules\Admin\Controller;
 
 use Laas\Core\Container\Container;
 use Laas\Domain\Rbac\RbacServiceInterface;
-use Laas\Domain\Security\SecurityReportsServiceInterface;
-use Laas\Domain\Users\UsersServiceInterface;
+use Laas\Domain\Security\SecurityReportsReadServiceInterface;
+use Laas\Domain\Security\SecurityReportsWriteServiceInterface;
+use Laas\Domain\Users\UsersReadServiceInterface;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
@@ -18,11 +19,12 @@ use Throwable;
 
 final class SecurityReportsController
 {
-    private ?UsersServiceInterface $usersService = null;
+    private ?UsersReadServiceInterface $usersReadService = null;
 
     public function __construct(
         private View $view,
-        private ?SecurityReportsServiceInterface $reportsService = null,
+        private ?SecurityReportsReadServiceInterface $reportsReadService = null,
+        private ?SecurityReportsWriteServiceInterface $reportsWriteService = null,
         private ?Container $container = null
     ) {
     }
@@ -33,7 +35,7 @@ final class SecurityReportsController
             return $this->forbidden($request, 'admin.security_reports.index');
         }
 
-        $service = $this->service();
+        $service = $this->readService();
         if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503, 'admin.security_reports.index');
         }
@@ -123,7 +125,7 @@ final class SecurityReportsController
             return $this->notFound($request, 'admin.security_reports.show');
         }
 
-        $service = $this->service();
+        $service = $this->readService();
         if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503, 'admin.security_reports.show');
         }
@@ -179,17 +181,18 @@ final class SecurityReportsController
             return $this->notFound($request, 'admin.security_reports.delete');
         }
 
-        $service = $this->service();
-        if ($service === null) {
+        $readService = $this->readService();
+        $writeService = $this->writeService();
+        if ($readService === null || $writeService === null) {
             return $this->errorResponse($request, 'db_unavailable', 503, 'admin.security_reports.delete');
         }
 
-        $row = $service->find((string) $id);
+        $row = $readService->find((string) $id);
         if ($row === null) {
             return $this->notFound($request, 'admin.security_reports.delete');
         }
 
-        $service->delete($id);
+        $writeService->delete($id);
         $this->logAudit($request, $id, 'deleted');
 
         if ($request->wantsJson()) {
@@ -225,23 +228,24 @@ final class SecurityReportsController
             return $this->notFound($request, $route);
         }
 
-        $service = $this->service();
-        if ($service === null) {
+        $readService = $this->readService();
+        $writeService = $this->writeService();
+        if ($readService === null || $writeService === null) {
             return $this->errorResponse($request, 'db_unavailable', 503, $route);
         }
 
-        $row = $service->find((string) $id);
+        $row = $readService->find((string) $id);
         if ($row === null) {
             return $this->notFound($request, $route);
         }
 
-        $updated = $service->updateStatus($id, $status);
+        $updated = $writeService->updateStatus($id, $status);
         if (!$updated) {
             return $this->notFound($request, $route);
         }
 
         $this->logAudit($request, $id, $status);
-        $fresh = $service->find((string) $id) ?? $row;
+        $fresh = $readService->find((string) $id) ?? $row;
 
         if ($request->wantsJson()) {
             UiToast::registerInfo($this->view->translate($toastKey), $toastKey);
@@ -421,18 +425,39 @@ final class SecurityReportsController
         return $sum;
     }
 
-    private function service(): ?SecurityReportsServiceInterface
+    private function readService(): ?SecurityReportsReadServiceInterface
     {
-        if ($this->reportsService !== null) {
-            return $this->reportsService;
+        if ($this->reportsReadService !== null) {
+            return $this->reportsReadService;
         }
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(SecurityReportsServiceInterface::class);
-                if ($service instanceof SecurityReportsServiceInterface) {
-                    $this->reportsService = $service;
-                    return $this->reportsService;
+                $service = $this->container->get(SecurityReportsReadServiceInterface::class);
+                if ($service instanceof SecurityReportsReadServiceInterface) {
+                    $this->reportsReadService = $service;
+                    return $this->reportsReadService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function writeService(): ?SecurityReportsWriteServiceInterface
+    {
+        if ($this->reportsWriteService !== null) {
+            return $this->reportsWriteService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(SecurityReportsWriteServiceInterface::class);
+                if ($service instanceof SecurityReportsWriteServiceInterface) {
+                    $this->reportsWriteService = $service;
+                    return $this->reportsWriteService;
                 }
             } catch (Throwable) {
                 return null;
@@ -456,18 +481,18 @@ final class SecurityReportsController
         }
     }
 
-    private function usersService(): ?UsersServiceInterface
+    private function usersService(): ?UsersReadServiceInterface
     {
-        if ($this->usersService !== null) {
-            return $this->usersService;
+        if ($this->usersReadService !== null) {
+            return $this->usersReadService;
         }
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(UsersServiceInterface::class);
-                if ($service instanceof UsersServiceInterface) {
-                    $this->usersService = $service;
-                    return $this->usersService;
+                $service = $this->container->get(UsersReadServiceInterface::class);
+                if ($service instanceof UsersReadServiceInterface) {
+                    $this->usersReadService = $service;
+                    return $this->usersReadService;
                 }
             } catch (Throwable) {
                 return null;
@@ -478,7 +503,7 @@ final class SecurityReportsController
     }
 
     /** @return array{new: int, triaged: int, ignored: int} */
-    private function countStatusFilters(SecurityReportsServiceInterface $service, array $filters): array
+    private function countStatusFilters(SecurityReportsReadServiceInterface $service, array $filters): array
     {
         $status = $filters['status'] ?? 'all';
         $statusCounts = [
@@ -500,7 +525,7 @@ final class SecurityReportsController
     }
 
     /** @return array{csp: int, other: int} */
-    private function countTypeFilters(SecurityReportsServiceInterface $service, array $filters): array
+    private function countTypeFilters(SecurityReportsReadServiceInterface $service, array $filters): array
     {
         $type = $filters['type'] ?? 'all';
         $typeCounts = [

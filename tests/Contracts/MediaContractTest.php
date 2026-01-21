@@ -35,7 +35,8 @@ final class MediaContractTest extends TestCase
     {
         $db = $this->createDatabase();
         $request = new Request('GET', '/media/999/file.jpg', [], [], [], '');
-        $controller = new MediaServeController(null, $db);
+        $service = new \Laas\Domain\Media\MediaService($db, [], $this->rootPath);
+        $controller = new MediaServeController(null, $service, null, null, null, $this->storage);
         $response = $controller->serve($request, ['id' => 999, 'name' => 'file.jpg']);
 
         $this->assertSame(404, $response->getStatus());
@@ -49,7 +50,8 @@ final class MediaContractTest extends TestCase
             $media = $this->createMedia($repo, false, null);
 
             $request = new Request('GET', $media['url'], [], [], [], '');
-            $controller = new MediaServeController(null, $db);
+            $service = new \Laas\Domain\Media\MediaService($db, [], $this->rootPath);
+            $controller = new MediaServeController(null, $service, null, null, null, $this->storage);
             $response = $controller->serve($request, ['id' => $media['id'], 'name' => 'file.jpg']);
 
             $this->assertSame(200, $response->getStatus());
@@ -85,7 +87,8 @@ final class MediaContractTest extends TestCase
             $params = $this->parseQuery($url);
 
             $request = new Request('GET', $media['url'], $params, [], [], '');
-            $controller = new MediaServeController(null, $db);
+            $service = new \Laas\Domain\Media\MediaService($db, [], $this->rootPath);
+            $controller = new MediaServeController(null, $service, null, null, $signer, $this->storage);
             $response = $controller->serve($request, ['id' => $media['id'], 'name' => 'file.jpg']);
 
             $this->assertSame(200, $response->getStatus());

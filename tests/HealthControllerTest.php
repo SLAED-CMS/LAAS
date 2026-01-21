@@ -38,7 +38,7 @@ final class HealthControllerTest extends TestCase
         );
 
         $translator = new Translator(dirname(__DIR__), 'default', 'en');
-        $controller = new HealthController($health, $translator);
+        $controller = new HealthController(null, $health, null, $translator);
 
         $response = $controller->index(new Request('GET', '/health', [], [], [], ''));
         $this->assertSame(200, $response->getStatus());
@@ -71,7 +71,7 @@ final class HealthControllerTest extends TestCase
         );
 
         $translator = new Translator(dirname(__DIR__), 'default', 'en');
-        $controller = new HealthController($health, $translator);
+        $controller = new HealthController(null, $health, null, $translator);
 
         $response = $controller->index(new Request('GET', '/health', [], [], [], ''));
         $this->assertSame(503, $response->getStatus());
@@ -105,7 +105,7 @@ final class HealthControllerTest extends TestCase
         );
 
         $translator = new Translator(dirname(__DIR__), 'default', 'en');
-        $controller = new HealthController($health, $translator);
+        $controller = new HealthController(null, $health, null, $translator);
 
         $response = $controller->index(new Request('GET', '/health', [], [], [], ''));
         $this->assertSame(503, $response->getStatus());

@@ -65,7 +65,8 @@ final class AdminMediaUploadServiceTest extends TestCase
 
         $view = SecurityTestHelper::createView($db, $request, 'admin');
         $service = new SpyMediaService($db);
-        $controller = new AdminMediaController($view, $db, $service);
+        $container = SecurityTestHelper::createContainer($db);
+        $controller = new AdminMediaController($view, $service, $service, $container);
 
         $tmp = $this->createTempPng();
         $size = (int) (filesize($tmp) ?: 0);

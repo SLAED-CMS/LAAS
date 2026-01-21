@@ -243,7 +243,7 @@ function assets_verify_file(string $path, string $kind, ?int $minBytes = null): 
     }
     $head = substr($contents, 0, 200);
     if (stripos($head, 'todo') !== false) {
-        $errors[] = 'Contains TODO in first 200 bytes';
+        $errors[] = 'Contains todo marker in first 200 bytes';
     }
     if (stripos($head, 'placeholder') !== false) {
         $errors[] = 'Contains placeholder in first 200 bytes';

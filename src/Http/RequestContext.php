@@ -3,20 +3,67 @@ declare(strict_types=1);
 
 namespace Laas\Http;
 
+use Laas\DevTools\DevToolsContext;
+use Laas\Support\RequestScope;
+
 final class RequestContext
 {
     public static function requestId(): ?string
     {
+        $fromScope = RequestScope::get('request.id');
+        if (is_string($fromScope)) {
+            $fromScope = trim($fromScope);
+            if ($fromScope !== '') {
+                return $fromScope;
+            }
+        }
+
+        $context = RequestScope::get('devtools.context');
+        if ($context instanceof DevToolsContext) {
+            $rid = $context->getRequestId();
+            if (is_string($rid)) {
+                $rid = trim($rid);
+                if ($rid !== '') {
+                    return $rid;
+                }
+            }
+        }
+
+        $request = RequestScope::getRequest();
+        if ($request instanceof Request) {
+            $rid = $request->getHeader('x-request-id');
+            if (is_string($rid)) {
+                $rid = trim($rid);
+                if ($rid !== '') {
+                    return $rid;
+                }
+            }
+        }
+
         $rid = $_SERVER['HTTP_X_REQUEST_ID'] ?? $_SERVER['X_REQUEST_ID'] ?? null;
         if (!is_string($rid)) {
-            return null;
+            $generated = bin2hex(random_bytes(16));
+            RequestScope::set('request.id', $generated);
+            return $generated;
         }
         $rid = trim($rid);
-        return $rid !== '' ? $rid : null;
+        if ($rid === '') {
+            $generated = bin2hex(random_bytes(16));
+            RequestScope::set('request.id', $generated);
+            return $generated;
+        }
+        RequestScope::set('request.id', $rid);
+        return $rid;
     }
 
     public static function path(): ?string
     {
+        $request = RequestScope::getRequest();
+        if ($request instanceof Request) {
+            $path = trim((string) $request->getPath());
+            return $path !== '' ? $path : null;
+        }
+
         $raw = $_SERVER['REQUEST_URI'] ?? null;
         if (!is_string($raw)) {
             return null;
@@ -41,5 +88,10 @@ final class RequestContext
         }
         $parsed = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
         return $parsed ?? false;
+    }
+
+    public static function timestamp(): string
+    {
+        return gmdate('c');
     }
 }

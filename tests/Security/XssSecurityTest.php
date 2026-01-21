@@ -33,7 +33,7 @@ final class XssSecurityTest extends TestCase
 
         $request = new Request('GET', '/search', ['q' => 'alert'], [], [], '');
         $view = SecurityTestHelper::createView($db, $request, 'default');
-        $controller = new PagesController($view, $db, new PagesService($db));
+        $controller = new PagesController($view, new PagesService($db));
 
         $response = $controller->search($request);
         $body = $response->getBody();
@@ -60,7 +60,8 @@ final class XssSecurityTest extends TestCase
         $request = new Request('GET', '/admin/media', [], [], [], '');
         $this->attachSession($request, 1);
         $view = SecurityTestHelper::createView($db, $request, 'admin');
-        $controller = new AdminMediaController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        $controller = new AdminMediaController($view, null, null, $container);
 
         $response = $controller->index($request);
         $body = $response->getBody();
@@ -88,7 +89,9 @@ final class XssSecurityTest extends TestCase
         $request = new Request('GET', '/admin/menus', [], [], [], '');
         $this->attachSession($request, 1);
         $view = SecurityTestHelper::createView($db, $request, 'admin');
-        $controller = new AdminMenusController($view, $db, new MenusService($db));
+        $container = SecurityTestHelper::createContainer($db);
+        $service = new MenusService($db);
+        $controller = new AdminMenusController($view, $service, $service, $container);
 
         $response = $controller->index($request);
         $body = $response->getBody();

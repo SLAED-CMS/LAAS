@@ -8,7 +8,8 @@ use Laas\Core\Container\Container;
 use Laas\Core\Validation\Validator;
 use Laas\Core\Validation\ValidationResult;
 use Laas\Domain\Rbac\RbacServiceInterface;
-use Laas\Domain\Menus\MenusServiceInterface;
+use Laas\Domain\Menus\MenusReadServiceInterface;
+use Laas\Domain\Menus\MenusWriteServiceInterface;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
@@ -23,7 +24,8 @@ final class AdminMenusController
 {
     public function __construct(
         private View $view,
-        private ?MenusServiceInterface $menusService = null,
+        private ?MenusReadServiceInterface $menusReadService = null,
+        private ?MenusWriteServiceInterface $menusWriteService = null,
         private ?Container $container = null,
         private ?RbacServiceInterface $rbacService = null
     ) {
@@ -74,7 +76,7 @@ final class AdminMenusController
             return $this->errorResponse($request, 'invalid_request', 400);
         }
 
-        $service = $this->service();
+        $service = $this->readService();
         if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
@@ -174,7 +176,7 @@ final class AdminMenusController
             $payload['id'] = $id;
         }
 
-        $service = $this->service();
+        $service = $this->writeService();
         if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
@@ -224,19 +226,20 @@ final class AdminMenusController
             return $this->errorResponse($request, 'invalid_request', 400);
         }
 
-        $service = $this->service();
-        if ($service === null) {
+        $readService = $this->readService();
+        $writeService = $this->writeService();
+        if ($readService === null || $writeService === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
-        $item = $service->findItem($id);
+        $item = $readService->findItem($id);
         if ($item === null) {
             return $this->errorResponse($request, 'not_found', 404);
         }
 
         $enabled = !empty($item['enabled']) ? 1 : 0;
         $nextEnabled = $enabled === 1 ? 0 : 1;
-        $service->setItemEnabled($id, $nextEnabled);
+        $writeService->setItemEnabled($id, $nextEnabled);
         Audit::log($nextEnabled === 1 ? 'menus.item.enable' : 'menus.item.disable', 'menu_item', $id, [
             'label' => (string) ($item['label'] ?? ''),
             'url' => (string) ($item['url'] ?? ''),
@@ -267,12 +270,13 @@ final class AdminMenusController
             return $this->errorResponse($request, 'invalid_request', 400);
         }
 
-        $service = $this->service();
-        if ($service === null) {
+        $readService = $this->readService();
+        $writeService = $this->writeService();
+        if ($readService === null || $writeService === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
-        $item = $service->findItem($id);
-        $service->deleteItem($id);
+        $item = $readService->findItem($id);
+        $writeService->deleteItem($id);
         Audit::log('menus.item.delete', 'menu_item', $id, [
             'label' => (string) ($item['label'] ?? ''),
             'url' => (string) ($item['url'] ?? ''),
@@ -362,7 +366,7 @@ final class AdminMenusController
             return [];
         }
 
-        $service = $this->service();
+        $service = $this->readService();
         if ($service === null) {
             return [];
         }
@@ -379,7 +383,7 @@ final class AdminMenusController
 
     private function getMainMenu(): ?array
     {
-        $service = $this->service();
+        $service = $this->readService();
         if ($service === null) {
             return null;
         }
@@ -505,18 +509,39 @@ final class AdminMenusController
         return $messages;
     }
 
-    private function service(): ?MenusServiceInterface
+    private function readService(): ?MenusReadServiceInterface
     {
-        if ($this->menusService !== null) {
-            return $this->menusService;
+        if ($this->menusReadService !== null) {
+            return $this->menusReadService;
         }
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(MenusServiceInterface::class);
-                if ($service instanceof MenusServiceInterface) {
-                    $this->menusService = $service;
-                    return $this->menusService;
+                $service = $this->container->get(MenusReadServiceInterface::class);
+                if ($service instanceof MenusReadServiceInterface) {
+                    $this->menusReadService = $service;
+                    return $this->menusReadService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function writeService(): ?MenusWriteServiceInterface
+    {
+        if ($this->menusWriteService !== null) {
+            return $this->menusWriteService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(MenusWriteServiceInterface::class);
+                if ($service instanceof MenusWriteServiceInterface) {
+                    $this->menusWriteService = $service;
+                    return $this->menusWriteService;
                 }
             } catch (Throwable) {
                 return null;

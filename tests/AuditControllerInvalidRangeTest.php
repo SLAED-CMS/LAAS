@@ -13,6 +13,7 @@ use Laas\View\Theme\ThemeManager;
 use Laas\View\AssetManager;
 use Laas\View\View;
 use PHPUnit\Framework\TestCase;
+use Tests\Security\Support\SecurityTestHelper;
 use Tests\Support\InMemorySession;
 
 final class AuditControllerInvalidRangeTest extends TestCase
@@ -40,7 +41,8 @@ final class AuditControllerInvalidRangeTest extends TestCase
         ], [], [], '');
         $request->setSession($session);
         $view = $this->createView($db, $request);
-        $controller = new AuditController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        $controller = new AuditController($view, null, $container);
 
         $response = $controller->index($request);
         $this->assertSame(422, $response->getStatus());

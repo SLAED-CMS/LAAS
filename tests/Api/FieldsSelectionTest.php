@@ -13,7 +13,8 @@ final class FieldsSelectionTest extends TestCase
     public function testFieldsSelectionLimitsPayload(): void
     {
         $db = $this->createDb();
-        $controller = new PagesV2Controller($db);
+        $service = new \Laas\Domain\Pages\PagesService($db);
+        $controller = new PagesV2Controller(null, $service);
 
         $request = new Request('GET', '/api/v2/pages', [
             'fields' => 'slug,title,unknown',

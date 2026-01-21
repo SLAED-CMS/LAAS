@@ -7,7 +7,8 @@ use Laas\Core\Validation\Validator;
 use Laas\Core\Validation\ValidationResult;
 use Laas\Auth\AuthInterface;
 use Laas\Auth\TotpService;
-use Laas\Domain\Users\UsersServiceInterface;
+use Laas\Domain\Users\UsersReadServiceInterface;
+use Laas\Domain\Users\UsersWriteServiceInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\View\View;
@@ -17,7 +18,8 @@ final class AuthController
     public function __construct(
         private View $view,
         private AuthInterface $auth,
-        private ?UsersServiceInterface $users,
+        private ?UsersReadServiceInterface $usersRead,
+        private ?UsersWriteServiceInterface $usersWrite,
         private TotpService $totp
     ) {
     }
@@ -29,7 +31,7 @@ final class AuthController
 
     public function doLogin(Request $request): Response
     {
-        if ($this->users === null) {
+        if ($this->usersRead === null || $this->usersWrite === null) {
             return new Response('', 503);
         }
 
@@ -61,7 +63,7 @@ final class AuthController
             ], 422);
         }
 
-        $user = $this->users->findByUsername($username);
+        $user = $this->usersRead->findByUsername($username);
         if ($user === null || (int) ($user['status'] ?? 0) !== 1) {
             $errorMessage = $this->view->translate('users.login.invalid');
             $errors = [$errorMessage];
@@ -91,7 +93,7 @@ final class AuthController
             ], 422);
         }
 
-        $totpData = $this->users->getTotpData((int) $user['id']);
+        $totpData = $this->usersRead->getTotpData((int) $user['id']);
         $totpEnabled = (int) ($totpData['totp_enabled'] ?? 0) === 1;
 
         if ($totpEnabled) {
@@ -137,7 +139,7 @@ final class AuthController
 
     public function verify2fa(Request $request): Response
     {
-        if ($this->users === null) {
+        if ($this->usersRead === null || $this->usersWrite === null) {
             return new Response('', 503);
         }
 
@@ -168,14 +170,14 @@ final class AuthController
             ], 422);
         }
 
-        $user = $this->users->find($pendingUserId);
+        $user = $this->usersRead->find($pendingUserId);
         if ($user === null || (int) ($user['status'] ?? 0) !== 1) {
             $session->delete('_2fa_pending_user_id');
             $session->delete('_2fa_pending_ip');
             return new Response('', 302, ['Location' => '/login']);
         }
 
-        $totpData = $this->users->getTotpData($pendingUserId);
+        $totpData = $this->usersRead->getTotpData($pendingUserId);
         $totpSecret = (string) ($totpData['totp_secret'] ?? '');
         $backupCodesJson = (string) ($totpData['backup_codes'] ?? '');
 
@@ -192,7 +194,7 @@ final class AuthController
             $isValidBackupCode = $this->totp->verifyBackupCode($code, $backupCodes);
             if ($isValidBackupCode) {
                 $remainingCodes = $this->totp->removeBackupCode($code, $backupCodes);
-                $this->users->setBackupCodes($pendingUserId, json_encode($remainingCodes));
+                $this->usersWrite->setBackupCodes($pendingUserId, json_encode($remainingCodes));
             }
         }
 
@@ -208,7 +210,7 @@ final class AuthController
 
         $session->regenerateId(true);
         $session->set('user_id', $pendingUserId);
-        $this->users->updateLoginMeta($pendingUserId, $pendingIp);
+        $this->usersWrite->updateLoginMeta($pendingUserId, $pendingIp);
 
         return new Response('', 303, [
             'Location' => '/admin',

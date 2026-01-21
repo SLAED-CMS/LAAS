@@ -6,8 +6,9 @@ namespace Laas\Modules\Media\Controller;
 use Laas\Api\ApiCacheInvalidator;
 use Laas\Core\Container\Container;
 use Laas\Domain\Rbac\RbacServiceInterface;
-use Laas\Domain\Media\MediaServiceInterface;
+use Laas\Domain\Media\MediaReadServiceInterface;
 use Laas\Domain\Media\MediaServiceException;
+use Laas\Domain\Media\MediaWriteServiceInterface;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorCode;
 use Laas\Http\ErrorResponse;
@@ -28,7 +29,8 @@ final class AdminMediaController
 {
     public function __construct(
         private View $view,
-        private ?MediaServiceInterface $mediaService = null,
+        private ?MediaReadServiceInterface $mediaReadService = null,
+        private ?MediaWriteServiceInterface $mediaWriteService = null,
         private ?Container $container = null,
         private ?RbacServiceInterface $rbacService = null,
         private ?MediaSignedUrlService $signedUrlService = null,
@@ -45,7 +47,7 @@ final class AdminMediaController
             return $this->forbidden($request);
         }
 
-        $service = $this->service();
+        $service = $this->readService();
         if ($service === null) {
             if ($request->wantsJson()) {
                 return $this->contractServiceUnavailable('admin.media.index');
@@ -162,8 +164,9 @@ final class AdminMediaController
             return $this->errorResponse($request, 'forbidden', 403);
         }
 
-        $service = $this->service();
-        if ($service === null) {
+        $readService = $this->readService();
+        $writeService = $this->writeService();
+        if ($readService === null || $writeService === null) {
             if ($request->wantsJson()) {
                 return $this->contractServiceUnavailable('admin.media.upload');
             }
@@ -207,13 +210,8 @@ final class AdminMediaController
 
         $originalName = $this->safeOriginalName((string) ($file['name'] ?? ''));
 
-        $service = $this->service();
-        if ($service === null) {
-            return $this->uploadMalformedResponse($request);
-        }
-
         try {
-            $media = $service->upload([
+            $media = $writeService->upload([
                 'name' => $originalName,
                 'tmp_path' => (string) ($file['tmp_name'] ?? ''),
                 'size' => $fileSize,
@@ -265,7 +263,7 @@ final class AdminMediaController
         }
 
         $success = $this->view->translate($successKey);
-        return $this->tableResponse($request, $service, $success, [], $mediaId > 0 ? $mediaId : null);
+        return $this->tableResponse($request, $readService, $success, [], $mediaId > 0 ? $mediaId : null);
     }
 
     public function delete(Request $request, array $params = []): Response
@@ -274,8 +272,9 @@ final class AdminMediaController
             return $this->errorResponse($request, 'forbidden', 403);
         }
 
-        $service = $this->service();
-        if ($service === null) {
+        $readService = $this->readService();
+        $writeService = $this->writeService();
+        if ($readService === null || $writeService === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
@@ -289,7 +288,7 @@ final class AdminMediaController
             return $this->errorResponse($request, 'storage_error', 503);
         }
 
-        $row = $service->find($id);
+        $row = $readService->find($id);
         if ($row !== null) {
             try {
                 $storage->delete((string) ($row['disk_path'] ?? ''));
@@ -312,7 +311,7 @@ final class AdminMediaController
                     'Content-Type' => 'text/plain; charset=utf-8',
                 ]);
             }
-            $service->delete($id);
+            $writeService->delete($id);
             Audit::log('media.delete', 'media_file', $id, [
                 'id' => $id,
                 'original_name' => (string) ($row['original_name'] ?? ''),
@@ -337,7 +336,7 @@ final class AdminMediaController
             ]);
         }
 
-        return $this->tableResponse($request, $service, $success, []);
+        return $this->tableResponse($request, $readService, $success, []);
     }
 
     public function togglePublic(Request $request, array $params = []): Response
@@ -346,8 +345,9 @@ final class AdminMediaController
             return $this->errorResponse($request, 'forbidden', 403);
         }
 
-        $service = $this->service();
-        if ($service === null) {
+        $readService = $this->readService();
+        $writeService = $this->writeService();
+        if ($readService === null || $writeService === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
 
@@ -356,7 +356,7 @@ final class AdminMediaController
             return $this->errorResponse($request, 'invalid_request', 400);
         }
 
-        $row = $service->find($id);
+        $row = $readService->find($id);
         if ($row === null) {
             return $this->errorResponse($request, 'not_found', 404);
         }
@@ -365,7 +365,7 @@ final class AdminMediaController
         $newPublic = !$isPublic;
         $token = $newPublic ? bin2hex(random_bytes(16)) : null;
 
-        $service->setPublic($id, $newPublic, $token);
+        $writeService->setPublic($id, $newPublic, $token);
 
         Audit::log($newPublic ? 'media.public.enabled' : 'media.public.disabled', 'media_file', $id, [
             'id' => $id,
@@ -375,7 +375,7 @@ final class AdminMediaController
 
         (new ApiCacheInvalidator())->bumpMedia();
 
-        $updated = $service->find($id);
+        $updated = $readService->find($id);
         $config = $this->mediaConfig();
         $items = $updated !== null ? $this->mapRows([$updated], $config) : [];
 
@@ -390,7 +390,7 @@ final class AdminMediaController
             ]);
         }
 
-        return $this->tableResponse($request, $service, $this->view->translate('media.public.toggled'), []);
+        return $this->tableResponse($request, $readService, $this->view->translate('media.public.toggled'), []);
     }
 
     public function signed(Request $request, array $params = []): Response
@@ -399,7 +399,7 @@ final class AdminMediaController
             return $this->errorResponse($request, 'forbidden', 403);
         }
 
-        $service = $this->service();
+        $service = $this->readService();
         if ($service === null) {
             return $this->errorResponse($request, 'db_unavailable', 503);
         }
@@ -476,7 +476,7 @@ final class AdminMediaController
         ]);
     }
 
-    private function tableResponse(Request $request, MediaServiceInterface $service, ?string $success, array $errors, ?int $flashId = null): Response
+    private function tableResponse(Request $request, MediaReadServiceInterface $service, ?string $success, array $errors, ?int $flashId = null): Response
     {
         $query = SearchNormalizer::normalize((string) ($request->query('q') ?? ''));
         $page = max(1, (int) ($request->query('page') ?? 1));
@@ -591,7 +591,7 @@ final class AdminMediaController
             ]);
         }
 
-        $service = $this->service();
+        $service = $this->readService();
         $items = $service !== null ? $this->mapRows($service->list(20, 0, ''), $this->mediaConfig()) : [];
         return $this->view->render('pages/media.html', [
             'items' => $items,
@@ -632,7 +632,7 @@ final class AdminMediaController
             ]);
         }
 
-        $service = $this->service();
+        $service = $this->readService();
         $items = $service !== null ? $this->mapRows($service->list(20, 0, ''), $this->mediaConfig()) : [];
         return $this->view->render('pages/media.html', [
             'items' => $items,
@@ -651,18 +651,39 @@ final class AdminMediaController
         ]);
     }
 
-    private function service(): ?MediaServiceInterface
+    private function readService(): ?MediaReadServiceInterface
     {
-        if ($this->mediaService !== null) {
-            return $this->mediaService;
+        if ($this->mediaReadService !== null) {
+            return $this->mediaReadService;
         }
 
         if ($this->container !== null) {
             try {
-                $service = $this->container->get(MediaServiceInterface::class);
-                if ($service instanceof MediaServiceInterface) {
-                    $this->mediaService = $service;
-                    return $this->mediaService;
+                $service = $this->container->get(MediaReadServiceInterface::class);
+                if ($service instanceof MediaReadServiceInterface) {
+                    $this->mediaReadService = $service;
+                    return $this->mediaReadService;
+                }
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function writeService(): ?MediaWriteServiceInterface
+    {
+        if ($this->mediaWriteService !== null) {
+            return $this->mediaWriteService;
+        }
+
+        if ($this->container !== null) {
+            try {
+                $service = $this->container->get(MediaWriteServiceInterface::class);
+                if ($service instanceof MediaWriteServiceInterface) {
+                    $this->mediaWriteService = $service;
+                    return $this->mediaWriteService;
                 }
             } catch (Throwable) {
                 return null;

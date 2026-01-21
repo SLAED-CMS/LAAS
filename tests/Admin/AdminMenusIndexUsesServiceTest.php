@@ -23,7 +23,8 @@ final class AdminMenusIndexUsesServiceTest extends TestCase
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = $this->createView($db, $request);
         $service = new SpyMenusService($db);
-        $controller = new AdminMenusController($view, $db, $service);
+        $container = SecurityTestHelper::createContainer($db);
+        $controller = new AdminMenusController($view, $service, $service, $container);
 
         $response = $controller->index($request);
 

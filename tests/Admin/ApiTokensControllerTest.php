@@ -48,7 +48,8 @@ final class ApiTokensControllerTest extends TestCase
 
         $view = $this->createView($db, $request);
         $service = $this->createService($db);
-        $controller = new ApiTokensController($view, $db, $service);
+        $container = SecurityTestHelper::createContainer($db);
+        $controller = new ApiTokensController($view, $service, $service, $container);
 
         $response = $controller->revoke($request);
 

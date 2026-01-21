@@ -19,6 +19,7 @@ final class DatabaseManager
     public function __construct(private array $config)
     {
         RequestScope::set('db.manager', $this);
+        RequestScope::forget('db.healthcheck');
     }
 
     public function enableDevTools(DevToolsContext $context, array $config): void

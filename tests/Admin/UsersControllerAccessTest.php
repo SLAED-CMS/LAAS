@@ -219,7 +219,9 @@ final class UsersControllerAccessTest extends TestCase
     {
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = $this->createView($db, $request);
-        return new UsersController($view, $db, new UsersService($db));
+        $container = SecurityTestHelper::createContainer($db);
+        $service = new UsersService($db);
+        return new UsersController($view, $service, $service, $container);
     }
 
     private function createView(DatabaseManager $db, Request $request): View

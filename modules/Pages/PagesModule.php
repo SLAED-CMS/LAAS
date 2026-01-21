@@ -38,7 +38,9 @@ final class PagesModule implements ModuleInterface
             $useContainer = $this->container !== null;
 
             $router->addRoute($method, $path, function ($request, array $vars = []) use ($class, $action, $paramCount, $useContainer) {
-                if ($useContainer && $paramCount >= 3) {
+                if ($useContainer && $paramCount >= 4) {
+                    $controller = new $class($this->view, null, null, $this->container);
+                } elseif ($useContainer && $paramCount >= 3) {
                     $controller = new $class($this->view, null, $this->container);
                 } elseif ($useContainer && $paramCount >= 2) {
                     $controller = new $class($this->view, $this->container);

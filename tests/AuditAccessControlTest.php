@@ -13,6 +13,7 @@ use Laas\View\Theme\ThemeManager;
 use Laas\View\AssetManager;
 use Laas\View\View;
 use PHPUnit\Framework\TestCase;
+use Tests\Security\Support\SecurityTestHelper;
 use Tests\Support\InMemorySession;
 
 final class AuditAccessControlTest extends TestCase
@@ -35,7 +36,8 @@ final class AuditAccessControlTest extends TestCase
         $request = new Request('GET', '/admin/audit', [], [], ['accept' => 'application/json'], '');
         $request->setSession($session);
         $view = $this->createView($db, $request);
-        $controller = new AuditController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        $controller = new AuditController($view, null, $container);
 
         $response = $controller->index($request);
 

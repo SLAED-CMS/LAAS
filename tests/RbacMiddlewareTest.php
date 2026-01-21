@@ -7,12 +7,15 @@ use Laas\Database\Repositories\RbacRepository;
 use Laas\Http\Middleware\RbacMiddleware;
 use Laas\Http\Request;
 use Laas\Http\Response;
+use Laas\Support\RequestScope;
 use PHPUnit\Framework\TestCase;
 
 final class RbacMiddlewareTest extends TestCase
 {
     public function testDeniedWhenMissingPermission(): void
     {
+        RequestScope::reset();
+        RequestScope::setRequest(null);
         $pdo = $this->createPdo();
         $this->createRbacSchema($pdo);
 
@@ -32,6 +35,8 @@ final class RbacMiddlewareTest extends TestCase
 
     public function testAllowsWhenPermissionGranted(): void
     {
+        RequestScope::reset();
+        RequestScope::setRequest(null);
         $pdo = $this->createPdo();
         $this->createRbacSchema($pdo);
         $pdo->exec("INSERT INTO roles (id, name, title, created_at, updated_at) VALUES (1, 'admin', 'Admin', '2026-01-01 00:00:00', '2026-01-01 00:00:00')");

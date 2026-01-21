@@ -5,7 +5,8 @@ namespace Laas\Modules\Users\Controller;
 
 use Laas\Core\Validation\Validator;
 use Laas\Core\Validation\ValidationResult;
-use Laas\Domain\Users\UsersServiceInterface;
+use Laas\Domain\Users\UsersReadServiceInterface;
+use Laas\Domain\Users\UsersWriteServiceInterface;
 use Laas\Support\Mail\MailerInterface;
 use Laas\Security\RateLimiter;
 use Laas\Http\Request;
@@ -20,7 +21,8 @@ final class PasswordResetController
 
     public function __construct(
         private View $view,
-        private ?UsersServiceInterface $users,
+        private ?UsersReadServiceInterface $usersRead,
+        private ?UsersWriteServiceInterface $usersWrite,
         private MailerInterface $mailer,
         private RateLimiter $rateLimiter,
         private string $rootPath,
@@ -36,7 +38,7 @@ final class PasswordResetController
 
     public function requestReset(Request $request): Response
     {
-        if ($this->users === null) {
+        if ($this->usersRead === null || $this->usersWrite === null) {
             return new Response('', 503);
         }
 
@@ -79,14 +81,14 @@ final class PasswordResetController
             ], 429);
         }
 
-        $user = $this->users->findByEmail($email);
+        $user = $this->usersRead->findByEmail($email);
 
         if ($user !== null && (int) ($user['status'] ?? 0) === 1) {
             $rawToken = bin2hex(random_bytes(32));
             $hashedToken = hash('sha256', $rawToken);
 
-            $this->users->deletePasswordResetByEmail($email);
-            $this->users->createPasswordResetToken($email, $hashedToken, 3600);
+            $this->usersWrite->deletePasswordResetByEmail($email);
+            $this->usersWrite->createPasswordResetToken($email, $hashedToken, 3600);
 
             $scheme = $request->header('X-Forwarded-Proto') ?? ($request->isSecure() ? 'https' : 'http');
             $host = $request->header('Host') ?? 'localhost';
@@ -116,7 +118,7 @@ final class PasswordResetController
 
     public function showResetForm(Request $request): Response
     {
-        if ($this->users === null) {
+        if ($this->usersRead === null || $this->usersWrite === null) {
             return $this->view->render('pages/password_reset_invalid.html', [], 503);
         }
 
@@ -126,9 +128,9 @@ final class PasswordResetController
         }
 
         $hashedToken = hash('sha256', $rawToken);
-        $tokenRecord = $this->users->findPasswordResetByToken($hashedToken);
+        $tokenRecord = $this->usersRead->findPasswordResetByToken($hashedToken);
 
-        if ($tokenRecord === null || !$this->users->isPasswordResetTokenValid($tokenRecord)) {
+        if ($tokenRecord === null || !$this->usersRead->isPasswordResetTokenValid($tokenRecord)) {
             return $this->view->render('pages/password_reset_invalid.html', [], 400);
         }
 
@@ -139,7 +141,7 @@ final class PasswordResetController
 
     public function processReset(Request $request): Response
     {
-        if ($this->users === null) {
+        if ($this->usersRead === null || $this->usersWrite === null) {
             return $this->view->render('pages/password_reset_invalid.html', [], 503);
         }
 
@@ -182,14 +184,14 @@ final class PasswordResetController
         }
 
         $hashedToken = hash('sha256', $rawToken);
-        $tokenRecord = $this->users->findPasswordResetByToken($hashedToken);
+        $tokenRecord = $this->usersRead->findPasswordResetByToken($hashedToken);
 
-        if ($tokenRecord === null || !$this->users->isPasswordResetTokenValid($tokenRecord)) {
+        if ($tokenRecord === null || !$this->usersRead->isPasswordResetTokenValid($tokenRecord)) {
             return $this->view->render('pages/password_reset_invalid.html', [], 400);
         }
 
         $email = (string) ($tokenRecord['email'] ?? '');
-        $user = $this->users->findByEmail($email);
+        $user = $this->usersRead->findByEmail($email);
 
         if ($user === null || (int) ($user['status'] ?? 0) !== 1) {
             $this->logger->warning('Password reset attempted for invalid user', [
@@ -199,9 +201,9 @@ final class PasswordResetController
         }
 
         $passwordHash = password_hash($password, PASSWORD_BCRYPT);
-        $this->users->setPasswordHash((int) $user['id'], $passwordHash);
+        $this->usersWrite->setPasswordHash((int) $user['id'], $passwordHash);
 
-        $this->users->deletePasswordResetToken($hashedToken);
+        $this->usersWrite->deletePasswordResetToken($hashedToken);
 
         $this->logger->info('Password reset successful', [
             'user_id' => (int) $user['id'],

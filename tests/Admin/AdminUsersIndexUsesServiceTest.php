@@ -22,7 +22,8 @@ final class AdminUsersIndexUsesServiceTest extends TestCase
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = $this->createView($db, $request);
         $service = new SpyUsersService($db);
-        $controller = new UsersController($view, $db, $service);
+        $container = SecurityTestHelper::createContainer($db);
+        $controller = new UsersController($view, $service, $service, $container);
 
         $response = $controller->index($request);
 

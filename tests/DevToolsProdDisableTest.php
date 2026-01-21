@@ -13,6 +13,7 @@ use Laas\View\Theme\ThemeManager;
 use Laas\View\AssetManager;
 use Laas\View\View;
 use PHPUnit\Framework\TestCase;
+use Tests\Security\Support\SecurityTestHelper;
 use Tests\Support\InMemorySession;
 
 final class DevToolsProdDisableTest extends TestCase
@@ -57,7 +58,8 @@ final class DevToolsProdDisableTest extends TestCase
         $request = new Request('GET', '/__devtools/ping', [], [], [], '');
         $request->setSession($session);
         $view = $this->createView($db, $request);
-        $controller = new DevToolsController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        $controller = new DevToolsController($view, null, $container);
 
         $response = $controller->ping($request);
         $this->assertSame(403, $response->getStatus());

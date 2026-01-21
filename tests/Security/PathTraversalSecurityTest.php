@@ -5,6 +5,8 @@ require_once __DIR__ . '/Support/SecurityTestHelper.php';
 
 use Laas\Http\Request;
 use Laas\Modules\Media\Controller\MediaThumbController;
+use Laas\Modules\Media\Service\MediaThumbnailService;
+use Laas\Modules\Media\Service\StorageService;
 use Laas\Modules\Pages\Controller\PagesController;
 use Laas\Domain\Pages\PagesService;
 use PHPUnit\Framework\Attributes\Group;
@@ -22,7 +24,7 @@ final class PathTraversalSecurityTest extends TestCase
 
         $request = new Request('GET', '/pages/../etc/passwd', [], [], [], '');
         $view = SecurityTestHelper::createView($db, $request, 'default');
-        $controller = new PagesController($view, $db, new PagesService($db));
+        $controller = new PagesController($view, new PagesService($db));
 
         $response = $controller->show($request, ['slug' => '../etc/passwd']);
         $this->assertSame(404, $response->getStatus());
@@ -37,7 +39,10 @@ final class PathTraversalSecurityTest extends TestCase
             $db = SecurityTestHelper::dbManagerFromPdo($pdo);
 
             $request = new Request('GET', '/media/1/thumb/../etc', [], [], [], '');
-            $controller = new MediaThumbController($db);
+            $service = new \Laas\Domain\Media\MediaService($db, [], SecurityTestHelper::rootPath());
+            $storage = new StorageService(SecurityTestHelper::rootPath());
+            $thumbs = new MediaThumbnailService($storage);
+            $controller = new MediaThumbController(null, $service, null, null, null, $storage, $thumbs);
 
             $response = $controller->serve($request, ['id' => 1, 'variant' => '../etc']);
             $this->assertSame(404, $response->getStatus());

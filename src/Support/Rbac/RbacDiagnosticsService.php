@@ -4,13 +4,13 @@ declare(strict_types=1);
 namespace Laas\Support\Rbac;
 
 use Laas\Domain\Rbac\RbacServiceInterface;
-use Laas\Domain\Users\UsersServiceInterface;
+use Laas\Domain\Users\UsersReadServiceInterface;
 
 final class RbacDiagnosticsService
 {
     public function __construct(
         private RbacServiceInterface $rbac,
-        private UsersServiceInterface $users
+        private UsersReadServiceInterface $users
     ) {
     }
 

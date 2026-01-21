@@ -85,7 +85,8 @@ final class AdminMediaJsonTest extends TestCase
     {
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = $this->createView($db, $request);
-        return new AdminMediaController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        return new AdminMediaController($view, null, null, $container);
     }
 
     private function createView(DatabaseManager $db, Request $request): View

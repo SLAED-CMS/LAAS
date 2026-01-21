@@ -14,7 +14,8 @@ final class PagesApiTest extends TestCase
     public function testListPublishedOnly(): void
     {
         $db = $this->createDb();
-        $controller = new PagesController($db);
+        $service = new \Laas\Domain\Pages\PagesService($db);
+        $controller = new PagesController(null, $service);
 
         $request = new Request('GET', '/api/v1/pages', [], [], [], '');
         $response = $controller->index($request);
@@ -29,7 +30,8 @@ final class PagesApiTest extends TestCase
     public function testBySlug(): void
     {
         $db = $this->createDb();
-        $controller = new PagesController($db);
+        $service = new \Laas\Domain\Pages\PagesService($db);
+        $controller = new PagesController(null, $service);
 
         $request = new Request('GET', '/api/v1/pages/by-slug/hello', [], [], [], '');
         $response = $controller->bySlug($request, ['slug' => 'hello']);
@@ -42,7 +44,8 @@ final class PagesApiTest extends TestCase
     public function testPaginationClamp(): void
     {
         $db = $this->createDb();
-        $controller = new PagesController($db);
+        $service = new \Laas\Domain\Pages\PagesService($db);
+        $controller = new PagesController(null, $service);
 
         $request = new Request('GET', '/api/v1/pages', ['per_page' => '999'], [], [], '');
         $response = $controller->index($request);
@@ -55,7 +58,8 @@ final class PagesApiTest extends TestCase
     public function testQueryTooShort(): void
     {
         $db = $this->createDb();
-        $controller = new PagesController($db);
+        $service = new \Laas\Domain\Pages\PagesService($db);
+        $controller = new PagesController(null, $service);
 
         $request = new Request('GET', '/api/v1/pages', ['q' => 'a'], [], [], '');
         $response = $controller->index($request);

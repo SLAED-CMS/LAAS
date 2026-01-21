@@ -110,7 +110,8 @@ final class ModulesControllerAccessTest extends TestCase
     {
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         $view = $this->createView($db, $request);
-        return new ModulesController($view, $db);
+        $container = SecurityTestHelper::createContainer($db);
+        return new ModulesController($view, null, $container);
     }
 
     private function createView(DatabaseManager $db, Request $request): View

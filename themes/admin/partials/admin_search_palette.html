@@ -1,0 +1,39 @@
+{% if reason == 'too_short' %}
+  <div class="text-muted small">Type at least 2 characters.</div>
+{% else %}
+  {% foreach groups as group %}
+    {% if group.items and group.count > 0 %}
+      <div class="palette-group" data-palette-group="{% group.key %}">
+        <div class="palette-group-title text-muted small text-uppercase">{% group.title %}</div>
+        <div class="list-group list-group-flush">
+          {% foreach group.items as item %}
+            <button class="list-group-item list-group-item-action palette-item"
+                    type="button"
+                    data-palette-item="1"
+                    data-url="{% item.url %}">
+              <div class="d-flex align-items-center gap-2">
+                {% if item.icon %}
+                <span class="palette-icon">
+                  <i class="bi bi-{% item.icon %}"></i>
+                </span>
+                {% endif %}
+                <div class="flex-grow-1">
+                  <div class="fw-semibold">{% item.title %}</div>
+                  {% if item.subtitle %}
+                  <div class="text-muted small">{% item.subtitle %}</div>
+                  {% endif %}
+                </div>
+                {% if item.section %}
+                <span class="badge text-bg-light text-uppercase">{% item.section %}</span>
+                {% endif %}
+              </div>
+            </button>
+          {% endforeach %}
+        </div>
+      </div>
+    {% endif %}
+  {% endforeach %}
+  {% if not has_items %}
+    <div class="text-muted small">No matches.</div>
+  {% endif %}
+{% endif %}

@@ -23,7 +23,8 @@ final class AdminApiTokensIndexUsesServiceTest extends TestCase
         $service = new SpyApiTokensService($db, [
             'token_scopes' => ['admin.read'],
         ], SecurityTestHelper::rootPath());
-        $controller = new ApiTokensController($view, $db, $service);
+        $container = SecurityTestHelper::createContainer($db);
+        $controller = new ApiTokensController($view, $service, $service, $container);
 
         $response = $controller->index($request);
 

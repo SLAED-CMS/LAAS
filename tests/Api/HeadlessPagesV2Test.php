@@ -6,6 +6,7 @@ use Laas\Http\Request;
 use Laas\Modules\Api\Controller\PagesV2Controller;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
+use Tests\Security\Support\SecurityTestHelper;
 
 #[Group('api')]
 final class HeadlessPagesV2Test extends TestCase
@@ -13,7 +14,8 @@ final class HeadlessPagesV2Test extends TestCase
     public function testListDefaultsToMinimalFields(): void
     {
         $db = $this->createDb();
-        $controller = new PagesV2Controller($db);
+        $pagesService = new \Laas\Domain\Pages\PagesService($db);
+        $controller = new PagesV2Controller(null, $pagesService);
 
         $request = new Request('GET', '/api/v2/pages', [], [], [], '');
         $response = $controller->index($request);
@@ -33,7 +35,9 @@ final class HeadlessPagesV2Test extends TestCase
     public function testIncludeBlocksAndMedia(): void
     {
         $db = $this->createDb();
-        $controller = new PagesV2Controller($db);
+        $pagesService = new \Laas\Domain\Pages\PagesService($db);
+        $mediaService = new \Laas\Domain\Media\MediaService($db, [], SecurityTestHelper::rootPath());
+        $controller = new PagesV2Controller(null, $pagesService, null, $mediaService);
 
         $request = new Request('GET', '/api/v2/pages', [
             'include' => 'blocks,media',
@@ -52,7 +56,8 @@ final class HeadlessPagesV2Test extends TestCase
     public function testShowAddsContentHtmlWhenBlocksMissingInCompatMode(): void
     {
         $db = $this->createDbWithLegacyContent();
-        $controller = new PagesV2Controller($db);
+        $pagesService = new \Laas\Domain\Pages\PagesService($db);
+        $controller = new PagesV2Controller(null, $pagesService);
 
         $request = new Request('GET', '/api/v2/pages/1', [
             'include' => 'blocks',

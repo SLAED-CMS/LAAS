@@ -15,6 +15,7 @@ use Laas\View\Theme\ThemeManager;
 use Laas\View\AssetManager;
 use Laas\View\View;
 use PHPUnit\Framework\TestCase;
+use Tests\Security\Support\SecurityTestHelper;
 use Tests\Support\InMemorySession;
 
 final class MediaRateLimitTest extends TestCase
@@ -67,7 +68,9 @@ final class MediaRateLimitTest extends TestCase
         ], '');
         $this->attachSession($request);
         $view = $this->createView($db, $request);
-        $controller = new AdminMediaController($view, $db, $this->createService($db));
+        $container = SecurityTestHelper::createContainer($db);
+        $service = $this->createService($db);
+        $controller = new AdminMediaController($view, $service, $service, $container);
 
         $response = $controller->upload($request);
         $this->assertSame(429, $response->getStatus());
@@ -104,7 +107,9 @@ final class MediaRateLimitTest extends TestCase
         ], '');
         $this->attachSession($request);
         $view = $this->createView($db, $request);
-        $controller = new AdminMediaController($view, $db, $this->createService($db));
+        $container = SecurityTestHelper::createContainer($db);
+        $service = $this->createService($db);
+        $controller = new AdminMediaController($view, $service, $service, $container);
 
         $response = $controller->delete($request);
         $this->assertSame(200, $response->getStatus());

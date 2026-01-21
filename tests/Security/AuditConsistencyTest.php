@@ -118,7 +118,8 @@ final class AuditConsistencyTest extends TestCase
     {
         $view = $this->createView($db, $request);
         $service = $this->createService($db);
-        return new ApiTokensController($view, $db, $service);
+        $container = SecurityTestHelper::createContainer($db);
+        return new ApiTokensController($view, $service, $service, $container);
     }
 
     private function createView(DatabaseManager $db, Request $request): View
