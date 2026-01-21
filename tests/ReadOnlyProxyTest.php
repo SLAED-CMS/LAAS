@@ -6,6 +6,19 @@ use PHPUnit\Framework\TestCase;
 
 final class ReadOnlyProxyTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        ReadOnlyProxy::setLogger(static function (string $message): void {
+        });
+    }
+
+    protected function tearDown(): void
+    {
+        ReadOnlyProxy::setLogger(null);
+        parent::tearDown();
+    }
+
     public function testReadMethodPassesThrough(): void
     {
         $service = new ReadOnlyProxyReadService();
