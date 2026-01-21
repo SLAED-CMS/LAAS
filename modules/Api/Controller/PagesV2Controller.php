@@ -6,6 +6,8 @@ namespace Laas\Modules\Api\Controller;
 use Laas\Api\ApiResponse;
 use Laas\Content\Blocks\BlockRegistry;
 use Laas\Core\Container\Container;
+use Laas\Domain\Pages\Dto\PageSummary;
+use Laas\Domain\Pages\Dto\PageView;
 use Laas\Domain\Media\MediaReadServiceInterface;
 use Laas\Domain\Pages\PagesReadServiceInterface;
 use Laas\Http\Request;
@@ -55,11 +57,11 @@ final class PagesV2Controller
         }
 
         try {
-            $rows = $service->listPublishedAll();
+            $rows = $service->listPublishedSummaries();
         } catch (Throwable) {
             return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
         }
-        $pageIds = array_map(static fn(array $row): int => (int) ($row['id'] ?? 0), $rows);
+        $pageIds = array_map(static fn(PageSummary $row): int => $row->id(), $rows);
         $revisions = $service->findLatestRevisionIds($pageIds);
         $latestRevisionId = $this->maxRevisionId($revisions);
 
@@ -68,7 +70,12 @@ final class PagesV2Controller
 
         $items = [];
         foreach ($rows as $row) {
-            $items[] = $this->mapPage($row, $fields, $includeBlocks, $includeMedia);
+            $pageView = PageView::fromSummary($row, $locale);
+            if ($includeBlocks || $includeMedia) {
+                $blocks = $this->loadRawBlocks($row->id());
+                $pageView = $pageView->withBlocks($blocks);
+            }
+            $items[] = $this->mapPage($pageView, $fields, $includeBlocks, $includeMedia);
         }
 
         $etag = $this->buildEtag([
@@ -129,6 +136,11 @@ final class PagesV2Controller
 
         $includeBlocks = in_array('blocks', $include, true) || in_array('blocks', $fields, true);
         $includeMedia = in_array('media', $include, true);
+        $pageView = PageView::fromArray($row, $locale);
+        if ($includeBlocks || $includeMedia) {
+            $blocks = $this->loadRawBlocks($id);
+            $pageView = $pageView->withBlocks($blocks);
+        }
 
         $revId = $service->findLatestRevisionId($id);
         $etag = $this->buildEtag([
@@ -151,7 +163,7 @@ final class PagesV2Controller
         }
 
         return ApiResponse::ok([
-            'page' => $this->mapPage($row, $fields, $includeBlocks, $includeMedia),
+            'page' => $this->mapPage($pageView, $fields, $includeBlocks, $includeMedia),
             'locale' => $locale,
         ], [], 200, $headers);
     }
@@ -179,24 +191,22 @@ final class PagesV2Controller
         }
 
         try {
-            $pages = $service->list([
-                'slug' => $slug,
-                'status' => 'published',
-                'limit' => 1,
-                'offset' => 0,
-            ]);
+            $pageView = $service->getPublishedView($slug, $locale);
         } catch (Throwable) {
             return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
         }
-        $row = $pages[0] ?? null;
-        if ($row === null) {
+        if ($pageView === null) {
             return ApiResponse::error('not_found', 'Not Found', [], 404);
         }
 
         $includeBlocks = in_array('blocks', $include, true) || in_array('blocks', $fields, true);
         $includeMedia = in_array('media', $include, true);
+        if ($includeBlocks || $includeMedia) {
+            $blocks = $this->loadRawBlocks($pageView->id());
+            $pageView = $pageView->withBlocks($blocks);
+        }
 
-        $id = (int) ($row['id'] ?? 0);
+        $id = $pageView->id();
         $revId = $id > 0 ? $service->findLatestRevisionId($id) : 0;
         $etag = $this->buildEtag([
             'page',
@@ -218,7 +228,7 @@ final class PagesV2Controller
         }
 
         return ApiResponse::ok([
-            'page' => $this->mapPage($row, $fields, $includeBlocks, $includeMedia),
+            'page' => $this->mapPage($pageView, $fields, $includeBlocks, $includeMedia),
             'locale' => $locale,
         ], [], 200, $headers);
     }
@@ -268,28 +278,27 @@ final class PagesV2Controller
     /**
      * @param array<int, string> $fields
      */
-    private function mapPage(array $row, array $fields, bool $includeBlocks, bool $includeMedia): array
+    private function mapPage(PageView $pageView, array $fields, bool $includeBlocks, bool $includeMedia): array
     {
         $page = [];
         foreach ($fields as $field) {
             $page[$field] = match ($field) {
-                'id' => (int) ($row['id'] ?? 0),
-                'slug' => (string) ($row['slug'] ?? ''),
-                'title' => (string) ($row['title'] ?? ''),
-                'content' => (string) ($row['content'] ?? ''),
-                'status' => (string) ($row['status'] ?? ''),
-                'updated_at' => (string) ($row['updated_at'] ?? ''),
-                default => $page[$field] ?? null,
+                'id' => $pageView->id(),
+                'slug' => $pageView->slug(),
+                'title' => $pageView->title(),
+                'content' => $pageView->content(),
+                'status' => $pageView->status(),
+                'updated_at' => $pageView->updatedAt(),
+                default => null,
             };
         }
 
         $blocks = [];
         if ($includeBlocks) {
-            $pageId = (int) ($row['id'] ?? 0);
-            $blocks = $this->loadBlocks($pageId);
+            $blocks = $this->renderBlocks($pageView->blocks());
             $page['blocks'] = $blocks;
             if ($blocks === [] && $this->compatBlocksLegacyContent()) {
-                $content = (string) ($row['content'] ?? '');
+                $content = $pageView->content();
                 if (trim($content) !== '') {
                     $page['content_html'] = $content;
                 }
@@ -305,9 +314,9 @@ final class PagesV2Controller
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{type: string, data: array<string, mixed>}>
      */
-    private function loadBlocks(int $pageId): array
+    private function loadRawBlocks(int $pageId): array
     {
         if ($pageId <= 0) {
             return [];
@@ -319,11 +328,18 @@ final class PagesV2Controller
         }
 
         try {
-            $blocks = $service->findLatestBlocks($pageId);
+            return $service->findLatestBlocks($pageId);
         } catch (Throwable) {
             return [];
         }
+    }
 
+    /**
+     * @param array<int, array{type: string, data: array<string, mixed>}> $blocks
+     * @return array<int, array<string, mixed>>
+     */
+    private function renderBlocks(array $blocks): array
+    {
         $registry = BlockRegistry::default();
         return $registry->renderJsonBlocks($blocks);
     }

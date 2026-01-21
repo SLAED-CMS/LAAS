@@ -5,6 +5,8 @@ namespace Laas\Domain\Pages;
 
 use InvalidArgumentException;
 use Laas\Database\DatabaseManager;
+use Laas\Domain\Pages\Dto\PageSummary;
+use Laas\Domain\Pages\Dto\PageView;
 use Laas\Modules\Pages\Repository\PagesRepository;
 use Laas\Modules\Pages\Repository\PagesRevisionsRepository;
 use Laas\Security\HtmlSanitizer;
@@ -77,10 +79,47 @@ class PagesService implements PagesServiceInterface, PagesReadServiceInterface, 
         return $repo->listByStatus($statusFilter, $limit, $offset);
     }
 
-    /** @return array<int, array<string, mixed>> */
-    public function listPublishedAll(): array
+    /** @return PageSummary[] */
+    public function listPublishedSummaries(): array
     {
-        return $this->repository()->listPublishedAll();
+        $rows = $this->repository()->listPublishedAll();
+        $out = [];
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $out[] = PageSummary::fromArray($row);
+        }
+        return $out;
+    }
+
+    /**
+     * @param array<int, string> $fields
+     * @param array<int, string> $include
+     */
+    public function getPublishedView(string $slug, string $locale, array $fields = [], array $include = []): ?PageView
+    {
+        $slug = trim($slug);
+        if ($slug === '') {
+            return null;
+        }
+
+        $row = $this->repository()->findPublishedBySlug($slug);
+        if ($row === null) {
+            return null;
+        }
+
+        $view = PageView::fromArray($row, $locale);
+
+        $includeBlocks = in_array('blocks', $include, true) || in_array('blocks', $fields, true);
+        $includeMedia = in_array('media', $include, true);
+        if ($includeBlocks || $includeMedia) {
+            $pageId = (int) ($row['id'] ?? 0);
+            $blocks = $pageId > 0 ? $this->findLatestBlocks($pageId) : [];
+            $view = $view->withBlocks($blocks);
+        }
+
+        return $view;
     }
 
     /**

@@ -5,6 +5,7 @@ namespace Laas\Domain\Modules;
 
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\ModulesRepository;
+use Laas\Domain\Modules\Dto\ModuleSummary;
 use Laas\Modules\ModuleCatalog;
 use RuntimeException;
 use Throwable;
@@ -18,14 +19,21 @@ class ModulesService implements ModulesServiceInterface
     ) {
     }
 
-    /** @return array<int, array<string, mixed>> */
+    /** @return ModuleSummary[] */
     public function listModules(): array
     {
-        return $this->catalog()->listAll();
+        $rows = $this->catalog()->listAll();
+        $out = [];
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $out[] = ModuleSummary::fromArray($row);
+        }
+        return $out;
     }
 
-    /** @return array<string, mixed>|null */
-    public function findModuleById(string $moduleId): ?array
+    public function findModuleById(string $moduleId): ?ModuleSummary
     {
         $moduleId = strtolower(trim($moduleId));
         if ($moduleId === '') {
@@ -33,10 +41,7 @@ class ModulesService implements ModulesServiceInterface
         }
 
         foreach ($this->listModules() as $module) {
-            if (!is_array($module)) {
-                continue;
-            }
-            if ((string) ($module['module_id'] ?? '') === $moduleId) {
+            if ($module->moduleId() === $moduleId) {
                 return $module;
             }
         }
@@ -44,8 +49,7 @@ class ModulesService implements ModulesServiceInterface
         return null;
     }
 
-    /** @return array<string, mixed>|null */
-    public function findModuleByName(string $name): ?array
+    public function findModuleByName(string $name): ?ModuleSummary
     {
         $name = trim($name);
         if ($name === '') {
@@ -53,10 +57,7 @@ class ModulesService implements ModulesServiceInterface
         }
 
         foreach ($this->listModules() as $module) {
-            if (!is_array($module)) {
-                continue;
-            }
-            if ((string) ($module['name'] ?? '') === $name) {
+            if ($module->name() === $name) {
                 return $module;
             }
         }

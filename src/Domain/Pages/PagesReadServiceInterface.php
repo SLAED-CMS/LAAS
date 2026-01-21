@@ -3,13 +3,22 @@ declare(strict_types=1);
 
 namespace Laas\Domain\Pages;
 
+use Laas\Domain\Pages\Dto\PageSummary;
+use Laas\Domain\Pages\Dto\PageView;
+
 interface PagesReadServiceInterface
 {
     /** @return array<int, array<string, mixed>> */
     public function list(array $filters = []): array;
 
-    /** @return array<int, array<string, mixed>> */
-    public function listPublishedAll(): array;
+    /** @return PageSummary[] */
+    public function listPublishedSummaries(): array;
+
+    /**
+     * @param array<int, string> $fields
+     * @param array<int, string> $include
+     */
+    public function getPublishedView(string $slug, string $locale, array $fields = [], array $include = []): ?PageView;
 
     public function count(array $filters = []): int;
 

@@ -45,6 +45,28 @@ final class PagesController
 }
 ```
 
+## Stable output shapes (DTOs)
+- For public/headless responses, services return DTOs or validated array shapes.
+- Controllers map DTOs to view/JSON; no raw repository rows in responses.
+
+Before (controller reads arrays):
+```php
+// controller
+$rows = $pagesService->list(['status' => 'published']);
+foreach ($rows as $row) {
+    $titles[] = $row['title'] ?? '';
+}
+```
+
+After (controller reads DTOs):
+```php
+// controller
+$pages = $pagesService->listPublishedSummaries();
+foreach ($pages as $page) {
+    $titles[] = $page->title();
+}
+```
+
 ## How to migrate an existing controller
 1) Identify the domain/system logic in the controller.
 2) Move that logic into a `*Service` class in `src/Domain/*`.

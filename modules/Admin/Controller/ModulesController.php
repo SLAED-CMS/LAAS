@@ -5,6 +5,7 @@ namespace Laas\Modules\Admin\Controller;
 
 use Laas\Core\Container\Container;
 use Laas\Domain\Modules\ModulesServiceInterface;
+use Laas\Domain\Modules\Dto\ModuleSummary;
 use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
@@ -42,6 +43,7 @@ final class ModulesController
         }
         $filters = $this->normalizeFilters($request);
         $modules = $this->filterModules($modules, $filters);
+        $modulesData = $this->moduleArrays($modules);
 
         if ($request->wantsJson()) {
             $items = $this->jsonItems($modules);
@@ -64,7 +66,7 @@ final class ModulesController
         }
 
         return $this->view->render('pages/modules.html', [
-            'modules' => $modules,
+            'modules' => $modulesData,
             'filters' => $filters,
             'filter_status_all' => $filters['status'] === 'all',
             'filter_status_on' => $filters['status'] === 'on',
@@ -114,7 +116,7 @@ final class ModulesController
         }
 
         return $this->view->render('partials/module_details.html', [
-            'module' => $module,
+            'module' => $module->toArray(),
         ], 200, $this->detailsHeaders(), [
             'theme' => 'admin',
             'render_partial' => true,
@@ -138,7 +140,7 @@ final class ModulesController
         }
 
         $moduleMeta = $service->findModuleByName($name);
-        $type = is_array($moduleMeta) ? (string) ($moduleMeta['type'] ?? 'feature') : 'feature';
+        $type = $moduleMeta?->type() ?? 'feature';
         if ($type !== 'feature') {
             return $this->errorResponse($request, 'protected_module', 400, 'admin.modules.toggle');
         }
@@ -150,7 +152,6 @@ final class ModulesController
         }
 
         $enabled = (bool) ($toggle['enabled'] ?? false);
-        $row = is_array($toggle['row'] ?? null) ? $toggle['row'] : [];
 
         Audit::log('modules.toggle', 'module', null, [
             'actor_user_id' => $this->currentUserId($request),
@@ -164,7 +165,7 @@ final class ModulesController
         $module = [
             'name' => $name,
             'enabled' => $enabled,
-            'version' => is_array($moduleMeta) ? ($moduleMeta['version'] ?? null) : null,
+            'version' => $moduleMeta?->version(),
             'type' => $type,
             'type_label' => $typeLabel,
             'type_is_internal' => $type === 'internal',
@@ -374,9 +375,9 @@ final class ModulesController
     }
 
     /**
-     * @param array<int, array<string, mixed>> $modules
+     * @param ModuleSummary[] $modules
      * @param array{q: string, status: string, type: string} $filters
-     * @return array<int, array<string, mixed>>
+     * @return ModuleSummary[]
      */
     private function filterModules(array $modules, array $filters): array
     {
@@ -386,12 +387,8 @@ final class ModulesController
 
         $out = [];
         foreach ($modules as $module) {
-            if (!is_array($module)) {
-                continue;
-            }
-
             if ($status !== 'all') {
-                $enabled = (bool) ($module['enabled'] ?? false);
+                $enabled = $module->enabled();
                 if ($status === 'on' && !$enabled) {
                     continue;
                 }
@@ -402,20 +399,14 @@ final class ModulesController
 
             if ($type !== 'all') {
                 $wanted = $type === 'general' ? 'feature' : $type;
-                $moduleType = (string) ($module['type'] ?? '');
+                $moduleType = $module->type();
                 if ($moduleType !== $wanted) {
                     continue;
                 }
             }
 
             if ($q !== '') {
-                $haystack = strtolower(
-                    (string) ($module['name'] ?? '')
-                    . ' '
-                    . (string) ($module['notes'] ?? '')
-                    . ' '
-                    . (string) ($module['type'] ?? '')
-                );
+                $haystack = strtolower($module->name() . ' ' . $module->notes() . ' ' . $module->type());
                 if (!str_contains($haystack, $q)) {
                     continue;
                 }
@@ -510,18 +501,21 @@ final class ModulesController
         }
     }
 
-    /** @return array<int, array{name: string, enabled: bool, version: string|null, type: string, protected: bool}> */
+    /**
+     * @param ModuleSummary[] $modules
+     * @return array<int, array{name: string, enabled: bool, version: string|null, type: string, protected: bool}>
+     */
     private function jsonItems(array $modules): array
     {
         $items = [];
         foreach ($modules as $module) {
-            $type = (string) ($module['type'] ?? 'feature');
+            $type = $module->type() !== '' ? $module->type() : 'feature';
             $items[] = [
-                'name' => (string) ($module['name'] ?? ''),
-                'enabled' => (bool) ($module['enabled'] ?? false),
-                'version' => is_string($module['version'] ?? null) ? $module['version'] : null,
+                'name' => $module->name(),
+                'enabled' => $module->enabled(),
+                'version' => $module->version(),
                 'type' => $this->jsonType($type),
-                'protected' => (bool) ($module['protected'] ?? $type !== 'feature'),
+                'protected' => $module->protected(),
             ];
         }
 
@@ -535,5 +529,18 @@ final class ModulesController
             'admin', 'api' => 'core',
             default => 'module',
         };
+    }
+
+    /**
+     * @param ModuleSummary[] $modules
+     * @return array<int, array<string, mixed>>
+     */
+    private function moduleArrays(array $modules): array
+    {
+        $out = [];
+        foreach ($modules as $module) {
+            $out[] = $module->toArray();
+        }
+        return $out;
     }
 }

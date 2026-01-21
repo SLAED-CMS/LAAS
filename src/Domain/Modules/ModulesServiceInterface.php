@@ -3,16 +3,16 @@ declare(strict_types=1);
 
 namespace Laas\Domain\Modules;
 
+use Laas\Domain\Modules\Dto\ModuleSummary;
+
 interface ModulesServiceInterface
 {
-    /** @return array<int, array<string, mixed>> */
+    /** @return ModuleSummary[] */
     public function listModules(): array;
 
-    /** @return array<string, mixed>|null */
-    public function findModuleById(string $moduleId): ?array;
+    public function findModuleById(string $moduleId): ?ModuleSummary;
 
-    /** @return array<string, mixed>|null */
-    public function findModuleByName(string $name): ?array;
+    public function findModuleByName(string $name): ?ModuleSummary;
 
     /**
      * @return array{enabled: bool, row: array<string, mixed>}

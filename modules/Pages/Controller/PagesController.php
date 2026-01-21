@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Laas\Modules\Pages\Controller;
 
 use Laas\Core\Container\Container;
+use Laas\Domain\Pages\Dto\PageView;
 use Laas\Domain\Pages\PagesReadServiceInterface;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
@@ -52,33 +53,27 @@ final class PagesController
         }
 
         try {
-            $pages = $service->list([
-                'slug' => $slug,
-                'status' => 'published',
-                'limit' => 1,
-                'offset' => 0,
-            ]);
+            $pageView = $service->getPublishedView($slug, $this->view->getLocale());
         } catch (Throwable) {
             return $this->notFound($request);
         }
 
-        $page = $pages[0] ?? null;
-        if ($page === null) {
+        if ($pageView === null) {
             return $this->notFound($request);
         }
 
-        $vm = PagePublicViewModel::fromArray($page);
-        $blocks = $this->loadLatestBlocks((int) ($page['id'] ?? 0));
+        $vm = PagePublicViewModel::fromArray($pageView->toArray());
+        $blocks = $this->loadLatestBlocks($pageView->id());
         $blocksHtml = $this->blocksRegistry()->renderHtmlBlocks($blocks, new ThemeContext(
             $this->view->getThemeName(),
             $this->view->getLocale()
         ));
         $blocksJson = $this->blocksRegistry()->renderJsonBlocks($blocks);
-        $legacyDetected = $this->isLegacyContent($page, $blocks);
+        $legacyDetected = $this->isLegacyContent($pageView, $blocks);
         $legacyAllowed = $legacyDetected && $this->compatBlocksLegacyContent();
         if ($this->shouldJson($request)) {
             return ContractResponse::ok([
-                'page' => $this->jsonPage($page),
+                'page' => $this->jsonPage($pageView),
                 'blocks' => $blocksJson,
             ], [
                 'route' => 'pages.show',
@@ -179,22 +174,17 @@ final class PagesController
         return $request->wantsJson();
     }
 
-    /** @param array<string, mixed> $page */
-    private function jsonPage(array $page): array
+    private function jsonPage(PageView $page): array
     {
-        $id = $page['id'] ?? null;
-        if (is_string($id) && ctype_digit($id)) {
-            $id = (int) $id;
-        } elseif (!is_int($id)) {
-            $id = null;
-        }
+        $id = $page->id();
+        $id = $id > 0 ? $id : null;
 
         return [
             'id' => $id,
-            'slug' => (string) ($page['slug'] ?? ''),
-            'title' => (string) ($page['title'] ?? ''),
-            'content' => (string) ($page['content'] ?? ''),
-            'updated_at' => (string) ($page['updated_at'] ?? ''),
+            'slug' => $page->slug(),
+            'title' => $page->title(),
+            'content' => $page->content(),
+            'updated_at' => $page->updatedAt(),
         ];
     }
 
@@ -230,15 +220,14 @@ final class PagesController
     }
 
     /**
-     * @param array<string, mixed> $page
      * @param array<int, array{type: string, data: array<string, mixed>}> $blocks
      */
-    private function isLegacyContent(array $page, array $blocks): bool
+    private function isLegacyContent(PageView $page, array $blocks): bool
     {
         if ($blocks !== []) {
             return false;
         }
-        $content = (string) ($page['content'] ?? '');
+        $content = $page->content();
         return trim($content) !== '';
     }
 

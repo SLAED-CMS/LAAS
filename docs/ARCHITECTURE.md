@@ -2334,6 +2334,11 @@ $config = $container->get('config');
 - Read/Write split: services with reads + mutations expose `*ReadServiceInterface` and `*WriteServiceInterface` (with `*ServiceInterface` extending both); GET/HEAD-only controllers depend on Read interfaces only
 - tests enforce interface-only controller dependencies and `@mutation` markers on mutating methods
 
+**Stable output shapes (DTOs):**
+- read services return DTOs or validated array shapes for public/headless consumers
+- controllers map DTOs to HTML/JSON; raw repository rows do not cross the boundary
+- shape contract tests lock the exposed fields for versioned APIs (e.g., Pages v2)
+
 **Read-only proxy barrier:**
 - Read interfaces resolve to a runtime proxy that blocks `@mutation` methods.
 - Mutation detection relies solely on `@mutation` markers in service methods.
