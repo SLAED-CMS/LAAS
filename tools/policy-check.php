@@ -678,6 +678,7 @@ function policy_run_assets_checks(): array
     $root = policy_root_path();
     require_once $root . '/tools/assets-verify.php';
     require_once $root . '/tools/assets-http-smoke.php';
+    require_once $root . '/tools/admin-smoke.php';
 
     $assetsCode = assets_verify_run($root);
 
@@ -691,7 +692,16 @@ function policy_run_assets_checks(): array
         echo "assets.http_smoke.skipped (set POLICY_HTTP_SMOKE=1)\n";
     }
 
-    return ['assets' => $assetsCode, 'http' => $httpCode];
+    $policyAdminSmoke = $_ENV['POLICY_ADMIN_SMOKE'] ?? '';
+    $adminSmoke = filter_var($policyAdminSmoke, FILTER_VALIDATE_BOOLEAN) === true;
+    if ($adminSmoke) {
+        $adminSmokeCode = admin_smoke_run($root, []);
+    } else {
+        $adminSmokeCode = 0;
+        echo "admin.smoke.skipped (set POLICY_ADMIN_SMOKE=1)\n";
+    }
+
+    return ['assets' => $assetsCode, 'http' => $httpCode, 'admin_smoke' => $adminSmokeCode];
 }
 
 function policy_is_core_theme_path(string $path): bool
@@ -1103,7 +1113,7 @@ function policy_run(array $paths): int
     }
     echo 'Summary: errors=' . $errorsCount . ' warnings=' . $warningsCount . ' w3a=' . $w3aCount . ' w3b=' . $w3bCount . ' w4=' . $w4Count . ' w5=' . $w5Count . ' w6=' . $w6Count . "\n";
 
-    return max($assetsResult['assets'], $assetsResult['http'], policy_exit_code($analysis));
+    return max($assetsResult['assets'], $assetsResult['http'], $assetsResult['admin_smoke'], policy_exit_code($analysis));
 }
 
 if (PHP_SAPI === 'cli' && realpath($argv[0] ?? '') === realpath(__FILE__)) {

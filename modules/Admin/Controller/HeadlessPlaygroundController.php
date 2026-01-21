@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Laas\Modules\Admin\Controller;
 
 use Laas\Core\Container\Container;
+use Laas\Core\FeatureFlagsInterface;
 use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
@@ -26,23 +27,33 @@ final class HeadlessPlaygroundController
 
     public function index(Request $request): Response
     {
+        if (!$this->isFeatureEnabled(FeatureFlagsInterface::ADMIN_FEATURE_HEADLESS_PLAYGROUND)) {
+            return $this->notFound($request, 'admin.headless.disabled');
+        }
+
         if (!$this->hasAccess($request)) {
             return $this->forbidden($request, 'admin.headless.index');
         }
 
         $defaultUrl = '/api/v2/pages?fields=id,title,slug&limit=5';
 
-        return $this->view->render('pages/headless_playground.html', [
+        $response = $this->view->render('pages/headless_playground.html', [
             'default_url' => $defaultUrl,
             'input_url' => $defaultUrl,
             'fetch_result' => null,
         ], 200, [], [
             'theme' => 'admin',
         ]);
+
+        return $this->withNoStore($response);
     }
 
     public function fetch(Request $request): Response
     {
+        if (!$this->isFeatureEnabled(FeatureFlagsInterface::ADMIN_FEATURE_HEADLESS_PLAYGROUND)) {
+            return $this->notFound($request, 'admin.headless.disabled');
+        }
+
         if (!$this->hasAccess($request)) {
             return $this->forbidden($request, 'admin.headless.fetch');
         }
@@ -50,18 +61,18 @@ final class HeadlessPlaygroundController
         $inputUrl = trim((string) ($request->query('url') ?? ''));
         $normalized = $this->normalizePath($inputUrl);
         if ($normalized['error'] !== null) {
-            return $this->renderFetchResult($request, $inputUrl, [
+            return $this->withNoStore($this->renderFetchResult($request, $inputUrl, [
                 'error' => $normalized['error'],
                 'status' => null,
-            ], 400);
+            ], 400));
         }
 
         $host = $this->requestHost($request);
         if ($host === '') {
-            return $this->renderFetchResult($request, $inputUrl, [
+            return $this->withNoStore($this->renderFetchResult($request, $inputUrl, [
                 'error' => 'Missing host.',
                 'status' => null,
-            ], 400);
+            ], 400));
         }
 
         $scheme = $request->isHttps() ? 'https' : 'http';
@@ -78,10 +89,10 @@ final class HeadlessPlaygroundController
                 'max_bytes' => 200_000,
             ]);
         } catch (Throwable) {
-            return $this->renderFetchResult($request, $inputUrl, [
+            return $this->withNoStore($this->renderFetchResult($request, $inputUrl, [
                 'error' => 'Request failed.',
                 'status' => null,
-            ], 502);
+            ], 502));
         }
 
         $headers = $response['headers'] ?? [];
@@ -98,7 +109,7 @@ final class HeadlessPlaygroundController
             'body' => $body,
         ];
 
-        return $this->renderFetchResult($request, $inputUrl, $result, 200);
+        return $this->withNoStore($this->renderFetchResult($request, $inputUrl, $result, 200));
     }
 
     /**
@@ -257,8 +268,46 @@ final class HeadlessPlaygroundController
         return null;
     }
 
+    private function featureFlags(): ?FeatureFlagsInterface
+    {
+        if ($this->container === null) {
+            return null;
+        }
+
+        try {
+            $flags = $this->container->get(FeatureFlagsInterface::class);
+            return $flags instanceof FeatureFlagsInterface ? $flags : null;
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    private function isFeatureEnabled(string $flag): bool
+    {
+        $flags = $this->featureFlags();
+        if ($flags === null) {
+            return true;
+        }
+
+        return $flags->isEnabled($flag);
+    }
+
+    private function notFound(Request $request, string $route): Response
+    {
+        return $this->withNoStore(
+            ErrorResponse::respondForRequest($request, 'not_found', [], 404, [], $route)
+        );
+    }
+
+    private function withNoStore(Response $response): Response
+    {
+        return $response->withHeader('Cache-Control', 'no-store');
+    }
+
     private function forbidden(Request $request, string $route): Response
     {
-        return ErrorResponse::respondForRequest($request, 'forbidden', [], 403, [], $route);
+        return $this->withNoStore(
+            ErrorResponse::respondForRequest($request, 'forbidden', [], 403, [], $route)
+        );
     }
 }

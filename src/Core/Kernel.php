@@ -102,6 +102,8 @@ use Laas\View\Template\TemplateEngine;
 use Laas\View\Theme\ThemeManager;
 use Laas\View\View;
 use Laas\Content\Blocks\BlockRegistry;
+use Laas\Core\FeatureFlags;
+use Laas\Core\FeatureFlagsInterface;
 
 final class Kernel
 {
@@ -274,6 +276,25 @@ final class Kernel
         );
         $view->setRequest($request);
 
+        try {
+            $featureFlags = $this->container->get(FeatureFlagsInterface::class);
+            if ($featureFlags instanceof FeatureFlagsInterface) {
+                $view->share('admin_features', [
+                    'palette' => $featureFlags->isEnabled(FeatureFlagsInterface::ADMIN_FEATURE_PALETTE),
+                    'blocks_studio' => $featureFlags->isEnabled(FeatureFlagsInterface::ADMIN_FEATURE_BLOCKS_STUDIO),
+                    'theme_inspector' => $featureFlags->isEnabled(FeatureFlagsInterface::ADMIN_FEATURE_THEME_INSPECTOR),
+                    'headless_playground' => $featureFlags->isEnabled(FeatureFlagsInterface::ADMIN_FEATURE_HEADLESS_PLAYGROUND),
+                ]);
+            }
+        } catch (Throwable) {
+            $view->share('admin_features', [
+                'palette' => false,
+                'blocks_studio' => false,
+                'theme_inspector' => false,
+                'headless_playground' => false,
+            ]);
+        }
+
         $adminModulesNav = [];
         if (str_starts_with($request->getPath(), '/admin')) {
             $catalog = new ModuleCatalog(
@@ -429,6 +450,10 @@ final class Kernel
             return $config;
         }, 'array');
 
+        $bindSingleton($container, FeatureFlagsInterface::class, static function () use ($config): FeatureFlagsInterface {
+            return new FeatureFlags($config['admin_features'] ?? []);
+        }, FeatureFlags::class);
+
         $bindSingleton($container, 'db', function (): DatabaseManager {
             return $this->database();
         }, DatabaseManager::class);
@@ -582,6 +607,7 @@ final class Kernel
             $users = $container->get(UsersServiceInterface::class);
             $menus = $container->get(MenusServiceInterface::class);
             $securityReports = $container->get(SecurityReportsServiceInterface::class);
+            $featureFlags = $container->get(FeatureFlagsInterface::class);
             $moduleCatalog = new ModuleCatalog(
                 $rootPath,
                 $this->database(),
@@ -595,7 +621,8 @@ final class Kernel
                 $users,
                 $menus,
                 $moduleCatalog,
-                $securityReports
+                $securityReports,
+                $featureFlags
             );
         }, AdminSearchService::class);
 
@@ -716,6 +743,7 @@ final class Kernel
 
         $files = [
             'app' => $configDir . '/app.php',
+            'admin_features' => $configDir . '/admin_features.php',
             'modules' => $configDir . '/modules.php',
             'modules_nav' => $configDir . '/modules_nav.php',
             'security' => $configDir . '/security.php',

@@ -19,6 +19,7 @@ final class PlaygroundAllowlistTest extends TestCase
 
         $request = $this->makeRequest('/admin/headless-playground/fetch', ['url' => 'https://example.com/'], 1);
         $view = SecurityTestHelper::createView($db, $request, 'admin');
+        $view->share('admin_features', $this->adminFeatures());
         $container = $this->makeContainer($db);
         $controller = new HeadlessPlaygroundController($view, null, $container);
 
@@ -35,6 +36,7 @@ final class PlaygroundAllowlistTest extends TestCase
 
         $request = $this->makeRequest('/admin/headless-playground/fetch', ['url' => '/admin/pages'], 1);
         $view = SecurityTestHelper::createView($db, $request, 'admin');
+        $view->share('admin_features', $this->adminFeatures());
         $container = $this->makeContainer($db);
         $controller = new HeadlessPlaygroundController($view, null, $container);
 
@@ -78,5 +80,18 @@ final class PlaygroundAllowlistTest extends TestCase
             return new RbacService($db);
         });
         return $container;
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    private function adminFeatures(): array
+    {
+        return [
+            'palette' => true,
+            'blocks_studio' => true,
+            'theme_inspector' => true,
+            'headless_playground' => true,
+        ];
     }
 }

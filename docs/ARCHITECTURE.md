@@ -2346,6 +2346,11 @@ $config = $container->get('config');
 - Blocks Studio (MVP) renders a list editor for Blocks JSON; the textarea remains the source of truth.
 - Both are admin-only UI helpers and do not change public rendering or service behavior.
 
+**Admin feature flags (v4.0.20+):**
+- Flags live in `config/admin_features.php` (`ADMIN_FEATURE_*`).
+- Defaults: disabled in prod; enabled when `APP_DEBUG=true` unless overridden per-flag.
+- Controllers/templates gate admin tools; disabled endpoints return 404 and UI is hidden.
+
 **Controller boundary example:**
 
 ```php

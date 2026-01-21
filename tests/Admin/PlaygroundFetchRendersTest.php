@@ -42,6 +42,7 @@ final class PlaygroundFetchRendersTest extends TestCase
 
         $request = $this->makeRequest('/admin/headless-playground/fetch', ['url' => '/api/v2/ping'], 1);
         $view = SecurityTestHelper::createView($db, $request, 'admin');
+        $view->share('admin_features', $this->adminFeatures());
         $container = $this->makeContainer($db);
         $controller = new HeadlessPlaygroundController($view, $client, $container);
 
@@ -89,5 +90,18 @@ final class PlaygroundFetchRendersTest extends TestCase
             return new RbacService($db);
         });
         return $container;
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    private function adminFeatures(): array
+    {
+        return [
+            'palette' => true,
+            'blocks_studio' => true,
+            'theme_inspector' => true,
+            'headless_playground' => true,
+        ];
     }
 }

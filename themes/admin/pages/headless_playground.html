@@ -6,40 +6,43 @@
   <span class="badge text-bg-secondary">/api/v2 only</span>
 </div>
 
-<div class="card shadow-sm mb-3">
-  <div class="card-body">
-    <form method="get"
-          action="/admin/headless-playground/fetch"
-          hx-get="/admin/headless-playground/fetch"
-          hx-target="#headless-result"
-          hx-swap="innerHTML">
-      <div class="row g-2 align-items-center">
-        <div class="col-12 col-lg-9">
-          <input class="form-control"
-                 type="text"
-                 name="url"
-                 value="{% input_url %}"
-                 placeholder="{% default_url %}">
+{% if admin_features.headless_playground %}
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <form method="get"
+            action="/admin/headless-playground/fetch"
+            hx-get="/admin/headless-playground/fetch"
+            hx-target="#headless-result"
+            hx-swap="innerHTML"
+            data-headless-form="1">
+        <div class="row g-2 align-items-center">
+          <div class="col-12 col-lg-9">
+            <input class="form-control"
+                   type="text"
+                   name="url"
+                   value="{% input_url %}"
+                   placeholder="{% default_url %}">
+          </div>
+          <div class="col-12 col-lg-3">
+            <button class="btn btn-primary w-100" type="submit">Send</button>
+          </div>
         </div>
-        <div class="col-12 col-lg-3">
-          <button class="btn btn-primary w-100" type="submit">Send</button>
-        </div>
-      </div>
-      <div class="form-text mt-2">Allowed: /api/v2/* (same host only).</div>
-    </form>
+        <div class="form-text mt-2">Allowed: /api/v2/* (same host only).</div>
+      </form>
+    </div>
   </div>
-</div>
 
-<div class="card shadow-sm">
-  <div class="card-header">
-    <strong>Response</strong>
+  <div class="card shadow-sm">
+    <div class="card-header">
+      <strong>Response</strong>
+    </div>
+    <div class="card-body" id="headless-result" data-headless-result="1">
+      {% if fetch_result %}
+        {% include "partials/headless_playground_result.html" %}
+      {% else %}
+        <div class="text-muted small">Send a request to see the response.</div>
+      {% endif %}
+    </div>
   </div>
-  <div class="card-body" id="headless-result">
-    {% if fetch_result %}
-      {% include "partials/headless_playground_result.html" %}
-    {% else %}
-      <div class="text-muted small">Send a request to see the response.</div>
-    {% endif %}
-  </div>
-</div>
+{% endif %}
 {% endblock %}

@@ -2580,6 +2580,11 @@ $commands['assets:http:smoke'] = function () use ($rootPath, $args): int {
     return assets_http_smoke_run($rootPath, $args);
 };
 
+$commands['admin:smoke'] = function () use ($rootPath, $args): int {
+    require_once $rootPath . '/tools/admin-smoke.php';
+    return admin_smoke_run($rootPath, $args);
+};
+
 $commands['git:lf:fix'] = function () use ($rootPath): int {
     require_once $rootPath . '/tools/policy-check.php';
     $fixed = policy_git_lf_fix($rootPath);

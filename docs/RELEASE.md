@@ -27,6 +27,7 @@
 
 ## Policy checks
 - HTTP smoke is opt-in: set `POLICY_HTTP_SMOKE=1` only when the local server is up.
+- Admin smoke is opt-in: set `POLICY_ADMIN_SMOKE=1` to run the admin HTML smoke gate.
 - `policy:check` remains strict; `assets:verify` always runs.
 - CRLF violations fail the check; run `php tools/cli.php git:lf:fix` to remediate.
 
@@ -54,6 +55,7 @@
 ## Verification commands
 ```bash
 php tools/cli.php policy:check
+POLICY_ADMIN_SMOKE=1 php tools/cli.php policy:check
 php tools/cli.php assets:verify
 php tools/cli.php assets:http:smoke --base=https://laas.loc
 php tools/cli.php templates:raw:check --path=themes

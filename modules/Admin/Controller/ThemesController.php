@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Laas\Modules\Admin\Controller;
 
 use Laas\Core\Container\Container;
+use Laas\Core\FeatureFlagsInterface;
 use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
@@ -28,6 +29,10 @@ final class ThemesController
 
     public function index(Request $request): Response
     {
+        if (!$this->isFeatureEnabled(FeatureFlagsInterface::ADMIN_FEATURE_THEME_INSPECTOR)) {
+            return $this->notFound($request, 'admin.themes.disabled');
+        }
+
         if (!$this->hasAccess($request)) {
             return $this->forbidden($request, 'admin.themes.index');
         }
@@ -37,7 +42,7 @@ final class ThemesController
         $validation = $this->validateTheme($themeName);
         $snapshot = $this->snapshotInfo($themeName);
 
-        return $this->view->render('pages/themes.html', [
+        $response = $this->view->render('pages/themes.html', [
             'theme_name' => $themeName,
             'theme_api' => $manager->getThemeApi($themeName),
             'theme_version' => $manager->getThemeVersion($themeName),
@@ -52,10 +57,16 @@ final class ThemesController
         ], 200, [], [
             'theme' => 'admin',
         ]);
+
+        return $this->withNoStore($response);
     }
 
     public function validate(Request $request): Response
     {
+        if (!$this->isFeatureEnabled(FeatureFlagsInterface::ADMIN_FEATURE_THEME_INSPECTOR)) {
+            return $this->notFound($request, 'admin.themes.disabled');
+        }
+
         if (!$this->hasAccess($request)) {
             return $this->forbidden($request, 'admin.themes.validate');
         }
@@ -69,9 +80,10 @@ final class ThemesController
         $status = $validation->hasViolations() ? 422 : 200;
 
         if ($request->wantsJson()) {
-            return Response::json([
+            $response = Response::json([
                 'validation' => $payload,
             ], $status);
+            return $this->withNoStore($response);
         }
 
         $response = $this->view->render('partials/theme_validation.html', [
@@ -83,12 +95,12 @@ final class ThemesController
         ]);
 
         if ($validation->hasViolations()) {
-            return $response->withToastDanger('theme.validate.failed', 'Theme validation failed.');
+            return $this->withNoStore($response->withToastDanger('theme.validate.failed', 'Theme validation failed.'));
         }
         if ($validation->hasWarnings()) {
-            return $response->withToastWarning('theme.validate.warn', 'Theme validation warnings.');
+            return $this->withNoStore($response->withToastWarning('theme.validate.warn', 'Theme validation warnings.'));
         }
-        return $response->withToastSuccess('theme.validate.ok', 'Theme validation OK.');
+        return $this->withNoStore($response->withToastSuccess('theme.validate.ok', 'Theme validation OK.'));
     }
 
     private function validateTheme(string $themeName): ThemeValidationResult
@@ -247,7 +259,45 @@ final class ThemesController
 
     private function forbidden(Request $request, string $route): Response
     {
-        return ErrorResponse::respondForRequest($request, 'forbidden', [], 403, [], $route);
+        return $this->withNoStore(
+            ErrorResponse::respondForRequest($request, 'forbidden', [], 403, [], $route)
+        );
+    }
+
+    private function featureFlags(): ?FeatureFlagsInterface
+    {
+        if ($this->container === null) {
+            return null;
+        }
+
+        try {
+            $flags = $this->container->get(FeatureFlagsInterface::class);
+            return $flags instanceof FeatureFlagsInterface ? $flags : null;
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    private function isFeatureEnabled(string $flag): bool
+    {
+        $flags = $this->featureFlags();
+        if ($flags === null) {
+            return true;
+        }
+
+        return $flags->isEnabled($flag);
+    }
+
+    private function notFound(Request $request, string $route): Response
+    {
+        return $this->withNoStore(
+            ErrorResponse::respondForRequest($request, 'not_found', [], 404, [], $route)
+        );
+    }
+
+    private function withNoStore(Response $response): Response
+    {
+        return $response->withHeader('Cache-Control', 'no-store');
     }
 
     private function isDebug(): bool

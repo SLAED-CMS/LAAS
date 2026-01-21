@@ -26,6 +26,8 @@
   - Tooling: policy check hardened; LF fix command; optional HTTP assets smoke.
   - Service layer: enforced read-only proxy blocks mutation methods in GET controllers.
   - WOW Pack: Command Palette, Blocks Studio MVP, Theme Inspector, Headless Playground.
+  - Admin feature flags for WOW tools (safe-by-default in prod).
+  - Admin smoke CLI (admin:smoke) + optional policy gate (POLICY_ADMIN_SMOKE=1).
 
 - v4.0.1: Admin UI Polish (Released 2026-01-19)
   - Admin UI: Bootstrap 5 wired + modern layout for /admin/ai and page editor AI panel

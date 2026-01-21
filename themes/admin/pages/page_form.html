@@ -58,7 +58,7 @@
             <div class="form-text text-warning">{% t 'admin.pages.legacy_content_hint' %}</div>
             {% endif %}
           </div>
-          {% if blocks_json_allowed %}
+          {% if blocks_json_allowed and admin_features.blocks_studio %}
           <div class="card mb-3" data-blocks-studio="1" data-target-textarea="#blocks-json">
             <div class="card-header d-flex align-items-center justify-content-between">
               <strong>Blocks Studio (MVP)</strong>
@@ -97,7 +97,7 @@
           {% endif %}
           <div class="d-flex gap-2 flex-wrap">
             <button class="btn btn-primary" type="submit">{% t 'admin.pages.form.save' %}</button>
-            {% if blocks_json_allowed %}
+            {% if blocks_json_allowed and admin_features.blocks_studio %}
             <button class="btn btn-outline-secondary" type="button"
                     data-preview-blocks="1"
                     data-preview-action="/admin/pages/preview-blocks"

@@ -9,6 +9,7 @@ use Laas\Domain\Pages\PagesService;
 use Laas\Domain\Security\SecurityReportsService;
 use Laas\Domain\Users\UsersService;
 use Laas\Modules\ModuleCatalog;
+use Laas\Core\FeatureFlagsInterface;
 use Laas\Support\Search\Highlighter;
 use Laas\Support\Search\SearchNormalizer;
 use Throwable;
@@ -26,7 +27,8 @@ class AdminSearchService implements AdminSearchServiceInterface
         private UsersService $users,
         private MenusService $menus,
         private ModuleCatalog $modules,
-        private ?SecurityReportsService $securityReports = null
+        private ?SecurityReportsService $securityReports = null,
+        private ?FeatureFlagsInterface $featureFlags = null
     ) {
     }
 
@@ -305,6 +307,7 @@ class AdminSearchService implements AdminSearchServiceInterface
                 'icon' => 'palette',
                 'section' => 'System',
                 'requires' => ['can_settings'],
+                'feature_flag' => FeatureFlagsInterface::ADMIN_FEATURE_THEME_INSPECTOR,
             ],
             [
                 'id' => 'headless.playground',
@@ -314,6 +317,7 @@ class AdminSearchService implements AdminSearchServiceInterface
                 'icon' => 'terminal',
                 'section' => 'API',
                 'requires' => ['can_access'],
+                'feature_flag' => FeatureFlagsInterface::ADMIN_FEATURE_HEADLESS_PLAYGROUND,
             ],
         ];
     }
@@ -356,6 +360,13 @@ class AdminSearchService implements AdminSearchServiceInterface
 
     private function commandAllowed(array $command, array $opts): bool
     {
+        $flag = (string) ($command['feature_flag'] ?? '');
+        if ($flag !== '' && $this->featureFlags instanceof FeatureFlagsInterface) {
+            if (!$this->featureFlags->isEnabled($flag)) {
+                return false;
+            }
+        }
+
         $requirements = $command['requires'] ?? [];
         if (is_string($requirements)) {
             $requirements = [$requirements];

@@ -4,8 +4,10 @@ declare(strict_types=1);
 namespace Laas\Modules\Admin\Controller;
 
 use Laas\Core\Container\Container;
+use Laas\Core\FeatureFlagsInterface;
 use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Domain\AdminSearch\AdminSearchServiceInterface;
+use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\View\View;
@@ -60,6 +62,10 @@ final class AdminSearchController
 
     public function palette(Request $request): Response
     {
+        if (!$this->isFeatureEnabled(FeatureFlagsInterface::ADMIN_FEATURE_PALETTE)) {
+            return $this->notFound($request, 'admin.search.palette');
+        }
+
         $service = $this->service();
         if ($service === null) {
             return Response::json([
@@ -190,8 +196,37 @@ final class AdminSearchController
             $service = $this->container->get(RbacServiceInterface::class);
             return $service instanceof RbacServiceInterface ? $service : null;
         } catch (Throwable) {
+        return null;
+    }
+
+    private function featureFlags(): ?FeatureFlagsInterface
+    {
+        if ($this->container === null) {
             return null;
         }
+
+        try {
+            $service = $this->container->get(FeatureFlagsInterface::class);
+            return $service instanceof FeatureFlagsInterface ? $service : null;
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    private function isFeatureEnabled(string $flag): bool
+    {
+        $flags = $this->featureFlags();
+        if ($flags === null) {
+            return true;
+        }
+
+        return $flags->isEnabled($flag);
+    }
+
+    private function notFound(Request $request, string $route): Response
+    {
+        return ErrorResponse::respondForRequest($request, 'not_found', [], 404, [], $route);
+    }
     }
 
     /** @return array<string, mixed> */
