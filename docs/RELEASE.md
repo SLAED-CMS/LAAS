@@ -48,6 +48,7 @@
 - Blocks JSON editor is gated (APP_DEBUG or admin) and preview is no-store
 - Smoke: Ctrl+K palette opens and results load; Blocks preview works
 - Admin modules page: no duplicate queries (list + navbar) in a single request
+- Perf budgets: SQL unique/dup ceilings enforced for `/admin/modules`, `/admin/pages`, `/api/v2/pages`
 - Admin modules details: rate-limited + no-store + content-type header
 - Headless v2: ETag/304 has cache headers and empty body
 - CSP uses local assets only (no inline JS required)

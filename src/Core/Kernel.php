@@ -104,6 +104,7 @@ use Laas\View\View;
 use Laas\Content\Blocks\BlockRegistry;
 use Laas\Core\FeatureFlags;
 use Laas\Core\FeatureFlagsInterface;
+use Laas\Http\RequestContext;
 use Laas\Core\Bindings\BindingsContext;
 use Laas\Core\Bindings\CoreBindings;
 use Laas\Core\Bindings\DevBindings;
@@ -391,6 +392,14 @@ final class Kernel
                 return $enforcer->buildOverBudgetResponse($request);
             }
         }
+
+        $devtoolsContext->finalize();
+        RequestContext::setMetrics([
+            'total_ms' => $devtoolsContext->getDurationMs(),
+            'sql_unique' => $devtoolsContext->getDbUniqueCount(),
+            'sql_dup' => $devtoolsContext->getDbDuplicateCount(),
+            'sql_ms' => $devtoolsContext->getDbTotalMs(),
+        ]);
 
         if (!empty($resolution['set_cookie'])) {
             $response = $response->withHeader('Set-Cookie', $localeResolver->cookieHeader($locale));
