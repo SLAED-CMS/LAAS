@@ -33,21 +33,28 @@ final class MediaModule implements ModuleInterface
             }
 
             $ctor = (new \ReflectionClass($class))->getConstructor();
+            $params = $ctor?->getParameters() ?? [];
             $paramCount = $ctor?->getNumberOfParameters() ?? 0;
             $useContainer = $this->container !== null;
 
-            $router->addRoute($method, $path, function ($request, array $vars = []) use ($class, $action, $paramCount, $useContainer) {
-                if ($useContainer && $paramCount >= 4) {
-                    $controller = new $class($this->view, null, $this->container, null);
-                } elseif ($useContainer && $paramCount >= 3) {
-                    $controller = new $class($this->view, null, $this->container);
-                } elseif ($useContainer && $paramCount >= 2) {
-                    $controller = new $class($this->view, $this->container);
-                } elseif ($paramCount >= 2) {
-                    $controller = new $class($this->view, null);
-                } else {
-                    $controller = new $class($this->view);
+            $router->addRoute($method, $path, function ($request, array $vars = []) use ($class, $action, $params, $paramCount, $useContainer) {
+                if ($paramCount <= 0) {
+                    $controller = new $class();
+                    return $controller->{$action}($request, $vars);
                 }
+
+                $args = array_fill(0, $paramCount, null);
+                $args[0] = $this->view;
+                if ($useContainer && $params !== []) {
+                    foreach ($params as $index => $param) {
+                        $type = $param->getType();
+                        if ($type instanceof \ReflectionNamedType && $type->getName() === Container::class) {
+                            $args[$index] = $this->container;
+                        }
+                    }
+                }
+
+                $controller = new $class(...$args);
                 return $controller->{$action}($request, $vars);
             });
         }
