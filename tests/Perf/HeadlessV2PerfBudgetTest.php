@@ -46,7 +46,9 @@ final class HeadlessV2PerfBudgetTest extends PerfBudgetTestCase
         $this->assertSame(304, $etagResponse->getStatus());
 
         $etagSnapshot = PerfBudgetTestHelper::snapshot();
-        PerfBudgetTestHelper::assertBudget($this, '/api/v2/pages', $etagSnapshot, $budget);
+        $etagBudget = $registry->budgetForPath('/api/v2/pages:304');
+        $this->assertNotNull($etagBudget, 'Budget not found for /api/v2/pages:304');
+        PerfBudgetTestHelper::assertBudget($this, '/api/v2/pages:304', $etagSnapshot, $etagBudget);
         $this->assertLessThanOrEqual(3, $etagSnapshot->sqlDup(), 'Duplicate SQL detected on /api/v2/pages (304)');
         $this->assertLessThanOrEqual(
             $snapshot->sqlCount(),
@@ -91,7 +93,9 @@ final class HeadlessV2PerfBudgetTest extends PerfBudgetTestCase
         $this->assertSame(304, $etagResponse->getStatus());
 
         $etagSnapshot = PerfBudgetTestHelper::snapshot();
-        PerfBudgetTestHelper::assertBudget($this, '/api/v2/menus', $etagSnapshot, $budget);
+        $etagBudget = $registry->budgetForPath('/api/v2/menus:304');
+        $this->assertNotNull($etagBudget, 'Budget not found for /api/v2/menus:304');
+        PerfBudgetTestHelper::assertBudget($this, '/api/v2/menus:304', $etagSnapshot, $etagBudget);
         $this->assertLessThanOrEqual(3, $etagSnapshot->sqlDup(), 'Duplicate SQL detected on /api/v2/menus (304)');
         $this->assertLessThanOrEqual(
             $snapshot->sqlCount(),

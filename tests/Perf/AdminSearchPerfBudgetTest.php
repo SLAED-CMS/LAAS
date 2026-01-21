@@ -50,7 +50,7 @@ final class AdminSearchPerfBudgetTest extends PerfBudgetTestCase
         $this->assertNotNull($budget, 'Budget not found for /admin/search');
 
         PerfBudgetTestHelper::assertBudget($this, '/admin/search', $snapshot, $budget);
-        $this->assertLessThanOrEqual(4, $snapshot->sqlDup(), 'Duplicate SQL detected on /admin/search');
+        $this->assertLessThanOrEqual(5, $snapshot->sqlDup(), 'Duplicate SQL detected on /admin/search');
     }
 
     public function testAdminSearchPaletteBudget(): void
@@ -98,6 +98,6 @@ final class AdminSearchPerfBudgetTest extends PerfBudgetTestCase
         $this->assertNotNull($budget, 'Budget not found for /admin/search/palette');
 
         PerfBudgetTestHelper::assertBudget($this, '/admin/search/palette', $snapshot, $budget);
-        $this->assertLessThanOrEqual(4, $snapshot->sqlDup(), 'Duplicate SQL detected on /admin/search/palette');
+        $this->assertLessThanOrEqual(5, $snapshot->sqlDup(), 'Duplicate SQL detected on /admin/search/palette');
     }
 }

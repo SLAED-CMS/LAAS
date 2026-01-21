@@ -660,6 +660,30 @@ function policy_env_bool(string $key, bool $default): bool
     return $parsed ?? $default;
 }
 
+function policy_perf_profile(): string
+{
+    $env = $_ENV['POLICY_PERF_PROFILE'] ?? getenv('POLICY_PERF_PROFILE');
+    $env = is_string($env) ? trim($env) : '';
+
+    $root = policy_root_path();
+    $configPath = $root . '/config/perf_budgets.php';
+    $config = is_file($configPath) ? require $configPath : [];
+    $config = is_array($config) ? $config : [];
+    $profiles = $config['profiles'] ?? [];
+    $profiles = is_array($profiles) ? $profiles : [];
+
+    if ($env !== '' && isset($profiles[$env]) && is_array($profiles[$env])) {
+        return $env;
+    }
+
+    $default = $config['default_profile'] ?? null;
+    if (is_string($default) && $default !== '' && isset($profiles[$default])) {
+        return $default;
+    }
+
+    return $env !== '' ? $env : 'ci';
+}
+
 function policy_strict(): bool
 {
     return policy_env_bool('POLICY_STRICT', false);
@@ -1131,6 +1155,11 @@ function policy_run(array $paths): int
         echo "perf.budgets.skipped (set POLICY_PERF=1)\n";
         return $exitCode;
     }
+
+    $perfProfile = policy_perf_profile();
+    $_ENV['POLICY_PERF_PROFILE'] = $perfProfile;
+    putenv('POLICY_PERF_PROFILE=' . $perfProfile);
+    echo "perf.profile=" . $perfProfile . "\n";
 
     $perfExit = 0;
     if (function_exists('passthru')) {

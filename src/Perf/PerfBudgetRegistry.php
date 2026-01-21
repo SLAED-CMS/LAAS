@@ -54,13 +54,27 @@ final class PerfBudgetRegistry
 
     private function resolveProfile(): string
     {
-        $env = $_ENV['PERF_BUDGET_PROFILE'] ?? getenv('PERF_BUDGET_PROFILE');
+        $env = $this->resolveEnvProfile();
+        $profiles = $this->config['profiles'] ?? [];
+        if ($env !== '' && is_array($profiles) && isset($profiles[$env]) && is_array($profiles[$env])) {
+            return $env;
+        }
+        $default = $this->config['default_profile'] ?? null;
+        if (is_string($default) && $default !== '' && is_array($profiles) && isset($profiles[$default])) {
+            return $default;
+        }
+        return is_string($default) && $default !== '' ? $default : 'default';
+    }
+
+    private function resolveEnvProfile(): string
+    {
+        $env = $_ENV['POLICY_PERF_PROFILE'] ?? getenv('POLICY_PERF_PROFILE');
         $env = is_string($env) ? trim($env) : '';
         if ($env !== '') {
             return $env;
         }
-        $default = $this->config['default_profile'] ?? null;
-        return is_string($default) && $default !== '' ? $default : 'default';
+        $legacy = $_ENV['PERF_BUDGET_PROFILE'] ?? getenv('PERF_BUDGET_PROFILE');
+        return is_string($legacy) ? trim($legacy) : '';
     }
 
     /**
