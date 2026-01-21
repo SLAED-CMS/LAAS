@@ -6,6 +6,7 @@ use Laas\Domain\Pages\PagesService;
 use Laas\Domain\Rbac\RbacService;
 use Laas\Http\Request;
 use Laas\Modules\Pages\Controller\AdminPagesController;
+use Laas\View\View;
 use PHPUnit\Framework\TestCase;
 use Tests\Security\Support\SecurityTestHelper;
 use Tests\Support\InMemorySession;
@@ -36,6 +37,7 @@ final class AdminPagesBlocksStudioRenderTest extends TestCase
 
         $request = $this->makeRequest('GET', '/admin/pages/new', 1);
         $view = SecurityTestHelper::createView($db, $request, 'admin');
+        $this->shareAdminFeatures($view, true);
         $pages = new PagesService($db);
         $rbac = new RbacService($db);
         $controller = new AdminPagesController($view, $pages, $pages, null, $rbac);
@@ -55,6 +57,7 @@ final class AdminPagesBlocksStudioRenderTest extends TestCase
 
         $request = $this->makeRequest('GET', '/admin/pages/new', 1);
         $view = SecurityTestHelper::createView($db, $request, 'admin');
+        $this->shareAdminFeatures($view, false);
         $pages = new PagesService($db);
         $rbac = new RbacService($db);
         $controller = new AdminPagesController($view, $pages, $pages, null, $rbac);
@@ -93,5 +96,15 @@ final class AdminPagesBlocksStudioRenderTest extends TestCase
         $session->set('user_id', $userId);
         $request->setSession($session);
         return $request;
+    }
+
+    private function shareAdminFeatures(View $view, bool $blocksStudioEnabled): void
+    {
+        $view->share('admin_features', [
+            'palette' => false,
+            'blocks_studio' => $blocksStudioEnabled,
+            'theme_inspector' => false,
+            'headless_playground' => false,
+        ]);
     }
 }
