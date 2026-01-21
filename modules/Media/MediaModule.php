@@ -38,7 +38,7 @@ final class MediaModule implements ModuleInterface
 
             $router->addRoute($method, $path, function ($request, array $vars = []) use ($class, $action, $paramCount, $useContainer) {
                 if ($useContainer && $paramCount >= 4) {
-                    $controller = new $class($this->view, null, null, $this->container);
+                    $controller = new $class($this->view, null, $this->container, null);
                 } elseif ($useContainer && $paramCount >= 3) {
                     $controller = new $class($this->view, null, $this->container);
                 } elseif ($useContainer && $paramCount >= 2) {
