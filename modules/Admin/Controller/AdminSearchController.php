@@ -62,18 +62,19 @@ final class AdminSearchController
 
     public function palette(Request $request): Response
     {
-        if (!$this->isFeatureEnabled(FeatureFlagsInterface::ADMIN_FEATURE_PALETTE)) {
-            return $this->notFound($request, 'admin.search.palette');
+        if (!$this->isDevtoolsEnabled(FeatureFlagsInterface::DEVTOOLS_PALETTE)) {
+            return $this->notFoundNoStore($request, 'admin.search.palette');
         }
 
         $service = $this->service();
         if ($service === null) {
-            return Response::json([
+            $response = Response::json([
                 'groups' => [],
                 'meta' => [
                     'reason' => 'service_unavailable',
                 ],
             ], 503);
+            return $this->withNoStore($response);
         }
 
         $query = (string) ($request->query('q') ?? '');
@@ -85,10 +86,10 @@ final class AdminSearchController
         $hasItems = $this->paletteHasItems($payload['groups'] ?? []);
 
         if ($request->wantsJson() || $request->acceptsJson()) {
-            return Response::json($payload, $status);
+            return $this->withNoStore(Response::json($payload, $status));
         }
 
-        return $this->view->render('partials/admin_search_palette.html', [
+        $response = $this->view->render('partials/admin_search_palette.html', [
             'q' => $search['q'] ?? '',
             'groups' => $payload['groups'] ?? [],
             'has_items' => $hasItems,
@@ -97,6 +98,7 @@ final class AdminSearchController
             'theme' => 'admin',
             'render_partial' => true,
         ]);
+        return $this->withNoStore($response);
     }
 
     /** @return array<string, mixed> */
@@ -214,19 +216,26 @@ final class AdminSearchController
         }
     }
 
-    private function isFeatureEnabled(string $flag): bool
+    private function isDevtoolsEnabled(string $flag): bool
     {
         $flags = $this->featureFlags();
         if ($flags === null) {
-            return true;
+            return false;
         }
 
         return $flags->isEnabled($flag);
     }
 
-    private function notFound(Request $request, string $route): Response
+    private function notFoundNoStore(Request $request, string $route): Response
     {
-        return ErrorResponse::respondForRequest($request, 'not_found', [], 404, [], $route);
+        return $this->withNoStore(
+            ErrorResponse::respondForRequest($request, 'not_found', [], 404, [], $route)
+        );
+    }
+
+    private function withNoStore(Response $response): Response
+    {
+        return $response->withHeader('Cache-Control', 'no-store');
     }
 
     /** @return array<string, mixed> */

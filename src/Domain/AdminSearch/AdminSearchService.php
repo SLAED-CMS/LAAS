@@ -307,7 +307,7 @@ class AdminSearchService implements AdminSearchServiceInterface
                 'icon' => 'palette',
                 'section' => 'System',
                 'requires' => ['can_settings'],
-                'feature_flag' => FeatureFlagsInterface::ADMIN_FEATURE_THEME_INSPECTOR,
+                'feature_flag' => FeatureFlagsInterface::DEVTOOLS_THEME_INSPECTOR,
             ],
             [
                 'id' => 'headless.playground',
@@ -317,7 +317,7 @@ class AdminSearchService implements AdminSearchServiceInterface
                 'icon' => 'terminal',
                 'section' => 'API',
                 'requires' => ['can_access'],
-                'feature_flag' => FeatureFlagsInterface::ADMIN_FEATURE_HEADLESS_PLAYGROUND,
+                'feature_flag' => FeatureFlagsInterface::DEVTOOLS_HEADLESS_PLAYGROUND,
             ],
         ];
     }

@@ -13,20 +13,23 @@ $envBool = static function (string $key, ?bool $default = null) use ($env): ?boo
 
 $appEnv = strtolower((string) ($env['APP_ENV'] ?? getenv('APP_ENV') ?? 'dev'));
 $isProd = in_array($appEnv, ['prod', 'production'], true);
-$appDebug = $envBool('APP_DEBUG', null);
-if ($appDebug === null) {
-    $appDebug = true;
-}
+$appDebug = $envBool('APP_DEBUG', true);
 
-$defaultEnabled = !$isProd && $appDebug === true;
-$resolveFlag = static function (string $key) use ($envBool, $defaultEnabled): bool {
-    $override = $envBool($key, null);
+$defaultEnabled = $appDebug && !$isProd;
+$resolveDevtoolsFlag = static function (string $primaryEnv, ?string $legacyEnv) use ($envBool, $defaultEnabled, $appDebug, $isProd): bool {
+    if (!$appDebug || $isProd) {
+        return false;
+    }
+    $override = $envBool($primaryEnv, null);
+    if ($override === null && $legacyEnv !== null) {
+        $override = $envBool($legacyEnv, null);
+    }
     return $override ?? $defaultEnabled;
 };
 
 return [
-    'ADMIN_FEATURE_PALETTE' => $resolveFlag('ADMIN_FEATURE_PALETTE'),
-    'ADMIN_FEATURE_BLOCKS_STUDIO' => $resolveFlag('ADMIN_FEATURE_BLOCKS_STUDIO'),
-    'ADMIN_FEATURE_THEME_INSPECTOR' => $resolveFlag('ADMIN_FEATURE_THEME_INSPECTOR'),
-    'ADMIN_FEATURE_HEADLESS_PLAYGROUND' => $resolveFlag('ADMIN_FEATURE_HEADLESS_PLAYGROUND'),
+    'devtools_palette' => $resolveDevtoolsFlag('DEVTOOLS_PALETTE', 'ADMIN_FEATURE_PALETTE'),
+    'devtools_blocks_studio' => $resolveDevtoolsFlag('DEVTOOLS_BLOCKS_STUDIO', 'ADMIN_FEATURE_BLOCKS_STUDIO'),
+    'devtools_theme_inspector' => $resolveDevtoolsFlag('DEVTOOLS_THEME_INSPECTOR', 'ADMIN_FEATURE_THEME_INSPECTOR'),
+    'devtools_headless_playground' => $resolveDevtoolsFlag('DEVTOOLS_HEADLESS_PLAYGROUND', 'ADMIN_FEATURE_HEADLESS_PLAYGROUND'),
 ];

@@ -29,7 +29,7 @@ final class ThemesController
 
     public function index(Request $request): Response
     {
-        if (!$this->isFeatureEnabled(FeatureFlagsInterface::ADMIN_FEATURE_THEME_INSPECTOR)) {
+        if (!$this->isDevtoolsEnabled(FeatureFlagsInterface::DEVTOOLS_THEME_INSPECTOR)) {
             return $this->notFound($request, 'admin.themes.disabled');
         }
 
@@ -63,7 +63,7 @@ final class ThemesController
 
     public function validate(Request $request): Response
     {
-        if (!$this->isFeatureEnabled(FeatureFlagsInterface::ADMIN_FEATURE_THEME_INSPECTOR)) {
+        if (!$this->isDevtoolsEnabled(FeatureFlagsInterface::DEVTOOLS_THEME_INSPECTOR)) {
             return $this->notFound($request, 'admin.themes.disabled');
         }
 
@@ -278,11 +278,11 @@ final class ThemesController
         }
     }
 
-    private function isFeatureEnabled(string $flag): bool
+    private function isDevtoolsEnabled(string $flag): bool
     {
         $flags = $this->featureFlags();
         if ($flags === null) {
-            return true;
+            return false;
         }
 
         return $flags->isEnabled($flag);

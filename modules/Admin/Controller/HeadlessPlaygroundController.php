@@ -27,7 +27,7 @@ final class HeadlessPlaygroundController
 
     public function index(Request $request): Response
     {
-        if (!$this->isFeatureEnabled(FeatureFlagsInterface::ADMIN_FEATURE_HEADLESS_PLAYGROUND)) {
+        if (!$this->isDevtoolsEnabled(FeatureFlagsInterface::DEVTOOLS_HEADLESS_PLAYGROUND)) {
             return $this->notFound($request, 'admin.headless.disabled');
         }
 
@@ -50,7 +50,7 @@ final class HeadlessPlaygroundController
 
     public function fetch(Request $request): Response
     {
-        if (!$this->isFeatureEnabled(FeatureFlagsInterface::ADMIN_FEATURE_HEADLESS_PLAYGROUND)) {
+        if (!$this->isDevtoolsEnabled(FeatureFlagsInterface::DEVTOOLS_HEADLESS_PLAYGROUND)) {
             return $this->notFound($request, 'admin.headless.disabled');
         }
 
@@ -282,11 +282,11 @@ final class HeadlessPlaygroundController
         }
     }
 
-    private function isFeatureEnabled(string $flag): bool
+    private function isDevtoolsEnabled(string $flag): bool
     {
         $flags = $this->featureFlags();
         if ($flags === null) {
-            return true;
+            return false;
         }
 
         return $flags->isEnabled($flag);

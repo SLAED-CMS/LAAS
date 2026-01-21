@@ -2,6 +2,8 @@
 declare(strict_types=1);
 
 use Laas\Core\Container\Container;
+use Laas\Core\FeatureFlags;
+use Laas\Core\FeatureFlagsInterface;
 use Laas\Database\DatabaseManager;
 use Laas\Domain\AdminSearch\AdminSearchService;
 use Laas\Domain\Media\MediaService;
@@ -19,6 +21,25 @@ use Tests\Support\InMemorySession;
 
 final class AdminSearchPaletteControllerTest extends TestCase
 {
+    private ?string $previousDebug = null;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->previousDebug = $_ENV['APP_DEBUG'] ?? null;
+        $_ENV['APP_DEBUG'] = 'true';
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->previousDebug === null) {
+            unset($_ENV['APP_DEBUG']);
+        } else {
+            $_ENV['APP_DEBUG'] = $this->previousDebug;
+        }
+        parent::tearDown();
+    }
+
     public function testPaletteReturnsJsonAndOrderedGroups(): void
     {
         $pdo = SecurityTestHelper::createSqlitePdo();
@@ -41,6 +62,11 @@ final class AdminSearchPaletteControllerTest extends TestCase
 
         $service = $this->createService($db);
         $container = new Container();
+        $container->singleton(FeatureFlagsInterface::class, static function (): FeatureFlagsInterface {
+            return new FeatureFlags([
+                FeatureFlagsInterface::DEVTOOLS_PALETTE => true,
+            ]);
+        });
         $container->singleton(RbacServiceInterface::class, function () use ($db): RbacServiceInterface {
             return new RbacService($db);
         });

@@ -2,6 +2,8 @@
 declare(strict_types=1);
 
 use Laas\Core\Container\Container;
+use Laas\Core\FeatureFlags;
+use Laas\Core\FeatureFlagsInterface;
 use Laas\Domain\Rbac\RbacService;
 use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Http\Request;
@@ -14,6 +16,24 @@ use Tests\Support\InMemorySession;
 
 final class PlaygroundFetchRendersTest extends TestCase
 {
+    private ?string $previousDebug = null;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->previousDebug = $_ENV['APP_DEBUG'] ?? null;
+        $_ENV['APP_DEBUG'] = 'true';
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->previousDebug === null) {
+            unset($_ENV['APP_DEBUG']);
+        } else {
+            $_ENV['APP_DEBUG'] = $this->previousDebug;
+        }
+        parent::tearDown();
+    }
     public function testFetchRendersStatusAndEtag(): void
     {
         $db = $this->createDatabase();
@@ -86,6 +106,11 @@ final class PlaygroundFetchRendersTest extends TestCase
     private function makeContainer(\Laas\Database\DatabaseManager $db): Container
     {
         $container = new Container();
+        $container->singleton(FeatureFlagsInterface::class, static function (): FeatureFlagsInterface {
+            return new FeatureFlags([
+                FeatureFlagsInterface::DEVTOOLS_HEADLESS_PLAYGROUND => true,
+            ]);
+        });
         $container->singleton(RbacServiceInterface::class, function () use ($db): RbacServiceInterface {
             return new RbacService($db);
         });

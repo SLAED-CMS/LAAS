@@ -33,13 +33,14 @@ function admin_smoke_run(string $rootPath, array $args = []): int
     $featureConfig = admin_smoke_load_config($root . '/config/admin_features.php') ?? [];
     $flags = new FeatureFlags($featureConfig);
     $appConfig = admin_smoke_load_config($root . '/config/app.php') ?? [];
-    $themeDebug = (bool) ($appConfig['debug'] ?? false);
+    $appDebug = (bool) ($appConfig['debug'] ?? false);
+    $themeDebug = $appDebug;
 
     $features = [
-        'palette' => $flags->isEnabled(FeatureFlagsInterface::ADMIN_FEATURE_PALETTE),
-        'blocks_studio' => $flags->isEnabled(FeatureFlagsInterface::ADMIN_FEATURE_BLOCKS_STUDIO),
-        'theme_inspector' => $flags->isEnabled(FeatureFlagsInterface::ADMIN_FEATURE_THEME_INSPECTOR),
-        'headless_playground' => $flags->isEnabled(FeatureFlagsInterface::ADMIN_FEATURE_HEADLESS_PLAYGROUND),
+        'palette' => $appDebug && $flags->isEnabled(FeatureFlagsInterface::DEVTOOLS_PALETTE),
+        'blocks_studio' => $appDebug && $flags->isEnabled(FeatureFlagsInterface::DEVTOOLS_BLOCKS_STUDIO),
+        'theme_inspector' => $appDebug && $flags->isEnabled(FeatureFlagsInterface::DEVTOOLS_THEME_INSPECTOR),
+        'headless_playground' => $appDebug && $flags->isEnabled(FeatureFlagsInterface::DEVTOOLS_HEADLESS_PLAYGROUND),
     ];
 
     $restoreEnv = null;
@@ -84,6 +85,13 @@ function admin_smoke_run(string $rootPath, array $args = []): int
             },
         ],
         [
+            'label' => 'admin.palette.status',
+            'method' => 'GET',
+            'path' => '/admin/search/palette',
+            'expected_status' => $features['palette'] ? 200 : 404,
+            'expect_no_store' => true,
+        ],
+        [
             'label' => 'admin.pages.status',
             'method' => 'GET',
             'path' => '/admin/pages/1/edit',
@@ -116,7 +124,7 @@ function admin_smoke_run(string $rootPath, array $args = []): int
                 }
                 return null;
             },
-            'expect_no_store' => $features['theme_inspector'],
+            'expect_no_store' => true,
         ],
         [
             'label' => 'admin.headless.status',
@@ -142,7 +150,7 @@ function admin_smoke_run(string $rootPath, array $args = []): int
                 }
                 return null;
             },
-            'expect_no_store' => $features['headless_playground'],
+            'expect_no_store' => true,
         ],
     ];
 

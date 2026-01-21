@@ -20,8 +20,12 @@ final class AdminSmokeCommandTest extends TestCase
 
         $this->assertSame(0, $code, $output);
         $this->assertStringContainsString('admin.smoke.ok admin.status', $output);
+        $this->assertStringContainsString('admin.smoke.ok admin.palette.status', $output);
+        $this->assertStringContainsString('admin.smoke.ok admin.palette.status.no_store', $output);
         $this->assertStringContainsString('admin.smoke.ok admin.themes.status', $output);
+        $this->assertStringContainsString('admin.smoke.ok admin.themes.status.no_store', $output);
         $this->assertStringContainsString('admin.smoke.ok admin.headless.status', $output);
+        $this->assertStringContainsString('admin.smoke.ok admin.headless.status.no_store', $output);
     }
 
     public function testSmokeOkWhenFlagsDisabled(): void
@@ -38,8 +42,12 @@ final class AdminSmokeCommandTest extends TestCase
         ]);
 
         $this->assertSame(0, $code, $output);
+        $this->assertStringContainsString('admin.smoke.ok admin.palette.status', $output);
+        $this->assertStringContainsString('admin.smoke.ok admin.palette.status.no_store', $output);
         $this->assertStringContainsString('admin.smoke.ok admin.themes.status', $output);
+        $this->assertStringContainsString('admin.smoke.ok admin.themes.status.no_store', $output);
         $this->assertStringContainsString('admin.smoke.ok admin.headless.status', $output);
+        $this->assertStringContainsString('admin.smoke.ok admin.headless.status.no_store', $output);
     }
 
     private function writeFixture(string $root, bool $enabled): string
@@ -66,11 +74,19 @@ final class AdminSmokeCommandTest extends TestCase
                 ],
                 'body' => $enabled ? '<div>Blocks (JSON)</div>' : '<div>Pages</div>',
             ],
+            '/admin/search/palette' => [
+                'status' => $enabled ? 200 : 404,
+                'headers' => [
+                    'Content-Type' => 'text/html; charset=utf-8',
+                    'Cache-Control' => 'no-store',
+                ],
+                'body' => $enabled ? '<div>Palette</div>' : '<div>Not Found</div>',
+            ],
             '/admin/themes' => [
                 'status' => $enabled ? 200 : 404,
                 'headers' => [
                     'Content-Type' => 'text/html; charset=utf-8',
-                    'Cache-Control' => $enabled ? 'no-store' : '',
+                    'Cache-Control' => 'no-store',
                 ],
                 'body' => $enabled ? '<form data-theme-validate="1"></form>' : '<div>Not Found</div>',
             ],
@@ -78,7 +94,7 @@ final class AdminSmokeCommandTest extends TestCase
                 'status' => $enabled ? 200 : 404,
                 'headers' => [
                     'Content-Type' => 'text/html; charset=utf-8',
-                    'Cache-Control' => $enabled ? 'no-store' : '',
+                    'Cache-Control' => 'no-store',
                 ],
                 'body' => $enabled
                     ? '<form data-headless-form="1"></form><div data-headless-result="1"></div>'

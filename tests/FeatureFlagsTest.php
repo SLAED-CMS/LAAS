@@ -23,17 +23,17 @@ final class FeatureFlagsTest extends TestCase
     {
         $this->setEnv('APP_ENV', 'prod');
         $this->setEnv('APP_DEBUG', 'false');
-        $this->unsetEnv('ADMIN_FEATURE_PALETTE');
-        $this->unsetEnv('ADMIN_FEATURE_BLOCKS_STUDIO');
-        $this->unsetEnv('ADMIN_FEATURE_THEME_INSPECTOR');
-        $this->unsetEnv('ADMIN_FEATURE_HEADLESS_PLAYGROUND');
+        $this->unsetEnv('DEVTOOLS_PALETTE');
+        $this->unsetEnv('DEVTOOLS_BLOCKS_STUDIO');
+        $this->unsetEnv('DEVTOOLS_THEME_INSPECTOR');
+        $this->unsetEnv('DEVTOOLS_HEADLESS_PLAYGROUND');
 
         $flags = $this->loadFlags();
 
-        $this->assertFalse($flags->isEnabled(FeatureFlagsInterface::ADMIN_FEATURE_PALETTE));
-        $this->assertFalse($flags->isEnabled(FeatureFlagsInterface::ADMIN_FEATURE_BLOCKS_STUDIO));
-        $this->assertFalse($flags->isEnabled(FeatureFlagsInterface::ADMIN_FEATURE_THEME_INSPECTOR));
-        $this->assertFalse($flags->isEnabled(FeatureFlagsInterface::ADMIN_FEATURE_HEADLESS_PLAYGROUND));
+        $this->assertFalse($flags->isEnabled(FeatureFlagsInterface::DEVTOOLS_PALETTE));
+        $this->assertFalse($flags->isEnabled(FeatureFlagsInterface::DEVTOOLS_BLOCKS_STUDIO));
+        $this->assertFalse($flags->isEnabled(FeatureFlagsInterface::DEVTOOLS_THEME_INSPECTOR));
+        $this->assertFalse($flags->isEnabled(FeatureFlagsInterface::DEVTOOLS_HEADLESS_PLAYGROUND));
     }
 
     public function testDefaultsTrueInDebug(): void
@@ -43,22 +43,22 @@ final class FeatureFlagsTest extends TestCase
 
         $flags = $this->loadFlags();
 
-        $this->assertTrue($flags->isEnabled(FeatureFlagsInterface::ADMIN_FEATURE_PALETTE));
-        $this->assertTrue($flags->isEnabled(FeatureFlagsInterface::ADMIN_FEATURE_BLOCKS_STUDIO));
-        $this->assertTrue($flags->isEnabled(FeatureFlagsInterface::ADMIN_FEATURE_THEME_INSPECTOR));
-        $this->assertTrue($flags->isEnabled(FeatureFlagsInterface::ADMIN_FEATURE_HEADLESS_PLAYGROUND));
+        $this->assertTrue($flags->isEnabled(FeatureFlagsInterface::DEVTOOLS_PALETTE));
+        $this->assertTrue($flags->isEnabled(FeatureFlagsInterface::DEVTOOLS_BLOCKS_STUDIO));
+        $this->assertTrue($flags->isEnabled(FeatureFlagsInterface::DEVTOOLS_THEME_INSPECTOR));
+        $this->assertTrue($flags->isEnabled(FeatureFlagsInterface::DEVTOOLS_HEADLESS_PLAYGROUND));
     }
 
-    public function testExplicitOverrideWins(): void
+    public function testExplicitOverrideDoesNotBypassDebug(): void
     {
         $this->setEnv('APP_ENV', 'prod');
         $this->setEnv('APP_DEBUG', 'false');
-        $this->setEnv('ADMIN_FEATURE_PALETTE', 'true');
+        $this->setEnv('DEVTOOLS_PALETTE', 'true');
 
         $flags = $this->loadFlags();
 
-        $this->assertTrue($flags->isEnabled(FeatureFlagsInterface::ADMIN_FEATURE_PALETTE));
-        $this->assertFalse($flags->isEnabled(FeatureFlagsInterface::ADMIN_FEATURE_BLOCKS_STUDIO));
+        $this->assertFalse($flags->isEnabled(FeatureFlagsInterface::DEVTOOLS_PALETTE));
+        $this->assertFalse($flags->isEnabled(FeatureFlagsInterface::DEVTOOLS_BLOCKS_STUDIO));
     }
 
     private function loadFlags(): FeatureFlags

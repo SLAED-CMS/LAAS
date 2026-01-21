@@ -131,6 +131,13 @@ final class Kernel
         RequestScope::reset();
         RequestScope::setRequest($request);
         RequestScope::set('blocks.registry', $this->container->get(BlockRegistry::class));
+        RequestScope::set('devtools.paths', [
+            '/admin/themes',
+            '/admin/themes/validate',
+            '/admin/headless-playground',
+            '/admin/headless-playground/fetch',
+            '/admin/search/palette',
+        ]);
 
         try {
         $router = new Router();
@@ -285,11 +292,12 @@ final class Kernel
         try {
             $featureFlags = $this->container->get(FeatureFlagsInterface::class);
             if ($featureFlags instanceof FeatureFlagsInterface) {
+                $devtoolsEnabled = $appDebug;
                 $view->share('admin_features', [
-                    'palette' => $featureFlags->isEnabled(FeatureFlagsInterface::ADMIN_FEATURE_PALETTE),
-                    'blocks_studio' => $featureFlags->isEnabled(FeatureFlagsInterface::ADMIN_FEATURE_BLOCKS_STUDIO),
-                    'theme_inspector' => $featureFlags->isEnabled(FeatureFlagsInterface::ADMIN_FEATURE_THEME_INSPECTOR),
-                    'headless_playground' => $featureFlags->isEnabled(FeatureFlagsInterface::ADMIN_FEATURE_HEADLESS_PLAYGROUND),
+                    'palette' => $devtoolsEnabled && $featureFlags->isEnabled(FeatureFlagsInterface::DEVTOOLS_PALETTE),
+                    'blocks_studio' => $devtoolsEnabled && $featureFlags->isEnabled(FeatureFlagsInterface::DEVTOOLS_BLOCKS_STUDIO),
+                    'theme_inspector' => $devtoolsEnabled && $featureFlags->isEnabled(FeatureFlagsInterface::DEVTOOLS_THEME_INSPECTOR),
+                    'headless_playground' => $devtoolsEnabled && $featureFlags->isEnabled(FeatureFlagsInterface::DEVTOOLS_HEADLESS_PLAYGROUND),
                 ]);
             }
         } catch (Throwable) {

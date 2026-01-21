@@ -9,6 +9,7 @@ use Laas\Http\ErrorCode;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
+use Laas\Support\RequestScope;
 
 use function FastRoute\simpleDispatcher;
 
@@ -33,7 +34,12 @@ final class Router
 
         switch ($routeInfo[0]) {
             case Dispatcher::NOT_FOUND:
-                return ErrorResponse::respondForRequest($request, ErrorCode::NOT_FOUND, [], 404, [], 'router');
+                $headers = [];
+                $devtoolsPaths = RequestScope::get('devtools.paths');
+                if (is_array($devtoolsPaths) && in_array($request->getPath(), $devtoolsPaths, true)) {
+                    $headers['Cache-Control'] = 'no-store';
+                }
+                return ErrorResponse::respondForRequest($request, ErrorCode::NOT_FOUND, [], 404, [], 'router', $headers);
             case Dispatcher::METHOD_NOT_ALLOWED:
                 $allowed = $routeInfo[1] ?? [];
                 $allowHeader = is_array($allowed) ? implode(', ', $allowed) : '';

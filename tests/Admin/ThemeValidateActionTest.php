@@ -2,6 +2,8 @@
 declare(strict_types=1);
 
 use Laas\Core\Container\Container;
+use Laas\Core\FeatureFlags;
+use Laas\Core\FeatureFlagsInterface;
 use Laas\Domain\Rbac\RbacService;
 use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Http\Request;
@@ -29,7 +31,7 @@ final class ThemeValidateActionTest extends TestCase
         }
     }
 
-    public function testValidateForbiddenWhenNotDebug(): void
+    public function testValidateNotFoundWhenNotDebug(): void
     {
         $_ENV['APP_DEBUG'] = 'false';
 
@@ -50,7 +52,7 @@ final class ThemeValidateActionTest extends TestCase
 
         $response = $controller->validate($request);
 
-        $this->assertSame(403, $response->getStatus());
+        $this->assertSame(404, $response->getStatus());
     }
 
     private function makeRequest(string $method, string $path, int $userId): Request
@@ -67,6 +69,11 @@ final class ThemeValidateActionTest extends TestCase
     {
         $rootPath = SecurityTestHelper::rootPath();
         $container = new Container();
+        $container->singleton(FeatureFlagsInterface::class, static function (): FeatureFlagsInterface {
+            return new FeatureFlags([
+                FeatureFlagsInterface::DEVTOOLS_THEME_INSPECTOR => false,
+            ]);
+        });
         $container->singleton(RbacServiceInterface::class, function () use ($db): RbacServiceInterface {
             return new RbacService($db);
         });

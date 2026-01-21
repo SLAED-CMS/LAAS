@@ -1,7 +1,16 @@
 <?php
 declare(strict_types=1);
 
-return [
+$root = dirname(__DIR__, 2);
+$appConfig = is_file($root . '/config/app.php') ? require $root . '/config/app.php' : [];
+$featureConfig = is_file($root . '/config/admin_features.php') ? require $root . '/config/admin_features.php' : [];
+$flags = new \Laas\Core\FeatureFlags(is_array($featureConfig) ? $featureConfig : []);
+$appDebug = (bool) ($appConfig['debug'] ?? false);
+$devtoolsEnabled = static function (string $flag) use ($flags, $appDebug): bool {
+    return $appDebug && $flags->isEnabled($flag);
+};
+
+$routes = [
     ['GET', '/admin', [\Laas\Modules\Admin\Controller\DashboardController::class, 'index']],
     ['GET', '/admin/modules', [\Laas\Modules\Admin\Controller\ModulesController::class, 'index']],
     ['GET', '/admin/modules/details', [\Laas\Modules\Admin\Controller\ModulesController::class, 'details']],
@@ -27,10 +36,6 @@ return [
     ['GET', '/admin/ai', [\Laas\Modules\Admin\Controller\AdminAiController::class, 'index']],
     ['POST', '/admin/ai/save-proposal', [\Laas\Modules\Admin\Controller\AdminAiController::class, 'saveProposal']],
     ['POST', '/admin/ai/dev-autopilot', [\Laas\Modules\Admin\Controller\AdminAiController::class, 'devAutopilot']],
-    ['GET', '/admin/themes', [\Laas\Modules\Admin\Controller\ThemesController::class, 'index']],
-    ['POST', '/admin/themes/validate', [\Laas\Modules\Admin\Controller\ThemesController::class, 'validate']],
-    ['GET', '/admin/headless-playground', [\Laas\Modules\Admin\Controller\HeadlessPlaygroundController::class, 'index']],
-    ['GET', '/admin/headless-playground/fetch', [\Laas\Modules\Admin\Controller\HeadlessPlaygroundController::class, 'fetch']],
     ['GET', '/admin/security-reports', [\Laas\Modules\Admin\Controller\SecurityReportsController::class, 'index']],
     ['GET', '/admin/security-reports/{id:\d+}', [\Laas\Modules\Admin\Controller\SecurityReportsController::class, 'show']],
     ['POST', '/admin/security-reports/{id:\d+}/triage', [\Laas\Modules\Admin\Controller\SecurityReportsController::class, 'triage']],
@@ -45,7 +50,22 @@ return [
     ['POST', '/admin/api/tokens/rotate', [\Laas\Modules\Admin\Controller\ApiTokensController::class, 'rotate']],
     ['POST', '/admin/api/tokens/revoke', [\Laas\Modules\Admin\Controller\ApiTokensController::class, 'revoke']],
     ['GET', '/admin/search', [\Laas\Modules\Admin\Controller\AdminSearchController::class, 'index']],
-    ['GET', '/admin/search/palette', [\Laas\Modules\Admin\Controller\AdminSearchController::class, 'palette']],
     ['GET', '/admin/rbac/diagnostics', [\Laas\Modules\Admin\Controller\RbacDiagnosticsController::class, 'index']],
     ['POST', '/admin/rbac/diagnostics/check', [\Laas\Modules\Admin\Controller\RbacDiagnosticsController::class, 'checkPermission']],
 ];
+
+if ($devtoolsEnabled(\Laas\Core\FeatureFlagsInterface::DEVTOOLS_THEME_INSPECTOR)) {
+    $routes[] = ['GET', '/admin/themes', [\Laas\Modules\Admin\Controller\ThemesController::class, 'index']];
+    $routes[] = ['POST', '/admin/themes/validate', [\Laas\Modules\Admin\Controller\ThemesController::class, 'validate']];
+}
+
+if ($devtoolsEnabled(\Laas\Core\FeatureFlagsInterface::DEVTOOLS_HEADLESS_PLAYGROUND)) {
+    $routes[] = ['GET', '/admin/headless-playground', [\Laas\Modules\Admin\Controller\HeadlessPlaygroundController::class, 'index']];
+    $routes[] = ['GET', '/admin/headless-playground/fetch', [\Laas\Modules\Admin\Controller\HeadlessPlaygroundController::class, 'fetch']];
+}
+
+if ($devtoolsEnabled(\Laas\Core\FeatureFlagsInterface::DEVTOOLS_PALETTE)) {
+    $routes[] = ['GET', '/admin/search/palette', [\Laas\Modules\Admin\Controller\AdminSearchController::class, 'palette']];
+}
+
+return $routes;
