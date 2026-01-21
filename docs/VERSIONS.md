@@ -54,7 +54,7 @@
   - NEU: templates:raw:check + allowlist baseline verhindert neue Raw-Stellen ohne Review
   - NEU: Proposal-Contract (foundation for AI) + CLI ai:proposal:demo (local, no network)
   - NEU: ai:proposal:apply (safe file_changes apply, allowlist + dry-run + --yes)
-  - NEU: ai:proposal:validate + docs/ai/proposal.schema.json (machine-checkable contract)
+  - NEU: ai:proposal:validate (machine-checkable contract)
   - NEU: ai:dev:module:scaffold erzeugt Module-Skeleton als Proposal (dev-first, deterministic)
   - NEU: Plan-Contract + ai:plan:demo/ai:plan:run (safe allowlisted workflow runner)
   - NEU: ai:doctor (dev diagnostics incl. DB ping + artifact counts)

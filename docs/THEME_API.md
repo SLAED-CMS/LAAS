@@ -1,29 +1,43 @@
-# Theme API v1
+# Theme API
 
-Note: Theme API v2 is the current contract. See `docs/themes/THEME_API_V2.md`.
+Theme API v2 — текущий контракт для тем LAAS.
 
-## Purpose / Goals
+## Contract (theme.json)
 
-- Зафиксировать контракт между backend и темами.
-- Обеспечить предсказуемость глобальных переменных и шаблонов.
-- Разделить UI (темы) и данные (backend).
-- Сохранить совместимость с legacy темами.
+Required fields:
+- `name` (string)
+- `version` (semver)
+- `api` (string, must be `v2`)
+
+Optional fields:
+- `capabilities` (array<string>)
+- `provides` (array<string>)
+- `meta` (object)
+
+## Capabilities
+
+Allowlisted capabilities:
+- `toasts`
+- `devtools`
+- `headless`
+- `blocks`
+
+If a theme does not declare a capability, the feature is treated as disabled.
 
 ## Theme Structure
 
-Обязательные файлы и каталоги:
+Обязательные файлы:
 - `themes/<theme>/theme.json`
 - `themes/<theme>/layouts/base.html`
-- `themes/<theme>/layouts/*`
-- `themes/<theme>/pages/*`
-- `themes/<theme>/partials/*`
+- `themes/<theme>/partials/header.html`
 
-Допускается legacy:
-- `themes/<theme>/layout.html` (fallback)
+Стандартные каталоги:
+- `layouts/*`
+- `pages/*`
+- `partials/*`
 
-## Provided variables (globals)
+## Provided Variables (globals)
 
-Гарантированные переменные:
 - `app.name`, `app.version`, `app.env`, `app.debug`
 - `user.id`, `user.username`, `user.roles`
 - `csrf_token`
@@ -31,47 +45,25 @@ Note: Theme API v2 is the current contract. See `docs/themes/THEME_API_V2.md`.
 - `locale`
 - `t()` (i18n)
 
-## UI Tokens contract
+## Slots & Blocks
 
-Токены, которые уже используются:
-- `status`
-- `variant`
-- `severity`
-- `enabled`
-- `visibility`
-- `size`
+Обязательный слот: `content`
 
-Правила расширения:
-- Новые токены добавляются без изменения существующих.
-- Значения токенов — enum, не менять смысл без миграции.
-- Маппинг в классы — только в шаблонах.
+Опциональные: `header`, `footer`, `sidebar`
 
-## Slots & blocks
+## HTMX Rules
 
-Обязательный слот:
-- `content`
-
-Опциональные слоты:
-- `header`
-- `footer`
-- `sidebar`
-
-## HTMX rules
-
-- `hx-*` атрибуты могут быть только в templates.
-- Partial rendering: для HTMX запросов возвращается только контент блока.
-- Layout не рендерится для HTMX partial.
+- `hx-*` атрибуты только в templates
+- Partial rendering для HTMX запросов (без layout)
 
 ## Forbidden
 
-- `*_class` из PHP
 - inline style
 - inline JS
 - CDN in templates
 
-## Migration notes
+## Validation
 
-- Добавить `theme.json` и указать `layouts.base`.
-- Перенести layout в `layouts/base.html`.
-- Вынести общие фрагменты в `partials/*`.
-- Убедиться, что все классы и `hx-*` живут только в templates.
+- `php tools/cli.php themes:validate` — валидация всех тем
+- `policy:check` включает проверку Theme API
+- Изменения `theme.json` требуют явного подтверждения snapshot

@@ -24,14 +24,9 @@ final class ThemeValidator
 
     public function __construct(
         private string $themesRoot,
-        private ?string $schemaPath = null,
         private ?string $snapshotPath = null,
         private ?array $compatConfig = null
     ) {
-        if ($this->schemaPath === null) {
-            $root = dirname(__DIR__, 2);
-            $this->schemaPath = $root . '/docs/theme/theme.schema.json';
-        }
         if ($this->snapshotPath === null) {
             $root = dirname(__DIR__, 2);
             $this->snapshotPath = $root . '/config/theme_snapshot.php';

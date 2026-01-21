@@ -1809,6 +1809,15 @@ if (config('app.read_only') && $request->isWriteMethod()) {
 - Admin GET overrides apply for `/admin` paths
 - Exempt paths/routes skip guard
 
+### Performance budgets + N+1 guards
+
+**Purpose:** Fail fast on query explosions and regressions in CI without changing prod behavior.
+
+**Implementation:**
+- Budgets live in `config/perf_budgets.php` (profiles: local/ci, warn + hard thresholds)
+- PHPUnit uses `PerfSnapshot` + `PerfBudgetRegistry` to assert per-route budgets and duplicate-query limits
+- Optional CI gate via `policy:check` when `POLICY_PERF=1`
+
 ### Backup & Restore
 
 **CLI commands:**
@@ -2224,7 +2233,6 @@ src/Ai/
 **Proposals:**
 - Local artifacts for AI-suggested changes
 - Stored in `storage/proposals/` (git-ignored)
-- Schema: `docs/ai/proposal.schema.json`
 - Apply requires: `php tools/cli.php ai:proposal:apply <id> --yes`
 
 **Plans:**
