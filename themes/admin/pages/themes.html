@@ -3,7 +3,8 @@
 {% block content %}
 <div class="d-flex align-items-center justify-content-between mb-3">
   <h1 class="h4 mb-0">Theme Inspector</h1>
-  {% if admin_features.theme_inspector and theme_debug %}
+  {% if admin_features.theme_inspector %}
+  {% if theme_debug %}
   <form method="post"
         action="/admin/themes/validate"
         hx-post="/admin/themes/validate"
@@ -13,6 +14,7 @@
     <input type="hidden" name="_token" value="{% csrf_token %}">
     <button class="btn btn-outline-primary btn-sm" type="submit">Validate</button>
   </form>
+  {% endif %}
   {% endif %}
 </div>
 
@@ -77,8 +79,10 @@
 <div class="card shadow-sm">
   <div class="card-header d-flex align-items-center justify-content-between">
     <strong>Validation</strong>
-    {% if admin_features.theme_inspector and theme_debug %}
+    {% if admin_features.theme_inspector %}
+    {% if theme_debug %}
     <span class="badge text-bg-info">dev-only validate</span>
+    {% endif %}
     {% endif %}
   </div>
   <div class="card-body" id="theme-validation">

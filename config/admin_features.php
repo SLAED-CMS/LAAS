@@ -4,7 +4,7 @@ declare(strict_types=1);
 $env = $_ENV;
 $envBool = static function (string $key, ?bool $default = null) use ($env): ?bool {
     $value = $env[$key] ?? getenv($key);
-    if ($value === null || $value === '') {
+    if ($value === null || $value === '' || $value === false) {
         return $default;
     }
     $parsed = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);

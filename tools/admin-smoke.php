@@ -6,8 +6,6 @@ use Laas\Core\FeatureFlagsInterface;
 use Laas\Core\Kernel;
 use Laas\Http\Request;
 use Laas\Session\NativeSession;
-use PDO;
-
 /**
  * Admin HTML smoke checks.
  *

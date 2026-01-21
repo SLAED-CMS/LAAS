@@ -196,7 +196,8 @@ final class AdminSearchController
             $service = $this->container->get(RbacServiceInterface::class);
             return $service instanceof RbacServiceInterface ? $service : null;
         } catch (Throwable) {
-        return null;
+            return null;
+        }
     }
 
     private function featureFlags(): ?FeatureFlagsInterface
@@ -226,7 +227,6 @@ final class AdminSearchController
     private function notFound(Request $request, string $route): Response
     {
         return ErrorResponse::respondForRequest($request, 'not_found', [], 404, [], $route);
-    }
     }
 
     /** @return array<string, mixed> */
