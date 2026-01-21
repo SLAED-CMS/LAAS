@@ -16,6 +16,8 @@ return [
     'admin.pages.form.slug_help' => 'Slug (মানব‑পাঠযোগ্য URL‑এ) হলো পেজের ঠিকানার সেই অংশ যা বিষয়বস্তু বোঝাতে অর্থবোধক শব্দ দিয়ে গঠিত (যেমন /product/laas-cms-v21), সংখ্যার বা চিহ্নের বদলে (যেমন /cat/10&id=41)। এটি ব্যবহারকারীকে আগে থেকেই পেজটি বুঝতে সাহায্য করে এবং SEO উন্নত করতে পারে, কারণ সার্চ ইঞ্জিন এ ধরনের বন্ধুত্বপূর্ণ লিংককে বেশি গুরুত্ব দেয়।',
     'admin.pages.form.status' => 'স্ট্যাটাস',
     'admin.pages.form.content' => 'কনটেন্ট',
+    'admin.pages.legacy_content' => 'Legacy',
+    'admin.pages.legacy_content_hint' => 'Legacy content detected, consider migrate to blocks.',
     'admin.pages.form.save' => 'সেভ করুন',
     'admin.pages.status.draft' => 'খসড়া',
     'admin.pages.status.published' => 'প্রকাশিত',
@@ -27,4 +29,5 @@ return [
     'admin.pages.filter.search' => 'অনুসন্ধান',
     'admin.pages.filter.status' => 'স্ট্যাটাস',
     'admin.pages.filter.all' => 'সব',
+    'validation.blocks_json_invalid' => 'Blocks JSON is invalid{detail}',
 ];

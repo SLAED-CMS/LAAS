@@ -16,6 +16,8 @@ return [
     'admin.pages.form.slug_help' => 'Ein Slug (in einer sprechenden URL) ist der Teil der Seitenadresse, der aus verständlichen Wörtern besteht und den Inhalt beschreibt (z. B. /product/laas-cms-v21) statt aus Zahlen oder Symbolen (z. B. /cat/10&id=41). Er hilft Nutzern, den Inhalt vor dem Öffnen zu verstehen, und kann SEO verbessern, da Suchmaschinen solche freundlichen Links besser bewerten.',
     'admin.pages.form.status' => 'Status',
     'admin.pages.form.content' => 'Inhalt',
+    'admin.pages.legacy_content' => 'Legacy',
+    'admin.pages.legacy_content_hint' => 'Legacy content detected, consider migrate to blocks.',
     'admin.pages.form.save' => 'Speichern',
     'admin.pages.status.draft' => 'Entwurf',
     'admin.pages.status.published' => 'Veröffentlicht',
@@ -27,4 +29,5 @@ return [
     'admin.pages.filter.search' => 'Suche',
     'admin.pages.filter.status' => 'Status',
     'admin.pages.filter.all' => 'Alle',
+    'validation.blocks_json_invalid' => 'Blocks JSON is invalid{detail}',
 ];

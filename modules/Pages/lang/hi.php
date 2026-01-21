@@ -16,6 +16,8 @@ return [
     'admin.pages.form.slug_help' => 'Slug (मानव‑पठनीय URL में) पेज पते का वह हिस्सा है जो सामग्री का वर्णन करने वाले अर्थपूर्ण शब्दों से बना होता है (उदाहरण: /product/laas-cms-v21), न कि अंकों या प्रतीकों से (उदाहरण: /cat/10&id=41)। यह उपयोगकर्ता को पेज खोले बिना समझने में मदद करता है और SEO सुधारता है, क्योंकि खोज इंजन ऐसे मित्रवत लिंक को बेहतर रैंक देते हैं।',
     'admin.pages.form.status' => 'स्थिति',
     'admin.pages.form.content' => 'सामग्री',
+    'admin.pages.legacy_content' => 'Legacy',
+    'admin.pages.legacy_content_hint' => 'Legacy content detected, consider migrate to blocks.',
     'admin.pages.form.save' => 'सहेजें',
     'admin.pages.status.draft' => 'ड्राफ्ट',
     'admin.pages.status.published' => 'प्रकाशित',
@@ -27,4 +29,5 @@ return [
     'admin.pages.filter.search' => 'खोज',
     'admin.pages.filter.status' => 'स्थिति',
     'admin.pages.filter.all' => 'सभी',
+    'validation.blocks_json_invalid' => 'Blocks JSON is invalid{detail}',
 ];

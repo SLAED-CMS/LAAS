@@ -16,6 +16,8 @@ return [
     'admin.pages.form.slug_help' => 'Slug (katika URL inayosomeka na binadamu) ni sehemu ya anwani ya ukurasa yenye maneno yenye maana yanayoelezea maudhui (mfano, /product/laas-cms-v21) badala ya namba au alama (mfano, /cat/10&id=41). Husaidia mtumiaji kuelewa ukurasa kabla ya kuufungua na inaweza kuboresha SEO kwa kuwa injini za utafutaji hupendelea viungo rafiki.',
     'admin.pages.form.status' => 'Hali',
     'admin.pages.form.content' => 'Maudhui',
+    'admin.pages.legacy_content' => 'Legacy',
+    'admin.pages.legacy_content_hint' => 'Legacy content detected, consider migrate to blocks.',
     'admin.pages.form.save' => 'Hifadhi',
     'admin.pages.status.draft' => 'Rasimu',
     'admin.pages.status.published' => 'Imechapishwa',
@@ -27,4 +29,5 @@ return [
     'admin.pages.filter.search' => 'Tafuta',
     'admin.pages.filter.status' => 'Hali',
     'admin.pages.filter.all' => 'Zote',
+    'validation.blocks_json_invalid' => 'Blocks JSON is invalid{detail}',
 ];

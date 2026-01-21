@@ -16,6 +16,8 @@ return [
     'admin.pages.form.slug_help' => 'Slug (انسانی‑قابلِ فہم URL میں) صفحے کے پتے کا وہ حصہ ہے جو مواد کی وضاحت کرنے والے معنی خیز الفاظ پر مشتمل ہوتا ہے (مثال: /product/laas-cms-v21)، اعداد یا علامات کی بجائے (مثال: /cat/10&id=41). یہ صارف کو صفحہ کھولنے سے پہلے سمجھنے میں مدد دیتا ہے اور SEO بہتر کر سکتا ہے کیونکہ سرچ انجن ایسی دوستانہ لنکس کو بہتر درجہ دیتے ہیں۔',
     'admin.pages.form.status' => 'اسٹیٹس',
     'admin.pages.form.content' => 'مواد',
+    'admin.pages.legacy_content' => 'Legacy',
+    'admin.pages.legacy_content_hint' => 'Legacy content detected, consider migrate to blocks.',
     'admin.pages.form.save' => 'محفوظ کریں',
     'admin.pages.status.draft' => 'مسودہ',
     'admin.pages.status.published' => 'شائع شدہ',
@@ -27,4 +29,5 @@ return [
     'admin.pages.filter.search' => 'تلاش',
     'admin.pages.filter.status' => 'اسٹیٹس',
     'admin.pages.filter.all' => 'سب',
+    'validation.blocks_json_invalid' => 'Blocks JSON is invalid{detail}',
 ];

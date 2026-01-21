@@ -16,6 +16,8 @@ return [
     'admin.pages.form.slug_help' => 'Slug (w przyjaznym adresie URL) to część adresu strony złożona ze zrozumiałych słów opisujących treść (np. /product/laas-cms-v21), a nie z cyfr lub symboli (np. /cat/10&id=41). Pomaga użytkownikom zrozumieć stronę przed jej otwarciem i może poprawić SEO, ponieważ wyszukiwarki lepiej oceniają takie przyjazne linki.',
     'admin.pages.form.status' => 'Status',
     'admin.pages.form.content' => 'Treść',
+    'admin.pages.legacy_content' => 'Legacy',
+    'admin.pages.legacy_content_hint' => 'Legacy content detected, consider migrate to blocks.',
     'admin.pages.form.save' => 'Zapisz',
     'admin.pages.status.draft' => 'Szkic',
     'admin.pages.status.published' => 'Opublikowano',
@@ -27,4 +29,5 @@ return [
     'admin.pages.filter.search' => 'Szukaj',
     'admin.pages.filter.status' => 'Status',
     'admin.pages.filter.all' => 'Wszystkie',
+    'validation.blocks_json_invalid' => 'Blocks JSON is invalid{detail}',
 ];

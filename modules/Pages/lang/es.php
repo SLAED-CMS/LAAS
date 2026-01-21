@@ -16,6 +16,8 @@ return [
     'admin.pages.form.slug_help' => 'El slug (en una URL legible) es la parte de la dirección de una página formada por palabras significativas que describen el contenido (por ejemplo, /product/laas-cms-v21) en lugar de números o símbolos (por ejemplo, /cat/10&id=41). Ayuda a los usuarios a entender la página antes de abrirla y puede mejorar el SEO, ya que los buscadores valoran mejor estos enlaces «amigables».',
     'admin.pages.form.status' => 'Estado',
     'admin.pages.form.content' => 'Contenido',
+    'admin.pages.legacy_content' => 'Legacy',
+    'admin.pages.legacy_content_hint' => 'Legacy content detected, consider migrate to blocks.',
     'admin.pages.form.save' => 'Guardar',
     'admin.pages.status.draft' => 'Borrador',
     'admin.pages.status.published' => 'Publicado',
@@ -27,4 +29,5 @@ return [
     'admin.pages.filter.search' => 'Buscar',
     'admin.pages.filter.status' => 'Estado',
     'admin.pages.filter.all' => 'Todos',
+    'validation.blocks_json_invalid' => 'Blocks JSON is invalid{detail}',
 ];

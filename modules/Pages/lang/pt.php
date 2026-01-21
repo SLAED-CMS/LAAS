@@ -16,6 +16,8 @@ return [
     'admin.pages.form.slug_help' => 'Slug (em uma URL amigável) é a parte do endereço da página formada por palavras que descrevem o conteúdo (por exemplo, /product/laas-cms-v21) em vez de números ou símbolos (por exemplo, /cat/10&id=41). Ele ajuda o usuário a entender a página antes de abri-la e pode melhorar o SEO, pois os mecanismos de busca ranqueiam melhor esses links amigáveis.',
     'admin.pages.form.status' => 'Status',
     'admin.pages.form.content' => 'Conteúdo',
+    'admin.pages.legacy_content' => 'Legacy',
+    'admin.pages.legacy_content_hint' => 'Legacy content detected, consider migrate to blocks.',
     'admin.pages.form.save' => 'Salvar',
     'admin.pages.status.draft' => 'Rascunho',
     'admin.pages.status.published' => 'Publicado',
@@ -27,4 +29,5 @@ return [
     'admin.pages.filter.search' => 'Buscar',
     'admin.pages.filter.status' => 'Status',
     'admin.pages.filter.all' => 'Todos',
+    'validation.blocks_json_invalid' => 'Blocks JSON is invalid{detail}',
 ];

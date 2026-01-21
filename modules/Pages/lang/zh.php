@@ -16,6 +16,8 @@ return [
     'admin.pages.form.slug_help' => 'Slug（在可读 URL 中）是页面地址中由有意义的词组成、用于描述内容的部分（例如 /product/laas-cms-v21），而不是数字或符号（例如 /cat/10&id=41）。它有助于用户在打开前理解页面，也能提升 SEO，因为搜索引擎更偏好这类友好的链接。',
     'admin.pages.form.status' => '状态',
     'admin.pages.form.content' => '内容',
+    'admin.pages.legacy_content' => 'Legacy',
+    'admin.pages.legacy_content_hint' => 'Legacy content detected, consider migrate to blocks.',
     'admin.pages.form.save' => '保存',
     'admin.pages.status.draft' => '草稿',
     'admin.pages.status.published' => '已发布',
@@ -27,4 +29,5 @@ return [
     'admin.pages.filter.search' => '搜索',
     'admin.pages.filter.status' => '状态',
     'admin.pages.filter.all' => '全部',
+    'validation.blocks_json_invalid' => 'Blocks JSON is invalid{detail}',
 ];

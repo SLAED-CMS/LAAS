@@ -16,6 +16,8 @@ return [
     'admin.pages.form.slug_help' => 'Slug (pada URL yang mudah dibaca) adalah bagian alamat halaman yang terdiri dari kata-kata bermakna yang menjelaskan isi (misalnya /product/laas-cms-v21) alih-alih angka atau simbol (misalnya /cat/10&id=41). Ini membantu pengguna memahami halaman sebelum membuka dan dapat meningkatkan SEO karena mesin pencari lebih menyukai tautan yang ramah.',
     'admin.pages.form.status' => 'Status',
     'admin.pages.form.content' => 'Konten',
+    'admin.pages.legacy_content' => 'Legacy',
+    'admin.pages.legacy_content_hint' => 'Legacy content detected, consider migrate to blocks.',
     'admin.pages.form.save' => 'Simpan',
     'admin.pages.status.draft' => 'Draf',
     'admin.pages.status.published' => 'Dipublikasikan',
@@ -27,4 +29,5 @@ return [
     'admin.pages.filter.search' => 'Cari',
     'admin.pages.filter.status' => 'Status',
     'admin.pages.filter.all' => 'Semua',
+    'validation.blocks_json_invalid' => 'Blocks JSON is invalid{detail}',
 ];

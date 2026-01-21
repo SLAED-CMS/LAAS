@@ -16,6 +16,8 @@ return [
     'admin.pages.form.slug_help' => 'السلَغ (في عنوان URL قابل للقراءة) هو الجزء من عنوان الصفحة المكوّن من كلمات مفهومة تصف المحتوى (مثال: /product/laas-cms-v21) بدلًا من أرقام أو رموز (مثال: /cat/10&id=41). يساعد المستخدم على فهم الصفحة قبل فتحها وقد يحسّن SEO لأن محركات البحث تقيّم هذه الروابط الودّية بشكل أفضل.',
     'admin.pages.form.status' => 'الحالة',
     'admin.pages.form.content' => 'المحتوى',
+    'admin.pages.legacy_content' => 'Legacy',
+    'admin.pages.legacy_content_hint' => 'Legacy content detected, consider migrate to blocks.',
     'admin.pages.form.save' => 'حفظ',
     'admin.pages.status.draft' => 'مسودة',
     'admin.pages.status.published' => 'منشور',
@@ -27,4 +29,5 @@ return [
     'admin.pages.filter.search' => 'بحث',
     'admin.pages.filter.status' => 'الحالة',
     'admin.pages.filter.all' => 'الكل',
+    'validation.blocks_json_invalid' => 'Blocks JSON is invalid{detail}',
 ];
