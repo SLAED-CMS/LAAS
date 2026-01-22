@@ -7,11 +7,14 @@ use Laas\Bootstrap\BootstrapsRunner;
 use Laas\Bootstrap\ObservabilityBootstrap;
 use Laas\Bootstrap\SecurityBootstrap;
 use Laas\Bootstrap\ModulesBootstrap;
+use Laas\Bootstrap\RoutingBootstrap;
+use Laas\Bootstrap\ViewBootstrap;
 use Laas\Auth\NullAuthService;
 use Laas\Core\Container\Container;
 use Laas\Database\DatabaseManager;
 use Laas\Events\EventDispatcherInterface;
 use Laas\Events\SimpleEventDispatcher;
+use Laas\Events\Http\ResponseEvent;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\ModuleLifecycleInterface;
@@ -38,14 +41,14 @@ final class ModulesBootstrapTakeoverTest extends TestCase
         $container = new Container();
         $router = new Router(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'laas-router-takeover-test', true);
         $container->singleton(Router::class, static fn (): Router => $router);
-        $container->singleton(EventDispatcherInterface::class, static fn (): EventDispatcherInterface => new SimpleEventDispatcher());
+        $dispatcher = new SimpleEventDispatcher();
+        $container->singleton(EventDispatcherInterface::class, static fn (): EventDispatcherInterface => $dispatcher);
         $container->singleton(View::class, fn (): View => $this->buildView());
 
         $module = new class implements ModuleLifecycleInterface {
-            public bool $listenersCalled = false;
-
             public function registerBindings(Container $container): void
             {
+                $container->singleton('test.bound', static fn (): bool => true);
             }
 
             public function registerRoutes(Router $router): void
@@ -55,7 +58,9 @@ final class ModulesBootstrapTakeoverTest extends TestCase
 
             public function registerListeners(EventDispatcherInterface $events): void
             {
-                $this->listenersCalled = true;
+                $events->addListener(ResponseEvent::class, static function (ResponseEvent $event): void {
+                    $event->response = $event->response->withHeader('X-Boot-Test', 'yes');
+                });
             }
         };
 
@@ -81,12 +86,22 @@ final class ModulesBootstrapTakeoverTest extends TestCase
         ];
         $ctx = new BootContext(__DIR__, $container, $ctxConfig, true);
 
-        $runner = new BootstrapsRunner([new SecurityBootstrap(), new ObservabilityBootstrap(), new ModulesBootstrap()]);
+        $runner = new BootstrapsRunner([
+            new SecurityBootstrap(),
+            new ObservabilityBootstrap(),
+            new ModulesBootstrap(),
+            new RoutingBootstrap(),
+            new ViewBootstrap(),
+        ]);
         $runner->run($ctx);
 
-        $response = $router->dispatch(new Request('GET', '/_boot-test', [], [], [], ''));
+        $request = new Request('GET', '/_boot-test', [], [], [], '');
+        $response = $router->dispatch($request);
+        $responseEvent = $dispatcher->dispatch(new ResponseEvent($request, $response));
+        $response = $responseEvent instanceof ResponseEvent ? $responseEvent->response : $response;
         $this->assertSame(200, $response->getStatus());
-        $this->assertTrue($module->listenersCalled);
+        $this->assertSame('yes', $response->getHeader('X-Boot-Test'));
+        $this->assertTrue($container->get('test.bound'));
     }
 
     private function buildView(): View

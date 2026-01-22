@@ -60,28 +60,25 @@ final class ModulesBootstrap implements BootstrapperInterface
                 $this->log($logger, 'Module bootstrap bindings failed.', $e, ['module' => $module::class]);
             }
 
-            if ($events instanceof EventDispatcherInterface) {
-                try {
-                    ModuleBootstrapAdapter::callRegisterListenersIfSupported($module, $events);
-                } catch (\Throwable $e) {
-                    $this->log($logger, 'Module bootstrap listeners failed.', $e, ['module' => $module::class]);
-                }
-            }
-
             if ($module instanceof ModuleLifecycleInterface) {
                 try {
                     ModuleBootstrapAdapter::callRegisterRoutesIfSupported($module, $router);
                 } catch (\Throwable $e) {
                     $this->log($logger, 'Module bootstrap routes failed.', $e, ['module' => $module::class]);
                 }
-                continue;
-            }
-
-            if ($module instanceof ModuleInterface) {
+            } elseif ($module instanceof ModuleInterface) {
                 try {
                     $module->registerRoutes($router);
                 } catch (\Throwable $e) {
                     $this->log($logger, 'Module bootstrap legacy routes failed.', $e, ['module' => $module::class]);
+                }
+            }
+
+            if ($events instanceof EventDispatcherInterface) {
+                try {
+                    ModuleBootstrapAdapter::callRegisterListenersIfSupported($module, $events);
+                } catch (\Throwable $e) {
+                    $this->log($logger, 'Module bootstrap listeners failed.', $e, ['module' => $module::class]);
                 }
             }
         }

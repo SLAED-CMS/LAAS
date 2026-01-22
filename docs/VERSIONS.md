@@ -1,4 +1,10 @@
-# LAAS Versions
+﻿# LAAS Versions
+
+## v4.0.69 — Bootstrap: Modules takeover orchestration (opt-in) (2026-01-22)
+- Implement full module lifecycle orchestration in ModulesBootstrap under takeover flag
+- Support bindings/routes/listeners via ModuleLifecycleInterface; keep legacy ModuleInterface routes supported
+### Upgrade notes (Enable: app.bootstraps_enabled + app.bootstraps_modules_takeover)
+### Breaking changes (None)
 
 ## v4.0.68 — Observability: request id single source (opt-in) (2026-01-22)
 - Add RequestId helper and unify X-Request-Id handling under ObservabilityBootstrap when bootstraps enabled
