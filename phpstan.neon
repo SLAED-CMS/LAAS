@@ -1,3 +1,6 @@
+includes:
+    - phpstan-baseline.neon
+
 parameters:
     level: 6
     paths:
@@ -8,4 +11,4 @@ parameters:
             - vendor
             - storage
     tmpDir: storage/cache/phpstan
-    reportUnmatchedIgnoredErrors: false
+    reportUnmatchedIgnoredErrors: true

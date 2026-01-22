@@ -1,5 +1,12 @@
 # LAAS Versions
 
+## v4.0.44 — PHPStan baseline (2026-01-22)
+- Generate phpstan-baseline.neon to track existing issues
+- Configure phpstan.neon to include baseline and prevent new regressions
+- No functional changes intended
+### Upgrade notes (Use: tools\composer.cmd qa:stan; reduce baseline over time)
+### Breaking changes (None)
+
 ## v4.0.43 — Code style formatting (2026-01-22)
 - Apply PHP-CS-Fixer across src and modules (PSR-12 baseline)
 - No functional changes intended
