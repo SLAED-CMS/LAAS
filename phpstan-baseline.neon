@@ -5287,12 +5287,6 @@ parameters:
 			path: src/Http/Middleware/DevToolsMiddleware.php
 
 		-
-			message: '#^Property Laas\\Http\\Middleware\\ErrorHandlerMiddleware\:\:\$debug is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: src/Http/Middleware/ErrorHandlerMiddleware.php
-
-		-
 			message: '#^Method Laas\\Http\\Middleware\\HttpLimitsMiddleware\:\:__construct\(\) has parameter \$config with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1

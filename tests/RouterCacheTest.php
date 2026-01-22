@@ -16,9 +16,7 @@ final class RouterCacheTest extends TestCase
         }
 
         $router = new Router($cacheDir, true);
-        $router->addRoute('GET', '/ping', function (): Response {
-            return new Response('ok', 200);
-        });
+        $router->addRoute('GET', '/ping', [RouterCacheTestHandler::class, 'handle']);
 
         $request = new Request('GET', '/ping', [], [], [], '');
         $router->dispatch($request);
@@ -31,5 +29,16 @@ final class RouterCacheTest extends TestCase
         @unlink($cacheFile);
         @unlink($fingerprintFile);
         @rmdir($cacheDir);
+    }
+}
+
+final class RouterCacheTestHandler
+{
+    /**
+     * @param array<string, string> $vars
+     */
+    public static function handle(Request $request, array $vars = []): Response
+    {
+        return new Response('ok', 200);
     }
 }

@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.54 — Perf tests: fix 500 responses (2026-01-22)
+- Fix underlying error causing perf budget endpoints to return 500 in tests
+- Improve test-mode diagnostics for HTTP 500 (guarded)
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.53 — Tooling: git LF hygiene (2026-01-22)
 - Normalize line endings using git:lf:fix and enforce LF via .gitattributes
 - Reduce strict test failures caused by CRLF drift

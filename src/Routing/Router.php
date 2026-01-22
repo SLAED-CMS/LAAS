@@ -124,6 +124,29 @@ final class Router
 
     private function getDispatcher(): Dispatcher
     {
+        $cacheDisabled = $this->hasClosureHandlers();
+        if ($cacheDisabled) {
+            $this->lastFingerprint = null;
+            if (is_file($this->cacheFile)) {
+                @unlink($this->cacheFile);
+            }
+            if (is_file($this->fingerprintFile)) {
+                @unlink($this->fingerprintFile);
+            }
+
+            $dispatcher = cachedDispatcher(function (RouteCollector $r): void {
+                foreach ($this->routes as [$method, $path, $handler]) {
+                    $r->addRoute($method, $path, $handler);
+                }
+            }, [
+                'cacheFile' => $this->cacheFile,
+                'cacheDisabled' => true,
+            ]);
+
+            $this->logCache('DISABLED');
+            return $dispatcher;
+        }
+
         $fingerprint = $this->computeFingerprint();
         $this->lastFingerprint = $fingerprint;
         $cacheValid = $this->isCacheValid($fingerprint);
@@ -147,6 +170,17 @@ final class Router
         }
 
         return $dispatcher;
+    }
+
+    private function hasClosureHandlers(): bool
+    {
+        foreach ($this->routes as $route) {
+            if (isset($route[2]) && $route[2] instanceof \Closure) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function handlerFingerprint(callable $handler): string
