@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.63 — Bootstrap: Modules scaffold + lifecycle hooks (2026-01-22)
+- Add ModulesBootstrap scaffold (flag only, no behavior change)
+- Add optional ModuleLifecycleInterface + ModuleBootstrapAdapter (not yet used)
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.62 — Bootstrap: Observability via events (2026-01-22)
 - Add ObservabilityBootstrap registering Request/Response event listeners
 - In debug mode, emit X-Response-Time-Ms header (non-production)
