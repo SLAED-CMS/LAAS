@@ -1,5 +1,11 @@
 ﻿# LAAS Versions
 
+## v4.0.70 — Bootstrap: takeover pipeline hardening (2026-01-22)
+- Add kernel-level takeover test proving module listeners run via HTTP event pipeline
+- Add bootstrap order guard test to prevent accidental reorder regressions
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.69 — Bootstrap: Modules takeover orchestration (opt-in) (2026-01-22)
 - Implement full module lifecycle orchestration in ModulesBootstrap under takeover flag
 - Support bindings/routes/listeners via ModuleLifecycleInterface; keep legacy ModuleInterface routes supported
