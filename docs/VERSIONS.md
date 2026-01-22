@@ -1,5 +1,12 @@
 # LAAS Versions
 
+## v4.0.41 — Tooling: Composer wrapper (2026-01-22)
+- Add project-local Composer wrapper for Windows/OSPanel (tools/composer.cmd, tools/composer.ps1)
+- Add tools/doctor.ps1 for environment diagnostics
+- No functional changes intended
+### Upgrade notes (Run tools/doctor.ps1; use tools/composer.cmd instead of global composer when needed)
+### Breaking changes (None)
+
 ## v4.0.40 — Baseline (2026-01-22)
 - Start semantic versioning for LAAS CMS (v4+), baseline at v4.0.40
 - Establish release notes in docs/VERSIONS.md
