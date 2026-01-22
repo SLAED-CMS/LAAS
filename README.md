@@ -18,12 +18,12 @@
 
 LAAS CMS is a modular, security-first CMS built for PHP 8.4+ with Bootstrap 5 + HTMX.
 
-- **Frontend-agnostic** — RenderAdapter v1, headless mode, content negotiation
-- **Security** — 2FA/TOTP, RBAC, CSRF, rate limiting, 99/100 security score
-- **AI Assistant** — Proposal/plan workflows with human-in-the-loop (v4.0.0)
-- **Operations** — Health endpoint, backups, Redis sessions, performance budgets
+- **Frontend-agnostic** â€” RenderAdapter v1, headless mode, content negotiation
+- **Security** â€” 2FA/TOTP, RBAC, CSRF, rate limiting, 99/100 security score
+- **AI Assistant** â€” Proposal/plan workflows with human-in-the-loop (v4.0.0)
+- **Operations** â€” Health endpoint, backups, Redis sessions, performance budgets
 
-© Eduard Laas, 2005–2026 · MIT License · https://laas-cms.org
+Â© Eduard Laas, 2005â€“2026 Â· MIT License Â· https://laas-cms.org
 
 ---
 
@@ -101,13 +101,13 @@ http://localhost/
 Read-only AI assistant with proposal/plan workflows.
 
 1. Open `/admin/ai`
-2. **Propose** → see diff preview
-3. **Dry-run** → see checks
-4. **Save** → get proposal ID
+2. **Propose** â†’ see diff preview
+3. **Dry-run** â†’ see checks
+4. **Save** â†’ get proposal ID
 5. **Apply via CLI:** `php tools/cli.php ai:proposal:apply <id> --yes`
 
 > [!IMPORTANT]
-> No direct apply in UI — all changes require explicit CLI confirmation.
+> No direct apply in UI â€” all changes require explicit CLI confirmation.
 
 ---
 
@@ -121,7 +121,7 @@ Read-only AI assistant with proposal/plan workflows.
 | **v2.0** | Stable | Production-ready CMS release |
 | **v1.0** | Foundation | Admin UI, RBAC, Media, DevTools |
 
-Full history: [docs/VERSIONS.md](docs/VERSIONS.md) · [docs/ROADMAP.md](docs/ROADMAP.md)
+Full history: [docs/VERSIONS.md](docs/VERSIONS.md) Â· [docs/ROADMAP.md](docs/ROADMAP.md)
 
 ---
 
@@ -129,14 +129,14 @@ Full history: [docs/VERSIONS.md](docs/VERSIONS.md) · [docs/ROADMAP.md](docs/ROA
 
 ```
 laas/
-├── public/           # Web root
-├── src/              # Core framework
-├── modules/          # Feature modules
-├── config/           # Configuration
-├── resources/lang/   # Translations
-├── themes/           # Templates
-├── storage/          # Logs, cache, sessions
-└── tools/            # CLI utilities
+â”œâ”€â”€ public/           # Web root
+â”œâ”€â”€ src/              # Core framework
+â”œâ”€â”€ modules/          # Feature modules
+â”œâ”€â”€ config/           # Configuration
+â”œâ”€â”€ resources/lang/   # Translations
+â”œâ”€â”€ themes/           # Templates
+â”œâ”€â”€ storage/          # Logs, cache, sessions
+â””â”€â”€ tools/            # CLI utilities
 ```
 
 ---
@@ -189,35 +189,36 @@ Full reference: [docs/ROUTES.md](docs/ROUTES.md)
 ## Documentation
 
 ### Architecture
-- [Architecture](docs/ARCHITECTURE.md) — System design
-- [Modules](docs/MODULES.md) — Module system
-- [Templates](docs/TEMPLATES.md) — Template engine
-- [Contracts](docs/CONTRACTS.md) — API contracts
+- [Architecture](docs/ARCHITECTURE.md) â€” System design
+- [Modules](docs/MODULES.md) â€” Module system
+- [Templates](docs/TEMPLATES.md) â€” Template engine
+- [Contracts](docs/CONTRACTS.md) â€” API contracts
 
 ### Security
-- [Security](docs/SECURITY.md) — Security features
-- [RBAC](docs/RBAC.md) — Access control
-- [Audit](docs/AUDIT.md) — Audit logging
-- [API](docs/API.md) — REST API v1
+- [Security](docs/SECURITY.md) â€” Security features
+- [RBAC](docs/RBAC.md) â€” Access control
+- [Audit](docs/AUDIT.md) â€” Audit logging
+- [API](docs/API.md) â€” REST API v1
 
 ### Features
-- [Media](docs/MEDIA.md) — Media & storage
-- [Cache](docs/CACHE.md) — Caching system
-- [i18n](docs/I18N.md) — Internationalization
-- [DevTools](docs/DEVTOOLS.md) — Debug toolbar
+- [Media](docs/MEDIA.md) â€” Media & storage
+- [Cache](docs/CACHE.md) â€” Caching system
+- [i18n](docs/I18N.md) â€” Internationalization
+- [DevTools](docs/DEVTOOLS.md) â€” Debug toolbar
 
 ### Operations
-- [CLI Reference](docs/CLI.md) — All commands
-- [Routes](docs/ROUTES.md) — All routes
-- [Production](docs/PRODUCTION.md) — Deployment
-- [Backup](docs/BACKUP.md) — Backup/restore
-- [Upgrading](UPGRADING.md) — Upgrade guide
+- [CLI Reference](docs/CLI.md) â€” All commands
+- [Routes](docs/ROUTES.md) â€” All routes
+- [Production](docs/PRODUCTION.md) â€” Deployment
+- [Backup](docs/BACKUP.md) â€” Backup/restore
+- [Upgrading](UPGRADING.md) â€” Upgrade guide
 
 ### Development
-- [Testing](docs/TESTING.md) — Tests & coverage
-- [Coding Standards](docs/CODING_STANDARDS.md) — Code style
-- [Assets](docs/ASSETS.md) — Asset management
-- [UI Tokens](docs/UI_TOKENS.md) — Frontend separation
+- [Testing](docs/TESTING.md) â€” Tests & coverage
+- [Coding Standards](docs/CODING_STANDARDS.md) â€” Code style
+- [Assets](docs/ASSETS.md) â€” Asset management
+- [UI Tokens](docs/UI_TOKENS.md) â€” Frontend separation
+- [Bootstraps](docs/BOOTSTRAPS.md) â€” Bootstrap pipeline and flags
 
 ---
 
@@ -264,7 +265,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## License
 
-MIT License — see [LICENSE](LICENSE)
+MIT License â€” see [LICENSE](LICENSE)
 
 ---
 

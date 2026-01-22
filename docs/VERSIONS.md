@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.78 — Docs: bootstrap migration plan PR1–PR8 (2026-01-22)
+- Add docs/BOOTSTRAPS.md documenting bootstrap pipeline, flags, and takeover options
+- Document PR1–PR8 migration steps summary
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.77 — Config: APP_BOOTSTRAPS list (2026-01-22)
 - Add APP_BOOTSTRAPS env parsing (comma-separated) to control bootstraps selection
 - Allow resolver to accept tokens or known bootstrap FQCNs (unknown ignored)
