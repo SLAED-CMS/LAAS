@@ -416,10 +416,5 @@ final class Router
 
     private function logCache(string $status): void
     {
-        if (!$this->debug) {
-            return;
-        }
-
-        error_log('[router] route cache ' . $status);
     }
 }

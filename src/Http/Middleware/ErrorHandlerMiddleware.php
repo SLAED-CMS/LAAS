@@ -26,9 +26,6 @@ final class ErrorHandlerMiddleware implements MiddlewareInterface
             return $next($request);
         } catch (Throwable $e) {
             $errorId = $this->generateErrorId();
-            if ($this->shouldEmitDiagnostics()) {
-                error_log('[error.handler] ' . get_class($e) . ': ' . $e->getMessage());
-            }
             $this->logger->error($e->getMessage(), [
                 'exception' => $e,
                 'request_id' => $this->requestId,

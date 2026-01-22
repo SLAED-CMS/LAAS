@@ -27,12 +27,6 @@ final class RoutingBootstrap implements BootstrapperInterface
         }
 
         $force = (bool) ($appConfig['routing_cache_warm_force'] ?? false);
-        $result = $router->warmCache($force);
-
-        if ($ctx->debug) {
-            $status = (string) $result['status'];
-            $fingerprint = (string) $result['fingerprint'];
-            error_log('[bootstrap.routing] warmed route cache (' . $status . ') fingerprint=' . $fingerprint);
-        }
+        $router->warmCache($force);
     }
 }
