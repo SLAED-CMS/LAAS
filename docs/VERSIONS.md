@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.67 — Bootstrap: ViewBootstrap sanity (opt-in) (2026-01-22)
+- Add ViewBootstrap (sanity checks + ensure template cache dir)
+- Optional strict check via app.view_sanity_strict=true (dev only)
+### Upgrade notes (Enable bootstraps; optional strict sanity flag)
+### Breaking changes (None)
+
 ## v4.0.66 — Bootstrap: RoutingBootstrap warm (opt-in) (2026-01-22)
 - Add RoutingBootstrap
 - Add optional config app.routing_cache_warm=true to warm route cache during bootstrap (dev/ops)
@@ -728,4 +734,3 @@
 - v0.1: Kernel/Router/Modules + System+Api routes
 
 **Last updated:** 2026-01-19
-
