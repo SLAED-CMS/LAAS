@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.77 — Config: APP_BOOTSTRAPS list (2026-01-22)
+- Add APP_BOOTSTRAPS env parsing (comma-separated) to control bootstraps selection
+- Allow resolver to accept tokens or known bootstrap FQCNs (unknown ignored)
+### Upgrade notes (Optional: set APP_BOOTSTRAPS="security,observability,..." when APP_BOOTSTRAPS_ENABLED=1)
+### Breaking changes (None)
+
 ## v4.0.76 — Bootstrap: extract config resolver (2026-01-22)
 - Extract bootstrap list resolution from Kernel into a dedicated resolver (no behavior change)
 - Add focused tests for resolver mapping/order

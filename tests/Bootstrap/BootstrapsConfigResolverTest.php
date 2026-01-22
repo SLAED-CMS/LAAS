@@ -54,6 +54,25 @@ final class BootstrapsConfigResolverTest extends TestCase
         ], $this->classesOf($result));
     }
 
+    public function testListAcceptsKnownFqcnAndIgnoresUnknownFqcn(): void
+    {
+        $resolver = new BootstrapsConfigResolver();
+
+        $result = $resolver->resolve([
+            'bootstraps' => [
+                '\\' . ViewBootstrap::class,
+                'unknown',
+                SecurityBootstrap::class,
+                'bad\\Class',
+            ],
+        ], true);
+
+        $this->assertSame([
+            ViewBootstrap::class,
+            SecurityBootstrap::class,
+        ], $this->classesOf($result));
+    }
+
     /**
      * @param list<\Laas\Bootstrap\BootstrapperInterface> $bootstraps
      * @return list<class-string>

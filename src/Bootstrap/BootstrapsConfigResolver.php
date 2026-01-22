@@ -27,25 +27,30 @@ final class BootstrapsConfigResolver
             ];
         }
 
+        $tokenMap = [
+            'security' => SecurityBootstrap::class,
+            'observability' => ObservabilityBootstrap::class,
+            'modules' => ModulesBootstrap::class,
+            'routing' => RoutingBootstrap::class,
+            'view' => ViewBootstrap::class,
+        ];
+        $classMap = array_flip($tokenMap);
+
         $bootstraps = [];
         foreach ($configured as $name) {
-            $key = strtolower((string) $name);
-            switch ($key) {
-                case 'security':
-                    $bootstraps[] = new SecurityBootstrap();
-                    break;
-                case 'observability':
-                    $bootstraps[] = new ObservabilityBootstrap();
-                    break;
-                case 'modules':
-                    $bootstraps[] = new ModulesBootstrap();
-                    break;
-                case 'routing':
-                    $bootstraps[] = new RoutingBootstrap();
-                    break;
-                case 'view':
-                    $bootstraps[] = new ViewBootstrap();
-                    break;
+            $value = (string) $name;
+            if (str_contains($value, '\\')) {
+                $fqcn = ltrim($value, '\\');
+                if (isset($classMap[$fqcn])) {
+                    $bootstraps[] = new $fqcn();
+                }
+                continue;
+            }
+
+            $key = strtolower($value);
+            if (isset($tokenMap[$key])) {
+                $fqcn = $tokenMap[$key];
+                $bootstraps[] = new $fqcn();
             }
         }
 
