@@ -1,6 +1,12 @@
 # LAAS Versions
 
-## v4.0.56 - Security: cache-backed rate limiter (2026-01-22)
+## v4.0.57 — Docs: fix VERSIONS encoding (2026-01-22)
+- Fix UTF-8 mojibake in VERSIONS.md and normalize dash formatting
+- Add test guard to prevent encoding regressions on Windows
+### Upgrade notes (None)
+### Breaking changes (None)
+
+## v4.0.56 — Security: cache-backed rate limiter (2026-01-22)
 - Refactor RateLimiter to persist state via CacheInterface (FileCache by default)
 - Enables easy future switch to Redis without rewriting RateLimiter logic
 ### Upgrade notes (Ensure storage/cache is writable; rate limit keys are prefixed ratelimit:)
