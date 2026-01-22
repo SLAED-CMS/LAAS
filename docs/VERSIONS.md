@@ -1,5 +1,11 @@
 ﻿# LAAS Versions
 
+## v4.0.71 — Config: bootstrap flags (2026-01-22)
+- Add env-backed config flags for bootstraps/modules takeover and routing/view boot options (defaults off)
+- No functional changes intended
+### Upgrade notes (Optional: set APP_BOOTSTRAPS_ENABLED=1 etc.)
+### Breaking changes (None)
+
 ## v4.0.70 — Bootstrap: takeover pipeline hardening (2026-01-22)
 - Add kernel-level takeover test proving module listeners run via HTTP event pipeline
 - Add bootstrap order guard test to prevent accidental reorder regressions
