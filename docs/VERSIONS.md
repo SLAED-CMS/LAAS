@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.74 — Config: bootstrap env flags in .env.example (2026-01-22)
+- Document bootstrap-related env flags in .env.example (defaults off)
+- No functional changes intended
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.72 — Refactor: move Bootstrap under src (2026-01-22)
 - Move Bootstrap/ into src/Bootstrap to keep PHP sources consolidated
 - Remove redundant PSR-4 mapping for Laas\\Bootstrap (now covered by Laas\\ => src/)
