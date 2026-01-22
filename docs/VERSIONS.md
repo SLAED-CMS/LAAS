@@ -1,5 +1,12 @@
 # LAAS Versions
 
+## v4.0.42 — QA gates (2026-01-22)
+- Add PHPStan + PHP-CS-Fixer configs and composer QA scripts
+- Use tools/composer.cmd as canonical composer entry point on Windows/OSPanel
+- No functional changes intended
+### Upgrade notes (Use: tools\composer.cmd qa)
+### Breaking changes (None)
+
 ## v4.0.41 — Tooling: Composer wrapper (2026-01-22)
 - Add project-local Composer wrapper for Windows/OSPanel (tools/composer.cmd, tools/composer.ps1)
 - Add tools/doctor.ps1 for environment diagnostics
