@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.61 — Bootstrap: SecurityBootstrap scaffold (2026-01-22)
+- Add SecurityBootstrap (scaffold) and feature-flagged bootstraps execution (default off)
+- Add tests for conditional bootstrap execution
+### Upgrade notes (To enable: set app.bootstraps_enabled=true in config for dev)
+### Breaking changes (None)
+
 ## v4.0.60 — Core: bootstrap pipeline skeleton (2026-01-22)
 - Add Bootstrap/ skeleton (BootContext, BootstrapperInterface, BootstrapsRunner)
 - Wire runner into Kernel with empty bootstrap list (no behavior change)
