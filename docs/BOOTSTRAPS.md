@@ -1,4 +1,4 @@
-﻿# Bootstrap Pipeline
+# Bootstrap Pipeline
 
 The bootstrap pipeline is opt-in and only runs when bootstraps are enabled.
 Default behavior is unchanged unless explicitly enabled.
@@ -32,7 +32,30 @@ APP_VIEW_SANITY_STRICT=0
 - Modules takeover is experimental and opt-in.
 - Routing cache warm is optional.
 
-## Migration checklist PR1–PR8
+## CLI
+Use CLI commands to inspect the resolved bootstrap configuration:
+
+```bash
+php tools/cli.php boot:dump
+php tools/cli.php boot:check
+```
+
+Example output (boot:dump):
+```
+bootstraps_enabled=1
+bootstraps_modules_takeover=0
+routing_cache_warm=0
+routing_cache_warm_force=0
+view_sanity_strict=0
+bootstraps:
+- security Laas\Bootstrap\SecurityBootstrap
+- observability Laas\Bootstrap\ObservabilityBootstrap
+- modules Laas\Bootstrap\ModulesBootstrap
+- routing Laas\Bootstrap\RoutingBootstrap
+- view Laas\Bootstrap\ViewBootstrap
+```
+
+## Migration checklist PR1-PR8
 - PR1: config flags in app.php
 - PR2: move Bootstrap to src/Bootstrap
 - PR3: SecurityBootstrap scaffold

@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.79 — Tooling: boot CLI visibility (2026-01-22)
+- Add boot:dump and boot:check commands to inspect resolved bootstrap config
+- No functional changes intended
+### Upgrade notes (Use: php tools/cli.php boot:dump / boot:check)
+### Breaking changes (None)
+
 ## v4.0.78 — Docs: bootstrap migration plan PR1–PR8 (2026-01-22)
 - Add docs/BOOTSTRAPS.md documenting bootstrap pipeline, flags, and takeover options
 - Document PR1–PR8 migration steps summary
