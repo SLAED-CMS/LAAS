@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.53 — Tooling: git LF hygiene (2026-01-22)
+- Normalize line endings using git:lf:fix and enforce LF via .gitattributes
+- Reduce strict test failures caused by CRLF drift
+### Upgrade notes (On Windows, run: php tools/cli.php git:lf:fix before strict checks)
+### Breaking changes (None)
+
 ## v4.0.52 — Tooling: test targets (2026-01-22)
 - Add test:unit default target (excludes policy/perf) for local development
 - Keep test:all for full CI/strict verification
