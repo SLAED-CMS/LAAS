@@ -6139,12 +6139,6 @@ parameters:
 			path: src/Session/Redis/RedisClient.php
 
 		-
-			message: '#^Static call to instance method Laas\\Session\\NativeSession\:\:start\(\)\.$#'
-			identifier: method.staticCall
-			count: 1
-			path: src/Session/RedisSession.php
-
-		-
 			message: '#^Method Laas\\Session\\RedisSessionHandler\:\:gc\(\) never returns false so it can be removed from the return type\.$#'
 			identifier: return.unusedType
 			count: 1

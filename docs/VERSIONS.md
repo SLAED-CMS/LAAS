@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.45 — Fix PHPStan blockers (2026-01-22)
+- Fix invalid inheritance: session classes no longer extend a final class
+- Restore green PHPStan gate
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.44 — PHPStan baseline (2026-01-22)
 - Generate phpstan-baseline.neon to track existing issues
 - Configure phpstan.neon to include baseline and prevent new regressions
