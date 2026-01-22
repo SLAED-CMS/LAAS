@@ -28,7 +28,10 @@
     "qa": [
       "composer qa:cs",
       "composer qa:stan"
-    ]
+    ],
+    "test:unit": "vendor/bin/phpunit --testsuite Unit --exclude-group policy,perf,perf-budgets,githygiene",
+    "test:all": "vendor/bin/phpunit",
+    "test": "composer test:unit"
   },
   "require-dev": {
     "phpunit/phpunit": "^12.5",

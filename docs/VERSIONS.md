@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.52 — Tooling: test targets (2026-01-22)
+- Add test:unit default target (excludes policy/perf) for local development
+- Keep test:all for full CI/strict verification
+### Upgrade notes (Use: tools\composer.cmd test for fast local; test:all for full)
+### Breaking changes (None)
+
 ## v4.0.51 — Core: cache interface + file cache (2026-01-22)
 - Add CacheInterface and FileCache implementation (atomic writes, TTL)
 - Wire cache service into Kernel for future perf/security features
