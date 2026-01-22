@@ -18,7 +18,6 @@
   },
   "autoload": {
     "psr-4": {
-      "Laas\\Bootstrap\\": "Bootstrap/",
       "Laas\\": "src/",
       "Laas\\Modules\\": "modules/"
     }

@@ -1,4 +1,11 @@
-﻿# LAAS Versions
+# LAAS Versions
+
+## v4.0.72 — Refactor: move Bootstrap under src (2026-01-22)
+- Move Bootstrap/ into src/Bootstrap to keep PHP sources consolidated
+- Remove redundant PSR-4 mapping for Laas\\Bootstrap (now covered by Laas\\ => src/)
+- No functional changes intended
+### Upgrade notes (None)
+### Breaking changes (None)
 
 ## v4.0.71 — Config: bootstrap flags (2026-01-22)
 - Add env-backed config flags for bootstraps/modules takeover and routing/view boot options (defaults off)

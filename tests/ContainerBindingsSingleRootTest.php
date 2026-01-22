@@ -14,6 +14,10 @@ final class ContainerBindingsSingleRootTest extends TestCase
             $this->normalizePath($root . '/src/Core/Bindings/DomainBindings.php'),
             $this->normalizePath($root . '/src/Core/Bindings/ModuleBindings.php'),
             $this->normalizePath($root . '/src/Core/Bindings/DevBindings.php'),
+            $this->normalizePath($root . '/src/Bootstrap/ModulesBootstrap.php'),
+            $this->normalizePath($root . '/src/Bootstrap/ObservabilityBootstrap.php'),
+            $this->normalizePath($root . '/src/Bootstrap/SecurityBootstrap.php'),
+            $this->normalizePath($root . '/src/Bootstrap/ViewBootstrap.php'),
         ];
 
         $violations = [];
