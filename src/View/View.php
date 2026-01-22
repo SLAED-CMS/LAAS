@@ -29,8 +29,13 @@ use Laas\View\Theme\ThemeManager;
 final class View
 {
     private ?Request $request = null;
+    /** @var array<string, mixed> */
     private array $shared = [];
 
+    /**
+     * @param array<string, mixed> $appConfig
+     * @param array<string, mixed> $assets
+     */
     public function __construct(
         private ThemeManager $themeManager,
         private TemplateEngine $engine,
@@ -72,6 +77,11 @@ final class View
         $this->shared[$key] = $value;
     }
 
+    /**
+     * @param array<string, mixed>|ViewModelInterface $data
+     * @param array<string, mixed> $headers
+     * @param array<string, mixed> $options
+     */
     public function render(
         string $template,
         array|ViewModelInterface $data = [],
@@ -202,6 +212,10 @@ final class View
         return new Response($html, $status, $headers);
     }
 
+    /**
+     * @param array<string, mixed>|ViewModelInterface $data
+     * @param array<string, mixed> $options
+     */
     public function renderPartial(string $template, array|ViewModelInterface $data = [], array $options = []): string
     {
         $options = array_merge(['render_partial' => true], $options);
@@ -209,6 +223,7 @@ final class View
         return $response->getBody();
     }
 
+    /** @param array<string, mixed> $params */
     public function translate(string $key, array $params = []): string
     {
         return $this->translator->trans($key, $params, $this->locale);
@@ -231,6 +246,7 @@ final class View
 
     /**
      * @param array<int, string> $themeCapabilities
+     * @return array<string, mixed>
      */
     private function globalContext(string $theme, array $themeCapabilities): array
     {
@@ -246,6 +262,7 @@ final class View
         return $ctx;
     }
 
+    /** @return array<string, mixed> */
     private function globalContextBase(): array
     {
         $csrfToken = '';
@@ -380,6 +397,7 @@ final class View
         return strtolower($this->env) !== 'prod';
     }
 
+    /** @return array<string, mixed> */
     private function buildUserContext(): array
     {
         $user = $this->authService->user();
@@ -403,6 +421,10 @@ final class View
         ];
     }
 
+    /**
+     * @param array<string, mixed>|ViewModelInterface $data
+     * @return array<string, mixed>
+     */
     private function normalizeViewModels(array|ViewModelInterface $data): array
     {
         if ($data instanceof ViewModelInterface) {

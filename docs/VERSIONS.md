@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.46 — PHPStan: typed View arrays (2026-01-22)
+- Add iterable value types to View/ViewModel contracts to reduce baseline noise
+- No functional changes intended
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.45 — Fix PHPStan blockers (2026-01-22)
 - Fix invalid inheritance: session classes no longer extend a final class
 - Restore green PHPStan gate

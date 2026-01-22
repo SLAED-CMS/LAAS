@@ -739,12 +739,6 @@ parameters:
 			path: modules/Admin/Controller/UsersController.php
 
 		-
-			message: '#^Method Laas\\Modules\\Admin\\ViewModel\\TablePaginationViewModel\:\:toArray\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: modules/Admin/ViewModel/TablePaginationViewModel.php
-
-		-
 			message: '#^Property Laas\\Modules\\Api\\ApiModule\:\:\$db is never read, only written\.$#'
 			identifier: property.onlyWritten
 			count: 1
@@ -2423,24 +2417,6 @@ parameters:
 			identifier: function.alreadyNarrowedType
 			count: 1
 			path: modules/Pages/Repository/PagesRevisionsRepository.php
-
-		-
-			message: '#^Method Laas\\Modules\\Pages\\ViewModel\\PagePublicViewModel\:\:__construct\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: modules/Pages/ViewModel/PagePublicViewModel.php
-
-		-
-			message: '#^Method Laas\\Modules\\Pages\\ViewModel\\PagePublicViewModel\:\:fromArray\(\) has parameter \$page with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: modules/Pages/ViewModel/PagePublicViewModel.php
-
-		-
-			message: '#^Method Laas\\Modules\\Pages\\ViewModel\\PagePublicViewModel\:\:toArray\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: modules/Pages/ViewModel/PagePublicViewModel.php
 
 		-
 			message: '#^Method Laas\\Modules\\System\\Controller\\CspReportController\:\:extractReport\(\) return type has no value type specified in iterable type array\.$#'
@@ -6979,84 +6955,6 @@ parameters:
 			path: src/View/Theme/ThemeManager.php
 
 		-
-			message: '#^Method Laas\\View\\View\:\:__construct\(\) has parameter \$appConfig with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/View/View.php
-
-		-
-			message: '#^Method Laas\\View\\View\:\:__construct\(\) has parameter \$assets with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/View/View.php
-
-		-
-			message: '#^Method Laas\\View\\View\:\:buildUserContext\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/View/View.php
-
-		-
-			message: '#^Method Laas\\View\\View\:\:globalContext\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/View/View.php
-
-		-
-			message: '#^Method Laas\\View\\View\:\:globalContextBase\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/View/View.php
-
-		-
-			message: '#^Method Laas\\View\\View\:\:normalizeViewModels\(\) has parameter \$data with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/View/View.php
-
-		-
-			message: '#^Method Laas\\View\\View\:\:normalizeViewModels\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/View/View.php
-
-		-
-			message: '#^Method Laas\\View\\View\:\:render\(\) has parameter \$data with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/View/View.php
-
-		-
-			message: '#^Method Laas\\View\\View\:\:render\(\) has parameter \$headers with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/View/View.php
-
-		-
-			message: '#^Method Laas\\View\\View\:\:render\(\) has parameter \$options with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/View/View.php
-
-		-
-			message: '#^Method Laas\\View\\View\:\:renderPartial\(\) has parameter \$data with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/View/View.php
-
-		-
-			message: '#^Method Laas\\View\\View\:\:renderPartial\(\) has parameter \$options with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/View/View.php
-
-		-
-			message: '#^Method Laas\\View\\View\:\:translate\(\) has parameter \$params with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/View/View.php
-
-		-
 			message: '#^Offset ''code'' on array\{key\: string, path\: string, code\: string\} on left side of \?\? always exists and is not nullable\.$#'
 			identifier: nullCoalesce.offset
 			count: 1
@@ -7069,13 +6967,14 @@ parameters:
 			path: src/View/View.php
 
 		-
-			message: '#^Property Laas\\View\\View\:\:\$shared type has no value type specified in iterable type array\.$#'
+			message: '#^Method Laas\\Modules\\Pages\\ViewModel\\PagePublicViewModel\:\:__construct\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: src/View/View.php
+			path: modules/Pages/ViewModel/PagePublicViewModel.php
 
 		-
-			message: '#^Method Laas\\View\\ViewModelInterface\:\:toArray\(\) return type has no value type specified in iterable type array\.$#'
+			message: '#^Method Laas\\Modules\\Pages\\ViewModel\\PagePublicViewModel\:\:fromArray\(\) has parameter \$page with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: src/View/ViewModelInterface.php
+			path: modules/Pages/ViewModel/PagePublicViewModel.php
+
