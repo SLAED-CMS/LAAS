@@ -24,6 +24,9 @@ use Laas\DevTools\DbCollector;
 use Laas\DevTools\DevToolsContext;
 use Laas\DevTools\PerformanceCollector;
 use Laas\DevTools\RequestCollector;
+use Laas\Events\EventDispatcherInterface;
+use Laas\Events\Http\RequestEvent;
+use Laas\Events\Http\ResponseEvent;
 use Laas\Http\Middleware\ApiMiddleware;
 use Laas\Http\Middleware\AuthMiddleware;
 use Laas\Http\Middleware\CsrfMiddleware;
@@ -92,6 +95,18 @@ final class Kernel
             '/admin/headless-playground/fetch',
             '/admin/search/palette',
         ]);
+
+        $dispatcher = null;
+        try {
+            $dispatcher = $this->container->get(EventDispatcherInterface::class);
+        } catch (\Throwable) {
+            $dispatcher = null;
+        }
+        if ($dispatcher instanceof EventDispatcherInterface) {
+            $requestEvent = new RequestEvent($request);
+            $dispatcher->dispatch($requestEvent);
+            $request = $requestEvent->request;
+        }
 
         try {
             $appConfig = $this->config['app'] ?? [];
@@ -368,7 +383,13 @@ final class Kernel
             if (!empty($resolution['set_cookie'])) {
                 $response = $response->withHeader('Set-Cookie', $localeResolver->cookieHeader($locale));
             }
-            return $response->withHeader('X-Request-Id', $requestId);
+            $response = $response->withHeader('X-Request-Id', $requestId);
+            if ($dispatcher instanceof EventDispatcherInterface) {
+                $responseEvent = new ResponseEvent($request, $response);
+                $dispatcher->dispatch($responseEvent);
+                $response = $responseEvent->response;
+            }
+            return $response;
         } finally {
             RequestScope::reset();
             RequestScope::setRequest(null);

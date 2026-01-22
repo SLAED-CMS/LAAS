@@ -8,6 +8,8 @@ use Laas\Core\Container\Container;
 use Laas\Core\FeatureFlags;
 use Laas\Core\FeatureFlagsInterface;
 use Laas\Database\DatabaseManager;
+use Laas\Events\EventDispatcherInterface;
+use Laas\Events\SimpleEventDispatcher;
 use Laas\I18n\Translator;
 use Laas\Security\CacheRateLimiterStore;
 use Laas\Security\RateLimiter;
@@ -46,6 +48,13 @@ final class CoreBindings
             return CacheFactory::create(BindingsContext::rootPath());
         }, [
             'concrete' => CacheInterface::class,
+            'read_only' => false,
+        ]);
+
+        $c->singleton(EventDispatcherInterface::class, static function (): EventDispatcherInterface {
+            return new SimpleEventDispatcher();
+        }, [
+            'concrete' => EventDispatcherInterface::class,
             'read_only' => false,
         ]);
 

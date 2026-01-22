@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.58 — Core: event dispatcher v1 (2026-01-22)
+- Add SimpleEventDispatcher with priorities and stoppable events
+- Emit RequestEvent/ResponseEvent around the HTTP pipeline for extensibility
+### Upgrade notes (Modules/themes can register listeners via container EventDispatcherInterface)
+### Breaking changes (None)
+
 ## v4.0.57 — Docs: fix VERSIONS encoding (2026-01-22)
 - Fix UTF-8 mojibake in VERSIONS.md and normalize dash formatting
 - Add test guard to prevent encoding regressions on Windows
