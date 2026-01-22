@@ -92,14 +92,13 @@ final class Kernel
         ]);
 
         try {
-            $router = new Router();
-
             $appConfig = $this->config['app'] ?? [];
             $securityConfig = $this->config['security'] ?? [];
             $devtoolsConfig = array_merge($this->config['devtools'] ?? [], $appConfig['devtools'] ?? []);
             $perfConfig = $this->config['perf'] ?? [];
             $env = strtolower((string) ($appConfig['env'] ?? ''));
             $appDebug = (bool) ($appConfig['debug'] ?? false);
+            $router = new Router($this->rootPath . '/storage/cache', $appDebug && $env !== 'prod');
             $devtoolsEnabled = $appDebug && (bool) ($devtoolsConfig['enabled'] ?? false);
             $perfEnabled = (bool) ($perfConfig['enabled'] ?? false);
             $collectDb = (bool) ($devtoolsConfig['collect_db'] ?? false);

@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.50 — Routing: route cache (2026-01-22)
+- Enable FastRoute cached dispatcher with fingerprint-based invalidation
+- Reduce per-request overhead by caching compiled routes
+### Upgrade notes (Ensure storage/cache is writable; optionally run routes:cache:warm)
+### Breaking changes (None)
+
 ## v4.0.49 — PHPStan: Pages public view model types (2026-01-22)
 - Add iterable value types to Pages public view model inputs to reduce baseline
 - No functional changes intended

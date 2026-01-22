@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Laas\Routing;
 
+use function FastRoute\cachedDispatcher;
+
 use FastRoute\Dispatcher;
 use FastRoute\RouteCollector;
-
-use function FastRoute\simpleDispatcher;
-
 use Laas\Http\ErrorCode;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
@@ -18,6 +17,23 @@ use Laas\Support\RequestScope;
 final class Router
 {
     private array $routes = [];
+    private string $cacheFile;
+    private string $fingerprintFile;
+    private bool $debug;
+    private ?string $lastFingerprint = null;
+
+    public function __construct(?string $cacheDir = null, bool $debug = false)
+    {
+        $cacheDir = $cacheDir ?? (sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'laas-route-cache');
+        $cacheDir = rtrim($cacheDir, '/\\');
+        $this->cacheFile = $cacheDir . DIRECTORY_SEPARATOR . 'routes.php';
+        $this->fingerprintFile = $cacheDir . DIRECTORY_SEPARATOR . 'routes.sha1';
+        $this->debug = $debug;
+
+        if (!is_dir($cacheDir)) {
+            mkdir($cacheDir, 0775, true);
+        }
+    }
 
     public function addRoute(string $method, string $path, callable $handler): void
     {
@@ -26,11 +42,7 @@ final class Router
 
     public function dispatch(Request $request): Response
     {
-        $dispatcher = simpleDispatcher(function (RouteCollector $r): void {
-            foreach ($this->routes as [$method, $path, $handler]) {
-                $r->addRoute($method, $path, $handler);
-            }
-        });
+        $dispatcher = $this->getDispatcher();
 
         $routeInfo = $dispatcher->dispatch(strtoupper($request->getMethod()), $request->getPath());
 
@@ -70,6 +82,12 @@ final class Router
         ]);
     }
 
+    public function warmCache(): string
+    {
+        $this->getDispatcher();
+        return $this->lastFingerprint ?? '';
+    }
+
     private function findRoutePattern(Request $request, callable $handler): ?string
     {
         $method = strtoupper($request->getMethod());
@@ -83,5 +101,129 @@ final class Router
         }
 
         return null;
+    }
+
+    private function computeFingerprint(): string
+    {
+        $tuples = [];
+        foreach ($this->routes as [$method, $path, $handler]) {
+            $tuples[] = [
+                (string) $method,
+                (string) $path,
+                $this->handlerFingerprint($handler),
+            ];
+        }
+
+        $encoded = json_encode($tuples, JSON_UNESCAPED_SLASHES);
+        if ($encoded === false) {
+            $encoded = '';
+        }
+
+        return sha1($encoded);
+    }
+
+    private function getDispatcher(): Dispatcher
+    {
+        $fingerprint = $this->computeFingerprint();
+        $this->lastFingerprint = $fingerprint;
+        $cacheValid = $this->isCacheValid($fingerprint);
+        if (!$cacheValid && is_file($this->cacheFile)) {
+            @unlink($this->cacheFile);
+        }
+
+        $dispatcher = cachedDispatcher(function (RouteCollector $r): void {
+            foreach ($this->routes as [$method, $path, $handler]) {
+                $r->addRoute($method, $path, $handler);
+            }
+        }, [
+            'cacheFile' => $this->cacheFile,
+        ]);
+
+        if (!$cacheValid) {
+            $this->writeFingerprint($fingerprint);
+            $this->logCache('REBUILT');
+        } else {
+            $this->logCache('HIT');
+        }
+
+        return $dispatcher;
+    }
+
+    private function handlerFingerprint(callable $handler): string
+    {
+        if (is_string($handler)) {
+            return $handler;
+        }
+        if (is_array($handler)) {
+            $target = is_object($handler[0]) ? get_class($handler[0]) : (string) $handler[0];
+            return $target . '::' . (string) ($handler[1] ?? '');
+        }
+        if ($handler instanceof \Closure) {
+            $ref = new \ReflectionFunction($handler);
+            $staticVars = $this->normalizeValue($ref->getStaticVariables());
+            $meta = [
+                'file' => $ref->getFileName(),
+                'start' => $ref->getStartLine(),
+                'end' => $ref->getEndLine(),
+                'static' => $staticVars,
+            ];
+            $encoded = json_encode($meta, JSON_UNESCAPED_SLASHES);
+            if ($encoded === false) {
+                $encoded = '';
+            }
+            return 'closure:' . $encoded;
+        }
+        if (is_object($handler) && method_exists($handler, '__invoke')) {
+            return get_class($handler) . '::__invoke';
+        }
+
+        return 'callable';
+    }
+
+    private function normalizeValue(mixed $value): mixed
+    {
+        if (is_array($value)) {
+            $normalized = [];
+            foreach ($value as $key => $item) {
+                $normalized[$key] = $this->normalizeValue($item);
+            }
+            return $normalized;
+        }
+        if (is_object($value)) {
+            return 'object:' . get_class($value);
+        }
+        if (is_resource($value)) {
+            return 'resource';
+        }
+
+        return $value;
+    }
+
+    private function isCacheValid(string $fingerprint): bool
+    {
+        if (!is_file($this->cacheFile) || !is_file($this->fingerprintFile)) {
+            return false;
+        }
+
+        $stored = trim((string) file_get_contents($this->fingerprintFile));
+        if ($stored === '') {
+            return false;
+        }
+
+        return hash_equals($stored, $fingerprint);
+    }
+
+    private function writeFingerprint(string $fingerprint): void
+    {
+        file_put_contents($this->fingerprintFile, $fingerprint);
+    }
+
+    private function logCache(string $status): void
+    {
+        if (!$this->debug) {
+            return;
+        }
+
+        error_log('[router] route cache ' . $status);
     }
 }

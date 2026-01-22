@@ -21,6 +21,8 @@ use Laas\Database\Repositories\RolesRepository;
 use Laas\Database\Repositories\SettingsRepository;
 use Laas\Database\Repositories\UsersRepository;
 use Laas\Database\Repositories\SecurityReportsRepository;
+use Laas\Auth\NullAuthService;
+use Laas\Modules\ModuleManager;
 use Laas\Modules\Media\Repository\MediaRepository;
 use Laas\Modules\Media\Service\LocalStorageDriver;
 use Laas\Modules\Media\Service\MediaGcService;
@@ -52,10 +54,13 @@ use Laas\I18n\Translator;
 use Laas\Http\Contract\ContractRegistry;
 use Laas\Http\Contract\ContractFixtureNormalizer;
 use Laas\Http\Contract\ContractDump;
+use Laas\Routing\Router;
+use Laas\View\AssetManager;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
 use Laas\View\Template\TemplateWarmupService;
 use Laas\View\Theme\ThemeManager;
+use Laas\View\View;
 
 $rootPath = dirname(__DIR__);
 require $rootPath . '/vendor/autoload.php';
@@ -184,6 +189,66 @@ $commands['cache:status'] = function () use ($rootPath): int {
     echo 'cache_dir: ' . $dir . "\n";
     echo 'last_prune: ' . $lastPrune . "\n";
     echo 'stats: hits=' . $hits . ' misses=' . $misses . "\n";
+    return 0;
+};
+
+$commands['routes:cache:warm'] = function () use ($rootPath, $appConfig, $securityConfig, $modulesConfig, $dbManager): int {
+    $cacheDir = $rootPath . '/storage/cache';
+    if (!is_dir($cacheDir)) {
+        mkdir($cacheDir, 0775, true);
+    }
+
+    $templateRawMode = (string) ($securityConfig['template']['raw_mode']
+        ?? $securityConfig['template_raw_mode']
+        ?? 'escape');
+
+    $settingsProvider = new SettingsProvider(
+        $dbManager,
+        [
+            'site_name' => $appConfig['name'] ?? 'LAAS',
+            'default_locale' => $appConfig['default_locale'] ?? 'en',
+            'theme' => $appConfig['theme'] ?? 'default',
+        ],
+        ['site_name', 'default_locale', 'theme']
+    );
+
+    $theme = (string) ($appConfig['theme'] ?? 'default');
+    $themeManager = new ThemeManager($rootPath . '/themes', $theme, $settingsProvider);
+    $publicTheme = $themeManager->getPublicTheme();
+    $locale = (string) ($appConfig['default_locale'] ?? 'en');
+
+    $translator = new Translator($rootPath, $publicTheme, $locale);
+    $templateEngine = new TemplateEngine(
+        $themeManager,
+        new TemplateCompiler(),
+        $rootPath . '/storage/cache/templates',
+        (bool) ($appConfig['debug'] ?? false),
+        $templateRawMode
+    );
+    $assetManager = new AssetManager($appConfig['assets'] ?? []);
+    $view = new View(
+        $themeManager,
+        $templateEngine,
+        $translator,
+        $locale,
+        $appConfig,
+        $assetManager,
+        new NullAuthService(),
+        $settingsProvider,
+        $rootPath . '/storage/cache/templates',
+        $dbManager,
+        [],
+        $templateRawMode
+    );
+
+    $router = new Router($cacheDir, (bool) ($appConfig['debug'] ?? false));
+    $modules = new ModuleManager($modulesConfig ?? [], $view, $dbManager);
+    $modules->register($router);
+
+    $fingerprint = $router->warmCache();
+    echo "routes cache warmed\n";
+    echo 'fingerprint: ' . $fingerprint . "\n";
+    echo 'cache_file: ' . $cacheDir . "/routes.php\n";
     return 0;
 };
 
