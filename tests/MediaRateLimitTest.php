@@ -7,8 +7,10 @@ use Laas\Domain\Media\MediaService;
 use Laas\Http\Request;
 use Laas\I18n\Translator;
 use Laas\Modules\Media\Controller\AdminMediaController;
+use Laas\Security\CacheRateLimiterStore;
 use Laas\Security\RateLimiter;
 use Laas\Settings\SettingsProvider;
+use Laas\Support\Cache\CacheFactory;
 use Laas\Support\RequestScope;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
@@ -209,10 +211,8 @@ final class MediaRateLimitTest extends TestCase
 
     private function clearRateLimit(string $group, string $key): void
     {
-        $file = $this->rootPath . '/storage/cache/ratelimit/' . md5($group . ':' . $key) . '.json';
-        if (is_file($file)) {
-            unlink($file);
-        }
+        $store = new CacheRateLimiterStore(CacheFactory::create($this->rootPath));
+        $store->delete($group . ':' . $key);
     }
 
     private function attachSession(Request $request): void

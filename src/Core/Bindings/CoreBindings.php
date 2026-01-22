@@ -9,6 +9,8 @@ use Laas\Core\FeatureFlags;
 use Laas\Core\FeatureFlagsInterface;
 use Laas\Database\DatabaseManager;
 use Laas\I18n\Translator;
+use Laas\Security\CacheRateLimiterStore;
+use Laas\Security\RateLimiter;
 use Laas\Support\Cache\CacheFactory;
 use Laas\Support\Cache\CacheInterface;
 use Laas\Theme\ThemeValidator;
@@ -44,6 +46,15 @@ final class CoreBindings
             return CacheFactory::create(BindingsContext::rootPath());
         }, [
             'concrete' => CacheInterface::class,
+            'read_only' => false,
+        ]);
+
+        $c->singleton(RateLimiter::class, static function () use ($c): RateLimiter {
+            $cache = $c->get(CacheInterface::class);
+            $store = $cache instanceof CacheInterface ? new CacheRateLimiterStore($cache) : null;
+            return new RateLimiter(BindingsContext::rootPath(), $store);
+        }, [
+            'concrete' => RateLimiter::class,
             'read_only' => false,
         ]);
 

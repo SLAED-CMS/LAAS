@@ -12,8 +12,11 @@ use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
+use Laas\Security\CacheRateLimiterStore;
 use Laas\Security\RateLimiter;
+use Laas\Security\RateLimiterStoreInterface;
 use Laas\Support\Audit;
+use Laas\Support\Cache\CacheInterface;
 use Laas\View\View;
 use Throwable;
 
@@ -437,10 +440,28 @@ final class ModulesController
         }
 
         try {
-            $limiter = new RateLimiter(dirname(__DIR__, 3));
+            $limiter = new RateLimiter(dirname(__DIR__, 3), $this->rateLimiterStore());
             $result = $limiter->hit('admin.modules.details', $ip, 60, 60);
             if (!$result['allowed']) {
                 return $this->renderDetailsError('Too many requests.', 429);
+            }
+        } catch (Throwable) {
+            return null;
+        }
+
+        return null;
+    }
+
+    private function rateLimiterStore(): ?RateLimiterStoreInterface
+    {
+        if ($this->container === null) {
+            return null;
+        }
+
+        try {
+            $cache = $this->container->get(CacheInterface::class);
+            if ($cache instanceof CacheInterface) {
+                return new CacheRateLimiterStore($cache);
             }
         } catch (Throwable) {
             return null;

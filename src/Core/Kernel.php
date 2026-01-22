@@ -46,11 +46,13 @@ use Laas\Modules\ModuleCatalog;
 use Laas\Modules\ModuleManager;
 use Laas\Perf\PerfBudgetEnforcer;
 use Laas\Routing\Router;
+use Laas\Security\CacheRateLimiterStore;
 use Laas\Security\RateLimiter;
 use Laas\Security\SecurityHeaders;
 use Laas\Session\SessionFactory;
 use Laas\Session\SessionInterface;
 use Laas\Settings\SettingsProvider;
+use Laas\Support\Cache\CacheInterface;
 use Laas\Support\ConfigSanityChecker;
 use Laas\Support\LoggerFactory;
 use Laas\Support\LogSpamGuard;
@@ -307,6 +309,15 @@ final class Kernel
             }
 
             $httpConfig = $this->config['http'] ?? [];
+            $rateLimiterStore = null;
+            try {
+                $cache = $this->container->get(CacheInterface::class);
+                if ($cache instanceof CacheInterface) {
+                    $rateLimiterStore = new CacheRateLimiterStore($cache);
+                }
+            } catch (\Throwable) {
+                $rateLimiterStore = null;
+            }
 
             $middleware = new MiddlewareQueue([
                 new ErrorHandlerMiddleware($logger, (bool) ($appConfig['debug'] ?? false), $requestId),
@@ -315,7 +326,7 @@ final class Kernel
                 new ApiMiddleware($this->database(), $authorization, $this->config['api'] ?? [], $this->rootPath),
                 new ReadOnlyMiddleware((bool) ($appConfig['read_only'] ?? false), $translator, $view),
                 new CsrfMiddleware(),
-                new RateLimitMiddleware(new RateLimiter($this->rootPath), $securityConfig),
+                new RateLimitMiddleware(new RateLimiter($this->rootPath, $rateLimiterStore), $securityConfig),
                 new SecurityHeadersMiddleware(new SecurityHeaders($securityConfig)),
                 new AuthMiddleware($authService),
                 new RbacMiddleware($authService, $authorization),

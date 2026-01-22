@@ -6,7 +6,9 @@ require_once __DIR__ . '/Support/SecurityTestHelper.php';
 use Laas\Http\Middleware\RateLimitMiddleware;
 use Laas\Http\Request;
 use Laas\Http\Response;
+use Laas\Security\CacheRateLimiterStore;
 use Laas\Security\RateLimiter;
+use Laas\Support\Cache\CacheFactory;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Tests\Security\Support\SecurityTestHelper;
@@ -54,13 +56,9 @@ final class RateLimitSecurityTest extends TestCase
 
     private function clearRateLimit(): void
     {
-        $dir = $this->rootPath . '/storage/cache/ratelimit';
-        if (!is_dir($dir)) {
-            return;
-        }
-        foreach (glob($dir . '/*.json') ?: [] as $file) {
-            @unlink($file);
-        }
+        $store = new CacheRateLimiterStore(CacheFactory::create($this->rootPath));
+        $store->delete('login:127.0.0.1');
+        $store->delete('api_default:127.0.0.1');
     }
 
     private function setProfileConfig(RateLimitMiddleware $middleware, array $config): void

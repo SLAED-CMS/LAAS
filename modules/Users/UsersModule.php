@@ -22,8 +22,11 @@ use Laas\Modules\Users\Controller\PasswordResetController;
 use Laas\Modules\Users\Controller\TwoFactorController;
 use Laas\Routing\RouteHandlerSpec;
 use Laas\Routing\Router;
+use Laas\Security\CacheRateLimiterStore;
 use Laas\Security\RateLimiter;
+use Laas\Security\RateLimiterStoreInterface;
 use Laas\Session\SessionInterface;
+use Laas\Support\Cache\CacheInterface;
 use Laas\Support\Mail\PhpMailer;
 use Laas\View\View;
 use Psr\Log\NullLogger;
@@ -92,7 +95,7 @@ final class UsersModule implements ModuleInterface
                 $usersReadService,
                 $usersWriteService,
                 new PhpMailer(null, $logger),
-                new RateLimiter(dirname(__DIR__, 2)),
+                new RateLimiter(dirname(__DIR__, 2), $this->rateLimiterStore()),
                 dirname(__DIR__, 2),
                 $logger
             ),
@@ -159,5 +162,23 @@ final class UsersModule implements ModuleInterface
         }
 
         return new UsersService($this->db);
+    }
+
+    private function rateLimiterStore(): ?RateLimiterStoreInterface
+    {
+        if ($this->container === null) {
+            return null;
+        }
+
+        try {
+            $cache = $this->container->get(CacheInterface::class);
+            if ($cache instanceof CacheInterface) {
+                return new CacheRateLimiterStore($cache);
+            }
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return null;
     }
 }

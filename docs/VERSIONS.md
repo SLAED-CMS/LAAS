@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.56 - Security: cache-backed rate limiter (2026-01-22)
+- Refactor RateLimiter to persist state via CacheInterface (FileCache by default)
+- Enables easy future switch to Redis without rewriting RateLimiter logic
+### Upgrade notes (Ensure storage/cache is writable; rate limit keys are prefixed ratelimit:)
+### Breaking changes (None)
+
 ## v4.0.55 — Routing: remove closure handlers (2026-01-22)
 - Replace closure-based route handlers with serializable handlers to keep route cache enabled
 - Route cache safety fallback remains, but should not trigger in normal boot
@@ -662,3 +668,4 @@
 - v0.1: Kernel/Router/Modules + System+Api routes
 
 **Last updated:** 2026-01-19
+
