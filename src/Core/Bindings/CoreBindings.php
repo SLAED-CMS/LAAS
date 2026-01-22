@@ -15,6 +15,8 @@ use Laas\Security\CacheRateLimiterStore;
 use Laas\Security\RateLimiter;
 use Laas\Support\Cache\CacheFactory;
 use Laas\Support\Cache\CacheInterface;
+use Laas\Theme\TemplateResolver;
+use Laas\Theme\ThemeRegistry;
 use Laas\Theme\ThemeValidator;
 use Laas\View\Theme\ThemeManager;
 
@@ -55,6 +57,21 @@ final class CoreBindings
             return new SimpleEventDispatcher();
         }, [
             'concrete' => EventDispatcherInterface::class,
+            'read_only' => false,
+        ]);
+
+        $c->singleton(ThemeRegistry::class, static function (): ThemeRegistry {
+            $root = rtrim(BindingsContext::rootPath(), '/\\') . '/themes';
+            return new ThemeRegistry($root, 'default');
+        }, [
+            'concrete' => ThemeRegistry::class,
+            'read_only' => false,
+        ]);
+
+        $c->singleton(TemplateResolver::class, static function (): TemplateResolver {
+            return new TemplateResolver();
+        }, [
+            'concrete' => TemplateResolver::class,
             'read_only' => false,
         ]);
 

@@ -60,6 +60,9 @@ use Laas\Support\ConfigSanityChecker;
 use Laas\Support\LoggerFactory;
 use Laas\Support\LogSpamGuard;
 use Laas\Support\RequestScope;
+use Laas\Theme\TemplateResolver;
+use Laas\Theme\ThemeInterface;
+use Laas\Theme\ThemeRegistry;
 use Laas\Theme\ThemeValidator;
 use Laas\View\AssetManager;
 use Laas\View\Template\TemplateCompiler;
@@ -232,12 +235,39 @@ final class Kernel
             $templateRawMode = (string) ($securityConfig['template']['raw_mode']
                 ?? $securityConfig['template_raw_mode']
                 ?? 'escape');
+            $themeRegistry = null;
+            $templateResolver = null;
+            try {
+                $themeRegistry = $this->container->get(ThemeRegistry::class);
+                if (!$themeRegistry instanceof ThemeRegistry) {
+                    $themeRegistry = null;
+                }
+            } catch (\Throwable) {
+                $themeRegistry = null;
+            }
+            try {
+                $templateResolver = $this->container->get(TemplateResolver::class);
+                if (!$templateResolver instanceof TemplateResolver) {
+                    $templateResolver = null;
+                }
+            } catch (\Throwable) {
+                $templateResolver = null;
+            }
+            $defaultTheme = $themeRegistry?->default();
+            $resolverForEngine = null;
+            if ($templateResolver instanceof TemplateResolver && $defaultTheme instanceof ThemeInterface) {
+                $resolverForEngine = $templateResolver->withFallback(
+                    static fn (string $template, ThemeInterface $theme): string => $themeManager->resolvePath($template)
+                );
+            }
             $templateEngine = new TemplateEngine(
                 $themeManager,
                 new TemplateCompiler(),
                 $this->rootPath . '/storage/cache/templates',
                 (bool) ($appConfig['debug'] ?? false),
-                $templateRawMode
+                $templateRawMode,
+                $resolverForEngine,
+                $defaultTheme
             );
             $assetManager = new AssetManager($this->config['assets'] ?? []);
             $assetsManager = new AssetsManager($this->config['assets'] ?? []);
@@ -254,7 +284,9 @@ final class Kernel
                 $this->rootPath . '/storage/cache/templates',
                 $this->database(),
                 $assets,
-                $templateRawMode
+                $templateRawMode,
+                $themeRegistry,
+                $templateResolver
             );
             $view->setRequest($request);
 

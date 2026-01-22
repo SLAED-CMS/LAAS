@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.59 — Themes: Theme API v1 (2026-01-22)
+- Add ThemeRegistry + TemplateResolver + ThemeInterface
+- Integrate theme selection into View with non-breaking defaults
+### Upgrade notes (Optional: add themes/<name>/views overrides; default theme always present)
+### Breaking changes (None)
+
 ## v4.0.58 — Core: event dispatcher v1 (2026-01-22)
 - Add SimpleEventDispatcher with priorities and stoppable events
 - Emit RequestEvent/ResponseEvent around the HTTP pipeline for extensibility

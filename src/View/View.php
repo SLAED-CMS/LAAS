@@ -20,7 +20,10 @@ use Laas\Settings\SettingsProvider;
 use Laas\Support\Cache\CacheFactory;
 use Laas\Support\Cache\CacheKey;
 use Laas\Support\RequestScope;
+use Laas\Theme\TemplateResolver;
 use Laas\Theme\ThemeCapabilities;
+use Laas\Theme\ThemeInterface;
+use Laas\Theme\ThemeRegistry;
 use Laas\Ui\PresentationLeakDetector;
 use Laas\View\Template\TemplateCompiler;
 use Laas\View\Template\TemplateEngine;
@@ -48,7 +51,9 @@ final class View
         private string $cachePath,
         private ?DatabaseManager $db = null,
         private array $assets = [],
-        private string $templateRawMode = 'escape'
+        private string $templateRawMode = 'escape',
+        ?ThemeRegistry $themeRegistry = null,
+        ?TemplateResolver $templateResolver = null
     ) {
         $this->defaultTheme = $themeManager->getThemeName();
         $this->themesRoot = $themeManager->getThemesRoot();
@@ -57,6 +62,8 @@ final class View
         $this->enforceUiTokens = (bool) ($appConfig['enforce_ui_tokens'] ?? false);
         $this->env = (string) ($appConfig['env'] ?? '');
         $this->templateRawMode = $templateRawMode;
+        $this->themeRegistry = $themeRegistry ?? new ThemeRegistry($this->themesRoot, $this->defaultTheme);
+        $this->templateResolver = $templateResolver ?? new TemplateResolver();
     }
 
     private string $defaultTheme;
@@ -64,6 +71,8 @@ final class View
     private bool $debug;
     private bool $enforceUiTokens;
     private string $env;
+    private ThemeRegistry $themeRegistry;
+    private TemplateResolver $templateResolver;
 
     public function setRequest(Request $request): void
     {
@@ -94,8 +103,13 @@ final class View
             'render_partial' => $this->request?->isHtmx() ?? false,
         ];
         $renderOptions = array_merge($renderOptions, $options);
-        $theme = $renderOptions['theme'] ?? $this->themeManager->getPublicTheme();
-        $themeCapabilities = $this->resolveThemeCapabilities($theme);
+        $themeName = $renderOptions['theme'] ?? $this->themeManager->getPublicTheme();
+        if (!is_string($themeName) || $themeName === '') {
+            $themeName = $this->themeManager->getPublicTheme();
+        }
+        $theme = $this->themeRegistry->get($themeName) ?? $this->themeRegistry->default();
+        $themeName = $theme->name();
+        $themeCapabilities = $this->resolveThemeCapabilities($themeName);
 
         if (!in_array('blocks', $themeCapabilities, true)) {
             if (array_key_exists('blocks_html', $data)) {
@@ -130,7 +144,7 @@ final class View
         if ($warnings !== []) {
             $this->handlePresentationWarnings($warnings);
         }
-        $engine = $this->resolveEngine($theme);
+        $engine = $this->resolveEngine($themeName, $theme);
         $ctx['__menu'] = function (string $name) use ($engine): string {
             if ($this->db === null || !$this->db->healthCheck()) {
                 return '';
@@ -248,16 +262,18 @@ final class View
      * @param array<int, string> $themeCapabilities
      * @return array<string, mixed>
      */
-    private function globalContext(string $theme, array $themeCapabilities): array
+    private function globalContext(ThemeInterface $theme, array $themeCapabilities): array
     {
         $ctx = $this->globalContextBase();
         $caps = ThemeCapabilities::toMap($themeCapabilities);
+        $themeName = $theme->name();
         $ctx['theme'] = [
-            'name' => $theme,
-            'api' => $this->resolveThemeApi($theme),
-            'version' => $this->resolveThemeVersion($theme),
+            'name' => $themeName,
+            'assets' => $theme->assets(),
+            'api' => $this->resolveThemeApi($themeName),
+            'version' => $this->resolveThemeVersion($themeName),
             'capabilities' => $caps,
-            'provides' => $this->resolveThemeProvides($theme),
+            'provides' => $this->resolveThemeProvides($themeName),
         ];
         return $ctx;
     }
@@ -311,19 +327,24 @@ final class View
         return $ctx;
     }
 
-    private function resolveEngine(string $theme): TemplateEngine
+    private function resolveEngine(string $theme, ThemeInterface $themeDefinition): TemplateEngine
     {
         if ($theme === $this->defaultTheme) {
             return $this->engine;
         }
 
         $themeManager = new ThemeManager($this->themesRoot, $theme, $this->settingsProvider);
+        $resolver = $this->templateResolver->withFallback(
+            fn (string $template, ThemeInterface $activeTheme): string => $themeManager->resolvePath($template)
+        );
         return new TemplateEngine(
             $themeManager,
             new TemplateCompiler(),
             $this->cachePath,
             $this->debug,
-            $this->templateRawMode
+            $this->templateRawMode,
+            $resolver,
+            $themeDefinition
         );
     }
 
