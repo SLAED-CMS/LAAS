@@ -7,6 +7,8 @@ namespace Laas\Modules\Admin;
 use Laas\Core\Container\Container;
 use Laas\Database\DatabaseManager;
 use Laas\Modules\ModuleInterface;
+use Laas\Routing\RouteHandlerSpec;
+use Laas\Routing\RouteHandlerTokens;
 use Laas\Routing\Router;
 use Laas\View\View;
 
@@ -21,6 +23,12 @@ final class AdminModule implements ModuleInterface
 
     public function registerRoutes(Router $router): void
     {
+        $contextKey = self::class;
+        $router->registerContext($contextKey, [
+            'view' => $this->view,
+            'container' => $this->container,
+        ]);
+
         $routes = require __DIR__ . '/routes.php';
         foreach ($routes as $route) {
             [$method, $path, $handler] = $route;
@@ -37,20 +45,14 @@ final class AdminModule implements ModuleInterface
             $paramCount = $ctor?->getNumberOfParameters() ?? 0;
             $useContainer = $this->container !== null;
 
-            $router->addRoute($method, $path, function ($request, array $vars = []) use ($class, $action, $paramCount, $useContainer) {
-                if ($useContainer && $paramCount >= 4) {
-                    $controller = new $class($this->view, null, null, $this->container);
-                } elseif ($useContainer && $paramCount >= 3) {
-                    $controller = new $class($this->view, null, $this->container);
-                } elseif ($useContainer && $paramCount >= 2) {
-                    $controller = new $class($this->view, $this->container);
-                } elseif ($paramCount >= 2) {
-                    $controller = new $class($this->view, null);
-                } else {
-                    $controller = new $class($this->view);
-                }
-                return $controller->{$action}($request);
-            });
+            $ctorTokens = RouteHandlerTokens::fromParamCountTail($paramCount, $useContainer);
+            $router->addRoute($method, $path, RouteHandlerSpec::controller(
+                $contextKey,
+                $class,
+                $action,
+                $ctorTokens,
+                false
+            ));
         }
     }
 }

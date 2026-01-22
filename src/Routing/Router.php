@@ -21,6 +21,8 @@ final class Router
     private string $fingerprintFile;
     private bool $debug;
     private ?string $lastFingerprint = null;
+    /** @var array<string, array<string, mixed>> */
+    private array $contexts = [];
 
     public function __construct(?string $cacheDir = null, bool $debug = false)
     {
@@ -35,9 +37,17 @@ final class Router
         }
     }
 
-    public function addRoute(string $method, string $path, callable $handler): void
+    public function addRoute(string $method, string $path, mixed $handler): void
     {
         $this->routes[] = [$method, $path, $handler];
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    public function registerContext(string $key, array $context): void
+    {
+        $this->contexts[$key] = $context;
     }
 
     public function dispatch(Request $request): Response
@@ -69,7 +79,7 @@ final class Router
                 $request->setAttribute('route.handler', $handler);
                 $request->setAttribute('route.vars', $vars);
 
-                $response = $handler($request, $vars);
+                $response = $this->invokeHandler($handler, $request, $vars);
                 if ($response instanceof Response) {
                     return $response;
                 }
@@ -88,7 +98,7 @@ final class Router
         return $this->lastFingerprint ?? '';
     }
 
-    private function findRoutePattern(Request $request, callable $handler): ?string
+    private function findRoutePattern(Request $request, mixed $handler): ?string
     {
         $method = strtoupper($request->getMethod());
         foreach ($this->routes as [$routeMethod, $path, $routeHandler]) {
@@ -124,7 +134,8 @@ final class Router
 
     private function getDispatcher(): Dispatcher
     {
-        $cacheDisabled = $this->hasClosureHandlers();
+        $closureCount = $this->countClosureHandlers();
+        $cacheDisabled = $closureCount > 0;
         if ($cacheDisabled) {
             $this->lastFingerprint = null;
             if (is_file($this->cacheFile)) {
@@ -143,7 +154,7 @@ final class Router
                 'cacheDisabled' => true,
             ]);
 
-            $this->logCache('DISABLED');
+            $this->logCache('DISABLED (closures: ' . $closureCount . ')');
             return $dispatcher;
         }
 
@@ -172,19 +183,113 @@ final class Router
         return $dispatcher;
     }
 
-    private function hasClosureHandlers(): bool
+    private function countClosureHandlers(): int
     {
+        $count = 0;
         foreach ($this->routes as $route) {
             if (isset($route[2]) && $route[2] instanceof \Closure) {
-                return true;
+                $count++;
             }
         }
 
-        return false;
+        return $count;
     }
 
-    private function handlerFingerprint(callable $handler): string
+    /**
+     * @param array<string, mixed> $vars
+     */
+    private function invokeHandler(mixed $handler, Request $request, array $vars): mixed
     {
+        if (is_array($handler) && isset($handler['type'])) {
+            return $this->dispatchSpec($handler, $request, $vars);
+        }
+
+        if (is_callable($handler)) {
+            return $handler($request, $vars);
+        }
+
+        return new Response('Invalid route handler', 500, [
+            'Content-Type' => 'text/plain; charset=utf-8',
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $spec
+     * @param array<string, mixed> $vars
+     */
+    private function dispatchSpec(array $spec, Request $request, array $vars): Response
+    {
+        $type = (string) ($spec['type'] ?? '');
+        if ($type === RouteHandlerSpec::TYPE_CONTROLLER) {
+            return $this->dispatchControllerSpec($spec, $request, $vars);
+        }
+        if ($type === RouteHandlerSpec::TYPE_MODULE) {
+            return $this->dispatchModuleSpec($spec, $request, $vars);
+        }
+
+        return new Response('Invalid route handler spec', 500, [
+            'Content-Type' => 'text/plain; charset=utf-8',
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $spec
+     * @param array<string, mixed> $vars
+     */
+    private function dispatchControllerSpec(array $spec, Request $request, array $vars): Response
+    {
+        $class = (string) ($spec['class'] ?? '');
+        $action = (string) ($spec['action'] ?? '');
+        $contextKey = (string) ($spec['context'] ?? '');
+        if ($class === '' || $action === '' || $contextKey === '') {
+            return new Response('Invalid controller handler spec', 500, [
+                'Content-Type' => 'text/plain; charset=utf-8',
+            ]);
+        }
+
+        $context = $this->contexts[$contextKey] ?? [];
+        $tokens = is_array($spec['ctor'] ?? null) ? $spec['ctor'] : [];
+        $args = RouteHandlerTokens::resolve($tokens, $context);
+
+        $controller = $args === [] ? new $class() : new $class(...$args);
+        $passVars = (bool) ($spec['pass_vars'] ?? false);
+        return $passVars ? $controller->{$action}($request, $vars) : $controller->{$action}($request);
+    }
+
+    /**
+     * @param array<string, mixed> $spec
+     * @param array<string, mixed> $vars
+     */
+    private function dispatchModuleSpec(array $spec, Request $request, array $vars): Response
+    {
+        $contextKey = (string) ($spec['context'] ?? '');
+        $class = (string) ($spec['class'] ?? '');
+        $action = (string) ($spec['action'] ?? '');
+        if ($contextKey === '' || $class === '' || $action === '') {
+            return new Response('Invalid module handler spec', 500, [
+                'Content-Type' => 'text/plain; charset=utf-8',
+            ]);
+        }
+
+        $context = $this->contexts[$contextKey] ?? [];
+        $module = $context['module'] ?? null;
+        if (is_object($module) && method_exists($module, 'dispatchRoute')) {
+            return $module->dispatchRoute($class, $action, $request, $vars);
+        }
+
+        return new Response('Module handler not available', 500, [
+            'Content-Type' => 'text/plain; charset=utf-8',
+        ]);
+    }
+    private function handlerFingerprint(mixed $handler): string
+    {
+        if (is_array($handler) && isset($handler['type'])) {
+            $encoded = json_encode($handler, JSON_UNESCAPED_SLASHES);
+            if ($encoded === false) {
+                $encoded = '';
+            }
+            return 'spec:' . sha1($encoded);
+        }
         if (is_string($handler)) {
             return $handler;
         }

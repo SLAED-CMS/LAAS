@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.55 — Routing: remove closure handlers (2026-01-22)
+- Replace closure-based route handlers with serializable handlers to keep route cache enabled
+- Route cache safety fallback remains, but should not trigger in normal boot
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.54 — Perf tests: fix 500 responses (2026-01-22)
 - Fix underlying error causing perf budget endpoints to return 500 in tests
 - Improve test-mode diagnostics for HTTP 500 (guarded)

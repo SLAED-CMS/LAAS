@@ -90,7 +90,10 @@ final class RequestCollector implements CollectorInterface
         $controller = null;
         $action = null;
 
-        if (is_array($handler) && count($handler) >= 2) {
+        if (is_array($handler) && isset($handler['type'])) {
+            $controller = (string) ($handler['class'] ?? '');
+            $action = (string) ($handler['action'] ?? '');
+        } elseif (is_array($handler) && array_key_exists(0, $handler) && array_key_exists(1, $handler)) {
             $controller = is_object($handler[0]) ? get_class($handler[0]) : (string) $handler[0];
             $action = (string) $handler[1];
         }

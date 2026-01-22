@@ -8,6 +8,8 @@ use Laas\Core\Container\Container;
 use Laas\Database\DatabaseManager;
 use Laas\Modules\ModuleInterface;
 use Laas\Modules\System\Controller\HomeController;
+use Laas\Routing\RouteHandlerSpec;
+use Laas\Routing\RouteHandlerTokens;
 use Laas\Routing\Router;
 use Laas\View\View;
 
@@ -22,15 +24,22 @@ final class SystemModule implements ModuleInterface
 
     public function registerRoutes(Router $router): void
     {
-        $view = $this->view;
-        $container = $this->container;
+        $contextKey = self::class;
+        $router->registerContext($contextKey, [
+            'view' => $this->view,
+            'container' => $this->container,
+        ]);
 
-        $router->addRoute('GET', '/', function ($request, array $vars = []) use ($view, $container) {
-            $controller = $container !== null
-                ? new HomeController($view, $container)
-                : new HomeController($view);
-            return $controller->index($request);
-        });
+        $homeCtor = (new \ReflectionClass(HomeController::class))->getConstructor();
+        $homeParamCount = $homeCtor?->getNumberOfParameters() ?? 0;
+        $homeTokens = RouteHandlerTokens::fromParamCountTail($homeParamCount, $this->container !== null);
+        $router->addRoute('GET', '/', RouteHandlerSpec::controller(
+            $contextKey,
+            HomeController::class,
+            'index',
+            $homeTokens,
+            false
+        ));
 
         $routes = require __DIR__ . '/routes.php';
         foreach ($routes as $route) {
@@ -49,26 +58,14 @@ final class SystemModule implements ModuleInterface
             $paramCount = $ctor?->getNumberOfParameters() ?? 0;
             $useContainer = $this->container !== null;
 
-            $router->addRoute($method, $path, function ($request, array $vars = []) use ($class, $action, $params, $paramCount, $useContainer) {
-                if ($paramCount <= 0) {
-                    $controller = new $class();
-                    return $controller->{$action}($request);
-                }
-
-                $args = array_fill(0, $paramCount, null);
-                $args[0] = $this->view;
-                if ($useContainer && $params !== []) {
-                    foreach ($params as $index => $param) {
-                        $type = $param->getType();
-                        if ($type instanceof \ReflectionNamedType && $type->getName() === Container::class) {
-                            $args[$index] = $this->container;
-                        }
-                    }
-                }
-
-                $controller = new $class(...$args);
-                return $controller->{$action}($request);
-            });
+            $ctorTokens = RouteHandlerTokens::fromParams($params, $paramCount, $useContainer);
+            $router->addRoute($method, $path, RouteHandlerSpec::controller(
+                $contextKey,
+                $class,
+                $action,
+                $ctorTokens,
+                false
+            ));
         }
     }
 }

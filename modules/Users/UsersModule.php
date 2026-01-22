@@ -14,10 +14,13 @@ use Laas\Database\Repositories\UsersRepository;
 use Laas\Domain\Users\UsersReadServiceInterface;
 use Laas\Domain\Users\UsersService;
 use Laas\Domain\Users\UsersWriteServiceInterface;
+use Laas\Http\Request;
+use Laas\Http\Response;
 use Laas\Modules\ModuleInterface;
 use Laas\Modules\Users\Controller\AuthController;
 use Laas\Modules\Users\Controller\PasswordResetController;
 use Laas\Modules\Users\Controller\TwoFactorController;
+use Laas\Routing\RouteHandlerSpec;
 use Laas\Routing\Router;
 use Laas\Security\RateLimiter;
 use Laas\Session\SessionInterface;
@@ -36,6 +39,13 @@ final class UsersModule implements ModuleInterface
 
     public function registerRoutes(Router $router): void
     {
+        $contextKey = self::class;
+        $router->registerContext($contextKey, [
+            'view' => $this->view,
+            'container' => $this->container,
+            'module' => $this,
+        ]);
+
         $routes = require __DIR__ . '/routes.php';
         foreach ($routes as $route) {
             [$method, $path, $handler] = $route;
@@ -48,11 +58,17 @@ final class UsersModule implements ModuleInterface
                 continue;
             }
 
-            $router->addRoute($method, $path, function ($request, array $vars = []) use ($class, $action) {
-                $controller = $this->createController($class, $request->session());
-                return $controller->{$action}($request);
-            });
+            $router->addRoute($method, $path, RouteHandlerSpec::module($contextKey, $class, $action));
         }
+    }
+
+    /**
+     * @param array<string, string> $vars
+     */
+    public function dispatchRoute(string $class, string $action, Request $request, array $vars = []): Response
+    {
+        $controller = $this->createController($class, $request->session());
+        return $controller->{$action}($request);
     }
 
     private function createController(string $class, SessionInterface $session): object

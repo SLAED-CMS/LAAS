@@ -25,6 +25,19 @@ final class RouterCacheTest extends TestCase
         $fingerprintFile = $cacheDir . DIRECTORY_SEPARATOR . 'routes.sha1';
         $this->assertFileExists($cacheFile);
         $this->assertFileExists($fingerprintFile);
+        $firstFingerprint = trim((string) file_get_contents($fingerprintFile));
+        $firstMtime = (int) filemtime($cacheFile);
+
+        sleep(1);
+        $router2 = new Router($cacheDir, true);
+        $router2->addRoute('GET', '/ping', [RouterCacheTestHandler::class, 'handle']);
+        $router2->dispatch($request);
+
+        clearstatcache(true, $cacheFile);
+        $secondFingerprint = trim((string) file_get_contents($fingerprintFile));
+        $secondMtime = (int) filemtime($cacheFile);
+        $this->assertSame($firstFingerprint, $secondFingerprint);
+        $this->assertSame($firstMtime, $secondMtime);
 
         @unlink($cacheFile);
         @unlink($fingerprintFile);
