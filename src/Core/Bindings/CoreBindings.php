@@ -9,6 +9,8 @@ use Laas\Core\FeatureFlags;
 use Laas\Core\FeatureFlagsInterface;
 use Laas\Database\DatabaseManager;
 use Laas\I18n\Translator;
+use Laas\Support\Cache\CacheFactory;
+use Laas\Support\Cache\CacheInterface;
 use Laas\Theme\ThemeValidator;
 use Laas\View\Theme\ThemeManager;
 
@@ -35,6 +37,13 @@ final class CoreBindings
             return BindingsContext::database();
         }, [
             'concrete' => DatabaseManager::class,
+            'read_only' => false,
+        ]);
+
+        $c->singleton(CacheInterface::class, static function (): CacheInterface {
+            return CacheFactory::create(BindingsContext::rootPath());
+        }, [
+            'concrete' => CacheInterface::class,
             'read_only' => false,
         ]);
 

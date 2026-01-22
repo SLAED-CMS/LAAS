@@ -469,6 +469,7 @@ final class Kernel
             $this->rootPath . '/storage/logs',
             $this->rootPath . '/storage/sessions',
             $this->rootPath . '/storage/cache',
+            $this->rootPath . '/storage/cache/data',
             $this->rootPath . '/storage/cache/templates',
             $this->rootPath . '/storage/cache/ratelimit',
             $this->rootPath . '/storage/uploads',

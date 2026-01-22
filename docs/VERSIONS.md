@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.51 — Core: cache interface + file cache (2026-01-22)
+- Add CacheInterface and FileCache implementation (atomic writes, TTL)
+- Wire cache service into Kernel for future perf/security features
+### Upgrade notes (Ensure storage/cache is writable)
+### Breaking changes (None)
+
 ## v4.0.50 — Routing: route cache (2026-01-22)
 - Enable FastRoute cached dispatcher with fingerprint-based invalidation
 - Reduce per-request overhead by caching compiled routes
