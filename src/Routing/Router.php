@@ -20,7 +20,6 @@ final class Router
     private string $cacheFile;
     private string $fingerprintFile;
     private bool $debug;
-    private ?string $lastFingerprint = null;
     /** @var array<string, array<string, mixed>> */
     private array $contexts = [];
 
@@ -92,12 +91,6 @@ final class Router
         ]);
     }
 
-    public function warmCache(): string
-    {
-        $this->getDispatcher();
-        return $this->lastFingerprint ?? '';
-    }
-
     private function findRoutePattern(Request $request, mixed $handler): ?string
     {
         $method = strtoupper($request->getMethod());
@@ -137,7 +130,6 @@ final class Router
         $closureCount = $this->countClosureHandlers();
         $cacheDisabled = $closureCount > 0;
         if ($cacheDisabled) {
-            $this->lastFingerprint = null;
             if (is_file($this->cacheFile)) {
                 @unlink($this->cacheFile);
             }
@@ -159,7 +151,6 @@ final class Router
         }
 
         $fingerprint = $this->computeFingerprint();
-        $this->lastFingerprint = $fingerprint;
         $cacheValid = $this->isCacheValid($fingerprint);
         if (!$cacheValid && is_file($this->cacheFile)) {
             @unlink($this->cacheFile);
@@ -181,6 +172,72 @@ final class Router
         }
 
         return $dispatcher;
+    }
+
+    /**
+     * @return array{fingerprint: string, cache_file: string, hit: bool, status: string}
+     */
+    public function warmCache(bool $force = false): array
+    {
+        if ($force) {
+            if (is_file($this->cacheFile)) {
+                @unlink($this->cacheFile);
+            }
+            if (is_file($this->fingerprintFile)) {
+                @unlink($this->fingerprintFile);
+            }
+        }
+
+        $closureCount = $this->countClosureHandlers();
+        if ($closureCount > 0) {
+            if (is_file($this->cacheFile)) {
+                @unlink($this->cacheFile);
+            }
+            if (is_file($this->fingerprintFile)) {
+                @unlink($this->fingerprintFile);
+            }
+
+            cachedDispatcher(function (RouteCollector $r): void {
+                foreach ($this->routes as [$method, $path, $handler]) {
+                    $r->addRoute($method, $path, $handler);
+                }
+            }, [
+                'cacheFile' => $this->cacheFile,
+                'cacheDisabled' => true,
+            ]);
+
+            return [
+                'fingerprint' => '',
+                'cache_file' => $this->cacheFile,
+                'hit' => false,
+                'status' => 'DISABLED',
+            ];
+        }
+
+        $fingerprint = $this->computeFingerprint();
+        $cacheValid = !$force && $this->isCacheValid($fingerprint);
+        if (!$cacheValid && is_file($this->cacheFile)) {
+            @unlink($this->cacheFile);
+        }
+
+        cachedDispatcher(function (RouteCollector $r): void {
+            foreach ($this->routes as [$method, $path, $handler]) {
+                $r->addRoute($method, $path, $handler);
+            }
+        }, [
+            'cacheFile' => $this->cacheFile,
+        ]);
+
+        if (!$cacheValid) {
+            $this->writeFingerprint($fingerprint);
+        }
+
+        return [
+            'fingerprint' => $fingerprint,
+            'cache_file' => $this->cacheFile,
+            'hit' => $cacheValid,
+            'status' => $cacheValid ? 'HIT' : 'REBUILT',
+        ];
     }
 
     private function countClosureHandlers(): int

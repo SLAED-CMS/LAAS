@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.66 — Bootstrap: RoutingBootstrap warm (opt-in) (2026-01-22)
+- Add RoutingBootstrap
+- Add optional config app.routing_cache_warm=true to warm route cache during bootstrap (dev/ops)
+### Upgrade notes (To use: enable bootstraps + set app.routing_cache_warm=true; optional force flag)
+### Breaking changes (None)
+
 ## v4.0.65 — Bootstrap: unify takeover flow (2026-01-22)
 - Ensure ModulesBootstrap takeover runs only through BootstrapsRunner
 - Remove manual bootstrap invocation from Kernel (reduce double-boot risk)

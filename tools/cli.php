@@ -245,7 +245,8 @@ $commands['routes:cache:warm'] = function () use ($rootPath, $appConfig, $securi
     $modules = new ModuleManager($modulesConfig ?? [], $view, $dbManager);
     $modules->register($router);
 
-    $fingerprint = $router->warmCache();
+    $result = $router->warmCache();
+    $fingerprint = (string) ($result['fingerprint'] ?? '');
     echo "routes cache warmed\n";
     echo 'fingerprint: ' . $fingerprint . "\n";
     echo 'cache_file: ' . $cacheDir . "/routes.php\n";

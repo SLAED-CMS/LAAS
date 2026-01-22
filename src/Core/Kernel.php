@@ -13,6 +13,7 @@ use Laas\Bootstrap\BootContext;
 use Laas\Bootstrap\BootstrapsRunner;
 use Laas\Bootstrap\ModulesBootstrap;
 use Laas\Bootstrap\ObservabilityBootstrap;
+use Laas\Bootstrap\RoutingBootstrap;
 use Laas\Bootstrap\SecurityBootstrap;
 use Laas\Content\Blocks\BlockRegistry;
 use Laas\Core\Bindings\BindingsContext;
@@ -286,7 +287,7 @@ final class Kernel
             $this->container->singleton(Router::class, static fn (): Router => $router);
 
             if ($bootEnabled) {
-                $bootstraps = [new SecurityBootstrap(), new ObservabilityBootstrap(), new ModulesBootstrap()];
+                $bootstraps = [new SecurityBootstrap(), new ObservabilityBootstrap(), new ModulesBootstrap(), new RoutingBootstrap()];
                 $runner = new BootstrapsRunner($bootstraps);
                 $runner->run(new BootContext(
                     $this->rootPath,
