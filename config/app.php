@@ -59,6 +59,7 @@ return [
     'debug' => $envBool('APP_DEBUG', true),
     'bootstraps_enabled' => $envBool('APP_BOOTSTRAPS_ENABLED', false),
     'bootstraps_modules_takeover' => $envBool('APP_BOOTSTRAPS_MODULES_TAKEOVER', false),
+    'bootstraps' => $envListAllowEmpty('APP_BOOTSTRAPS', []),
     'routing_cache_warm' => $envBool('APP_ROUTING_CACHE_WARM', false),
     'routing_cache_warm_force' => $envBool('APP_ROUTING_CACHE_WARM_FORCE', false),
     'view_sanity_strict' => $envBool('APP_VIEW_SANITY_STRICT', false),

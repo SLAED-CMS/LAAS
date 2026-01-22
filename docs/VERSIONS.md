@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.75 — Bootstrap: configurable bootstrap list (2026-01-22)
+- Allow selecting bootstraps via app.bootstraps list when bootstraps are enabled (default behavior unchanged)
+- Unknown bootstrap names are ignored
+### Upgrade notes (To use: set APP_BOOTSTRAPS_ENABLED=1; optionally set APP_BOOTSTRAPS=...)
+### Breaking changes (None)
+
 ## v4.0.74 — Config: bootstrap env flags in .env.example (2026-01-22)
 - Document bootstrap-related env flags in .env.example (defaults off)
 - No functional changes intended
