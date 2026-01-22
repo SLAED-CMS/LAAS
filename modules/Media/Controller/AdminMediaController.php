@@ -1,21 +1,22 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Media\Controller;
 
 use Laas\Api\ApiCacheInvalidator;
 use Laas\Core\Container\Container;
-use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Domain\Media\MediaReadServiceInterface;
 use Laas\Domain\Media\MediaServiceException;
 use Laas\Domain\Media\MediaWriteServiceInterface;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorCode;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\Modules\Media\Service\MimeSniffer;
 use Laas\Modules\Media\Service\MediaSignedUrlService;
+use Laas\Modules\Media\Service\MimeSniffer;
 use Laas\Modules\Media\Service\StorageService;
 use Laas\Security\RateLimiter;
 use Laas\Support\Audit;

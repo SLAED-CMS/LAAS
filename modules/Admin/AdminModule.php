@@ -1,13 +1,14 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Admin;
 
+use Laas\Core\Container\Container;
+use Laas\Database\DatabaseManager;
 use Laas\Modules\ModuleInterface;
 use Laas\Routing\Router;
 use Laas\View\View;
-use Laas\Database\DatabaseManager;
-use Laas\Core\Container\Container;
 
 final class AdminModule implements ModuleInterface
 {
@@ -15,8 +16,7 @@ final class AdminModule implements ModuleInterface
         private View $view,
         private ?DatabaseManager $db = null,
         private ?Container $container = null
-    )
-    {
+    ) {
     }
 
     public function registerRoutes(Router $router): void

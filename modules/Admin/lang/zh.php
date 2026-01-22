@@ -1,7 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-return array (
+return  [
     'admin.audit.action' => '操作',
     'admin.audit.context' => '上下文',
     'admin.audit.date' => '日期',
@@ -170,4 +171,4 @@ return array (
     'admin.ops.section.cache' => '缓存',
     'admin.ops.section.security' => '安全',
     'admin.ops.refresh' => '刷新',
-);
+];

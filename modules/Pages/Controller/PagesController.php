@@ -1,8 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Pages\Controller;
 
+use Laas\Content\Blocks\BlockRegistry;
+use Laas\Content\Blocks\ThemeContext;
 use Laas\Core\Container\Container;
 use Laas\Domain\Pages\Dto\PageView;
 use Laas\Domain\Pages\PagesReadServiceInterface;
@@ -11,13 +14,11 @@ use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Pages\ViewModel\PagePublicViewModel;
+use Laas\Support\RequestScope;
 use Laas\Support\Search\Highlighter;
 use Laas\Support\Search\SearchNormalizer;
 use Laas\Support\Search\SearchQuery;
-use Laas\Support\RequestScope;
 use Laas\View\View;
-use Laas\Content\Blocks\BlockRegistry;
-use Laas\Content\Blocks\ThemeContext;
 use Throwable;
 
 final class PagesController

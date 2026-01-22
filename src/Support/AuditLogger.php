@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Support;
@@ -13,8 +14,7 @@ final class AuditLogger
     public function __construct(
         private ?DatabaseManager $db = null,
         private ?SessionInterface $session = null
-    )
-    {
+    ) {
     }
 
     /** @param array<string, mixed> $context */

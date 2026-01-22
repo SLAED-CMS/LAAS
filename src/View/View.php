@@ -1,31 +1,30 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\View;
 
-use Laas\Http\Request;
-use Laas\Http\Response;
+use Laas\Auth\AuthInterface;
+use Laas\Database\DatabaseManager;
+use Laas\DevTools\DevToolsContext;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\HeadlessMode;
-use Laas\Auth\AuthInterface;
-use Laas\Security\Csrf;
+use Laas\Http\Request;
+use Laas\Http\RequestContext;
+use Laas\Http\Response;
 use Laas\I18n\Translator;
-use Laas\Settings\SettingsProvider;
-use Laas\Database\DatabaseManager;
-use Laas\Modules\Menu\Repository\MenusRepository;
 use Laas\Modules\Menu\Repository\MenuItemsRepository;
+use Laas\Modules\Menu\Repository\MenusRepository;
+use Laas\Security\Csrf;
+use Laas\Settings\SettingsProvider;
 use Laas\Support\Cache\CacheFactory;
 use Laas\Support\Cache\CacheKey;
 use Laas\Support\RequestScope;
-use Laas\DevTools\DevToolsContext;
-use Laas\Http\RequestContext;
-use Laas\View\AssetManager;
-use Laas\View\ViewModelInterface;
-use Laas\View\Template\TemplateEngine;
-use Laas\View\Template\TemplateCompiler;
-use Laas\View\Theme\ThemeManager;
 use Laas\Theme\ThemeCapabilities;
 use Laas\Ui\PresentationLeakDetector;
+use Laas\View\Template\TemplateCompiler;
+use Laas\View\Template\TemplateEngine;
+use Laas\View\Theme\ThemeManager;
 
 final class View
 {
@@ -79,8 +78,7 @@ final class View
         int $status = 200,
         array $headers = [],
         array $options = []
-    ): Response
-    {
+    ): Response {
         $data = $this->normalizeViewModels($data);
         $renderOptions = [
             'render_partial' => $this->request?->isHtmx() ?? false,
@@ -413,10 +411,10 @@ final class View
 
         $out = [];
         foreach ($data as $key => $value) {
-        if ($value instanceof ViewModelInterface) {
-            $out[$key] = $value->toArray();
-            continue;
-        }
+            if ($value instanceof ViewModelInterface) {
+                $out[$key] = $value->toArray();
+                continue;
+            }
             if (is_array($value)) {
                 $out[$key] = $this->normalizeViewModels($value);
                 continue;

@@ -1,12 +1,13 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\View\Template;
 
 use Laas\Support\Audit;
 use Laas\Support\RequestScope;
-use Laas\View\Theme\ThemeManager;
 use Laas\View\SanitizedHtml;
+use Laas\View\Theme\ThemeManager;
 use RuntimeException;
 
 final class TemplateEngine

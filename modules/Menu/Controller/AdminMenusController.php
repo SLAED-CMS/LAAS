@@ -1,21 +1,22 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Menu\Controller;
 
 use Laas\Api\ApiCacheInvalidator;
 use Laas\Core\Container\Container;
-use Laas\Core\Validation\Validator;
 use Laas\Core\Validation\ValidationResult;
-use Laas\Domain\Rbac\RbacServiceInterface;
+use Laas\Core\Validation\Validator;
 use Laas\Domain\Menus\MenusReadServiceInterface;
 use Laas\Domain\Menus\MenusWriteServiceInterface;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
+use Laas\Modules\Menu\Service\MenuCacheInvalidator;
 use Laas\Support\Audit;
 use Laas\Support\UrlValidator;
-use Laas\Modules\Menu\Service\MenuCacheInvalidator;
 use Laas\View\SanitizedHtml;
 use Laas\View\View;
 use Throwable;

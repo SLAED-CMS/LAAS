@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Users;
@@ -9,10 +10,9 @@ use Laas\Auth\NullAuthService;
 use Laas\Auth\TotpService;
 use Laas\Core\Container\Container;
 use Laas\Database\DatabaseManager;
-use Laas\Database\Repositories\PasswordResetRepository;
 use Laas\Database\Repositories\UsersRepository;
-use Laas\Domain\Users\UsersService;
 use Laas\Domain\Users\UsersReadServiceInterface;
+use Laas\Domain\Users\UsersService;
 use Laas\Domain\Users\UsersWriteServiceInterface;
 use Laas\Modules\ModuleInterface;
 use Laas\Modules\Users\Controller\AuthController;
@@ -21,10 +21,8 @@ use Laas\Modules\Users\Controller\TwoFactorController;
 use Laas\Routing\Router;
 use Laas\Security\RateLimiter;
 use Laas\Session\SessionInterface;
-use Laas\Support\Mail\MailerInterface;
 use Laas\Support\Mail\PhpMailer;
 use Laas\View\View;
-use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 final class UsersModule implements ModuleInterface

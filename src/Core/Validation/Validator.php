@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Core\Validation;
@@ -40,7 +41,7 @@ final class Validator
         }
 
         $parts = array_map('trim', explode('|', $rules));
-        return array_values(array_filter($parts, static fn(string $part): bool => $part !== ''));
+        return array_values(array_filter($parts, static fn (string $part): bool => $part !== ''));
     }
 
     /** @return array{0: string, 1: array<string, mixed>} */

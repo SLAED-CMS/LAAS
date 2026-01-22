@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.43 — Code style formatting (2026-01-22)
+- Apply PHP-CS-Fixer across src and modules (PSR-12 baseline)
+- No functional changes intended
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.42 — QA gates (2026-01-22)
 - Add PHPStan + PHP-CS-Fixer configs and composer QA scripts
 - Use tools/composer.cmd as canonical composer entry point on Windows/OSPanel

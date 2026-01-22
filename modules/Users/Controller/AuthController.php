@@ -1,12 +1,13 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Users\Controller;
 
-use Laas\Core\Validation\Validator;
-use Laas\Core\Validation\ValidationResult;
 use Laas\Auth\AuthInterface;
 use Laas\Auth\TotpService;
+use Laas\Core\Validation\ValidationResult;
+use Laas\Core\Validation\Validator;
 use Laas\Domain\Users\UsersReadServiceInterface;
 use Laas\Domain\Users\UsersWriteServiceInterface;
 use Laas\Http\Request;

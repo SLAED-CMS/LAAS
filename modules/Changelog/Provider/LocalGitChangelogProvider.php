@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Changelog\Provider;
@@ -120,7 +121,7 @@ final class LocalGitChangelogProvider implements ChangelogProviderInterface
 
         $proc = proc_open($command, $descriptors, $pipes);
         if (!is_resource($proc)) {
-            error_log("[LocalGit] runCommand() - FAILED: proc_open failed");
+            error_log('[LocalGit] runCommand() - FAILED: proc_open failed');
             throw new RuntimeException('git exec failed: could not start process');
         }
 
@@ -145,7 +146,7 @@ final class LocalGitChangelogProvider implements ChangelogProviderInterface
         }
 
         $stdoutStr = is_string($stdout) ? $stdout : '';
-        error_log("[LocalGit] runCommand() - SUCCESS, output length: " . strlen($stdoutStr));
+        error_log('[LocalGit] runCommand() - SUCCESS, output length: ' . strlen($stdoutStr));
         return $stdoutStr;
     }
 

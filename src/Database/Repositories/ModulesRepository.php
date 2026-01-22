@@ -1,10 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Database\Repositories;
 
-use PDO;
 use Laas\Support\RequestScope;
+use PDO;
 
 final class ModulesRepository
 {

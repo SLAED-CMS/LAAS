@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Changelog\Controller;
@@ -449,7 +450,7 @@ final class AdminChangelogController
             return '';
         }
 
-        $parts = array_values(array_filter(explode('/', $path), static fn(string $part): bool => $part !== ''));
+        $parts = array_values(array_filter(explode('/', $path), static fn (string $part): bool => $part !== ''));
         $count = count($parts);
         if ($count <= 2) {
             return $path;
@@ -535,7 +536,7 @@ final class AdminChangelogController
     /** @return array<int, array<string, mixed>> */
     private function bodyBlocks(string $body): array
     {
-        $lines = preg_split("/\\r?\\n/", $body) ?: [];
+        $lines = preg_split('/\\r?\\n/', $body) ?: [];
         $blocks = [];
         $currentList = null;
 
@@ -550,11 +551,11 @@ final class AdminChangelogController
             if ($isList) {
                 $item = preg_replace('/^([-*+]|\\d+\\.)\\s+/', '', $line) ?? $line;
                 if ($currentList === null) {
-            $blocks[] = [
-                'is_list' => true,
-                'items' => [$item],
-                'text' => '',
-            ];
+                    $blocks[] = [
+                        'is_list' => true,
+                        'items' => [$item],
+                        'text' => '',
+                    ];
                     $currentList = count($blocks) - 1;
                 } else {
                     $blocks[$currentList]['items'][] = $item;

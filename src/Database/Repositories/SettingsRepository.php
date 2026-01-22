@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Database\Repositories;
@@ -152,11 +153,11 @@ final class SettingsRepository
     public function invalidateSettings(): void
     {
         if ($this->shouldLog()) {
-            error_log("[SettingsRepo] invalidateSettings() - clearing ALL settings cache");
+            error_log('[SettingsRepo] invalidateSettings() - clearing ALL settings cache');
         }
         $this->cache->delete(CacheKey::settingsAll());
         if ($this->shouldLog()) {
-            error_log("[SettingsRepo] invalidateSettings() - DONE");
+            error_log('[SettingsRepo] invalidateSettings() - DONE');
         }
     }
 
@@ -164,21 +165,21 @@ final class SettingsRepository
     public function getAll(): array
     {
         if ($this->shouldLog()) {
-            error_log("[SettingsRepo] getAll() START");
+            error_log('[SettingsRepo] getAll() START');
         }
         $cached = $this->cache->get(CacheKey::settingsAll());
         if ($this->shouldLog()) {
-            error_log("[SettingsRepo] getAll() - cache: " . ($cached === null ? 'NULL' : 'EXISTS'));
+            error_log('[SettingsRepo] getAll() - cache: ' . ($cached === null ? 'NULL' : 'EXISTS'));
         }
         if (is_array($cached) && isset($cached['values']) && is_array($cached['values'])) {
             if ($this->shouldLog()) {
-                error_log("[SettingsRepo] getAll() - returning cached values, keys: " . implode(', ', array_keys($cached['values'])));
+                error_log('[SettingsRepo] getAll() - returning cached values, keys: ' . implode(', ', array_keys($cached['values'])));
             }
             return $cached['values'];
         }
 
         if ($this->shouldLog()) {
-            error_log("[SettingsRepo] getAll() - cache miss, loading from DB");
+            error_log('[SettingsRepo] getAll() - cache miss, loading from DB');
         }
         $stmt = $this->pdo->query('SELECT `key`, `value`, `type` FROM settings');
         $rows = $stmt !== false ? $stmt->fetchAll() : [];
@@ -192,7 +193,7 @@ final class SettingsRepository
         }
 
         if ($this->shouldLog()) {
-            error_log("[SettingsRepo] getAll() - loaded from DB, keys: " . implode(', ', array_keys($values)));
+            error_log('[SettingsRepo] getAll() - loaded from DB, keys: ' . implode(', ', array_keys($values)));
         }
 
         $sources = [];
@@ -201,7 +202,7 @@ final class SettingsRepository
         }
 
         if ($this->shouldLog()) {
-            error_log("[SettingsRepo] getAll() - setting cache");
+            error_log('[SettingsRepo] getAll() - setting cache');
         }
         $this->cache->set(CacheKey::settingsAll(), [
             'values' => $values,

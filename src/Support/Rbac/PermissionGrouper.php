@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Support\Rbac;
@@ -34,7 +35,7 @@ final class PermissionGrouper
         }
 
         foreach ($grouped as $prefix => $items) {
-            usort($items, static fn(array $a, array $b): int => strcmp($a['name'], $b['name']));
+            usort($items, static fn (array $a, array $b): int => strcmp($a['name'], $b['name']));
             $grouped[$prefix] = $items;
         }
 

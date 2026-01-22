@@ -1,8 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Admin\Controller;
 
+use InvalidArgumentException;
 use Laas\Ai\Dev\DevAutopilot;
 use Laas\Ai\Diff\UnifiedDiffRenderer;
 use Laas\Ai\Proposal;
@@ -13,7 +15,6 @@ use Laas\Http\ErrorCode;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\View\View;
-use InvalidArgumentException;
 use RuntimeException;
 
 final class AdminAiController

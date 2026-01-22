@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Api\Controller;
@@ -9,8 +10,8 @@ use Laas\Core\Container\Container;
 use Laas\Domain\Menus\MenusReadServiceInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Throwable;
 use Laas\View\View;
+use Throwable;
 
 final class MenusController
 {

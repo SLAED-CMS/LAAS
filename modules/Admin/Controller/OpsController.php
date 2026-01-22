@@ -1,11 +1,12 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Admin\Controller;
 
 use Laas\Core\Container\Container;
-use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Domain\Ops\OpsReadServiceInterface;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;

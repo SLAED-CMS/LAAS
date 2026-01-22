@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Database\Repositories;
@@ -125,7 +126,7 @@ final class RbacRepository
         $stmt->execute(['user_id' => $userId]);
         $rows = $stmt->fetchAll();
 
-        return array_map(static fn(array $row): string => (string) $row['name'], $rows);
+        return array_map(static fn (array $row): string => (string) $row['name'], $rows);
     }
 
     public function userHasRole(int $userId, string $roleName): bool
@@ -156,7 +157,7 @@ final class RbacRepository
                 return [];
             }
 
-            return array_values(array_filter(array_map(static fn(array $row): int => (int) ($row['role_id'] ?? 0), $rows)));
+            return array_values(array_filter(array_map(static fn (array $row): int => (int) ($row['role_id'] ?? 0), $rows)));
         });
     }
 
@@ -185,7 +186,7 @@ final class RbacRepository
             if ($this->usePermissionsCache) {
                 $cached = $this->cache->get(CacheKey::permissionsRole($roleId));
                 if (is_array($cached)) {
-                    return array_values(array_filter(array_map(static fn($name): string => (string) $name, $cached)));
+                    return array_values(array_filter(array_map(static fn ($name): string => (string) $name, $cached)));
                 }
             }
 
@@ -199,7 +200,7 @@ final class RbacRepository
                 return [];
             }
 
-            $names = array_values(array_filter(array_map(static fn(array $row): string => (string) ($row['name'] ?? ''), $rows)));
+            $names = array_values(array_filter(array_map(static fn (array $row): string => (string) ($row['name'] ?? ''), $rows)));
             if ($this->usePermissionsCache) {
                 $this->cache->set(CacheKey::permissionsRole($roleId), $names, $this->ttlPermissions);
             }
@@ -210,7 +211,7 @@ final class RbacRepository
     /** @param array<int, int> $permissionIds */
     public function setRolePermissions(int $roleId, array $permissionIds): array
     {
-        $permissionIds = array_values(array_unique(array_filter($permissionIds, static fn($id): bool => is_int($id) && $id > 0)));
+        $permissionIds = array_values(array_unique(array_filter($permissionIds, static fn ($id): bool => is_int($id) && $id > 0)));
 
         $existingIds = $this->permissions->listRolePermissionIds($roleId);
         $toAdd = array_values(array_diff($permissionIds, $existingIds));
@@ -250,7 +251,7 @@ final class RbacRepository
     /** @return array<int, array<int, string>> */
     public function getRolesForUsers(array $userIds): array
     {
-        $userIds = array_values(array_unique(array_filter($userIds, static fn($id): bool => is_int($id) && $id > 0)));
+        $userIds = array_values(array_unique(array_filter($userIds, static fn ($id): bool => is_int($id) && $id > 0)));
         if ($userIds === []) {
             return [];
         }

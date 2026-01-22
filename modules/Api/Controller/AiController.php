@@ -1,18 +1,20 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Api\Controller;
 
-use Laas\Api\ApiResponse;
+use DomainException;
 use Laas\Ai\Context\AiContextBuilder;
 use Laas\Ai\Context\Redactor;
 use Laas\Ai\Diff\UnifiedDiffRenderer;
+use Laas\Ai\Plan;
+use Laas\Ai\PlanRunner;
 use Laas\Ai\Provider\AiProviderInterface;
 use Laas\Ai\Provider\LocalDemoProvider;
 use Laas\Ai\Provider\RemoteHttpProvider;
-use Laas\Ai\Plan;
-use Laas\Ai\PlanRunner;
 use Laas\Ai\Tools\ToolRegistry;
+use Laas\Api\ApiResponse;
 use Laas\Core\Container\Container;
 use Laas\Http\ErrorCode;
 use Laas\Http\Request;
@@ -21,7 +23,6 @@ use Laas\Support\Audit;
 use Laas\Support\SafeHttpClient;
 use Laas\Support\UrlPolicy;
 use Laas\View\View;
-use DomainException;
 use RuntimeException;
 
 final class AiController

@@ -1,10 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\DevTools\Db;
 
-use Laas\DevTools\DevToolsContext;
 use Laas\Database\DbProfileCollector;
+use Laas\DevTools\DevToolsContext;
 use PDO;
 use PDOStatement;
 

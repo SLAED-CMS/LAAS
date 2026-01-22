@@ -1,11 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Database;
 
-use Laas\Database\DbProfileCollector;
-use Laas\DevTools\DevToolsContext;
 use Laas\DevTools\Db\ProxyPDO;
+use Laas\DevTools\DevToolsContext;
 use Laas\Support\RequestScope;
 use PDO;
 

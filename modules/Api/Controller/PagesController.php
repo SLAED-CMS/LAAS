@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Api\Controller;
@@ -6,15 +7,15 @@ namespace Laas\Modules\Api\Controller;
 use Laas\Api\ApiCache;
 use Laas\Api\ApiPagination;
 use Laas\Api\ApiResponse;
+use Laas\Content\Blocks\BlockRegistry;
 use Laas\Core\Container\Container;
 use Laas\Domain\Pages\PagesReadServiceInterface;
 use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Support\Search\SearchNormalizer;
-use Laas\Content\Blocks\BlockRegistry;
-use Throwable;
 use Laas\View\View;
+use Throwable;
 
 final class PagesController
 {

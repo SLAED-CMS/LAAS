@@ -1,17 +1,19 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Routing;
 
 use FastRoute\Dispatcher;
 use FastRoute\RouteCollector;
+
+use function FastRoute\simpleDispatcher;
+
 use Laas\Http\ErrorCode;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Support\RequestScope;
-
-use function FastRoute\simpleDispatcher;
 
 final class Router
 {

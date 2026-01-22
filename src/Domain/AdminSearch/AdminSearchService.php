@@ -1,15 +1,16 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Domain\AdminSearch;
 
+use Laas\Core\FeatureFlagsInterface;
 use Laas\Domain\Media\MediaService;
 use Laas\Domain\Menus\MenusService;
 use Laas\Domain\Pages\PagesService;
 use Laas\Domain\Security\SecurityReportsService;
 use Laas\Domain\Users\UsersService;
 use Laas\Modules\ModuleCatalog;
-use Laas\Core\FeatureFlagsInterface;
 use Laas\Support\Search\Highlighter;
 use Laas\Support\Search\SearchNormalizer;
 use Throwable;

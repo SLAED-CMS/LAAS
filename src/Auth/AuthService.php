@@ -1,11 +1,12 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Auth;
 
 use Laas\Database\Repositories\UsersRepository;
-use Laas\Support\RequestScope;
 use Laas\Session\SessionInterface;
+use Laas\Support\RequestScope;
 use Psr\Log\LoggerInterface;
 
 final class AuthService implements AuthInterface

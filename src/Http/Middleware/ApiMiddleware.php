@@ -1,14 +1,14 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Http\Middleware;
 
 use Laas\Api\ApiResponse;
-use Laas\Http\ErrorCode;
-use Laas\Http\ErrorResponse;
-use Laas\Api\ApiTokenService;
 use Laas\Auth\AuthorizationService;
 use Laas\Database\DatabaseManager;
+use Laas\Http\ErrorCode;
+use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Support\AuditLogger;

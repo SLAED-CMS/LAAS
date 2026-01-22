@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Domain\ApiTokens;
@@ -333,7 +334,7 @@ class ApiTokensService implements ApiTokensServiceInterface, ApiTokensReadServic
     private function decodeScopes(mixed $raw): array
     {
         if (is_array($raw)) {
-            return array_values(array_filter(array_map(static fn($item): string => (string) $item, $raw)));
+            return array_values(array_filter(array_map(static fn ($item): string => (string) $item, $raw)));
         }
         if (!is_string($raw) || $raw === '') {
             return [];

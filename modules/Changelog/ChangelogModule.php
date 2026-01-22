@@ -1,10 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Changelog;
 
-use Laas\Database\DatabaseManager;
 use Laas\Core\Container\Container;
+use Laas\Database\DatabaseManager;
 use Laas\Modules\ModuleInterface;
 use Laas\Routing\Router;
 use Laas\View\View;

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\System\Controller;
@@ -25,8 +26,7 @@ final class HealthController
         ?HealthService $healthService = null,
         private ?Container $container = null,
         ?Translator $translator = null
-    )
-    {
+    ) {
         $rootPath = dirname(__DIR__, 3);
         $appConfig = $this->loadConfig($rootPath . '/config/app.php');
         $mediaConfig = $this->loadConfig($rootPath . '/config/media.php');

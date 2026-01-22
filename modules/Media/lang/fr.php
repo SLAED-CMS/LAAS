@@ -1,7 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-return array (
+return  [
     'admin.nav.media' => 'Médias',
     'admin.media.title' => 'Bibliothèque de médias',
     'admin.media.upload' => 'Téléverser',
@@ -53,4 +54,4 @@ return array (
     'system.health.degraded' => 'Dégradé',
     'system.health.check_failed' => 'Vérification de santé échouée.',
     'system.config.invalid' => 'Configuration invalide.',
-);
+];

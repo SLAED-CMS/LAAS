@@ -1,16 +1,17 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Users\Controller;
 
-use Laas\Core\Validation\Validator;
 use Laas\Core\Validation\ValidationResult;
+use Laas\Core\Validation\Validator;
 use Laas\Domain\Users\UsersReadServiceInterface;
 use Laas\Domain\Users\UsersWriteServiceInterface;
-use Laas\Support\Mail\MailerInterface;
-use Laas\Security\RateLimiter;
 use Laas\Http\Request;
 use Laas\Http\Response;
+use Laas\Security\RateLimiter;
+use Laas\Support\Mail\MailerInterface;
 use Laas\View\View;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;

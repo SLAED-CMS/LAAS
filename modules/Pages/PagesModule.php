@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Pages;
@@ -15,8 +16,7 @@ final class PagesModule implements ModuleInterface
         private View $view,
         private ?DatabaseManager $db = null,
         private ?Container $container = null
-    )
-    {
+    ) {
     }
 
     public function registerRoutes(Router $router): void

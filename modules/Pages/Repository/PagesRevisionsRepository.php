@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Pages\Repository;
@@ -91,7 +92,7 @@ final class PagesRevisionsRepository
      */
     public function findLatestRevisionIdsByPageIds(array $pageIds): array
     {
-        $pageIds = array_values(array_filter($pageIds, static fn(int $id): bool => $id > 0));
+        $pageIds = array_values(array_filter($pageIds, static fn (int $id): bool => $id > 0));
         if ($pageIds === []) {
             return [];
         }

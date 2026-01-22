@@ -1,12 +1,13 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Admin\Controller;
 
 use Laas\Core\Container\Container;
 use Laas\Core\FeatureFlagsInterface;
-use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Domain\AdminSearch\AdminSearchServiceInterface;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;

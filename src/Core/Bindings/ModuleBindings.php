@@ -1,10 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Core\Bindings;
 
-use Laas\Core\Container\Container;
 use Laas\Content\Blocks\BlockRegistry;
+use Laas\Core\Container\Container;
 use Laas\Modules\Changelog\Service\ChangelogService;
 use Laas\Modules\Changelog\Support\ChangelogCache;
 use Laas\Modules\Media\Service\MediaSignedUrlService;

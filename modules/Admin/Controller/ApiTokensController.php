@@ -1,13 +1,14 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Admin\Controller;
 
 use Laas\Core\Container\Container;
-use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Domain\ApiTokens\ApiTokensReadServiceInterface;
 use Laas\Domain\ApiTokens\ApiTokensServiceException;
 use Laas\Domain\ApiTokens\ApiTokensWriteServiceInterface;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
@@ -552,7 +553,7 @@ final class ApiTokensController
         $raw = $input['scopes'] ?? [];
         if (is_string($raw)) {
             $parts = array_map('trim', explode(',', $raw));
-            return array_values(array_filter($parts, static fn(string $part): bool => $part !== ''));
+            return array_values(array_filter($parts, static fn (string $part): bool => $part !== ''));
         }
         if (!is_array($raw)) {
             return [];
@@ -744,7 +745,7 @@ final class ApiTokensController
     private function decodeScopes(mixed $raw): array
     {
         if (is_array($raw)) {
-            return array_values(array_filter(array_map(static fn($item): string => (string) $item, $raw)));
+            return array_values(array_filter(array_map(static fn ($item): string => (string) $item, $raw)));
         }
         if (!is_string($raw) || $raw === '') {
             return [];

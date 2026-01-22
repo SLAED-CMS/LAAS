@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Api\Controller;
@@ -6,14 +7,14 @@ namespace Laas\Modules\Api\Controller;
 use Laas\Api\ApiResponse;
 use Laas\Content\Blocks\BlockRegistry;
 use Laas\Core\Container\Container;
+use Laas\Domain\Media\MediaReadServiceInterface;
 use Laas\Domain\Pages\Dto\PageSummary;
 use Laas\Domain\Pages\Dto\PageView;
-use Laas\Domain\Media\MediaReadServiceInterface;
 use Laas\Domain\Pages\PagesReadServiceInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Throwable;
 use Laas\View\View;
+use Throwable;
 
 final class PagesV2Controller
 {
@@ -61,7 +62,7 @@ final class PagesV2Controller
         } catch (Throwable) {
             return ApiResponse::error('service_unavailable', 'Service Unavailable', [], 503);
         }
-        $pageIds = array_map(static fn(PageSummary $row): int => $row->id(), $rows);
+        $pageIds = array_map(static fn (PageSummary $row): int => $row->id(), $rows);
         $revisions = $service->findLatestRevisionIds($pageIds);
         $latestRevisionId = $this->maxRevisionId($revisions);
 
@@ -376,7 +377,7 @@ final class PagesV2Controller
             }
         }
 
-        $ids = array_values(array_unique(array_filter($ids, static fn(int $id): bool => $id > 0)));
+        $ids = array_values(array_unique(array_filter($ids, static fn (int $id): bool => $id > 0)));
         if ($ids === []) {
             return [];
         }

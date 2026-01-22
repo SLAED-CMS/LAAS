@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Http\Middleware;
@@ -203,8 +204,8 @@ final class ApiTokenAuthMiddleware implements MiddlewareInterface
     private function normalizeScopes(mixed $raw): array
     {
         if (is_array($raw)) {
-            $items = array_map(static fn($item): string => strtolower(trim((string) $item)), $raw);
-            $items = array_values(array_filter($items, static fn(string $item): bool => $item !== ''));
+            $items = array_map(static fn ($item): string => strtolower(trim((string) $item)), $raw);
+            $items = array_values(array_filter($items, static fn (string $item): bool => $item !== ''));
             if (in_array('*', $items, true)) {
                 return ['*'];
             }

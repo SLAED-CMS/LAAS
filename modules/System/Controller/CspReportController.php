@@ -1,11 +1,12 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\System\Controller;
 
 use Laas\Core\Container\Container;
-use Laas\Domain\Security\SecurityReportsWriteServiceInterface;
 use Laas\DevTools\DevToolsContext;
+use Laas\Domain\Security\SecurityReportsWriteServiceInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\I18n\Translator;
@@ -25,8 +26,7 @@ final class CspReportController
         private ?Container $container = null,
         ?Translator $translator = null,
         ?LoggerInterface $logger = null
-    )
-    {
+    ) {
         $rootPath = dirname(__DIR__, 3);
         $appConfig = $this->loadConfig($rootPath . '/config/app.php');
 
