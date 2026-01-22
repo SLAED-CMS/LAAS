@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.60 — Core: bootstrap pipeline skeleton (2026-01-22)
+- Add Bootstrap/ skeleton (BootContext, BootstrapperInterface, BootstrapsRunner)
+- Wire runner into Kernel with empty bootstrap list (no behavior change)
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.59 — Themes: Theme API v1 (2026-01-22)
 - Add ThemeRegistry + TemplateResolver + ThemeInterface
 - Integrate theme selection into View with non-breaking defaults

@@ -9,6 +9,8 @@ use Laas\Auth\AuthInterface;
 use Laas\Auth\AuthorizationService;
 use Laas\Auth\AuthService;
 use Laas\Auth\NullAuthService;
+use Laas\Bootstrap\BootContext;
+use Laas\Bootstrap\BootstrapsRunner;
 use Laas\Content\Blocks\BlockRegistry;
 use Laas\Core\Bindings\BindingsContext;
 use Laas\Core\Bindings\CoreBindings;
@@ -84,6 +86,14 @@ final class Kernel
         $this->container = new Container();
         BindingsContext::set($this, $this->config, $this->rootPath);
         $this->registerBindings($this->container);
+        $appConfig = $this->config['app'] ?? [];
+        $runner = new BootstrapsRunner([]);
+        $runner->run(new BootContext(
+            $this->rootPath,
+            $this->container,
+            $this->config,
+            (bool) ($appConfig['debug'] ?? false)
+        ));
     }
 
     public function handle(Request $request): Response
