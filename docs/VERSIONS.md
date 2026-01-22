@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.62 — Bootstrap: Observability via events (2026-01-22)
+- Add ObservabilityBootstrap registering Request/Response event listeners
+- In debug mode, emit X-Response-Time-Ms header (non-production)
+### Upgrade notes (Enable bootstraps to activate; response time header only in debug)
+### Breaking changes (None)
+
 ## v4.0.61 — Bootstrap: SecurityBootstrap scaffold (2026-01-22)
 - Add SecurityBootstrap (scaffold) and feature-flagged bootstraps execution (default off)
 - Add tests for conditional bootstrap execution

@@ -11,6 +11,7 @@ use Laas\Auth\AuthService;
 use Laas\Auth\NullAuthService;
 use Laas\Bootstrap\BootContext;
 use Laas\Bootstrap\BootstrapsRunner;
+use Laas\Bootstrap\ObservabilityBootstrap;
 use Laas\Bootstrap\SecurityBootstrap;
 use Laas\Content\Blocks\BlockRegistry;
 use Laas\Core\Bindings\BindingsContext;
@@ -89,7 +90,7 @@ final class Kernel
         $this->registerBindings($this->container);
         $appConfig = $this->config['app'] ?? [];
         $bootEnabled = (bool) ($appConfig['bootstraps_enabled'] ?? false);
-        $bootstraps = $bootEnabled ? [new SecurityBootstrap()] : [];
+        $bootstraps = $bootEnabled ? [new SecurityBootstrap(), new ObservabilityBootstrap()] : [];
         $runner = new BootstrapsRunner($bootstraps);
         $runner->run(new BootContext(
             $this->rootPath,
