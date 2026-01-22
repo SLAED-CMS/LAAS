@@ -1,5 +1,12 @@
 # LAAS Versions
 
+## v4.0.40 — Baseline (2026-01-22)
+- Start semantic versioning for LAAS CMS (v4+), baseline at v4.0.40
+- Establish release notes in docs/VERSIONS.md
+- No functional changes intended
+### Upgrade notes (None)
+### Breaking changes (None)
+
 - v4.0.20: Service Layer + Theme API v2 + Headless v2 (Unreleased)
   - DI Container MVP (foundation for service layer)
   - PagesService MVP (Service Layer introduction)
