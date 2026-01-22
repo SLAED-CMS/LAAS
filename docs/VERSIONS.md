@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.48 — PHPStan: AdminAiController typed data (2026-01-22)
+- Add iterable value types to Admin AI render helpers to reduce baseline
+- No functional changes intended
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.47 — PHPStan: AdminAiController cleanups (2026-01-22)
 - Remove redundant null-coalescing and tighten out-param typing to reduce baseline
 - No functional changes intended

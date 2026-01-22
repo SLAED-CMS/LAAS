@@ -184,6 +184,7 @@ final class AdminAiController
         return null;
     }
 
+    /** @param array<string, mixed> $data */
     private function renderSaveResult(array $data, int $status): Response
     {
         return $this->view->render('partials/ai_save_result.html', $data, $status, [], [
@@ -192,6 +193,7 @@ final class AdminAiController
         ]);
     }
 
+    /** @param array<string, mixed> $data */
     private function renderDevAutopilotResult(array $data, int $status): Response
     {
         return $this->view->render('partials/ai_dev_autopilot_result.html', $data, $status, [], [

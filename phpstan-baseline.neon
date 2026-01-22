@@ -7,18 +7,6 @@ parameters:
 			path: modules/Admin/AdminModule.php
 
 		-
-			message: '#^Method Laas\\Modules\\Admin\\Controller\\AdminAiController\:\:renderDevAutopilotResult\(\) has parameter \$data with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: modules/Admin/Controller/AdminAiController.php
-
-		-
-			message: '#^Method Laas\\Modules\\Admin\\Controller\\AdminAiController\:\:renderSaveResult\(\) has parameter \$data with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: modules/Admin/Controller/AdminAiController.php
-
-		-
 			message: '#^Method Laas\\Modules\\Admin\\Controller\\AdminSearchController\:\:canAny\(\) has parameter \$permissions with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
