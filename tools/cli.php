@@ -10,6 +10,9 @@ use Laas\Ai\ProposalStore;
 use Laas\Ai\ProposalValidator;
 use Laas\Ai\Dev\DevAutopilot;
 use Laas\Ai\Dev\ModuleScaffolder;
+use Laas\Bootstrap\BootstrapsCliReporter;
+use Laas\Bootstrap\BootstrapsConfigResolver;
+use Laas\Bootstrap\BootstrapperInterface;
 use Laas\Database\DatabaseManager;
 use Laas\Database\DbIndexInspector;
 use Laas\Database\Migrations\Migrator;
@@ -119,6 +122,87 @@ $getDbRepos = static function () use (&$dbRepos, $dbManager): ?array {
 };
 
 $commands = [];
+
+$commands['boot:dump'] = function () use ($appConfig): int {
+    $bootEnabled = (bool) ($appConfig['bootstraps_enabled'] ?? false);
+    $flags = [
+        'bootstraps_enabled' => $bootEnabled,
+        'bootstraps_modules_takeover' => (bool) ($appConfig['bootstraps_modules_takeover'] ?? false),
+        'routing_cache_warm' => (bool) ($appConfig['routing_cache_warm'] ?? false),
+        'routing_cache_warm_force' => (bool) ($appConfig['routing_cache_warm_force'] ?? false),
+        'view_sanity_strict' => (bool) ($appConfig['view_sanity_strict'] ?? false),
+    ];
+
+    $resolver = new BootstrapsConfigResolver();
+    $bootstraps = $resolver->resolve($appConfig, $bootEnabled);
+    echo BootstrapsCliReporter::formatDump($flags, $bootstraps);
+    return 0;
+};
+
+$commands['boot:check'] = function () use ($appConfig): int {
+    $bootEnabled = (bool) ($appConfig['bootstraps_enabled'] ?? false);
+    if (!$bootEnabled) {
+        echo "bootstraps disabled\n";
+        return 0;
+    }
+
+    $configured = $appConfig['bootstraps'] ?? [];
+    if (!is_array($configured)) {
+        $configured = [];
+    }
+
+    $tokenMap = BootstrapsConfigResolver::tokenMap();
+    $classMap = array_flip($tokenMap);
+    $unknown = [];
+
+    foreach ($configured as $name) {
+        $value = (string) $name;
+        if ($value === '') {
+            continue;
+        }
+        if (str_contains($value, '\\')) {
+            $fqcn = ltrim($value, '\\');
+            if (!isset($classMap[$fqcn])) {
+                $unknown[] = $value;
+            }
+            continue;
+        }
+
+        $key = strtolower($value);
+        if (!isset($tokenMap[$key])) {
+            $unknown[] = $value;
+        }
+    }
+
+    if ($unknown !== []) {
+        echo "unknown bootstraps:\n";
+        foreach ($unknown as $item) {
+            echo '- ' . $item . "\n";
+        }
+        return 1;
+    }
+
+    $resolver = new BootstrapsConfigResolver();
+    $bootstraps = $resolver->resolve($appConfig, $bootEnabled);
+    $invalid = [];
+    foreach ($bootstraps as $bootstrap) {
+        $fqcn = $bootstrap::class;
+        if (!class_exists($fqcn) || !$bootstrap instanceof BootstrapperInterface) {
+            $invalid[] = $fqcn;
+        }
+    }
+
+    if ($invalid !== []) {
+        echo "invalid bootstraps:\n";
+        foreach ($invalid as $item) {
+            echo '- ' . $item . "\n";
+        }
+        return 1;
+    }
+
+    echo "ok\n";
+    return 0;
+};
 
 $commands['templates:clear'] = function () use ($rootPath): int {
     $dir = $rootPath . '/storage/cache/templates';

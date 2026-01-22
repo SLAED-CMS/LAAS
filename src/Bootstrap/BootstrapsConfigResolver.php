@@ -7,6 +7,20 @@ namespace Laas\Bootstrap;
 final class BootstrapsConfigResolver
 {
     /**
+     * @return array<string, class-string>
+     */
+    public static function tokenMap(): array
+    {
+        return [
+            'security' => SecurityBootstrap::class,
+            'observability' => ObservabilityBootstrap::class,
+            'modules' => ModulesBootstrap::class,
+            'routing' => RoutingBootstrap::class,
+            'view' => ViewBootstrap::class,
+        ];
+    }
+
+    /**
      * @param array<string, mixed> $appConfig
      * @return list<BootstrapperInterface>
      */
@@ -27,13 +41,7 @@ final class BootstrapsConfigResolver
             ];
         }
 
-        $tokenMap = [
-            'security' => SecurityBootstrap::class,
-            'observability' => ObservabilityBootstrap::class,
-            'modules' => ModulesBootstrap::class,
-            'routing' => RoutingBootstrap::class,
-            'view' => ViewBootstrap::class,
-        ];
+        $tokenMap = self::tokenMap();
         $classMap = array_flip($tokenMap);
 
         $bootstraps = [];
