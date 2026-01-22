@@ -10,6 +10,8 @@
 /.osp/
 *.log
 .phpunit.result.cache
+.php-cs-fixer.cache
+.php-cs-fixer.cache.*
 config/security.local.php
 
 docs/audits/

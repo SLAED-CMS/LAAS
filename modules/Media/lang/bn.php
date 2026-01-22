@@ -1,7 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-return array (
+return  [
     'admin.nav.media' => 'à¦®à¦¿à¦¡à¦¿à¦¯à¦¼à¦¾',
     'admin.media.title' => 'à¦®à¦¿à¦¡à¦¿à¦¯à¦¼à¦¾ à¦²à¦¾à¦‡à¦¬à§à¦°à§‡à¦°à¦¿',
     'admin.media.upload' => 'à¦†à¦ªà¦²à§‹à¦¡',
@@ -53,4 +54,4 @@ return array (
     'system.health.degraded' => 'Degraded',
     'system.health.check_failed' => 'Health check failed.',
     'system.config.invalid' => 'Configuration is invalid.',
-);
+];

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Database\Repositories;
@@ -111,7 +112,7 @@ final class AuditLogRepository
             return [];
         }
 
-        return array_values(array_filter(array_map(static fn(array $row): string => (string) ($row['action'] ?? ''), $rows)));
+        return array_values(array_filter(array_map(static fn (array $row): string => (string) ($row['action'] ?? ''), $rows)));
     }
 
     /** @return array<int, array{user_id: int, username: string}> */

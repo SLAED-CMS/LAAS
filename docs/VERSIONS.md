@@ -1,4 +1,194 @@
-# LAAS Versions
+﻿# LAAS Versions
+
+## v4.0.70 — Bootstrap: takeover pipeline hardening (2026-01-22)
+- Add kernel-level takeover test proving module listeners run via HTTP event pipeline
+- Add bootstrap order guard test to prevent accidental reorder regressions
+### Upgrade notes (None)
+### Breaking changes (None)
+
+## v4.0.69 — Bootstrap: Modules takeover orchestration (opt-in) (2026-01-22)
+- Implement full module lifecycle orchestration in ModulesBootstrap under takeover flag
+- Support bindings/routes/listeners via ModuleLifecycleInterface; keep legacy ModuleInterface routes supported
+### Upgrade notes (Enable: app.bootstraps_enabled + app.bootstraps_modules_takeover)
+### Breaking changes (None)
+
+## v4.0.68 — Observability: request id single source (opt-in) (2026-01-22)
+- Add RequestId helper and unify X-Request-Id handling under ObservabilityBootstrap when bootstraps enabled
+- Ensure request-id is present in request context and response headers; keep response-time header debug-only
+### Upgrade notes (Enable bootstraps to activate unified behavior; default path unchanged)
+### Breaking changes (None)
+
+## v4.0.67 — Bootstrap: ViewBootstrap sanity (opt-in) (2026-01-22)
+- Add ViewBootstrap (sanity checks + ensure template cache dir)
+- Optional strict check via app.view_sanity_strict=true (dev only)
+### Upgrade notes (Enable bootstraps; optional strict sanity flag)
+### Breaking changes (None)
+
+## v4.0.66 — Bootstrap: RoutingBootstrap warm (opt-in) (2026-01-22)
+- Add RoutingBootstrap
+- Add optional config app.routing_cache_warm=true to warm route cache during bootstrap (dev/ops)
+### Upgrade notes (To use: enable bootstraps + set app.routing_cache_warm=true; optional force flag)
+### Breaking changes (None)
+
+## v4.0.65 — Bootstrap: unify takeover flow (2026-01-22)
+- Ensure ModulesBootstrap takeover runs only through BootstrapsRunner
+- Remove manual bootstrap invocation from Kernel (reduce double-boot risk)
+### Upgrade notes (None)
+### Breaking changes (None)
+
+## v4.0.64 — Bootstrap: Modules takeover (opt-in) (2026-01-22)
+- Add ModulesLoader extraction (no behavior change)
+- Add opt-in takeover flag: app.bootstraps_modules_takeover=true to move module bootstrapping into ModulesBootstrap
+### Upgrade notes (Enable only for dev: app.bootstraps_enabled + app.bootstraps_modules_takeover)
+### Breaking changes (None)
+
+## v4.0.63 — Bootstrap: Modules scaffold + lifecycle hooks (2026-01-22)
+- Add ModulesBootstrap scaffold (flag only, no behavior change)
+- Add optional ModuleLifecycleInterface + ModuleBootstrapAdapter (not yet used)
+### Upgrade notes (None)
+### Breaking changes (None)
+
+## v4.0.62 — Bootstrap: Observability via events (2026-01-22)
+- Add ObservabilityBootstrap registering Request/Response event listeners
+- In debug mode, emit X-Response-Time-Ms header (non-production)
+### Upgrade notes (Enable bootstraps to activate; response time header only in debug)
+### Breaking changes (None)
+
+## v4.0.61 — Bootstrap: SecurityBootstrap scaffold (2026-01-22)
+- Add SecurityBootstrap (scaffold) and feature-flagged bootstraps execution (default off)
+- Add tests for conditional bootstrap execution
+### Upgrade notes (To enable: set app.bootstraps_enabled=true in config for dev)
+### Breaking changes (None)
+
+## v4.0.60 — Core: bootstrap pipeline skeleton (2026-01-22)
+- Add Bootstrap/ skeleton (BootContext, BootstrapperInterface, BootstrapsRunner)
+- Wire runner into Kernel with empty bootstrap list (no behavior change)
+### Upgrade notes (None)
+### Breaking changes (None)
+
+## v4.0.59 — Themes: Theme API v1 (2026-01-22)
+- Add ThemeRegistry + TemplateResolver + ThemeInterface
+- Integrate theme selection into View with non-breaking defaults
+### Upgrade notes (Optional: add themes/<name>/views overrides; default theme always present)
+### Breaking changes (None)
+
+## v4.0.58 — Core: event dispatcher v1 (2026-01-22)
+- Add SimpleEventDispatcher with priorities and stoppable events
+- Emit RequestEvent/ResponseEvent around the HTTP pipeline for extensibility
+### Upgrade notes (Modules/themes can register listeners via container EventDispatcherInterface)
+### Breaking changes (None)
+
+## v4.0.57 — Docs: fix VERSIONS encoding (2026-01-22)
+- Fix UTF-8 mojibake in VERSIONS.md and normalize dash formatting
+- Add test guard to prevent encoding regressions on Windows
+### Upgrade notes (None)
+### Breaking changes (None)
+
+## v4.0.56 — Security: cache-backed rate limiter (2026-01-22)
+- Refactor RateLimiter to persist state via CacheInterface (FileCache by default)
+- Enables easy future switch to Redis without rewriting RateLimiter logic
+### Upgrade notes (Ensure storage/cache is writable; rate limit keys are prefixed ratelimit:)
+### Breaking changes (None)
+
+## v4.0.55 — Routing: remove closure handlers (2026-01-22)
+- Replace closure-based route handlers with serializable handlers to keep route cache enabled
+- Route cache safety fallback remains, but should not trigger in normal boot
+### Upgrade notes (None)
+### Breaking changes (None)
+
+## v4.0.54 — Perf tests: fix 500 responses (2026-01-22)
+- Fix underlying error causing perf budget endpoints to return 500 in tests
+- Improve test-mode diagnostics for HTTP 500 (guarded)
+### Upgrade notes (None)
+### Breaking changes (None)
+
+## v4.0.53 — Tooling: git LF hygiene (2026-01-22)
+- Normalize line endings using git:lf:fix and enforce LF via .gitattributes
+- Reduce strict test failures caused by CRLF drift
+### Upgrade notes (On Windows, run: php tools/cli.php git:lf:fix before strict checks)
+### Breaking changes (None)
+
+## v4.0.52 — Tooling: test targets (2026-01-22)
+- Add test:unit default target (excludes policy/perf) for local development
+- Keep test:all for full CI/strict verification
+### Upgrade notes (Use: tools\composer.cmd test for fast local; test:all for full)
+### Breaking changes (None)
+
+## v4.0.51 — Core: cache interface + file cache (2026-01-22)
+- Add CacheInterface and FileCache implementation (atomic writes, TTL)
+- Wire cache service into Kernel for future perf/security features
+### Upgrade notes (Ensure storage/cache is writable)
+### Breaking changes (None)
+
+## v4.0.50 — Routing: route cache (2026-01-22)
+- Enable FastRoute cached dispatcher with fingerprint-based invalidation
+- Reduce per-request overhead by caching compiled routes
+### Upgrade notes (Ensure storage/cache is writable; optionally run routes:cache:warm)
+### Breaking changes (None)
+
+## v4.0.49 — PHPStan: Pages public view model types (2026-01-22)
+- Add iterable value types to Pages public view model inputs to reduce baseline
+- No functional changes intended
+### Upgrade notes (None)
+### Breaking changes (None)
+
+## v4.0.48 — PHPStan: AdminAiController typed data (2026-01-22)
+- Add iterable value types to Admin AI render helpers to reduce baseline
+- No functional changes intended
+### Upgrade notes (None)
+### Breaking changes (None)
+
+## v4.0.47 — PHPStan: AdminAiController cleanups (2026-01-22)
+- Remove redundant null-coalescing and tighten out-param typing to reduce baseline
+- No functional changes intended
+### Upgrade notes (None)
+### Breaking changes (None)
+
+## v4.0.46 — PHPStan: typed View arrays (2026-01-22)
+- Add iterable value types to View/ViewModel contracts to reduce baseline noise
+- No functional changes intended
+### Upgrade notes (None)
+### Breaking changes (None)
+
+## v4.0.45 — Fix PHPStan blockers (2026-01-22)
+- Fix invalid inheritance: session classes no longer extend a final class
+- Restore green PHPStan gate
+### Upgrade notes (None)
+### Breaking changes (None)
+
+## v4.0.44 — PHPStan baseline (2026-01-22)
+- Generate phpstan-baseline.neon to track existing issues
+- Configure phpstan.neon to include baseline and prevent new regressions
+- No functional changes intended
+### Upgrade notes (Use: tools\composer.cmd qa:stan; reduce baseline over time)
+### Breaking changes (None)
+
+## v4.0.43 — Code style formatting (2026-01-22)
+- Apply PHP-CS-Fixer across src and modules (PSR-12 baseline)
+- No functional changes intended
+### Upgrade notes (None)
+### Breaking changes (None)
+
+## v4.0.42 — QA gates (2026-01-22)
+- Add PHPStan + PHP-CS-Fixer configs and composer QA scripts
+- Use tools/composer.cmd as canonical composer entry point on Windows/OSPanel
+- No functional changes intended
+### Upgrade notes (Use: tools\composer.cmd qa)
+### Breaking changes (None)
+
+## v4.0.41 — Tooling: Composer wrapper (2026-01-22)
+- Add project-local Composer wrapper for Windows/OSPanel (tools/composer.cmd, tools/composer.ps1)
+- Add tools/doctor.ps1 for environment diagnostics
+- No functional changes intended
+### Upgrade notes (Run tools/doctor.ps1; use tools/composer.cmd instead of global composer when needed)
+### Breaking changes (None)
+
+## v4.0.40 — Baseline (2026-01-22)
+- Start semantic versioning for LAAS CMS (v4+), baseline at v4.0.40
+- Establish release notes in docs/VERSIONS.md
+- No functional changes intended
+### Upgrade notes (None)
+### Breaking changes (None)
 
 - v4.0.20: Service Layer + Theme API v2 + Headless v2 (Unreleased)
   - DI Container MVP (foundation for service layer)

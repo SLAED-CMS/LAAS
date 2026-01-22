@@ -1,12 +1,15 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\View\Template;
 
 use Laas\Support\Audit;
 use Laas\Support\RequestScope;
-use Laas\View\Theme\ThemeManager;
+use Laas\Theme\TemplateResolver;
+use Laas\Theme\ThemeInterface;
 use Laas\View\SanitizedHtml;
+use Laas\View\Theme\ThemeManager;
 use RuntimeException;
 
 final class TemplateEngine
@@ -19,7 +22,9 @@ final class TemplateEngine
         private TemplateCompiler $compiler,
         private string $cachePath,
         private bool $debug,
-        string $rawMode = 'escape'
+        string $rawMode = 'escape',
+        private ?TemplateResolver $templateResolver = null,
+        private ?ThemeInterface $theme = null
     ) {
         $this->rawMode = $this->normalizeRawMode($rawMode);
     }
@@ -31,7 +36,7 @@ final class TemplateEngine
             'collect_blocks' => false,
         ], $options);
 
-        $templatePath = $this->themeManager->resolvePath($template);
+        $templatePath = $this->resolveTemplatePath($template);
         $source = (string) file_get_contents($templatePath);
         $parent = $this->compiler->extractExtends($source);
 
@@ -61,7 +66,7 @@ final class TemplateEngine
 
     public function includeTemplate(string $template, array $ctx, array $options): string
     {
-        $templatePath = $this->themeManager->resolvePath($template);
+        $templatePath = $this->resolveTemplatePath($template);
         $cacheFile = $this->compile($templatePath);
         $options['template'] = $template;
         $options['template_path'] = $templatePath;
@@ -87,7 +92,7 @@ final class TemplateEngine
 
     public function compileTemplate(string $template): string
     {
-        $templatePath = $this->themeManager->resolvePath($template);
+        $templatePath = $this->resolveTemplatePath($template);
         return $this->compile($templatePath);
     }
 
@@ -287,6 +292,15 @@ final class TemplateEngine
             return 'escape';
         }
         return $mode;
+    }
+
+    private function resolveTemplatePath(string $template): string
+    {
+        if ($this->templateResolver !== null && $this->theme instanceof ThemeInterface) {
+            return $this->templateResolver->resolve($template, $this->theme);
+        }
+
+        return $this->themeManager->resolvePath($template);
     }
 
     private function resolveTemplateName(array $options): string

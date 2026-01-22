@@ -1,12 +1,13 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\View\Theme;
 
 use Laas\DevTools\DevToolsContext;
-use Laas\Theme\ThemeCapabilities;
-use Laas\Support\RequestScope;
 use Laas\Settings\SettingsProvider;
+use Laas\Support\RequestScope;
+use Laas\Theme\ThemeCapabilities;
 use RuntimeException;
 
 final class ThemeManager

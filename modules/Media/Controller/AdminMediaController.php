@@ -1,24 +1,28 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Media\Controller;
 
 use Laas\Api\ApiCacheInvalidator;
 use Laas\Core\Container\Container;
-use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Domain\Media\MediaReadServiceInterface;
 use Laas\Domain\Media\MediaServiceException;
 use Laas\Domain\Media\MediaWriteServiceInterface;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\ErrorCode;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Laas\Modules\Media\Service\MimeSniffer;
 use Laas\Modules\Media\Service\MediaSignedUrlService;
+use Laas\Modules\Media\Service\MimeSniffer;
 use Laas\Modules\Media\Service\StorageService;
+use Laas\Security\CacheRateLimiterStore;
 use Laas\Security\RateLimiter;
+use Laas\Security\RateLimiterStoreInterface;
 use Laas\Support\Audit;
+use Laas\Support\Cache\CacheInterface;
 use Laas\Support\Search\Highlighter;
 use Laas\Support\Search\SearchNormalizer;
 use Laas\Support\Search\SearchQuery;
@@ -761,6 +765,24 @@ final class AdminMediaController
         return dirname(__DIR__, 3);
     }
 
+    private function rateLimiterStore(): ?RateLimiterStoreInterface
+    {
+        if ($this->container === null) {
+            return null;
+        }
+
+        try {
+            $cache = $this->container->get(CacheInterface::class);
+            if ($cache instanceof CacheInterface) {
+                return new CacheRateLimiterStore($cache);
+            }
+        } catch (Throwable) {
+            return null;
+        }
+
+        return null;
+    }
+
     private function mediaConfig(): array
     {
         $path = $this->rootPath() . '/config/media.php';
@@ -897,7 +919,7 @@ final class AdminMediaController
         $userId = $this->currentUserId($request);
 
         try {
-            $limiter = new RateLimiter($this->rootPath());
+            $limiter = new RateLimiter($this->rootPath(), $this->rateLimiterStore());
             $ipResult = $limiter->hit('media_upload_ip', $ip, $window, $max);
             $userResult = null;
             if ($userId !== null) {

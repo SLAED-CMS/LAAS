@@ -8,7 +8,9 @@ use Laas\Auth\TotpService;
 use Laas\Database\Repositories\UsersRepository;
 use Laas\Domain\Users\UsersService;
 use Laas\Http\Request;
+use Laas\Security\CacheRateLimiterStore;
 use Laas\Security\RateLimiter;
+use Laas\Support\Cache\CacheFactory;
 use Laas\Modules\Users\Controller\AuthController;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -112,12 +114,7 @@ final class AuthSessionSecurityTest extends TestCase
 
     private function clearRateLimit(): void
     {
-        $dir = $this->rootPath . '/storage/cache/ratelimit';
-        if (!is_dir($dir)) {
-            return;
-        }
-        foreach (glob($dir . '/*.json') ?: [] as $file) {
-            @unlink($file);
-        }
+        $store = new CacheRateLimiterStore(CacheFactory::create($this->rootPath));
+        $store->delete('login:127.0.0.1');
     }
 }

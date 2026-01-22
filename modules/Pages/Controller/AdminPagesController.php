@@ -1,33 +1,34 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Pages\Controller;
 
 use Laas\Api\ApiCacheInvalidator;
-use Laas\Core\Container\Container;
-use Laas\Core\Validation\Rules;
-use Laas\Core\Validation\Validator;
-use Laas\Core\Validation\ValidationResult;
-use Laas\Http\Request;
-use Laas\Http\Response;
-use Laas\Http\ErrorCode;
-use Laas\Http\ErrorResponse;
-use Laas\Domain\Pages\PagesReadServiceInterface;
-use Laas\Domain\Pages\PagesWriteServiceInterface;
-use Laas\Domain\Rbac\RbacServiceInterface;
-use Laas\Security\HtmlSanitizer;
-use Laas\Support\Audit;
-use Laas\Support\Search\Highlighter;
-use Laas\Support\Search\SearchNormalizer;
-use Laas\Support\Search\SearchQuery;
-use Laas\Support\RequestScope;
-use Laas\Ui\UiTokenMapper;
-use Laas\View\SanitizedHtml;
-use Laas\View\View;
 use Laas\Content\Blocks\BlockRegistry;
 use Laas\Content\Blocks\BlockValidationException;
 use Laas\Content\Blocks\ThemeContext;
+use Laas\Core\Container\Container;
+use Laas\Core\Validation\Rules;
+use Laas\Core\Validation\ValidationResult;
+use Laas\Core\Validation\Validator;
+use Laas\Domain\Pages\PagesReadServiceInterface;
+use Laas\Domain\Pages\PagesWriteServiceInterface;
+use Laas\Domain\Rbac\RbacServiceInterface;
+use Laas\Http\ErrorCode;
+use Laas\Http\ErrorResponse;
+use Laas\Http\Request;
+use Laas\Http\Response;
 use Laas\Modules\Pages\ViewModel\PagePublicViewModel;
+use Laas\Security\HtmlSanitizer;
+use Laas\Support\Audit;
+use Laas\Support\RequestScope;
+use Laas\Support\Search\Highlighter;
+use Laas\Support\Search\SearchNormalizer;
+use Laas\Support\Search\SearchQuery;
+use Laas\Ui\UiTokenMapper;
+use Laas\View\SanitizedHtml;
+use Laas\View\View;
 use Throwable;
 
 final class AdminPagesController

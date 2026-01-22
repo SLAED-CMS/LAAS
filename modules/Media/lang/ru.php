@@ -1,7 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-return array (
+return  [
     'admin.nav.media' => 'Медиа',
     'admin.media.title' => 'Библиотека медиа',
     'admin.media.upload' => 'Загрузить',
@@ -53,4 +54,4 @@ return array (
     'system.health.degraded' => 'Снижена',
     'system.health.check_failed' => 'Проверка работоспособности не пройдена.',
     'system.config.invalid' => 'Конфигурация недействительна.',
-);
+];

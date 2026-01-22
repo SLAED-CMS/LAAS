@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Changelog\Controller;
@@ -228,7 +229,7 @@ final class ChangelogController
             'file' => $filters['file'] ?? '',
             'datefrom' => $filters['date_from'] ?? '',
             'dateto' => $filters['date_to'] ?? '',
-        ], static fn(string $value): bool => $value !== '');
+        ], static fn (string $value): bool => $value !== '');
 
         if ($params === []) {
             return '';
@@ -274,7 +275,7 @@ final class ChangelogController
     /** @return array<int, array<string, mixed>> */
     private function bodyBlocks(string $body): array
     {
-        $lines = preg_split("/\\r?\\n/", $body) ?: [];
+        $lines = preg_split('/\\r?\\n/', $body) ?: [];
         $blocks = [];
         $currentList = null;
 
@@ -289,11 +290,11 @@ final class ChangelogController
             if ($isList) {
                 $item = preg_replace('/^([-*+]|\\d+\\.)\\s+/', '', $line) ?? $line;
                 if ($currentList === null) {
-            $blocks[] = [
-                'is_list' => true,
-                'items' => [$item],
-                'text' => '',
-            ];
+                    $blocks[] = [
+                        'is_list' => true,
+                        'items' => [$item],
+                        'text' => '',
+                    ];
                     $currentList = count($blocks) - 1;
                 } else {
                     $blocks[$currentList]['items'][] = $item;

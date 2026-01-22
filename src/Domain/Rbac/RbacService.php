@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Domain\Rbac;
@@ -187,7 +188,7 @@ class RbacService implements RbacServiceInterface
     /** @return array<int, string> */
     public function resolvePermissionNamesByIds(array $ids): array
     {
-        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn(int $id): bool => $id > 0)));
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0)));
         if ($ids === []) {
             return [];
         }

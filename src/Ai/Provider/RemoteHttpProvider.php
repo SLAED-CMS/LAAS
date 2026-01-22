@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Ai\Provider;
@@ -7,9 +8,7 @@ use DomainException;
 use Laas\Ai\Context\Redactor;
 use Laas\Support\Audit;
 use Laas\Support\SafeHttpClient;
-use Laas\Support\UrlPolicy;
 use RuntimeException;
-use Throwable;
 
 final class RemoteHttpProvider implements AiProviderInterface
 {

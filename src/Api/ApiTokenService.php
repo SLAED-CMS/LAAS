@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Api;
@@ -257,7 +258,7 @@ final class ApiTokenService
     private function decodeScopes(mixed $scopes): array
     {
         if (is_array($scopes)) {
-            return array_values(array_filter(array_map(static fn($item): string => (string) $item, $scopes)));
+            return array_values(array_filter(array_map(static fn ($item): string => (string) $item, $scopes)));
         }
         if (!is_string($scopes) || $scopes === '') {
             return [];

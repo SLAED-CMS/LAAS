@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Ai\Dev;
@@ -42,8 +43,7 @@ final class DevAutopilot
         bool $yes,
         bool $includePayload = false,
         bool $persist = true
-    ): array
-    {
+    ): array {
         $mode = $yes ? 'execute' : 'dry-run';
         $summary = [
             'mode' => $mode,

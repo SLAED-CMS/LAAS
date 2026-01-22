@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Ai\Dev;
@@ -145,6 +146,8 @@ final class ModuleScaffolder
             . "namespace Laas\\Modules\\{$name};\n\n"
             . "use Laas\\Database\\DatabaseManager;\n"
             . "use Laas\\Modules\\ModuleInterface;\n"
+            . "use Laas\\Routing\\RouteHandlerSpec;\n"
+            . "use Laas\\Routing\\RouteHandlerTokens;\n"
             . "use Laas\\Routing\\Router;\n"
             . "use Laas\\View\\View;\n\n"
             . "final class {$name}Module implements ModuleInterface\n"
@@ -156,6 +159,11 @@ final class ModuleScaffolder
             . "    }\n\n"
             . "    public function registerRoutes(Router \$router): void\n"
             . "    {\n"
+            . "        \$contextKey = self::class;\n"
+            . "        \$router->registerContext(\$contextKey, [\n"
+            . "            'view' => \$this->view,\n"
+            . "            'db' => \$this->db,\n"
+            . "        ]);\n\n"
             . "        \$routes = require __DIR__ . '/routes.php';\n"
             . "        foreach (\$routes as \$route) {\n"
             . "            [\$method, \$path, \$handler] = \$route;\n"
@@ -166,10 +174,13 @@ final class ModuleScaffolder
             . "            if (!is_string(\$class) || !is_string(\$action)) {\n"
             . "                continue;\n"
             . "            }\n\n"
-            . "            \$router->addRoute(\$method, \$path, function (\$request, array \$vars = []) use (\$class, \$action) {\n"
-            . "                \$controller = new \$class(\$this->view, \$this->db);\n"
-            . "                return \$controller->{\$action}(\$request, \$vars);\n"
-            . "            });\n"
+            . "            \$router->addRoute(\$method, \$path, RouteHandlerSpec::controller(\n"
+            . "                \$contextKey,\n"
+            . "                \$class,\n"
+            . "                \$action,\n"
+            . "                [RouteHandlerTokens::TOKEN_VIEW, RouteHandlerTokens::TOKEN_DB],\n"
+            . "                true\n"
+            . "            ));\n"
             . "        }\n"
             . "    }\n"
             . "}\n";

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Media\Repository;
@@ -376,7 +377,7 @@ final class MediaRepository
             $params['quarantine_path'] = (string) ($data['quarantine_path'] ?? '');
         }
 
-        $placeholders = array_map(static fn(string $name): string => ':' . $name, $columns);
+        $placeholders = array_map(static fn (string $name): string => ':' . $name, $columns);
         $sql = 'INSERT INTO media_files (' . implode(', ', $columns) . ') VALUES (' . implode(', ', $placeholders) . ')';
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);

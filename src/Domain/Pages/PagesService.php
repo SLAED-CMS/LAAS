@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Domain\Pages;
@@ -247,7 +248,7 @@ class PagesService implements PagesServiceInterface, PagesReadServiceInterface, 
     /** @return array<int, int> */
     public function findLatestRevisionIds(array $pageIds): array
     {
-        $pageIds = array_values(array_unique(array_filter(array_map('intval', $pageIds), static fn(int $id): bool => $id > 0)));
+        $pageIds = array_values(array_unique(array_filter(array_map('intval', $pageIds), static fn (int $id): bool => $id > 0)));
         if ($pageIds === []) {
             return [];
         }

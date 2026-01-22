@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Database\Repositories;
@@ -18,8 +19,7 @@ final class ApiTokensRepository
         string $tokenPrefix,
         array $scopes,
         ?string $expiresAt
-    ): int
-    {
+    ): int {
         $now = $this->now();
         $stmt = $this->pdo->prepare(
             'INSERT INTO api_tokens (user_id, name, token_hash, token_prefix, scopes, last_used_at, expires_at, revoked_at, created_at, updated_at)

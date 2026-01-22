@@ -1,0 +1,15 @@
+includes:
+    - phpstan-baseline.neon
+
+parameters:
+    level: 6
+    paths:
+        - Bootstrap
+        - src
+        - modules
+    excludePaths:
+        analyse:
+            - vendor
+            - storage
+    tmpDir: storage/cache/phpstan
+    reportUnmatchedIgnoredErrors: true

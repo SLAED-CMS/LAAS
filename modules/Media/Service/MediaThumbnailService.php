@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Media\Service;
@@ -19,8 +20,7 @@ final class MediaThumbnailService
         StorageService $storage,
         ?ImageDecoderInterface $decoder = null,
         ?AuditLogger $auditLogger = null
-    )
-    {
+    ) {
         $this->storage = $storage;
         $this->decoder = $decoder ?? $this->detectDecoder();
         $this->auditLogger = $auditLogger;

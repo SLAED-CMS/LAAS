@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Support\Rbac;
@@ -81,7 +82,7 @@ final class RbacDiagnosticsService
             }
         }
 
-        $roles = array_values(array_unique(array_filter($roles, static fn(string $role): bool => $role !== '')));
+        $roles = array_values(array_unique(array_filter($roles, static fn (string $role): bool => $role !== '')));
 
         return [
             'allowed' => $roles !== [],
@@ -137,7 +138,7 @@ final class RbacDiagnosticsService
     /** @param array<int, string> $roles */
     private function rolesLabel(array $roles): string
     {
-        $roles = array_values(array_filter($roles, static fn(string $role): bool => $role !== ''));
+        $roles = array_values(array_filter($roles, static fn (string $role): bool => $role !== ''));
         return implode(', ', $roles);
     }
 }

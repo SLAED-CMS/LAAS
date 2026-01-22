@@ -1,7 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-return array (
+return  [
     'admin.audit.action' => 'الإجراء',
     'admin.audit.context' => 'السياق',
     'admin.audit.date' => 'التاريخ',
@@ -170,4 +171,4 @@ return array (
     'admin.ops.section.cache' => 'ذاكرة التخزين المؤقت',
     'admin.ops.section.security' => 'الأمان',
     'admin.ops.refresh' => 'تحديث',
-);
+];

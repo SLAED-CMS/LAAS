@@ -1,26 +1,27 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\System\Controller;
 
 use Laas\Core\Container\Container;
+use Laas\DevTools\DevToolsContext;
 use Laas\Domain\Audit\AuditLogServiceInterface;
-use Laas\Domain\Menus\MenusReadServiceInterface;
 use Laas\Domain\Media\MediaReadServiceInterface;
+use Laas\Domain\Menus\MenusReadServiceInterface;
 use Laas\Domain\Pages\PagesReadServiceInterface;
 use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Domain\Settings\SettingsReadServiceInterface;
 use Laas\Domain\Users\UsersReadServiceInterface;
-use Laas\DevTools\DevToolsContext;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\Changelog\Service\ChangelogService;
 use Laas\Modules\Changelog\Support\ChangelogSettings;
 use Laas\Modules\Media\Service\StorageService;
+use Laas\Support\RequestScope;
 use Laas\Support\Search\Highlighter;
 use Laas\Support\Search\SearchNormalizer;
 use Laas\Support\Search\SearchQuery;
-use Laas\Support\RequestScope;
 use Laas\View\View;
 use RuntimeException;
 use Throwable;
@@ -40,8 +41,7 @@ final class HomeController
     public function __construct(
         private View $view,
         private ?Container $container = null
-    )
-    {
+    ) {
     }
 
     public function index(Request $request): Response
@@ -1023,7 +1023,7 @@ final class HomeController
             return $all;
         }
 
-        $blocks = array_values(array_filter($blocks, static fn($value): bool => is_string($value) && $value !== ''));
+        $blocks = array_values(array_filter($blocks, static fn ($value): bool => is_string($value) && $value !== ''));
         $blocks = array_values(array_intersect($all, $blocks));
         return $blocks !== [] ? $blocks : $all;
     }
@@ -1105,7 +1105,7 @@ final class HomeController
     /** @return array<int, array<string, mixed>> */
     private function bodyBlocks(string $body): array
     {
-        $lines = preg_split("/\\r?\\n/", $body) ?: [];
+        $lines = preg_split('/\\r?\\n/', $body) ?: [];
         $blocks = [];
         $currentList = null;
 
@@ -1120,11 +1120,11 @@ final class HomeController
             if ($isList) {
                 $item = preg_replace('/^([-*+]|\\d+\\.)\\s+/', '', $line) ?? $line;
                 if ($currentList === null) {
-            $blocks[] = [
-                'is_list' => true,
-                'items' => [$item],
-                'text' => '',
-            ];
+                    $blocks[] = [
+                        'is_list' => true,
+                        'items' => [$item],
+                        'text' => '',
+                    ];
                     $currentList = count($blocks) - 1;
                 } else {
                     $blocks[$currentList]['items'][] = $item;

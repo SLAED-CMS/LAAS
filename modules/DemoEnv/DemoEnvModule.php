@@ -1,9 +1,12 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\DemoEnv;
 
 use Laas\Modules\ModuleInterface;
+use Laas\Routing\RouteHandlerSpec;
+use Laas\Routing\RouteHandlerTokens;
 use Laas\Routing\Router;
 use Laas\View\View;
 
@@ -16,6 +19,11 @@ final class DemoEnvModule implements ModuleInterface
 
     public function registerRoutes(Router $router): void
     {
+        $contextKey = self::class;
+        $router->registerContext($contextKey, [
+            'view' => $this->view,
+        ]);
+
         $routes = require __DIR__ . '/routes.php';
         foreach ($routes as $route) {
             [$method, $path, $handler] = $route;
@@ -28,10 +36,13 @@ final class DemoEnvModule implements ModuleInterface
                 continue;
             }
 
-            $router->addRoute($method, $path, function ($request, array $vars = []) use ($class, $action) {
-                $controller = new $class($this->view);
-                return $controller->{$action}($request, $vars);
-            });
+            $router->addRoute($method, $path, RouteHandlerSpec::controller(
+                $contextKey,
+                $class,
+                $action,
+                RouteHandlerTokens::viewOnly(),
+                true
+            ));
         }
     }
 }

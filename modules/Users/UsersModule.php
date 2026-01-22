@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Users;
@@ -9,22 +10,25 @@ use Laas\Auth\NullAuthService;
 use Laas\Auth\TotpService;
 use Laas\Core\Container\Container;
 use Laas\Database\DatabaseManager;
-use Laas\Database\Repositories\PasswordResetRepository;
 use Laas\Database\Repositories\UsersRepository;
-use Laas\Domain\Users\UsersService;
 use Laas\Domain\Users\UsersReadServiceInterface;
+use Laas\Domain\Users\UsersService;
 use Laas\Domain\Users\UsersWriteServiceInterface;
+use Laas\Http\Request;
+use Laas\Http\Response;
 use Laas\Modules\ModuleInterface;
 use Laas\Modules\Users\Controller\AuthController;
 use Laas\Modules\Users\Controller\PasswordResetController;
 use Laas\Modules\Users\Controller\TwoFactorController;
+use Laas\Routing\RouteHandlerSpec;
 use Laas\Routing\Router;
+use Laas\Security\CacheRateLimiterStore;
 use Laas\Security\RateLimiter;
+use Laas\Security\RateLimiterStoreInterface;
 use Laas\Session\SessionInterface;
-use Laas\Support\Mail\MailerInterface;
+use Laas\Support\Cache\CacheInterface;
 use Laas\Support\Mail\PhpMailer;
 use Laas\View\View;
-use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 final class UsersModule implements ModuleInterface
@@ -38,6 +42,13 @@ final class UsersModule implements ModuleInterface
 
     public function registerRoutes(Router $router): void
     {
+        $contextKey = self::class;
+        $router->registerContext($contextKey, [
+            'view' => $this->view,
+            'container' => $this->container,
+            'module' => $this,
+        ]);
+
         $routes = require __DIR__ . '/routes.php';
         foreach ($routes as $route) {
             [$method, $path, $handler] = $route;
@@ -50,11 +61,17 @@ final class UsersModule implements ModuleInterface
                 continue;
             }
 
-            $router->addRoute($method, $path, function ($request, array $vars = []) use ($class, $action) {
-                $controller = $this->createController($class, $request->session());
-                return $controller->{$action}($request);
-            });
+            $router->addRoute($method, $path, RouteHandlerSpec::module($contextKey, $class, $action));
         }
+    }
+
+    /**
+     * @param array<string, string> $vars
+     */
+    public function dispatchRoute(string $class, string $action, Request $request, array $vars = []): Response
+    {
+        $controller = $this->createController($class, $request->session());
+        return $controller->{$action}($request);
     }
 
     private function createController(string $class, SessionInterface $session): object
@@ -78,7 +95,7 @@ final class UsersModule implements ModuleInterface
                 $usersReadService,
                 $usersWriteService,
                 new PhpMailer(null, $logger),
-                new RateLimiter(dirname(__DIR__, 2)),
+                new RateLimiter(dirname(__DIR__, 2), $this->rateLimiterStore()),
                 dirname(__DIR__, 2),
                 $logger
             ),
@@ -145,5 +162,23 @@ final class UsersModule implements ModuleInterface
         }
 
         return new UsersService($this->db);
+    }
+
+    private function rateLimiterStore(): ?RateLimiterStoreInterface
+    {
+        if ($this->container === null) {
+            return null;
+        }
+
+        try {
+            $cache = $this->container->get(CacheInterface::class);
+            if ($cache instanceof CacheInterface) {
+                return new CacheRateLimiterStore($cache);
+            }
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return null;
     }
 }

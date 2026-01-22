@@ -1,7 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-return array (
+return  [
     'admin.nav.media' => 'Vyombo vya habari',
     'admin.media.title' => 'Maktaba ya Media',
     'admin.media.upload' => 'Pakia',
@@ -53,4 +54,4 @@ return array (
     'system.health.degraded' => 'Degraded',
     'system.health.check_failed' => 'Health check failed.',
     'system.config.invalid' => 'Configuration is invalid.',
-);
+];

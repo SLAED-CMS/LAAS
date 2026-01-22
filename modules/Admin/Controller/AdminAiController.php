@@ -1,8 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Admin\Controller;
 
+use InvalidArgumentException;
 use Laas\Ai\Dev\DevAutopilot;
 use Laas\Ai\Diff\UnifiedDiffRenderer;
 use Laas\Ai\Proposal;
@@ -13,7 +15,6 @@ use Laas\Http\ErrorCode;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\View\View;
-use InvalidArgumentException;
 use RuntimeException;
 
 final class AdminAiController
@@ -130,9 +131,9 @@ final class AdminAiController
 
         $viewData = [
             'module_name' => $moduleName,
-            'module_path' => (string) ($result['module_path'] ?? ''),
-            'proposal_id' => (string) ($result['proposal_id'] ?? ''),
-            'plan_id' => (string) ($result['plan_id'] ?? ''),
+            'module_path' => (string) $result['module_path'],
+            'proposal_id' => (string) $result['proposal_id'],
+            'plan_id' => (string) $result['plan_id'],
             'plan_steps' => $steps,
             'proposal_json' => $proposalJson,
             'plan_json' => $planJson,
@@ -149,9 +150,10 @@ final class AdminAiController
     }
 
     /**
+     * @param-out bool $tooLarge
      * @return array<string, mixed>|null
      */
-    private function readProposal(Request $request, ?bool &$tooLarge = null): ?array
+    private function readProposal(Request $request, bool &$tooLarge): ?array
     {
         $tooLarge = false;
         $contentType = strtolower((string) ($request->getHeader('content-type') ?? ''));
@@ -179,10 +181,10 @@ final class AdminAiController
             return is_array($decoded) ? $decoded : null;
         }
 
-        $proposal = $request->post('proposal');
-        return is_array($proposal) ? $proposal : null;
+        return null;
     }
 
+    /** @param array<string, mixed> $data */
     private function renderSaveResult(array $data, int $status): Response
     {
         return $this->view->render('partials/ai_save_result.html', $data, $status, [], [
@@ -191,6 +193,7 @@ final class AdminAiController
         ]);
     }
 
+    /** @param array<string, mixed> $data */
     private function renderDevAutopilotResult(array $data, int $status): Response
     {
         return $this->view->render('partials/ai_dev_autopilot_result.html', $data, $status, [], [
@@ -208,9 +211,6 @@ final class AdminAiController
         $out = [];
         $index = 1;
         foreach ($diffBlocks as $block) {
-            if (!is_array($block)) {
-                continue;
-            }
             $block['collapse_id'] = $prefix . '-' . $index;
             $out[] = $block;
             $index++;

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Domain\Ops;
@@ -15,7 +16,6 @@ use Laas\Support\Cache\CacheFactory;
 use Laas\Support\ConfigSanityChecker;
 use Laas\Support\HealthService;
 use Laas\Support\SessionConfigValidator;
-use RuntimeException;
 use Throwable;
 
 class OpsService implements OpsServiceInterface, OpsReadServiceInterface

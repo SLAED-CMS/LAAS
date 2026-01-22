@@ -1,12 +1,13 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Api\Controller;
 
 use Laas\Api\ApiResponse;
 use Laas\Core\Container\Container;
-use Laas\Domain\ApiTokens\ApiTokensServiceException;
 use Laas\Domain\ApiTokens\ApiTokensReadServiceInterface;
+use Laas\Domain\ApiTokens\ApiTokensServiceException;
 use Laas\Domain\ApiTokens\ApiTokensWriteServiceInterface;
 use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Domain\Settings\SettingsReadServiceInterface;
@@ -17,8 +18,8 @@ use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Security\Csrf;
 use Laas\Support\Audit;
-use Throwable;
 use Laas\View\View;
+use Throwable;
 
 final class AuthController
 {
@@ -344,7 +345,7 @@ final class AuthController
         $raw = $input['scopes'] ?? [];
         if (is_string($raw)) {
             $parts = array_map('trim', explode(',', $raw));
-            return array_values(array_filter($parts, static fn(string $part): bool => $part !== ''));
+            return array_values(array_filter($parts, static fn (string $part): bool => $part !== ''));
         }
         if (!is_array($raw)) {
             return [];

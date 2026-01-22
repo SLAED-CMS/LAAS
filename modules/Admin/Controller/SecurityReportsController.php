@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Admin\Controller;
@@ -588,7 +589,7 @@ final class SecurityReportsController
 
     private function mapRowsForJson(array $rows): array
     {
-        return array_map(fn(array $row): array => $this->mapRowForJson($row), $rows);
+        return array_map(fn (array $row): array => $this->mapRowForJson($row), $rows);
     }
 
     private function mapRowForJson(array $row): array

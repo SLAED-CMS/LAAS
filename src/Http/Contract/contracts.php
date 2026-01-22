@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use Laas\Http\Contract\ContractRegistry;
@@ -2257,6 +2258,3 @@ ContractRegistry::register('media.show', [
         ],
     ],
 ]);
-
-
-

@@ -1,7 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-return array (
+return  [
     'admin.audit.action' => 'ক্রিয়া',
     'admin.audit.context' => 'প্রসঙ্গ',
     'admin.audit.date' => 'তারিখ',
@@ -170,4 +171,4 @@ return array (
     'admin.ops.section.cache' => 'ক্যাশ',
     'admin.ops.section.security' => 'নিরাপত্তা',
     'admin.ops.refresh' => 'রিফ্রেশ',
-);
+];

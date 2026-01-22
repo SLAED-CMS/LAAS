@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules;
@@ -6,7 +7,6 @@ namespace Laas\Modules;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\ModulesRepository;
 use Laas\Support\RequestCache;
-use Laas\Support\RequestScope;
 
 final class ModuleCatalog
 {
@@ -121,7 +121,7 @@ final class ModuleCatalog
                 }
             }
 
-            usort($modules, static fn(array $a, array $b): int => strcmp((string) $a['name'], (string) $b['name']));
+            usort($modules, static fn (array $a, array $b): int => strcmp((string) $a['name'], (string) $b['name']));
 
             return $modules;
         });
@@ -135,7 +135,7 @@ final class ModuleCatalog
     public function listNav(): array
     {
         $modules = $this->listAll();
-        usort($modules, fn(array $a, array $b): int => $this->compareNavModules($a, $b));
+        usort($modules, fn (array $a, array $b): int => $this->compareNavModules($a, $b));
         return $modules;
     }
 

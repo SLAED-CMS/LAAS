@@ -1,37 +1,44 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\View;
 
-use Laas\Http\Request;
-use Laas\Http\Response;
+use Laas\Auth\AuthInterface;
+use Laas\Database\DatabaseManager;
+use Laas\DevTools\DevToolsContext;
 use Laas\Http\Contract\ContractResponse;
 use Laas\Http\HeadlessMode;
-use Laas\Auth\AuthInterface;
-use Laas\Security\Csrf;
+use Laas\Http\Request;
+use Laas\Http\RequestContext;
+use Laas\Http\Response;
 use Laas\I18n\Translator;
-use Laas\Settings\SettingsProvider;
-use Laas\Database\DatabaseManager;
-use Laas\Modules\Menu\Repository\MenusRepository;
 use Laas\Modules\Menu\Repository\MenuItemsRepository;
+use Laas\Modules\Menu\Repository\MenusRepository;
+use Laas\Security\Csrf;
+use Laas\Settings\SettingsProvider;
 use Laas\Support\Cache\CacheFactory;
 use Laas\Support\Cache\CacheKey;
 use Laas\Support\RequestScope;
-use Laas\DevTools\DevToolsContext;
-use Laas\Http\RequestContext;
-use Laas\View\AssetManager;
-use Laas\View\ViewModelInterface;
-use Laas\View\Template\TemplateEngine;
-use Laas\View\Template\TemplateCompiler;
-use Laas\View\Theme\ThemeManager;
+use Laas\Theme\TemplateResolver;
 use Laas\Theme\ThemeCapabilities;
+use Laas\Theme\ThemeInterface;
+use Laas\Theme\ThemeRegistry;
 use Laas\Ui\PresentationLeakDetector;
+use Laas\View\Template\TemplateCompiler;
+use Laas\View\Template\TemplateEngine;
+use Laas\View\Theme\ThemeManager;
 
 final class View
 {
     private ?Request $request = null;
+    /** @var array<string, mixed> */
     private array $shared = [];
 
+    /**
+     * @param array<string, mixed> $appConfig
+     * @param array<string, mixed> $assets
+     */
     public function __construct(
         private ThemeManager $themeManager,
         private TemplateEngine $engine,
@@ -44,7 +51,9 @@ final class View
         private string $cachePath,
         private ?DatabaseManager $db = null,
         private array $assets = [],
-        private string $templateRawMode = 'escape'
+        private string $templateRawMode = 'escape',
+        ?ThemeRegistry $themeRegistry = null,
+        ?TemplateResolver $templateResolver = null
     ) {
         $this->defaultTheme = $themeManager->getThemeName();
         $this->themesRoot = $themeManager->getThemesRoot();
@@ -53,6 +62,8 @@ final class View
         $this->enforceUiTokens = (bool) ($appConfig['enforce_ui_tokens'] ?? false);
         $this->env = (string) ($appConfig['env'] ?? '');
         $this->templateRawMode = $templateRawMode;
+        $this->themeRegistry = $themeRegistry ?? new ThemeRegistry($this->themesRoot, $this->defaultTheme);
+        $this->templateResolver = $templateResolver ?? new TemplateResolver();
     }
 
     private string $defaultTheme;
@@ -60,6 +71,8 @@ final class View
     private bool $debug;
     private bool $enforceUiTokens;
     private string $env;
+    private ThemeRegistry $themeRegistry;
+    private TemplateResolver $templateResolver;
 
     public function setRequest(Request $request): void
     {
@@ -73,21 +86,30 @@ final class View
         $this->shared[$key] = $value;
     }
 
+    /**
+     * @param array<string, mixed>|ViewModelInterface $data
+     * @param array<string, mixed> $headers
+     * @param array<string, mixed> $options
+     */
     public function render(
         string $template,
         array|ViewModelInterface $data = [],
         int $status = 200,
         array $headers = [],
         array $options = []
-    ): Response
-    {
+    ): Response {
         $data = $this->normalizeViewModels($data);
         $renderOptions = [
             'render_partial' => $this->request?->isHtmx() ?? false,
         ];
         $renderOptions = array_merge($renderOptions, $options);
-        $theme = $renderOptions['theme'] ?? $this->themeManager->getPublicTheme();
-        $themeCapabilities = $this->resolveThemeCapabilities($theme);
+        $themeName = $renderOptions['theme'] ?? $this->themeManager->getPublicTheme();
+        if (!is_string($themeName) || $themeName === '') {
+            $themeName = $this->themeManager->getPublicTheme();
+        }
+        $theme = $this->themeRegistry->get($themeName) ?? $this->themeRegistry->default();
+        $themeName = $theme->name();
+        $themeCapabilities = $this->resolveThemeCapabilities($themeName);
 
         if (!in_array('blocks', $themeCapabilities, true)) {
             if (array_key_exists('blocks_html', $data)) {
@@ -122,7 +144,7 @@ final class View
         if ($warnings !== []) {
             $this->handlePresentationWarnings($warnings);
         }
-        $engine = $this->resolveEngine($theme);
+        $engine = $this->resolveEngine($themeName, $theme);
         $ctx['__menu'] = function (string $name) use ($engine): string {
             if ($this->db === null || !$this->db->healthCheck()) {
                 return '';
@@ -204,6 +226,10 @@ final class View
         return new Response($html, $status, $headers);
     }
 
+    /**
+     * @param array<string, mixed>|ViewModelInterface $data
+     * @param array<string, mixed> $options
+     */
     public function renderPartial(string $template, array|ViewModelInterface $data = [], array $options = []): string
     {
         $options = array_merge(['render_partial' => true], $options);
@@ -211,6 +237,7 @@ final class View
         return $response->getBody();
     }
 
+    /** @param array<string, mixed> $params */
     public function translate(string $key, array $params = []): string
     {
         return $this->translator->trans($key, $params, $this->locale);
@@ -233,21 +260,25 @@ final class View
 
     /**
      * @param array<int, string> $themeCapabilities
+     * @return array<string, mixed>
      */
-    private function globalContext(string $theme, array $themeCapabilities): array
+    private function globalContext(ThemeInterface $theme, array $themeCapabilities): array
     {
         $ctx = $this->globalContextBase();
         $caps = ThemeCapabilities::toMap($themeCapabilities);
+        $themeName = $theme->name();
         $ctx['theme'] = [
-            'name' => $theme,
-            'api' => $this->resolveThemeApi($theme),
-            'version' => $this->resolveThemeVersion($theme),
+            'name' => $themeName,
+            'assets' => $theme->assets(),
+            'api' => $this->resolveThemeApi($themeName),
+            'version' => $this->resolveThemeVersion($themeName),
             'capabilities' => $caps,
-            'provides' => $this->resolveThemeProvides($theme),
+            'provides' => $this->resolveThemeProvides($themeName),
         ];
         return $ctx;
     }
 
+    /** @return array<string, mixed> */
     private function globalContextBase(): array
     {
         $csrfToken = '';
@@ -296,19 +327,24 @@ final class View
         return $ctx;
     }
 
-    private function resolveEngine(string $theme): TemplateEngine
+    private function resolveEngine(string $theme, ThemeInterface $themeDefinition): TemplateEngine
     {
         if ($theme === $this->defaultTheme) {
             return $this->engine;
         }
 
         $themeManager = new ThemeManager($this->themesRoot, $theme, $this->settingsProvider);
+        $resolver = $this->templateResolver->withFallback(
+            fn (string $template, ThemeInterface $activeTheme): string => $themeManager->resolvePath($template)
+        );
         return new TemplateEngine(
             $themeManager,
             new TemplateCompiler(),
             $this->cachePath,
             $this->debug,
-            $this->templateRawMode
+            $this->templateRawMode,
+            $resolver,
+            $themeDefinition
         );
     }
 
@@ -382,6 +418,7 @@ final class View
         return strtolower($this->env) !== 'prod';
     }
 
+    /** @return array<string, mixed> */
     private function buildUserContext(): array
     {
         $user = $this->authService->user();
@@ -405,6 +442,10 @@ final class View
         ];
     }
 
+    /**
+     * @param array<string, mixed>|ViewModelInterface $data
+     * @return array<string, mixed>
+     */
     private function normalizeViewModels(array|ViewModelInterface $data): array
     {
         if ($data instanceof ViewModelInterface) {
@@ -413,10 +454,10 @@ final class View
 
         $out = [];
         foreach ($data as $key => $value) {
-        if ($value instanceof ViewModelInterface) {
-            $out[$key] = $value->toArray();
-            continue;
-        }
+            if ($value instanceof ViewModelInterface) {
+                $out[$key] = $value->toArray();
+                continue;
+            }
             if (is_array($value)) {
                 $out[$key] = $this->normalizeViewModels($value);
                 continue;

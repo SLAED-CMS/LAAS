@@ -1,11 +1,12 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\I18n;
 
 use Laas\Http\Request;
-use Laas\Support\RequestScope;
 use Laas\Settings\SettingsProvider;
+use Laas\Support\RequestScope;
 
 final class LocaleResolver
 {
@@ -14,8 +15,7 @@ final class LocaleResolver
     public function __construct(
         private array $appConfig,
         private ?SettingsProvider $settingsProvider = null
-    )
-    {
+    ) {
     }
 
     /** @return array{locale: string, set_cookie: bool} */

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Database\Migrations;
@@ -219,7 +220,7 @@ SQL;
     {
         $stmt = $this->pdo->query('SELECT DISTINCT batch FROM migrations ORDER BY batch DESC');
         $rows = $stmt ? $stmt->fetchAll() : [];
-        $batches = array_map(static fn(array $row): int => (int) $row['batch'], $rows);
+        $batches = array_map(static fn (array $row): int => (int) $row['batch'], $rows);
 
         if ($steps <= 0) {
             return $batches;

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Settings;
@@ -16,7 +17,7 @@ final class SettingsCacheInvalidator
     {
         if ($key === '') {
             if ($this->shouldLog()) {
-                error_log("[CacheInvalidator] invalidateKey() - empty key, skipping");
+                error_log('[CacheInvalidator] invalidateKey() - empty key, skipping');
             }
             return;
         }

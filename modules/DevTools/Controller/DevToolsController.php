@@ -1,12 +1,13 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\DevTools\Controller;
 
 use Laas\Core\Container\Container;
-use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\DevTools\DevToolsContext;
 use Laas\DevTools\JsErrorInbox;
+use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Http\ErrorResponse;
 use Laas\Http\Request;
 use Laas\Http\Response;

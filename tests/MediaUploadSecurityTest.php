@@ -26,7 +26,9 @@ namespace {
     use Laas\Modules\Media\Controller\AdminMediaController;
     use Laas\Modules\Media\Repository\MediaRepository;
     use Laas\Modules\Media\Service\StorageService;
+    use Laas\Security\CacheRateLimiterStore;
     use Laas\Settings\SettingsProvider;
+    use Laas\Support\Cache\CacheFactory;
     use Laas\Support\RequestScope;
     use Laas\View\Template\TemplateCompiler;
     use Laas\View\Template\TemplateEngine;
@@ -280,12 +282,12 @@ namespace {
 
         private function clearRateLimit(): void
         {
-            $dir = $this->rootPath . '/storage/cache/ratelimit';
-            if (!is_dir($dir)) {
-                return;
-            }
-            foreach (glob($dir . '/*.json') ?: [] as $file) {
-                @unlink($file);
+            $store = new CacheRateLimiterStore(CacheFactory::create($this->rootPath));
+            $store->delete('media_upload_user:user:' . $this->userId);
+
+            $ips = ['127.0.0.10', '127.0.0.11', '127.0.0.12', '127.0.0.13'];
+            foreach ($ips as $ip) {
+                $store->delete('media_upload_ip:' . $ip);
             }
         }
 

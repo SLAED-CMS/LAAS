@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\View\Template;
@@ -55,7 +56,7 @@ final class TemplateCompiler
         }
 
         if ($tag === 'endblock') {
-            return "<?php }, \$options); ?>";
+            return '<?php }, $options); ?>';
         }
 
         if (preg_match('/^include\s+[\'"]([^\'"]+)[\'"]$/', $tag, $matches)) {
@@ -109,11 +110,11 @@ final class TemplateCompiler
         }
 
         if ($tag === 'else') {
-            return "<?php else: ?>";
+            return '<?php else: ?>';
         }
 
         if ($tag === 'endif') {
-            return "<?php endif; ?>";
+            return '<?php endif; ?>';
         }
 
         if (preg_match('/^raw\s+([A-Za-z0-9_.]+)$/', $tag, $matches)) {

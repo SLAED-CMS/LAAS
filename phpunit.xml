@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit bootstrap="tests/bootstrap.php" colors="true">
+<phpunit bootstrap="tests/bootstrap.php" colors="true" defaultTestSuite="Full">
   <testsuites>
-    <testsuite name="LAAS">
+    <testsuite name="Unit">
+      <directory>tests</directory>
+      <exclude>tests/Cli</exclude>
+      <exclude>tests/Perf</exclude>
+      <exclude>tests/Policy</exclude>
+      <exclude>tests/DbIndexesPreflightProdFailTest.php</exclude>
+      <exclude>tests/PermissionsCacheTest.php</exclude>
+    </testsuite>
+    <testsuite name="Full">
       <directory>tests</directory>
     </testsuite>
   </testsuites>

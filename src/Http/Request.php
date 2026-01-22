@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Http;
@@ -172,6 +173,25 @@ final class Request
         $key = strtolower($name);
 
         return $this->headers[$key] ?? null;
+    }
+
+    public function withHeader(string $name, string $value): self
+    {
+        $headers = $this->headers;
+        $headers[strtolower($name)] = $value;
+
+        $clone = new self(
+            $this->method,
+            $this->path,
+            $this->query,
+            $this->post,
+            $headers,
+            $this->body,
+            $this->session
+        );
+        $clone->attributes = $this->attributes;
+
+        return $clone;
     }
 
     public function wantsJson(): bool

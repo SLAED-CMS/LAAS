@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Database\Repositories;
@@ -55,6 +56,6 @@ final class PermissionsRepository
             return [];
         }
 
-        return array_map(static fn(array $row): int => (int) ($row['permission_id'] ?? 0), $rows);
+        return array_map(static fn (array $row): int => (int) ($row['permission_id'] ?? 0), $rows);
     }
 }

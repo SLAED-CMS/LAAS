@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Support\Cache;
@@ -20,7 +21,7 @@ final class FileCache implements CacheInterface
         $this->trackStats = $trackStats;
     }
 
-    public function get(string $key): mixed
+    public function get(string $key, mixed $default = null): mixed
     {
         $path = $this->pathForKey($key);
         if ($key === 'settings:v1:all' && $this->shouldLog()) {
@@ -28,31 +29,31 @@ final class FileCache implements CacheInterface
         }
         if (!is_file($path)) {
             $this->recordCacheGet(false);
-            return null;
+            return $default;
         }
 
         $raw = @file_get_contents($path);
         if ($raw === false) {
             $this->recordCacheGet(false);
-            return null;
+            return $default;
         }
 
         $data = json_decode($raw, true);
         if (!is_array($data)) {
-            return null;
+            return $default;
         }
 
         $expires = (int) ($data['expires_at'] ?? 0);
         if ($expires > 0 && $expires < time()) {
             @unlink($path);
             $this->recordCacheGet(false);
-            return null;
+            return $default;
         }
 
         $payload = (string) ($data['value'] ?? '');
         if ($payload === '') {
             $this->recordCacheGet(false);
-            return null;
+            return $default;
         }
 
         $result = @unserialize($payload, ['allowed_classes' => false]);
@@ -122,6 +123,52 @@ final class FileCache implements CacheInterface
         return $result;
     }
 
+    public function has(string $key): bool
+    {
+        $path = $this->pathForKey($key);
+        if (!is_file($path)) {
+            return false;
+        }
+
+        $raw = @file_get_contents($path);
+        if ($raw === false) {
+            return false;
+        }
+
+        $data = json_decode($raw, true);
+        if (!is_array($data)) {
+            return false;
+        }
+
+        $expires = (int) ($data['expires_at'] ?? 0);
+        if ($expires > 0 && $expires < time()) {
+            @unlink($path);
+            return false;
+        }
+
+        return isset($data['value']) && $data['value'] !== '';
+    }
+
+    public function clear(): bool
+    {
+        if (!is_dir($this->dir)) {
+            return true;
+        }
+
+        if (!is_writable($this->dir)) {
+            return false;
+        }
+
+        $files = glob($this->dir . '/*.cache') ?: [];
+        $ok = true;
+        foreach ($files as $file) {
+            if (is_file($file) && !@unlink($file)) {
+                $ok = false;
+            }
+        }
+        return $ok;
+    }
+
     private function pathForKey(string $key): string
     {
         $hash = sha1($this->prefix . ':' . $key);
@@ -131,10 +178,14 @@ final class FileCache implements CacheInterface
     private function ensureDir(): bool
     {
         if (is_dir($this->dir)) {
-            return true;
+            return is_writable($this->dir);
         }
 
-        return mkdir($this->dir, 0775, true) || is_dir($this->dir);
+        if (!mkdir($this->dir, 0775, true) && !is_dir($this->dir)) {
+            return false;
+        }
+
+        return is_writable($this->dir);
     }
 
     private function shouldLog(): bool

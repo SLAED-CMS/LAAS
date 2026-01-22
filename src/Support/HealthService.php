@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Support;
@@ -73,8 +74,8 @@ final class HealthService
         } catch (\Throwable $e) {
             // Debug output for CI/test environments
             if (getenv('CI') === 'true' || getenv('APP_ENV') === 'test') {
-                fwrite(STDERR, "DEBUG: DB health check exception: " . $e->getMessage() . "\n");
-                fwrite(STDERR, "DEBUG: Exception trace: " . $e->getTraceAsString() . "\n");
+                fwrite(STDERR, 'DEBUG: DB health check exception: ' . $e->getMessage() . "\n");
+                fwrite(STDERR, 'DEBUG: Exception trace: ' . $e->getTraceAsString() . "\n");
             }
             return false;
         }

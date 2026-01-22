@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Modules\Api\Controller;
@@ -10,8 +11,8 @@ use Laas\Domain\Rbac\RbacServiceInterface;
 use Laas\Domain\Users\UsersReadServiceInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
-use Throwable;
 use Laas\View\View;
+use Throwable;
 
 final class UsersController
 {

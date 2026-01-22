@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Laas\Http;
@@ -116,7 +117,7 @@ final class HeadlessMode
         if ($value === '') {
             return [];
         }
-        $parts = array_filter(array_map('trim', explode(',', $value)), static fn(string $part): bool => $part !== '');
+        $parts = array_filter(array_map('trim', explode(',', $value)), static fn (string $part): bool => $part !== '');
         $normalized = [];
         foreach ($parts as $part) {
             $normalized[] = self::normalizePath($part);
