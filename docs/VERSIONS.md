@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.47 — PHPStan: AdminAiController cleanups (2026-01-22)
+- Remove redundant null-coalescing and tighten out-param typing to reduce baseline
+- No functional changes intended
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.46 — PHPStan: typed View arrays (2026-01-22)
 - Add iterable value types to View/ViewModel contracts to reduce baseline noise
 - No functional changes intended

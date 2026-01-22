@@ -131,9 +131,9 @@ final class AdminAiController
 
         $viewData = [
             'module_name' => $moduleName,
-            'module_path' => (string) ($result['module_path'] ?? ''),
-            'proposal_id' => (string) ($result['proposal_id'] ?? ''),
-            'plan_id' => (string) ($result['plan_id'] ?? ''),
+            'module_path' => (string) $result['module_path'],
+            'proposal_id' => (string) $result['proposal_id'],
+            'plan_id' => (string) $result['plan_id'],
             'plan_steps' => $steps,
             'proposal_json' => $proposalJson,
             'plan_json' => $planJson,
@@ -150,9 +150,10 @@ final class AdminAiController
     }
 
     /**
+     * @param-out bool $tooLarge
      * @return array<string, mixed>|null
      */
-    private function readProposal(Request $request, ?bool &$tooLarge = null): ?array
+    private function readProposal(Request $request, bool &$tooLarge): ?array
     {
         $tooLarge = false;
         $contentType = strtolower((string) ($request->getHeader('content-type') ?? ''));
@@ -180,8 +181,7 @@ final class AdminAiController
             return is_array($decoded) ? $decoded : null;
         }
 
-        $proposal = $request->post('proposal');
-        return is_array($proposal) ? $proposal : null;
+        return null;
     }
 
     private function renderSaveResult(array $data, int $status): Response
@@ -209,9 +209,6 @@ final class AdminAiController
         $out = [];
         $index = 1;
         foreach ($diffBlocks as $block) {
-            if (!is_array($block)) {
-                continue;
-            }
             $block['collapse_id'] = $prefix . '-' . $index;
             $out[] = $block;
             $index++;
