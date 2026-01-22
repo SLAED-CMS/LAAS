@@ -48,6 +48,7 @@ use Laas\Http\Middleware\SecurityHeadersMiddleware;
 use Laas\Http\Middleware\SessionMiddleware;
 use Laas\Http\Request;
 use Laas\Http\RequestContext;
+use Laas\Http\RequestId;
 use Laas\Http\Response;
 use Laas\Http\Session\SessionManager;
 use Laas\I18n\LocaleResolver;
@@ -133,7 +134,7 @@ final class Kernel
                 && (bool) ($devtoolsConfig['show_secrets'] ?? false)
                 && (bool) ($appConfig['db_profile']['store_sql'] ?? false);
 
-            $requestId = $this->resolveRequestId($request);
+            $requestId = $bootEnabled ? RequestId::fromRequest($request) : $this->resolveRequestId($request);
             $devtoolsContext = new DevToolsContext([
                 'enabled' => $devtoolsEnabled,
                 'debug' => $appDebug,
@@ -440,7 +441,9 @@ final class Kernel
             if (!empty($resolution['set_cookie'])) {
                 $response = $response->withHeader('Set-Cookie', $localeResolver->cookieHeader($locale));
             }
-            $response = $response->withHeader('X-Request-Id', $requestId);
+            if (!$bootEnabled) {
+                $response = $response->withHeader('X-Request-Id', $requestId);
+            }
             if ($dispatcher instanceof EventDispatcherInterface) {
                 $responseEvent = new ResponseEvent($request, $response);
                 $dispatcher->dispatch($responseEvent);

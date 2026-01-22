@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.68 — Observability: request id single source (opt-in) (2026-01-22)
+- Add RequestId helper and unify X-Request-Id handling under ObservabilityBootstrap when bootstraps enabled
+- Ensure request-id is present in request context and response headers; keep response-time header debug-only
+### Upgrade notes (Enable bootstraps to activate unified behavior; default path unchanged)
+### Breaking changes (None)
+
 ## v4.0.67 — Bootstrap: ViewBootstrap sanity (opt-in) (2026-01-22)
 - Add ViewBootstrap (sanity checks + ensure template cache dir)
 - Optional strict check via app.view_sanity_strict=true (dev only)

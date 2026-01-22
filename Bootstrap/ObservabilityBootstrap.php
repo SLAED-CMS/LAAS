@@ -7,6 +7,7 @@ namespace Laas\Bootstrap;
 use Laas\Events\EventDispatcherInterface;
 use Laas\Events\Http\RequestEvent;
 use Laas\Events\Http\ResponseEvent;
+use Laas\Http\RequestId;
 
 final class ObservabilityBootstrap implements BootstrapperInterface
 {
@@ -25,6 +26,14 @@ final class ObservabilityBootstrap implements BootstrapperInterface
         $dispatcher->addListener(RequestEvent::class, static function (RequestEvent $event) use ($ctx): void {
             $start = microtime(true);
             $ctx->container->singleton('obs.request_start', static fn (): float => $start);
+
+            $header = $event->request->getHeader('x-request-id');
+            $normalized = RequestId::normalize($header);
+            $requestId = $normalized ?? RequestId::generate();
+            $ctx->container->singleton('obs.request_id', static fn (): string => $requestId);
+            if ($normalized === null || $normalized !== $header) {
+                $event->request = $event->request->withHeader('x-request-id', $requestId);
+            }
         });
 
         $dispatcher->addListener(ResponseEvent::class, static function (ResponseEvent $event) use ($ctx): void {
@@ -44,11 +53,16 @@ final class ObservabilityBootstrap implements BootstrapperInterface
             }
 
             if ($response->getHeader('X-Request-Id') === null) {
-                $requestId = $event->request->getHeader('x-request-id');
-                if (is_string($requestId)) {
-                    $requestId = trim($requestId);
+                $requestId = null;
+                try {
+                    $requestId = $ctx->container->get('obs.request_id');
+                } catch (\Throwable) {
+                    $requestId = null;
                 }
-                if (is_string($requestId) && $requestId !== '') {
+                if (!is_string($requestId) || $requestId === '') {
+                    $requestId = RequestId::fromRequest($event->request);
+                }
+                if ($requestId !== '') {
                     $response = $response->withHeader('X-Request-Id', $requestId);
                 }
             }
