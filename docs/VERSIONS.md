@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.76 — Bootstrap: extract config resolver (2026-01-22)
+- Extract bootstrap list resolution from Kernel into a dedicated resolver (no behavior change)
+- Add focused tests for resolver mapping/order
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.75 — Bootstrap: configurable bootstrap list (2026-01-22)
 - Allow selecting bootstraps via app.bootstraps list when bootstraps are enabled (default behavior unchanged)
 - Unknown bootstrap names are ignored

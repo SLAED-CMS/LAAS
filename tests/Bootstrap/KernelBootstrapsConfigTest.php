@@ -2,9 +2,6 @@
 
 declare(strict_types=1);
 
-use Laas\Bootstrap\ModulesBootstrap;
-use Laas\Bootstrap\SecurityBootstrap;
-use Laas\Bootstrap\ViewBootstrap;
 use Laas\Core\Bindings\BindingsContext;
 use Laas\Core\Container\Container;
 use Laas\Core\Kernel;
@@ -39,36 +36,12 @@ final class KernelBootstrapsConfigTest extends TestCase
         $config['app']['bootstraps'] = ['view', 'security', 'modules', 'unknown'];
         $this->setKernelConfig($kernel, $config, $root);
 
-        $built = $this->invokeBuildBootstraps($kernel, $config['app']);
-        $this->assertSame([
-            ViewBootstrap::class,
-            SecurityBootstrap::class,
-            ModulesBootstrap::class,
-        ], $built);
-
         $kernel->handle(new Request('GET', '/health', [], [], [], ''));
 
         $container = $kernel->container();
         $this->assertTrue($container->get('boot.view'));
         $this->assertTrue($container->get('boot.security'));
         $this->assertTrue($container->get('boot.modules'));
-    }
-
-    /**
-     * @return list<class-string>
-     */
-    private function invokeBuildBootstraps(Kernel $kernel, array $appConfig): array
-    {
-        $ref = new ReflectionClass($kernel);
-        $method = $ref->getMethod('buildBootstraps');
-        $method->setAccessible(true);
-        $bootstraps = $method->invoke($kernel, $appConfig);
-        $names = [];
-        foreach ($bootstraps as $bootstrap) {
-            $names[] = $bootstrap::class;
-        }
-
-        return $names;
     }
 
     private function assertBootFlagMissing(Container $container, string $key): void

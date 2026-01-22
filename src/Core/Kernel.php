@@ -10,12 +10,8 @@ use Laas\Auth\AuthorizationService;
 use Laas\Auth\AuthService;
 use Laas\Auth\NullAuthService;
 use Laas\Bootstrap\BootContext;
+use Laas\Bootstrap\BootstrapsConfigResolver;
 use Laas\Bootstrap\BootstrapsRunner;
-use Laas\Bootstrap\ModulesBootstrap;
-use Laas\Bootstrap\ObservabilityBootstrap;
-use Laas\Bootstrap\RoutingBootstrap;
-use Laas\Bootstrap\SecurityBootstrap;
-use Laas\Bootstrap\ViewBootstrap;
 use Laas\Content\Blocks\BlockRegistry;
 use Laas\Core\Bindings\BindingsContext;
 use Laas\Core\Bindings\CoreBindings;
@@ -289,7 +285,7 @@ final class Kernel
             $this->container->singleton(Router::class, static fn (): Router => $router);
 
             if ($bootEnabled) {
-                $bootstraps = $this->buildBootstraps($appConfig);
+                $bootstraps = (new BootstrapsConfigResolver())->resolve($appConfig, $bootEnabled);
                 $runner = new BootstrapsRunner($bootstraps);
                 $runner->run(new BootContext(
                     $this->rootPath,
@@ -593,45 +589,4 @@ final class Kernel
         return preg_match('/^[a-zA-Z0-9._-]{8,64}$/', $value) === 1;
     }
 
-    /**
-     * @param array<string, mixed> $appConfig
-     * @return list<\Laas\Bootstrap\BootstrapperInterface>
-     */
-    private function buildBootstraps(array $appConfig): array
-    {
-        $configured = $appConfig['bootstraps'] ?? [];
-        if (!is_array($configured) || $configured === []) {
-            return [
-                new SecurityBootstrap(),
-                new ObservabilityBootstrap(),
-                new ModulesBootstrap(),
-                new RoutingBootstrap(),
-                new ViewBootstrap(),
-            ];
-        }
-
-        $bootstraps = [];
-        foreach ($configured as $name) {
-            $key = strtolower((string) $name);
-            switch ($key) {
-                case 'security':
-                    $bootstraps[] = new SecurityBootstrap();
-                    break;
-                case 'observability':
-                    $bootstraps[] = new ObservabilityBootstrap();
-                    break;
-                case 'modules':
-                    $bootstraps[] = new ModulesBootstrap();
-                    break;
-                case 'routing':
-                    $bootstraps[] = new RoutingBootstrap();
-                    break;
-                case 'view':
-                    $bootstraps[] = new ViewBootstrap();
-                    break;
-            }
-        }
-
-        return $bootstraps;
-    }
 }
