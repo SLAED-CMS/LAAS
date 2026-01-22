@@ -52,6 +52,7 @@ use Laas\I18n\LocaleResolver;
 use Laas\I18n\Translator;
 use Laas\Modules\ModuleCatalog;
 use Laas\Modules\ModuleManager;
+use Laas\Modules\ModulesLoader;
 use Laas\Perf\PerfBudgetEnforcer;
 use Laas\Routing\Router;
 use Laas\Security\CacheRateLimiterStore;
@@ -128,6 +129,7 @@ final class Kernel
 
         try {
             $appConfig = $this->config['app'] ?? [];
+            $bootEnabled = (bool) ($appConfig['bootstraps_enabled'] ?? false);
             $securityConfig = $this->config['security'] ?? [];
             $devtoolsConfig = array_merge($this->config['devtools'] ?? [], $appConfig['devtools'] ?? []);
             $perfConfig = $this->config['perf'] ?? [];
@@ -339,8 +341,24 @@ final class Kernel
             $view->share('admin_modules_nav', $adminModulesNav);
             $view->share('admin_modules_nav_sections', $adminModulesNavSections ?? []);
 
-            $modules = new ModuleManager($this->config['modules'] ?? [], $view, $this->database(), $this->container);
-            $modules->register($router);
+            $modulesTakeover = $bootEnabled && (bool) ($appConfig['bootstraps_modules_takeover'] ?? false);
+            if ($modulesTakeover) {
+                $this->container->singleton(View::class, static fn (): View => $view);
+                $this->container->singleton(Router::class, static fn (): Router => $router);
+                $this->container->singleton(ModulesLoader::class, function () use ($view): ModulesLoader {
+                    return new ModulesLoader($this->config['modules'] ?? [], $view, $this->database(), $this->container);
+                });
+                $modulesBootstrap = new ModulesBootstrap();
+                $modulesBootstrap->boot(new BootContext(
+                    $this->rootPath,
+                    $this->container,
+                    $this->config,
+                    $appDebug
+                ));
+            } else {
+                $modules = new ModuleManager($this->config['modules'] ?? [], $view, $this->database(), $this->container);
+                $modules->register($router);
+            }
 
             $collectors = [
                 new PerformanceCollector(),

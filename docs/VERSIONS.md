@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.64 — Bootstrap: Modules takeover (opt-in) (2026-01-22)
+- Add ModulesLoader extraction (no behavior change)
+- Add opt-in takeover flag: app.bootstraps_modules_takeover=true to move module bootstrapping into ModulesBootstrap
+### Upgrade notes (Enable only for dev: app.bootstraps_enabled + app.bootstraps_modules_takeover)
+### Breaking changes (None)
+
 ## v4.0.63 — Bootstrap: Modules scaffold + lifecycle hooks (2026-01-22)
 - Add ModulesBootstrap scaffold (flag only, no behavior change)
 - Add optional ModuleLifecycleInterface + ModuleBootstrapAdapter (not yet used)

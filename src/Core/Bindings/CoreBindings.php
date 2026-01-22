@@ -11,6 +11,7 @@ use Laas\Database\DatabaseManager;
 use Laas\Events\EventDispatcherInterface;
 use Laas\Events\SimpleEventDispatcher;
 use Laas\I18n\Translator;
+use Laas\Modules\ModulesLoader;
 use Laas\Security\CacheRateLimiterStore;
 use Laas\Security\RateLimiter;
 use Laas\Support\Cache\CacheFactory;
@@ -19,6 +20,7 @@ use Laas\Theme\TemplateResolver;
 use Laas\Theme\ThemeRegistry;
 use Laas\Theme\ThemeValidator;
 use Laas\View\Theme\ThemeManager;
+use Laas\View\View;
 
 final class CoreBindings
 {
@@ -57,6 +59,18 @@ final class CoreBindings
             return new SimpleEventDispatcher();
         }, [
             'concrete' => EventDispatcherInterface::class,
+            'read_only' => false,
+        ]);
+
+        $c->singleton(ModulesLoader::class, static function () use ($c): ModulesLoader {
+            $config = BindingsContext::config();
+            $view = $c->get(View::class);
+            if (!$view instanceof View) {
+                throw new \RuntimeException('View binding not available for ModulesLoader.');
+            }
+            return new ModulesLoader($config['modules'] ?? [], $view, BindingsContext::database(), $c);
+        }, [
+            'concrete' => ModulesLoader::class,
             'read_only' => false,
         ]);
 
