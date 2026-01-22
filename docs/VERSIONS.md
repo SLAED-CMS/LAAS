@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.65 — Bootstrap: unify takeover flow (2026-01-22)
+- Ensure ModulesBootstrap takeover runs only through BootstrapsRunner
+- Remove manual bootstrap invocation from Kernel (reduce double-boot risk)
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.64 — Bootstrap: Modules takeover (opt-in) (2026-01-22)
 - Add ModulesLoader extraction (no behavior change)
 - Add opt-in takeover flag: app.bootstraps_modules_takeover=true to move module bootstrapping into ModulesBootstrap

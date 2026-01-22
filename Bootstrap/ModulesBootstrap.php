@@ -10,8 +10,6 @@ use Laas\Modules\ModuleInterface;
 use Laas\Modules\ModuleLifecycleInterface;
 use Laas\Modules\ModulesLoader;
 use Laas\Routing\Router;
-use Laas\Database\DatabaseManager;
-use Laas\View\View;
 use Psr\Log\LoggerInterface;
 
 final class ModulesBootstrap implements BootstrapperInterface
@@ -101,31 +99,7 @@ final class ModulesBootstrap implements BootstrapperInterface
             return $loader;
         }
 
-        try {
-            $view = $ctx->container->get(View::class);
-        } catch (\Throwable) {
-            $view = null;
-        }
-        if (!$view instanceof View) {
-            return null;
-        }
-
-        $db = null;
-        try {
-            $db = $ctx->container->get('db');
-        } catch (\Throwable) {
-            $db = null;
-        }
-        if (!$db instanceof DatabaseManager) {
-            $db = null;
-        }
-
-        $modulesConfig = $ctx->appConfig['modules'] ?? [];
-        if (!is_array($modulesConfig)) {
-            $modulesConfig = [];
-        }
-
-        return new ModulesLoader($modulesConfig, $view, $db, $ctx->container);
+        return null;
     }
 
     private function resolveRouter(BootContext $ctx): ?Router

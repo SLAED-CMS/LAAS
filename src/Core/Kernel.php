@@ -52,7 +52,6 @@ use Laas\I18n\LocaleResolver;
 use Laas\I18n\Translator;
 use Laas\Modules\ModuleCatalog;
 use Laas\Modules\ModuleManager;
-use Laas\Modules\ModulesLoader;
 use Laas\Perf\PerfBudgetEnforcer;
 use Laas\Routing\Router;
 use Laas\Security\CacheRateLimiterStore;
@@ -90,16 +89,6 @@ final class Kernel
         $this->container = new Container();
         BindingsContext::set($this, $this->config, $this->rootPath);
         $this->registerBindings($this->container);
-        $appConfig = $this->config['app'] ?? [];
-        $bootEnabled = (bool) ($appConfig['bootstraps_enabled'] ?? false);
-        $bootstraps = $bootEnabled ? [new SecurityBootstrap(), new ObservabilityBootstrap(), new ModulesBootstrap()] : [];
-        $runner = new BootstrapsRunner($bootstraps);
-        $runner->run(new BootContext(
-            $this->rootPath,
-            $this->container,
-            $this->config,
-            (bool) ($appConfig['debug'] ?? false)
-        ));
     }
 
     public function handle(Request $request): Response
@@ -114,18 +103,6 @@ final class Kernel
             '/admin/headless-playground/fetch',
             '/admin/search/palette',
         ]);
-
-        $dispatcher = null;
-        try {
-            $dispatcher = $this->container->get(EventDispatcherInterface::class);
-        } catch (\Throwable) {
-            $dispatcher = null;
-        }
-        if ($dispatcher instanceof EventDispatcherInterface) {
-            $requestEvent = new RequestEvent($request);
-            $dispatcher->dispatch($requestEvent);
-            $request = $requestEvent->request;
-        }
 
         try {
             $appConfig = $this->config['app'] ?? [];
@@ -305,6 +282,32 @@ final class Kernel
                 $themeRegistry,
                 $templateResolver
             );
+            $this->container->singleton(View::class, static fn (): View => $view);
+            $this->container->singleton(Router::class, static fn (): Router => $router);
+
+            if ($bootEnabled) {
+                $bootstraps = [new SecurityBootstrap(), new ObservabilityBootstrap(), new ModulesBootstrap()];
+                $runner = new BootstrapsRunner($bootstraps);
+                $runner->run(new BootContext(
+                    $this->rootPath,
+                    $this->container,
+                    $this->config,
+                    $appDebug
+                ));
+            }
+
+            $dispatcher = null;
+            try {
+                $dispatcher = $this->container->get(EventDispatcherInterface::class);
+            } catch (\Throwable) {
+                $dispatcher = null;
+            }
+            if ($dispatcher instanceof EventDispatcherInterface) {
+                $requestEvent = new RequestEvent($request);
+                $dispatcher->dispatch($requestEvent);
+                $request = $requestEvent->request;
+            }
+
             $view->setRequest($request);
 
             try {
@@ -342,20 +345,7 @@ final class Kernel
             $view->share('admin_modules_nav_sections', $adminModulesNavSections ?? []);
 
             $modulesTakeover = $bootEnabled && (bool) ($appConfig['bootstraps_modules_takeover'] ?? false);
-            if ($modulesTakeover) {
-                $this->container->singleton(View::class, static fn (): View => $view);
-                $this->container->singleton(Router::class, static fn (): Router => $router);
-                $this->container->singleton(ModulesLoader::class, function () use ($view): ModulesLoader {
-                    return new ModulesLoader($this->config['modules'] ?? [], $view, $this->database(), $this->container);
-                });
-                $modulesBootstrap = new ModulesBootstrap();
-                $modulesBootstrap->boot(new BootContext(
-                    $this->rootPath,
-                    $this->container,
-                    $this->config,
-                    $appDebug
-                ));
-            } else {
+            if (!$modulesTakeover) {
                 $modules = new ModuleManager($this->config['modules'] ?? [], $view, $this->database(), $this->container);
                 $modules->register($router);
             }
