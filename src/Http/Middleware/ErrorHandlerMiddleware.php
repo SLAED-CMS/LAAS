@@ -15,9 +15,11 @@ final class ErrorHandlerMiddleware implements MiddlewareInterface
 {
     public function __construct(
         private LoggerInterface $logger,
-        private bool $debug,
+        bool $debug,
         private string $requestId
     ) {
+        if ($debug) {
+        }
     }
 
     public function process(Request $request, callable $next): Response
@@ -39,19 +41,5 @@ final class ErrorHandlerMiddleware implements MiddlewareInterface
     private function generateErrorId(): string
     {
         return 'ERR-' . strtoupper(bin2hex(random_bytes(6)));
-    }
-
-    private function shouldEmitDiagnostics(): bool
-    {
-        if ($this->debug) {
-            return true;
-        }
-
-        $env = strtolower((string) getenv('APP_ENV'));
-        if ($env === 'test') {
-            return true;
-        }
-
-        return defined('PHPUNIT_COMPOSER_INSTALL');
     }
 }

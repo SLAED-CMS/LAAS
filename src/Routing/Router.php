@@ -19,7 +19,6 @@ final class Router
     private array $routes = [];
     private string $cacheFile;
     private string $fingerprintFile;
-    private bool $debug;
     /** @var array<string, array<string, mixed>> */
     private array $contexts = [];
 
@@ -29,8 +28,8 @@ final class Router
         $cacheDir = rtrim($cacheDir, '/\\');
         $this->cacheFile = $cacheDir . DIRECTORY_SEPARATOR . 'routes.php';
         $this->fingerprintFile = $cacheDir . DIRECTORY_SEPARATOR . 'routes.sha1';
-        $this->debug = $debug;
-
+        if ($debug) {
+        }
         if (!is_dir($cacheDir)) {
             mkdir($cacheDir, 0775, true);
         }
