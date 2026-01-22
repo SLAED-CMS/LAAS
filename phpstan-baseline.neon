@@ -6918,15 +6918,3 @@ parameters:
 			count: 1
 			path: src/View/View.php
 
-		-
-			message: '#^Method Laas\\Modules\\Pages\\ViewModel\\PagePublicViewModel\:\:__construct\(\) has parameter \$meta with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: modules/Pages/ViewModel/PagePublicViewModel.php
-
-		-
-			message: '#^Method Laas\\Modules\\Pages\\ViewModel\\PagePublicViewModel\:\:fromArray\(\) has parameter \$page with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: modules/Pages/ViewModel/PagePublicViewModel.php
-

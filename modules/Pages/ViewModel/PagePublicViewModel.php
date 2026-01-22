@@ -9,6 +9,9 @@ use Laas\View\ViewModelInterface;
 
 final class PagePublicViewModel implements ViewModelInterface
 {
+    /**
+     * @param array<string, mixed> $meta
+     */
     public function __construct(
         private string $slug,
         private string $title,
@@ -17,6 +20,9 @@ final class PagePublicViewModel implements ViewModelInterface
     ) {
     }
 
+    /**
+     * @param array<string, mixed> $page
+     */
     public static function fromArray(array $page): self
     {
         $slug = (string) ($page['slug'] ?? '');

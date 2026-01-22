@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.49 — PHPStan: Pages public view model types (2026-01-22)
+- Add iterable value types to Pages public view model inputs to reduce baseline
+- No functional changes intended
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.48 — PHPStan: AdminAiController typed data (2026-01-22)
 - Add iterable value types to Admin AI render helpers to reduce baseline
 - No functional changes intended
