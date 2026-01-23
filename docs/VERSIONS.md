@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.80 — Modules: lifecycle takeover readiness (2026-01-22)
+- Convert real modules to ModuleLifecycleInterface (bindings/routes/listeners) for takeover mode
+- Add tests proving takeover works with real modules
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.79 — Tooling: boot CLI visibility (2026-01-22)
 - Add boot:dump and boot:check commands to inspect resolved bootstrap config
 - No functional changes intended
