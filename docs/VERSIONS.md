@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.81 — Refactor: kernel slimming via bootstraps (2026-01-22)
+- Extract request setup (devtools, view/theme, session/auth) into a request context factory
+- Bind router/view earlier for bootstraps while keeping the default path unchanged
+### Upgrade notes (Behavior changes only when bootstraps are enabled and selected)
+### Breaking changes (None)
+
 ## v4.0.80 — Modules: lifecycle takeover readiness (2026-01-22)
 - Convert real modules to ModuleLifecycleInterface (bindings/routes/listeners) for takeover mode
 - Add tests proving takeover works with real modules
