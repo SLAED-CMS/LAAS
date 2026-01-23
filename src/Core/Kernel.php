@@ -4,15 +4,9 @@ declare(strict_types=1);
 
 namespace Laas\Core;
 
-use Laas\Assets\AssetsManager;
-use Laas\Auth\AuthInterface;
-use Laas\Auth\AuthorizationService;
-use Laas\Auth\AuthService;
-use Laas\Auth\NullAuthService;
 use Laas\Bootstrap\BootContext;
 use Laas\Bootstrap\BootstrapsConfigResolver;
 use Laas\Bootstrap\BootstrapsRunner;
-use Laas\Content\Blocks\BlockRegistry;
 use Laas\Core\Bindings\BindingsContext;
 use Laas\Core\Bindings\CoreBindings;
 use Laas\Core\Bindings\DevBindings;
@@ -20,11 +14,7 @@ use Laas\Core\Bindings\DomainBindings;
 use Laas\Core\Bindings\ModuleBindings;
 use Laas\Core\Container\Container;
 use Laas\Database\DatabaseManager;
-use Laas\Database\DbProfileCollector;
-use Laas\Database\Repositories\RbacRepository;
-use Laas\Database\Repositories\UsersRepository;
 use Laas\DevTools\DbCollector;
-use Laas\DevTools\DevToolsContext;
 use Laas\DevTools\PerformanceCollector;
 use Laas\DevTools\RequestCollector;
 use Laas\Events\EventDispatcherInterface;
@@ -44,11 +34,8 @@ use Laas\Http\Middleware\SecurityHeadersMiddleware;
 use Laas\Http\Middleware\SessionMiddleware;
 use Laas\Http\Request;
 use Laas\Http\RequestContext;
-use Laas\Http\RequestId;
 use Laas\Http\Response;
 use Laas\Http\Session\SessionManager;
-use Laas\I18n\LocaleResolver;
-use Laas\I18n\Translator;
 use Laas\Modules\ModuleCatalog;
 use Laas\Modules\ModuleManager;
 use Laas\Perf\PerfBudgetEnforcer;
@@ -56,22 +43,10 @@ use Laas\Routing\Router;
 use Laas\Security\CacheRateLimiterStore;
 use Laas\Security\RateLimiter;
 use Laas\Security\SecurityHeaders;
-use Laas\Session\SessionFactory;
-use Laas\Session\SessionInterface;
-use Laas\Settings\SettingsProvider;
 use Laas\Support\Cache\CacheInterface;
 use Laas\Support\ConfigSanityChecker;
-use Laas\Support\LoggerFactory;
 use Laas\Support\LogSpamGuard;
 use Laas\Support\RequestScope;
-use Laas\Theme\TemplateResolver;
-use Laas\Theme\ThemeInterface;
-use Laas\Theme\ThemeRegistry;
-use Laas\Theme\ThemeValidator;
-use Laas\View\AssetManager;
-use Laas\View\Template\TemplateCompiler;
-use Laas\View\Template\TemplateEngine;
-use Laas\View\Theme\ThemeManager;
 use Laas\View\View;
 
 final class Kernel
@@ -92,195 +67,30 @@ final class Kernel
 
     public function handle(Request $request): Response
     {
-        RequestScope::reset();
-        RequestScope::setRequest($request);
-        RequestScope::set('blocks.registry', $this->container->get(BlockRegistry::class));
-        RequestScope::set('devtools.paths', [
-            '/admin/themes',
-            '/admin/themes/validate',
-            '/admin/headless-playground',
-            '/admin/headless-playground/fetch',
-            '/admin/search/palette',
-        ]);
-
         try {
-            $appConfig = $this->config['app'] ?? [];
-            $bootEnabled = (bool) ($appConfig['bootstraps_enabled'] ?? false);
-            $securityConfig = $this->config['security'] ?? [];
-            $devtoolsConfig = array_merge($this->config['devtools'] ?? [], $appConfig['devtools'] ?? []);
-            $perfConfig = $this->config['perf'] ?? [];
-            $env = strtolower((string) ($appConfig['env'] ?? ''));
-            $appDebug = (bool) ($appConfig['debug'] ?? false);
-            $router = new Router($this->rootPath . '/storage/cache', $appDebug && $env !== 'prod');
-            $devtoolsEnabled = $appDebug && (bool) ($devtoolsConfig['enabled'] ?? false);
-            $perfEnabled = (bool) ($perfConfig['enabled'] ?? false);
-            $collectDb = (bool) ($devtoolsConfig['collect_db'] ?? false);
-            if ($perfEnabled) {
-                $collectDb = true;
-            }
-            if ($env === 'prod') {
-                $devtoolsEnabled = false;
-                $devtoolsConfig['enabled'] = false;
-                $devtoolsConfig['collect_request'] = false;
-                $devtoolsConfig['collect_logs'] = false;
-            }
-            $devtoolsConfig['collect_db'] = $collectDb;
-            $devtoolsConfig['enabled'] = $devtoolsEnabled;
-            $storeSql = $appDebug
-                && (bool) ($devtoolsConfig['show_secrets'] ?? false)
-                && (bool) ($appConfig['db_profile']['store_sql'] ?? false);
+            $context = (new KernelRequestContextFactory($this->rootPath, $this->config, $this->container))
+                ->create($request, $this->database());
+            $appConfig = $context->appConfig;
+            $bootEnabled = $context->bootEnabled;
+            $securityConfig = $context->securityConfig;
+            $devtoolsConfig = $context->devtoolsConfig;
+            $perfConfig = $context->perfConfig;
+            $appDebug = $context->appDebug;
+            $router = $context->router;
+            $view = $context->view;
+            $translator = $context->translator;
+            $localeResolver = $context->localeResolver;
+            $locale = $context->locale;
+            $resolution = $context->localeResolution;
+            $sessionFactory = $context->sessionFactory;
+            $session = $context->session;
+            $authService = $context->authService;
+            $authorization = $context->authorization;
+            $logger = $context->logger;
+            $devtoolsContext = $context->devtoolsContext;
+            $requestId = $context->requestId;
+            $perfEnabled = $context->perfEnabled;
 
-            $requestId = $bootEnabled ? RequestId::fromRequest($request) : $this->resolveRequestId($request);
-            $devtoolsContext = new DevToolsContext([
-                'enabled' => $devtoolsEnabled,
-                'debug' => $appDebug,
-                'env' => (string) ($appConfig['env'] ?? ''),
-                'is_dev' => $env !== 'prod',
-                'root_path' => $this->rootPath,
-                'budgets' => $devtoolsConfig['budgets'] ?? [],
-                'show_secrets' => (bool) ($devtoolsConfig['show_secrets'] ?? false),
-                'collect_db' => (bool) ($devtoolsConfig['collect_db'] ?? false),
-                'collect_request' => (bool) ($devtoolsConfig['collect_request'] ?? false),
-                'collect_logs' => (bool) ($devtoolsConfig['collect_logs'] ?? false),
-                'store_sql' => $storeSql,
-                'request_id' => $requestId,
-            ]);
-            RequestScope::set('devtools.context', $devtoolsContext);
-            RequestContext::setStartTime($devtoolsContext->getStartedAt());
-
-            $dbProfileCollector = new DbProfileCollector();
-            RequestScope::set('db.profile', $dbProfileCollector);
-
-            $this->database()->enableDevTools($devtoolsContext, $devtoolsConfig);
-            $this->database()->enableDbProfiling($dbProfileCollector);
-
-            $settingsProvider = new SettingsProvider(
-                $this->database(),
-                [
-                    'site_name' => $appConfig['name'] ?? 'LAAS',
-                    'default_locale' => $appConfig['default_locale'] ?? 'en',
-                    'theme' => $appConfig['theme'] ?? 'default',
-                ],
-                ['site_name', 'default_locale', 'theme']
-            );
-
-            $theme = $appConfig['theme'] ?? 'default';
-            $themeManager = new ThemeManager($this->rootPath . '/themes', $theme, $settingsProvider);
-            $publicTheme = $themeManager->getPublicTheme();
-
-            $localeResolver = new LocaleResolver($appConfig, $settingsProvider);
-            $resolution = $localeResolver->resolve($request);
-            $locale = $resolution['locale'];
-
-            $translator = new Translator($this->rootPath, $publicTheme, $locale);
-
-            $loggerFactory = new LoggerFactory($this->rootPath);
-            $logger = $loggerFactory->create($appConfig);
-            if ($logger instanceof \Monolog\Logger) {
-                $logger->pushProcessor(static function ($record) use ($requestId) {
-                    if ($record instanceof \Monolog\LogRecord) {
-                        return $record->with(extra: array_merge($record->extra, [
-                            'request_id' => $requestId,
-                        ]));
-                    }
-                    if (is_array($record)) {
-                        $record['extra']['request_id'] = $requestId;
-                        return $record;
-                    }
-                    return $record;
-                });
-            }
-
-            $themeValidator = new ThemeValidator($this->rootPath . '/themes');
-            $themeValidation = $themeValidator->validateTheme($publicTheme);
-            if ($themeValidation->hasViolations()) {
-                foreach ($themeValidation->getViolations() as $violation) {
-                    $logger->warning('Theme validation warning', [
-                        'theme' => $publicTheme,
-                        'code' => $violation['code'] ?? '',
-                        'file' => $violation['file'] ?? '',
-                        'message' => $violation['message'] ?? '',
-                    ]);
-                    if ((bool) ($appConfig['debug'] ?? false)) {
-                        $devtoolsContext->addWarning('theme_validation', (string) ($violation['message'] ?? 'Theme validation warning'));
-                    }
-                }
-            }
-            if ($themeValidation->hasWarnings()) {
-                foreach ($themeValidation->getWarnings() as $warning) {
-                    $logger->notice('Theme compat warning', [
-                        'theme' => $publicTheme,
-                        'code' => $warning['code'] ?? '',
-                        'file' => $warning['file'] ?? '',
-                        'message' => $warning['message'] ?? '',
-                    ]);
-                    if ((bool) ($appConfig['debug'] ?? false)) {
-                        $devtoolsContext->addWarning('theme_compat', (string) ($warning['message'] ?? 'Theme compat warning'));
-                    }
-                }
-            }
-
-            $sessionFactory = new SessionFactory($securityConfig['session'] ?? [], $logger, $this->rootPath);
-            $session = $sessionFactory->create();
-            $authService = $this->createAuthService($logger, $session);
-            $authorization = $this->createAuthorizationService();
-
-            $templateRawMode = (string) ($securityConfig['template']['raw_mode']
-                ?? $securityConfig['template_raw_mode']
-                ?? 'escape');
-            $themeRegistry = null;
-            $templateResolver = null;
-            try {
-                $themeRegistry = $this->container->get(ThemeRegistry::class);
-                if (!$themeRegistry instanceof ThemeRegistry) {
-                    $themeRegistry = null;
-                }
-            } catch (\Throwable) {
-                $themeRegistry = null;
-            }
-            try {
-                $templateResolver = $this->container->get(TemplateResolver::class);
-                if (!$templateResolver instanceof TemplateResolver) {
-                    $templateResolver = null;
-                }
-            } catch (\Throwable) {
-                $templateResolver = null;
-            }
-            $defaultTheme = $themeRegistry?->default();
-            $resolverForEngine = null;
-            if ($templateResolver instanceof TemplateResolver && $defaultTheme instanceof ThemeInterface) {
-                $resolverForEngine = $templateResolver->withFallback(
-                    static fn (string $template, ThemeInterface $theme): string => $themeManager->resolvePath($template)
-                );
-            }
-            $templateEngine = new TemplateEngine(
-                $themeManager,
-                new TemplateCompiler(),
-                $this->rootPath . '/storage/cache/templates',
-                (bool) ($appConfig['debug'] ?? false),
-                $templateRawMode,
-                $resolverForEngine,
-                $defaultTheme
-            );
-            $assetManager = new AssetManager($this->config['assets'] ?? []);
-            $assetsManager = new AssetsManager($this->config['assets'] ?? []);
-            $assets = $assetsManager->all();
-            $view = new View(
-                $themeManager,
-                $templateEngine,
-                $translator,
-                $locale,
-                $appConfig,
-                $assetManager,
-                $authService,
-                $settingsProvider,
-                $this->rootPath . '/storage/cache/templates',
-                $this->database(),
-                $assets,
-                $templateRawMode,
-                $themeRegistry,
-                $templateResolver
-            );
             $this->container->singleton(View::class, static fn (): View => $view);
             $this->container->singleton(Router::class, static fn (): Router => $router);
 
@@ -452,29 +262,6 @@ final class Kernel
         }
     }
 
-    private function createAuthService(\Psr\Log\LoggerInterface $logger, SessionInterface $session): AuthInterface
-    {
-        try {
-            $usersRepository = new UsersRepository($this->database()->pdo());
-            return new AuthService($usersRepository, $session, $logger);
-        } catch (\Throwable) {
-            return new NullAuthService();
-        }
-    }
-
-    private function createAuthorizationService(): AuthorizationService
-    {
-        try {
-            if (!$this->database()->healthCheck()) {
-                return new AuthorizationService(null);
-            }
-
-            return new AuthorizationService(new RbacRepository($this->database()->pdo()));
-        } catch (\Throwable) {
-            return new AuthorizationService(null);
-        }
-    }
-
     public function container(): Container
     {
         return $this->container;
@@ -568,25 +355,6 @@ final class Kernel
                 mkdir($path, 0775, true);
             }
         }
-    }
-
-    private function resolveRequestId(Request $request): string
-    {
-        $candidate = (string) ($request->getHeader('x-request-id') ?? '');
-        if ($this->isValidRequestId($candidate)) {
-            return $candidate;
-        }
-
-        return bin2hex(random_bytes(16));
-    }
-
-    private function isValidRequestId(string $value): bool
-    {
-        if ($value === '') {
-            return false;
-        }
-
-        return preg_match('/^[a-zA-Z0-9._-]{8,64}$/', $value) === 1;
     }
 
 }
