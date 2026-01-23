@@ -4,17 +4,24 @@ declare(strict_types=1);
 
 namespace Laas\Modules\DemoEnv;
 
+use Laas\Core\Container\Container;
+use Laas\Events\EventDispatcherInterface;
 use Laas\Modules\ModuleInterface;
+use Laas\Modules\ModuleLifecycleInterface;
 use Laas\Routing\RouteHandlerSpec;
 use Laas\Routing\RouteHandlerTokens;
 use Laas\Routing\Router;
 use Laas\View\View;
 
-final class DemoEnvModule implements ModuleInterface
+final class DemoEnvModule implements ModuleInterface, ModuleLifecycleInterface
 {
     public function __construct(
         private View $view
     ) {
+    }
+
+    public function registerBindings(Container $container): void
+    {
     }
 
     public function registerRoutes(Router $router): void
@@ -44,5 +51,9 @@ final class DemoEnvModule implements ModuleInterface
                 true
             ));
         }
+    }
+
+    public function registerListeners(EventDispatcherInterface $events): void
+    {
     }
 }

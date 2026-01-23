@@ -14,9 +14,11 @@ use Laas\Database\Repositories\UsersRepository;
 use Laas\Domain\Users\UsersReadServiceInterface;
 use Laas\Domain\Users\UsersService;
 use Laas\Domain\Users\UsersWriteServiceInterface;
+use Laas\Events\EventDispatcherInterface;
 use Laas\Http\Request;
 use Laas\Http\Response;
 use Laas\Modules\ModuleInterface;
+use Laas\Modules\ModuleLifecycleInterface;
 use Laas\Modules\Users\Controller\AuthController;
 use Laas\Modules\Users\Controller\PasswordResetController;
 use Laas\Modules\Users\Controller\TwoFactorController;
@@ -31,13 +33,17 @@ use Laas\Support\Mail\PhpMailer;
 use Laas\View\View;
 use Psr\Log\NullLogger;
 
-final class UsersModule implements ModuleInterface
+final class UsersModule implements ModuleInterface, ModuleLifecycleInterface
 {
     public function __construct(
         private View $view,
         private ?DatabaseManager $db = null,
         private ?Container $container = null
     ) {
+    }
+
+    public function registerBindings(Container $container): void
+    {
     }
 
     public function registerRoutes(Router $router): void
@@ -63,6 +69,10 @@ final class UsersModule implements ModuleInterface
 
             $router->addRoute($method, $path, RouteHandlerSpec::module($contextKey, $class, $action));
         }
+    }
+
+    public function registerListeners(EventDispatcherInterface $events): void
+    {
     }
 
     /**

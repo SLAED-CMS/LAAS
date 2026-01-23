@@ -6,19 +6,25 @@ namespace Laas\Modules\DevTools;
 
 use Laas\Core\Container\Container;
 use Laas\Database\DatabaseManager;
+use Laas\Events\EventDispatcherInterface;
 use Laas\Modules\ModuleInterface;
+use Laas\Modules\ModuleLifecycleInterface;
 use Laas\Routing\RouteHandlerSpec;
 use Laas\Routing\RouteHandlerTokens;
 use Laas\Routing\Router;
 use Laas\View\View;
 
-final class DevToolsModule implements ModuleInterface
+final class DevToolsModule implements ModuleInterface, ModuleLifecycleInterface
 {
     public function __construct(
         private View $view,
         private ?DatabaseManager $db = null,
         private ?Container $container = null
     ) {
+    }
+
+    public function registerBindings(Container $container): void
+    {
     }
 
     public function registerRoutes(Router $router): void
@@ -54,5 +60,9 @@ final class DevToolsModule implements ModuleInterface
                 true
             ));
         }
+    }
+
+    public function registerListeners(EventDispatcherInterface $events): void
+    {
     }
 }
