@@ -1,11 +1,13 @@
 graph TB
-    %% LAAS CMS v3.0.0 - System Dependencies
-    %% 6 Layers: Bootstrap, Core Services, Security, View/Assets, Application Services, Presentation
-    %% DI Container: Lazy-loaded singletons, ~28 services
+    %% LAAS CMS v4.0.81 - System Dependencies
+    %% 7 Layers: Bootstrap Pipeline, Core Services, Security, Events, View/Assets, Application Services, Presentation
+    %% DI Container: Lazy-loaded singletons, ~30 services
     %% External: FastRoute, Dotenv, Monolog, CommonMark, AWS SDK (optional)
     %% Security: 2FA/TOTP, Password Reset, Session Timeout, SSRF Protection
-    %% Frontend: AssetManager, RenderAdapter, UI Tokens, ViewModels, Theme API v1
-    %% Version: v4.0.0 (2026-01-16)
+    %% Frontend: AssetManager, RenderAdapter, UI Tokens, ViewModels, Theme API v2
+    %% Bootstrap: Security → Observability → Modules → Routing → View (opt-in via APP_BOOTSTRAPS_ENABLED)
+    %% Events: SimpleEventDispatcher with RequestEvent/ResponseEvent (v4.0.58+)
+    %% Version: v4.0.81 (2026-01-22)
 
     subgraph Bootstrap["Bootstrap Layer"]
         Index["public/index.php<br/>Entry Point"]
@@ -156,4 +158,4 @@ graph TB
 
     %% Notes
     Note1["Dependency Injection:<br/>All services registered in Container<br/>Lazy-loaded on first request<br/>Singleton pattern for shared resources"]
-    Note2["No Event System:<br/>v2.2.5 uses direct method calls<br/>No EventBus or Plugin system<br/>Simple, predictable flow"]
+    Note2["Event System (v4.0.58+):<br/>SimpleEventDispatcher with priorities<br/>RequestEvent/ResponseEvent pipeline<br/>Stoppable events support"]

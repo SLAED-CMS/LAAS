@@ -55,7 +55,7 @@ LAAS CMS is designed to be **production-ready** out of the box, but requires pro
 Before deploying to production, verify:
 
 ### Code & Dependencies
-- [ ] Latest stable release (v2.3.10 or newer)
+- [ ] Latest stable release (v4.0.81 or newer)
 - [ ] `composer install --no-dev --optimize-autoloader` executed
 - [ ] No uncommitted changes in working directory
 - [ ] Version tagged in git

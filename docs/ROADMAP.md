@@ -652,6 +652,35 @@ Checklist:
 
 **Status:** Released (v4.0.0)
 
+### v4.0.20 — Service Layer & DI Container
+**Key features:**
+- **DI Container MVP** — Explicit bindings, no autowiring
+- **Service Layer** — PagesService, MediaService, UsersService, etc.
+- **Read/Write interfaces** — Safer dependencies for GET controllers
+- **Admin UX tools** — Command Palette, Blocks Studio MVP
+
+**Status:** Released (v4.0.20)
+
+### v4.0.40+ — Core Infrastructure
+**Key features:**
+- **Route Cache** (v4.0.50) — FastRoute cached dispatcher with fingerprint invalidation
+- **Cache Interface** (v4.0.51) — CacheInterface + FileCache implementation
+- **Event Dispatcher** (v4.0.58) — SimpleEventDispatcher with RequestEvent/ResponseEvent
+- **Theme API v2** (v4.0.59) — ThemeRegistry + TemplateResolver
+
+**Status:** Released (v4.0.59)
+
+### v4.0.60+ — Bootstrap Pipeline
+**Key features:**
+- **Bootstrap Pipeline** (v4.0.60-81) — Opt-in modular bootstrap system
+  - SecurityBootstrap, ObservabilityBootstrap, ModulesBootstrap, RoutingBootstrap, ViewBootstrap
+  - Configurable via `APP_BOOTSTRAPS_ENABLED`, `APP_BOOTSTRAPS` list
+  - Module lifecycle takeover support
+- **Request Context Factory** (v4.0.81) — Extract request setup into factory
+- **CLI Tools** — `boot:dump`, `boot:check` for bootstrap inspection
+
+**Status:** Released (v4.0.81)
+
 ---
 
 ## Summary
@@ -685,5 +714,6 @@ LAAS CMS evolved from v0.1 to v3.0:
 **v2.4.0 — mature, secure enterprise-grade CMS platform that is safe to maintain for years.**
 **v3.0.0 — frontend-agnostic architecture allowing UI evolution independent of backend.**
 **v4.0.0 — safe AI runtime with human-in-the-loop workflows and audit trails.**
+**v4.0.81 — bootstrap pipeline, event system, route cache, Theme API v2.**
 
-**Last updated:** January 16, 2026
+**Last updated:** January 23, 2026

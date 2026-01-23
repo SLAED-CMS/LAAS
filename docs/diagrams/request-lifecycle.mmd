@@ -1,10 +1,12 @@
 sequenceDiagram
-    %% LAAS CMS v4.0.0 - HTTP Request Lifecycle
-    %% Flow: Bootstrap -> Middleware -> Routing -> Business Logic -> RenderAdapter -> Response
+    %% LAAS CMS v4.0.81 - HTTP Request Lifecycle
+    %% Flow: Bootstrap Pipeline (opt-in) -> Middleware -> Routing -> Business Logic -> RenderAdapter -> Response
     %% Performance: Cold 80-120ms, Warm 15-25ms (cache hit 99%)
     %% Security: Session timeout, 2FA/TOTP, password reset, SSRF protection, AI safety
-    %% Frontend: Content negotiation (Accept header, ?format), AssetManager, UI Tokens
-    %% Version: v4.0.0 (2026-01-16)
+    %% Frontend: Content negotiation (Accept header, ?format), AssetManager, UI Tokens, Theme API v2
+    %% Bootstrap Pipeline: Security → Observability → Modules → Routing → View (APP_BOOTSTRAPS_ENABLED=1)
+    %% Events: SimpleEventDispatcher with RequestEvent/ResponseEvent (v4.0.58+)
+    %% Version: v4.0.81 (2026-01-22)
 
     participant Browser
     participant Nginx

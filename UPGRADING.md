@@ -27,6 +27,82 @@
 
 ## Version-Specific Upgrade Paths
 
+### v4.0.60+ notes (Bootstrap Pipeline)
+
+> [!NOTE]
+> **Overview:** Opt-in modular bootstrap system for fine-grained request lifecycle control.
+
+**Key features:**
+- **Bootstrap Pipeline** — Security → Observability → Modules → Routing → View (opt-in)
+- **Environment flags:**
+  - `APP_BOOTSTRAPS_ENABLED=1` — Enable bootstrap pipeline
+  - `APP_BOOTSTRAPS="security,observability,modules,routing,view"` — Configure bootstrap list
+  - `APP_BOOTSTRAPS_MODULES_TAKEOVER=1` — Enable module lifecycle takeover
+  - `APP_ROUTING_CACHE_WARM=1` — Enable route cache warmup
+  - `APP_VIEW_SANITY_STRICT=1` — Enable strict view sanity checks
+- **CLI commands:**
+  - `boot:dump` — Show resolved bootstrap configuration
+  - `boot:check` — Verify bootstrap pipeline integrity
+
+**Upgrade steps:**
+1. Follow standard upgrade flow
+2. **No database migrations required**
+3. Bootstrap pipeline is **disabled by default** — existing behavior unchanged
+4. **Optional:** Enable in `.env` for enhanced control:
+   ```env
+   APP_BOOTSTRAPS_ENABLED=1
+   ```
+5. Test critical flows with bootstrap enabled
+
+**Breaking changes:** None. Bootstrap pipeline is fully opt-in.
+
+---
+
+### v4.0.40+ notes (Core Infrastructure)
+
+> [!NOTE]
+> **Overview:** Route cache, cache interface, event dispatcher, and Theme API v2.
+
+**Key features:**
+- **Route Cache (v4.0.50)** — FastRoute cached dispatcher with fingerprint-based invalidation
+- **Cache Interface (v4.0.51)** — CacheInterface + FileCache implementation
+- **Event Dispatcher (v4.0.58)** — SimpleEventDispatcher with RequestEvent/ResponseEvent
+- **Theme API v2 (v4.0.59)** — ThemeRegistry + TemplateResolver with theme.json schema validation
+
+**Upgrade steps:**
+1. Follow standard upgrade flow
+2. **No database migrations required**
+3. Route cache is **automatic** when enabled
+4. Theme API v2 is backward compatible with v1 themes (warning emitted for legacy themes)
+
+**Breaking changes:** None. All features are additive.
+
+---
+
+### v4.0.20 notes (Service Layer & DI)
+
+> [!NOTE]
+> **Overview:** Explicit DI Container, Service Layer for domain logic, and admin UX tools.
+
+**Key features:**
+- **DI Container MVP** — Explicit bindings only, no autowiring/reflection
+- **Service Layer** — PagesService, MediaService, UsersService, MenusService, SettingsService, etc.
+- **Read/Write interfaces** — Safer dependencies for GET-only controllers
+- **Admin UX tools:**
+  - Command Palette (Ctrl+K) for admin search
+  - Blocks Studio MVP for content block editing
+- **Admin feature flags** — `ADMIN_FEATURE_*` toggles in `config/admin_features.php`
+
+**Upgrade steps:**
+1. Follow standard upgrade flow
+2. **No database migrations required**
+3. Custom controllers should migrate to service interfaces (optional but recommended)
+4. Admin feature flags default to debug-mode behavior
+
+**Breaking changes:** None. Service layer is additive.
+
+---
+
 ### v4.0.0 notes
 
 > [!NOTE]

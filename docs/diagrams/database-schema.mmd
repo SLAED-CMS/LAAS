@@ -1,9 +1,10 @@
 erDiagram
-    %% LAAS CMS v3.0.0 - Database Schema
+    %% LAAS CMS v4.0.81 - Database Schema
     %% 16 tables, 35+ migrations, InnoDB/SQLite
     %% Indexes: slug (0.5-1ms), status, uuid, timestamps, token_hash
     %% Security: Argon2id, 2FA/TOTP, password reset, audit logging, hard deletes, API tokens, XSS/SSRF hardening
-    %% Version: v4.0.0 (2026-01-16)
+    %% Cache: Route cache with fingerprint-based invalidation (v4.0.50+)
+    %% Version: v4.0.81 (2026-01-22)
 
     users ||--o{ role_user : "has"
     roles ||--o{ role_user : "assigned to"

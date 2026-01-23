@@ -48,6 +48,13 @@
 ### Upgrade notes (None)
 ### Breaking changes (None)
 
+## v4.0.73 — Docs: bootstrap flags + structure (2026-01-22)
+- Document bootstrap pipeline and env flags (defaults off)
+- Clarify Bootstrap location under src/Bootstrap
+- No functional changes intended
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.72 — Refactor: move Bootstrap under src (2026-01-22)
 - Move Bootstrap/ into src/Bootstrap to keep PHP sources consolidated
 - Remove redundant PSR-4 mapping for Laas\\Bootstrap (now covered by Laas\\ => src/)
@@ -251,7 +258,7 @@
 ### Upgrade notes (None)
 ### Breaking changes (None)
 
-- v4.0.20: Service Layer + Theme API v2 + Headless v2 (Unreleased)
+- v4.0.20: Service Layer + Theme API v2 + Headless v2 (Released)
   - DI Container MVP (foundation for service layer)
   - PagesService MVP (Service Layer introduction)
   - MediaService MVP + Upload Pipeline
@@ -812,4 +819,4 @@
 - v0.2: Middleware pipeline + sessions + security headers + error handler + Monolog
 - v0.1: Kernel/Router/Modules + System+Api routes
 
-**Last updated:** 2026-01-19
+**Last updated:** 2026-01-23

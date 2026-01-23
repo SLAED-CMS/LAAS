@@ -1,9 +1,11 @@
 graph LR
-    %% LAAS CMS v3.0.0 - Middleware Pipeline
-    %% 7 middlewares in strict order (Session before Auth, Auth before RBAC)
+    %% LAAS CMS v4.0.81 - Middleware Pipeline
+    %% 8 middlewares in strict order (Session before Auth, Auth before RBAC)
     %% Security: CSRF, Rate Limiting, CSP, HSTS, RBAC, API Auth, Session Timeout, SSRF Protection
     %% Performance: Total overhead 5-10ms
-    %% Version: v4.0.0 (2026-01-16)
+    %% Bootstrap: Optional bootstrap pipeline runs before middleware (Security → Observability → Modules → Routing → View)
+    %% Events: RequestEvent/ResponseEvent fired around HTTP pipeline (v4.0.58+)
+    %% Version: v4.0.81 (2026-01-22)
 
     Request["HTTP Request<br/>(from Nginx)"] --> ErrorHandler
 

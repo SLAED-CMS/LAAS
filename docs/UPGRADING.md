@@ -1,6 +1,6 @@
 # Upgrade Notes
 
-## v4.0.20 (Unreleased)
+## v4.0.20+ (Released in v4.0.81)
 
 ### Compat mode (default on)
 To keep v4 changes non-breaking, compatibility toggles are enabled by default in `config/compat.php`:

@@ -1,11 +1,12 @@
 graph TD
-    %% LAAS CMS v3.0.0 - Module Architecture
-    %% 9 modules: System, API, Admin, Users, Pages, Media, Menu, Changelog, DevTools
+    %% LAAS CMS v4.0.81 - Module Architecture
+    %% 12 modules: System, Api, Admin, Users, Pages, Media, Menu, Changelog, DevTools, Demo, DemoBlog, DemoEnv
     %% Loading: Kernel scans modules/ -> reads config/modules.php -> includes routes.php
-    %% Types: Core (required), Content (can disable), Admin (dev-only)
+    %% Types: Core (required), Content (can disable), Admin (dev-only), Demo (examples)
     %% Security: 2FA/TOTP, Password Reset, Session Timeout, SSRF Protection
-    %% Frontend: AssetManager, UI Tokens, ViewModels, Theme API v1
-    %% Version: v4.0.0 (2026-01-16)
+    %% Frontend: AssetManager, UI Tokens, ViewModels, Theme API v2
+    %% Bootstrap: ModuleLifecycleInterface for takeover mode (opt-in)
+    %% Version: v4.0.81 (2026-01-22)
 
     subgraph Core["Core Framework"]
         Kernel["Kernel<br/>Bootstrap & DI Container"]
@@ -15,16 +16,19 @@ graph TD
         DB["Database<br/>PDO Connection Pool"]
     end
 
-    subgraph Modules["9 Installed Modules"]
+    subgraph Modules["12 Installed Modules"]
         System["System Module<br/>Health, Backup, Audit"]
-        API["API Module<br/>REST API v1 + Bearer Tokens"]
-        Admin["Admin Module<br/>Backend UI"]
-        Users["Users Module<br/>Auth, RBAC, 2FA, Password Reset (v3.0.0)"]
-        Pages["Pages Module<br/>CMS Content"]
+        API["Api Module<br/>REST API v1 + Bearer Tokens"]
+        Admin["Admin Module<br/>Backend UI + AI Assistant"]
+        Users["Users Module<br/>Auth, RBAC, 2FA, Password Reset"]
+        Pages["Pages Module<br/>CMS Content + Blocks"]
         Media["Media Module<br/>File Management"]
         Menu["Menu Module<br/>Navigation"]
         Changelog["Changelog Module<br/>Git-based (GitHub/local)"]
         DevTools["DevTools Module<br/>Debug Tools"]
+        Demo["Demo Module<br/>Demo examples"]
+        DemoBlog["DemoBlog Module<br/>Blog demo"]
+        DemoEnv["DemoEnv Module<br/>Environment demo"]
     end
 
     subgraph ModuleStructure["Module Structure (Example: Media)"]
@@ -65,4 +69,4 @@ graph TD
 
     %% Notes
     Note1["Module Loading:<br/>1. Kernel scans modules/ directory<br/>2. Loads routes.php from each module<br/>3. Registers in DI Container<br/>4. Runs migrations on install"]
-    Note2["Module Types:<br/>Core: System, API, Users<br/>Content: Pages, Media, Menu<br/>Admin: Admin, DevTools"]
+    Note2["Module Types:<br/>Core: System, Api, Users<br/>Content: Pages, Media, Menu, Changelog<br/>Admin: Admin, DevTools<br/>Demo: Demo, DemoBlog, DemoEnv"]
