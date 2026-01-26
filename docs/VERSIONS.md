@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.87 — Security: user_plain URL scheme hardening (2026-01-26)
+- Enforce allowlist URL schemes for href/src in user_plain profile (block javascript/data/etc.)
+- Remove PHPUnit warning noise in test:all (clean green)
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.86 — Security: user links rel policy (2026-01-26)
 - Enforce rel="nofollow ugc noopener" for <a> in user_plain sanitizer profile
 - Add unit tests guarding rel merge behavior

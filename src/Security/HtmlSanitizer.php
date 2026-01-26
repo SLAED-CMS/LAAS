@@ -235,9 +235,15 @@ final class HtmlSanitizer
                 continue;
             }
 
-            if (($name === 'href' || $name === 'src')
-                && !$this->isSafeUrl($attr->nodeValue, $profile['allowed_url_schemes'])) {
-                $remove[] = $name;
+            if ($name === 'href' || $name === 'src') {
+                $url = $attr->nodeValue;
+                if (($profile['_profile'] ?? null) === ContentProfiles::USER_PLAIN) {
+                    if (!$this->isUserPlainSafeUrl($url, $name)) {
+                        $remove[] = $name;
+                    }
+                } elseif (!$this->isSafeUrl($url, $profile['allowed_url_schemes'])) {
+                    $remove[] = $name;
+                }
             }
         }
 
@@ -373,7 +379,50 @@ final class HtmlSanitizer
             $config['iframe_allowlist_hosts'] = array_map('strtolower', $config['iframe_allowlist_hosts']);
         }
 
+        $config['_profile'] = $resolved;
+
         return $config;
+    }
+
+    private function isUserPlainSafeUrl(?string $value, string $attribute): bool
+    {
+        $value = $value ?? '';
+        $decoded = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $trimmed = trim($decoded);
+        if ($trimmed === '') {
+            return true;
+        }
+
+        $lower = strtolower($trimmed);
+        if ($this->isUserPlainRelativeUrl($lower)) {
+            return true;
+        }
+
+        $normalized = preg_replace('/[\\x00-\\x1F\\x7F\\s]+/', '', $lower) ?? '';
+        if ($normalized === '') {
+            return false;
+        }
+
+        if (preg_match('/^[a-z][a-z0-9+.-]*:/i', $normalized) === 1) {
+            $pos = strpos($normalized, ':');
+            $scheme = $pos === false ? $normalized : substr($normalized, 0, $pos);
+            $allowed = $attribute === 'href'
+                ? ['http', 'https', 'mailto', 'tel']
+                : ['http', 'https'];
+
+            return in_array($scheme, $allowed, true);
+        }
+
+        return false;
+    }
+
+    private function isUserPlainRelativeUrl(string $value): bool
+    {
+        return str_starts_with($value, '/')
+            || str_starts_with($value, './')
+            || str_starts_with($value, '../')
+            || str_starts_with($value, '#')
+            || str_starts_with($value, '?');
     }
 
     private function enforceUserPlainRelPolicy(DOMDocument $doc): void

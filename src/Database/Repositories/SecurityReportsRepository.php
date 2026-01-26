@@ -25,6 +25,7 @@ final class SecurityReportsRepository
         );
 
         $createdAt = (string) ($data['created_at'] ?? date('Y-m-d H:i:s'));
+        $requestId = $data['request_id'] ?? null;
         $stmt->execute([
             'type' => (string) ($data['type'] ?? 'csp'),
             'status' => (string) ($data['status'] ?? 'new'),
@@ -35,7 +36,7 @@ final class SecurityReportsRepository
             'blocked_uri' => (string) ($data['blocked_uri'] ?? ''),
             'user_agent' => (string) ($data['user_agent'] ?? ''),
             'ip' => (string) ($data['ip'] ?? ''),
-            'request_id' => $data['request_id'] !== null ? (string) $data['request_id'] : null,
+            'request_id' => $requestId !== null ? (string) $requestId : null,
             'triaged_at' => $data['triaged_at'] ?? null,
             'ignored_at' => $data['ignored_at'] ?? null,
         ]);

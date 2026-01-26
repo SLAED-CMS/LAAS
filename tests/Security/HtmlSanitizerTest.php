@@ -83,6 +83,55 @@ final class HtmlSanitizerTest extends TestCase
         $this->assertStringContainsString('rel="nofollow ugc noopener"', $sanitized);
     }
 
+    public function testUserPlainBlocksJavascriptHref(): void
+    {
+        $html = '<a href="javascript:alert(1)">x</a>';
+        $sanitized = (new HtmlSanitizer())->sanitize($html, ContentProfiles::USER_PLAIN);
+
+        $this->assertStringNotContainsString('href=', strtolower($sanitized));
+    }
+
+    public function testUserPlainBlocksDataHref(): void
+    {
+        $html = '<a href="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==">x</a>';
+        $sanitized = (new HtmlSanitizer())->sanitize($html, ContentProfiles::USER_PLAIN);
+
+        $this->assertStringNotContainsString('href=', strtolower($sanitized));
+    }
+
+    public function testUserPlainKeepsAllowedSchemes(): void
+    {
+        $html = '<a href="https://example.com">x</a><a href="http://example.com">y</a>'
+            . '<a href="mailto:test@example.com">m</a><a href="tel:+123">t</a>';
+        $sanitized = (new HtmlSanitizer())->sanitize($html, ContentProfiles::USER_PLAIN);
+
+        $this->assertStringContainsString('href="https://example.com"', $sanitized);
+        $this->assertStringContainsString('href="http://example.com"', $sanitized);
+        $this->assertStringContainsString('href="mailto:test@example.com"', $sanitized);
+        $this->assertStringContainsString('href="tel:+123"', $sanitized);
+    }
+
+    public function testUserPlainKeepsRelativeUrls(): void
+    {
+        $html = '<a href="/path">a</a><a href="./x">b</a><a href="../x">c</a>'
+            . '<a href="#anchor">d</a><a href="?q=1">e</a>';
+        $sanitized = (new HtmlSanitizer())->sanitize($html, ContentProfiles::USER_PLAIN);
+
+        $this->assertStringContainsString('href="/path"', $sanitized);
+        $this->assertStringContainsString('href="./x"', $sanitized);
+        $this->assertStringContainsString('href="../x"', $sanitized);
+        $this->assertStringContainsString('href="#anchor"', $sanitized);
+        $this->assertStringContainsString('href="?q=1"', $sanitized);
+    }
+
+    public function testUserPlainBlocksObfuscatedJavascript(): void
+    {
+        $html = '<a href=" JaVaScRiPt:alert(1)">x</a><a href="java' . "\n" . 'script:alert(1)">y</a>';
+        $sanitized = (new HtmlSanitizer())->sanitize($html, ContentProfiles::USER_PLAIN);
+
+        $this->assertStringNotContainsString('href=', strtolower($sanitized));
+    }
+
     public function testUnknownProfileFallsBackToLegacy(): void
     {
         $html = '<img src="/a.png" alt="x">';
