@@ -277,6 +277,8 @@ class PagesService implements PagesServiceInterface, PagesReadServiceInterface, 
             throw new InvalidArgumentException('Page id must be positive.');
         }
 
+        $blocks = $this->normalizeBlocks($blocks);
+
         return $this->revisionsRepository()->createRevision($pageId, $blocks, $createdBy);
     }
 
@@ -336,6 +338,43 @@ class PagesService implements PagesServiceInterface, PagesReadServiceInterface, 
         }
 
         return $status;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $blocks
+     * @return array<int, array<string, mixed>>
+     */
+    private function normalizeBlocks(array $blocks): array
+    {
+        if (!$this->blocksNormalizeEnabled()) {
+            return $blocks;
+        }
+
+        $normalizer = $this->contentNormalizer();
+        foreach ($blocks as $index => $block) {
+            $type = (string) ($block['type'] ?? '');
+            if ($type !== 'rich_text') {
+                continue;
+            }
+
+            $data = $block['data'] ?? null;
+            if (!is_array($data)) {
+                continue;
+            }
+
+            $html = (string) ($data['html'] ?? '');
+            $data['html'] = $normalizer->normalize($html, 'html', ContentProfiles::EDITOR_SAFE_RICH);
+            $block['data'] = $data;
+            $blocks[$index] = $block;
+        }
+
+        return $blocks;
+    }
+
+    private function blocksNormalizeEnabled(): bool
+    {
+        $appConfig = $this->config['app'] ?? [];
+        return (bool) ($appConfig['blocks_normalize_enabled'] ?? false);
     }
 
     private function normalizeContent(string $content, mixed $format): string
