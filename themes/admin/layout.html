@@ -13,6 +13,7 @@
   {% if devtools.flags.enabled %}
   {% if assets.devtools_css %}<link href="{% assets.devtools_css %}" rel="stylesheet">{% endif %}
   {% endif %}
+  {% block head_extra %}{% endblock %}
 </head>
 <body class="bg-light laas-theme-admin" hx-headers='{"X-CSRF-Token":"{% csrf_token %}"}' data-app-debug="{% if request.show_request_id %}1{% else %}0{% endif %}">
   {% include "partials/header.html" %}
@@ -33,5 +34,6 @@
   {% if devtools.flags.enabled %}
   {% if assets.devtools_js %}<script src="{% assets.devtools_js %}" defer></script>{% endif %}
   {% endif %}
+  {% block scripts_extra %}{% endblock %}
 </body>
 </html>

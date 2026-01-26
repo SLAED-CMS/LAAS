@@ -43,18 +43,25 @@ return [
     'bootstrap_js' => $assetVendorBase . '/bootstrap/' . $bootstrapVersion . '/bootstrap.bundle.min.js',
     'bootstrap_icons_css' => $assetVendorBase . '/bootstrap-icons/' . $bootstrapIconsVersion . '/bootstrap-icons.min.css',
     'htmx_js' => $assetVendorBase . '/htmx/' . $htmxVersion . '/htmx.min.js',
+    'tinymce_js' => $assetVendorBase . '/tinymce/tinymce.min.js',
+    'toastui_editor_css' => $assetVendorBase . '/toastui-editor/toastui-editor.min.css',
+    'toastui_editor_js' => $assetVendorBase . '/toastui-editor/toastui-editor.min.js',
     'app_css' => $assetAppBase . '/app.css',
     'app_js' => $assetAppBase . '/app.js',
     'devtools_css' => $assetAppBase . '/devtools.css',
     'devtools_js' => $assetAppBase . '/devtools.js',
     'admin_css' => $assetBase . '/admin.css',
     'admin_js' => $assetBase . '/admin.js',
+    'pages_admin_editors_js' => $assetBase . '/admin-pages-editors.js',
     'css' => [
         'bootstrap' => [
             'path' => 'vendor/bootstrap/' . $bootstrapVersion . '/bootstrap.min.css',
         ],
         'bootstrap-icons' => [
             'path' => 'vendor/bootstrap-icons/' . $bootstrapIconsVersion . '/bootstrap-icons.css',
+        ],
+        'toastui-editor' => [
+            'path' => 'vendor/toastui-editor/toastui-editor.min.css',
         ],
         'app' => [
             'path' => 'app/app.css',
@@ -75,6 +82,14 @@ return [
             'path' => 'vendor/bootstrap/' . $bootstrapVersion . '/bootstrap.bundle.min.js',
             'defer' => true,
         ],
+        'tinymce' => [
+            'path' => 'vendor/tinymce/tinymce.min.js',
+            'defer' => true,
+        ],
+        'toastui-editor' => [
+            'path' => 'vendor/toastui-editor/toastui-editor.min.js',
+            'defer' => true,
+        ],
         'app' => [
             'path' => 'app/app.js',
             'defer' => true,
@@ -85,6 +100,10 @@ return [
         ],
         'admin' => [
             'path' => 'admin.js',
+            'defer' => true,
+        ],
+        'pages-admin-editors' => [
+            'path' => 'admin-pages-editors.js',
             'defer' => true,
         ],
     ],

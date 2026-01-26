@@ -31,12 +31,16 @@ final class AssetsManager
             'bootstrap_js' => $this->resolveAsset('bootstrap_js', $this->join($vendorBase, 'bootstrap/' . $bootstrapVersion . '/bootstrap.bundle.min.js')),
             'bootstrap_icons_css' => $this->resolveAsset('bootstrap_icons_css', $this->join($vendorBase, 'bootstrap-icons/' . $bootstrapIconsVersion . '/bootstrap-icons.min.css')),
             'htmx_js' => $this->resolveAsset('htmx_js', $this->join($vendorBase, 'htmx/' . $htmxVersion . '/htmx.min.js')),
+            'tinymce_js' => $this->resolveAsset('tinymce_js', $this->join($vendorBase, 'tinymce/tinymce.min.js')),
+            'toastui_editor_css' => $this->resolveAsset('toastui_editor_css', $this->join($vendorBase, 'toastui-editor/toastui-editor.min.css')),
+            'toastui_editor_js' => $this->resolveAsset('toastui_editor_js', $this->join($vendorBase, 'toastui-editor/toastui-editor.min.js')),
             'app_css' => $this->resolveAsset('app_css', $this->join($appBase, 'app.css')),
             'app_js' => $this->resolveAsset('app_js', $this->join($appBase, 'app.js')),
             'devtools_css' => $this->resolveAsset('devtools_css', $this->join($appBase, 'devtools.css')),
             'devtools_js' => $this->resolveAsset('devtools_js', $this->join($appBase, 'devtools.js')),
             'admin_css' => $this->resolveAsset('admin_css', $this->join($base, 'admin.css')),
             'admin_js' => $this->resolveAsset('admin_js', $this->join($base, 'admin.js')),
+            'pages_admin_editors_js' => $this->resolveAsset('pages_admin_editors_js', $this->join($base, 'admin-pages-editors.js')),
         ];
     }
 
