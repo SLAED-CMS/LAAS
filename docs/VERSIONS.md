@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.91 — Blocks: rich_text format support (opt-in) (2026-01-26)
+- Support per-block rich_text data.format (html|markdown) for normalization
+- Default behavior unchanged (flag off; missing format defaults to html)
+### Upgrade notes (Set APP_BLOCKS_NORMALIZE_ENABLED=1; send data.format=markdown for rich_text blocks)
+### Breaking changes (None)
+
 ## v4.0.90 — Blocks: normalize saved content (opt-in) (2026-01-26)
 - Sanitize block content at write-boundary via ContentNormalizer (editor_safe_rich) (opt-in)
 - Default behavior unchanged (flag off)

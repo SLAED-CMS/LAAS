@@ -37,8 +37,22 @@ final class RichTextBlock implements BlockInterface
     {
         $html = (string) ($data['html'] ?? '');
         $sanitized = (new HtmlSanitizer())->sanitize($html);
-        return [
+        $out = [
             'html' => $sanitized,
         ];
+        $format = $this->normalizeFormat($data['format'] ?? null);
+        if ($format !== null) {
+            $out['format'] = $format;
+        }
+        return $out;
+    }
+
+    private function normalizeFormat(mixed $format): ?string
+    {
+        if (!is_string($format)) {
+            return null;
+        }
+        $format = strtolower(trim($format));
+        return in_array($format, ['html', 'markdown'], true) ? $format : null;
     }
 }

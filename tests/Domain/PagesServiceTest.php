@@ -148,6 +148,9 @@ final class PagesServiceTest extends TestCase
 
         $storedBlocks = $service->findLatestBlocks($pageId);
         $this->assertSame($blocks[0]['data']['html'], $storedBlocks[0]['data']['html'] ?? null);
+        $storedData = $storedBlocks[0]['data'] ?? null;
+        $this->assertIsArray($storedData);
+        $this->assertArrayNotHasKey('format', $storedData);
     }
 
     public function testBlocksContentNormalizedWhenEnabledHtml(): void
@@ -177,6 +180,12 @@ final class PagesServiceTest extends TestCase
                     'html' => '<p>Hi</p><a href="https://example.com">ok</a><a href="javascript:alert(1)">bad</a><img src="https://example.com/x.png" onerror="alert(1)"><script>alert(1)</script>',
                 ],
             ],
+            [
+                'type' => 'rich_text',
+                'data' => [
+                    'html' => '**bold** <script>alert(1)</script>',
+                ],
+            ],
         ];
 
         $service->createRevision($pageId, $blocks, null);
@@ -189,6 +198,50 @@ final class PagesServiceTest extends TestCase
         $this->assertStringNotContainsString('<script', $lowerHtml);
         $this->assertStringNotContainsString('onerror', $lowerHtml);
         $this->assertStringNotContainsString('javascript:', $lowerHtml);
+
+        $storedHtmlPlain = (string) ($storedBlocks[1]['data']['html'] ?? '');
+        $lowerPlain = strtolower($storedHtmlPlain);
+        $this->assertStringNotContainsString('<strong>', $lowerPlain);
+        $this->assertStringNotContainsString('<script', $lowerPlain);
+    }
+
+    public function testBlocksContentNormalizedWhenEnabledMarkdown(): void
+    {
+        $db = $this->createDb();
+        $service = new PagesService($db, [
+            'app' => [
+                'blocks_normalize_enabled' => true,
+            ],
+        ], new \Laas\Content\ContentNormalizer(
+            new \Laas\Content\MarkdownRenderer(),
+            new \Laas\Security\HtmlSanitizer()
+        ));
+
+        $page = $service->create([
+            'title' => 'Blocks Markdown',
+            'slug' => 'blocks-markdown',
+            'content' => 'Text',
+            'status' => 'draft',
+        ]);
+        $pageId = (int) ($page['id'] ?? 0);
+
+        $blocks = [
+            [
+                'type' => 'rich_text',
+                'data' => [
+                    'html' => '**bold** <script>alert(1)</script>',
+                    'format' => 'markdown',
+                ],
+            ],
+        ];
+
+        $service->createRevision($pageId, $blocks, null);
+
+        $storedBlocks = $service->findLatestBlocks($pageId);
+        $storedHtml = (string) ($storedBlocks[0]['data']['html'] ?? '');
+        $lowerHtml = strtolower($storedHtml);
+        $this->assertStringContainsString('<strong>bold</strong>', $storedHtml);
+        $this->assertStringNotContainsString('<script', $lowerHtml);
     }
 
     private function createDb(): DatabaseManager

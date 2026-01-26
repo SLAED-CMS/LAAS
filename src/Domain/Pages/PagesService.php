@@ -363,7 +363,8 @@ class PagesService implements PagesServiceInterface, PagesReadServiceInterface, 
             }
 
             $html = (string) ($data['html'] ?? '');
-            $data['html'] = $normalizer->normalize($html, 'html', ContentProfiles::EDITOR_SAFE_RICH);
+            $format = $this->normalizeContentFormat($data['format'] ?? null);
+            $data['html'] = $normalizer->normalize($html, $format, ContentProfiles::EDITOR_SAFE_RICH);
             $block['data'] = $data;
             $blocks[$index] = $block;
         }

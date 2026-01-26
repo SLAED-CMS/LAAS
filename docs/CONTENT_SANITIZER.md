@@ -70,7 +70,11 @@ Policy:
 - Pages (opt-in): APP_PAGES_NORMALIZE_ENABLED (editor_safe_rich)
 - Menu (opt-in): APP_MENU_NORMALIZE_ENABLED (editor_safe_rich)
 - DevTools JS errors (opt-in): APP_DEVTOOLS_JS_NORMALIZE_ENABLED (user_plain)
-- Blocks (opt-in): APP_BLOCKS_NORMALIZE_ENABLED (editor_safe_rich) at PagesService::createRevision (rich_text html only)
+- Blocks (opt-in): APP_BLOCKS_NORMALIZE_ENABLED (editor_safe_rich) at PagesService::createRevision (rich_text html|markdown)
+
+## Blocks: rich_text format
+- data.format: html|markdown (optional; defaults to html when missing or unknown).
+- Used only when APP_BLOCKS_NORMALIZE_ENABLED=1 to render markdown before sanitizing.
 
 ## Pages integration (opt-in)
 - Flag: APP_PAGES_NORMALIZE_ENABLED (app.pages_normalize_enabled)
