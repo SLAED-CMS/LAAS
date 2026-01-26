@@ -1,8 +1,11 @@
 <?php
 declare(strict_types=1);
 
+use Laas\Content\ContentNormalizer;
+use Laas\Content\MarkdownRenderer;
 use Laas\Database\DatabaseManager;
 use Laas\Domain\Menus\MenusService;
+use Laas\Security\HtmlSanitizer;
 use PHPUnit\Framework\TestCase;
 
 final class MenusServiceTest extends TestCase
@@ -80,6 +83,65 @@ final class MenusServiceTest extends TestCase
 
         $service->deleteItem($itemId);
         $this->assertNull($service->findItem($itemId));
+    }
+
+    public function testItemLabelUnchangedWhenNormalizationDisabled(): void
+    {
+        $db = $this->createDb();
+        $service = new MenusService($db, [
+            'app' => [
+                'menu_normalize_enabled' => false,
+            ],
+        ]);
+        $menu = $service->findByName('main');
+        $menuId = (int) ($menu['id'] ?? 0);
+        $input = '**bold** <script>alert(1)</script>';
+
+        $itemId = $service->createItem([
+            'menu_id' => $menuId,
+            'label' => $input,
+            'url' => '/raw',
+            'enabled' => 1,
+            'is_external' => 0,
+            'sort_order' => 1,
+            'content_format' => 'markdown',
+        ]);
+
+        $item = $service->findItem($itemId);
+        $this->assertSame($input, $item['label'] ?? null);
+    }
+
+    public function testItemLabelNormalizedWhenEnabled(): void
+    {
+        $db = $this->createDb();
+        $service = new MenusService($db, [
+            'app' => [
+                'menu_normalize_enabled' => true,
+            ],
+        ], new ContentNormalizer(
+            new MarkdownRenderer(),
+            new HtmlSanitizer()
+        ));
+        $menu = $service->findByName('main');
+        $menuId = (int) ($menu['id'] ?? 0);
+        $input = '**bold** <script>alert(1)</script><img src="x" onerror="alert(1)">';
+
+        $itemId = $service->createItem([
+            'menu_id' => $menuId,
+            'label' => $input,
+            'url' => '/safe',
+            'enabled' => 1,
+            'is_external' => 0,
+            'sort_order' => 1,
+            'content_format' => 'markdown',
+        ]);
+
+        $item = $service->findItem($itemId);
+        $label = (string) ($item['label'] ?? '');
+        $lower = strtolower($label);
+        $this->assertStringContainsString('<strong>bold</strong>', $label);
+        $this->assertStringNotContainsString('<script', $lower);
+        $this->assertStringNotContainsString('onerror', $lower);
     }
 
     private function createDb(): DatabaseManager
