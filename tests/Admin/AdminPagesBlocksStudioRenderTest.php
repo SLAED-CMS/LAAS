@@ -69,6 +69,27 @@ final class AdminPagesBlocksStudioRenderTest extends TestCase
         $this->assertStringNotContainsString('name="blocks_json"', $response->getBody());
     }
 
+    public function testPageFormRendersEditorSwitchWithoutVendors(): void
+    {
+        $_ENV['APP_DEBUG'] = 'true';
+        $db = $this->createDatabase();
+        $this->seedEditor($db->pdo(), 1);
+
+        $request = $this->makeRequest('GET', '/admin/pages/new', 1);
+        $view = SecurityTestHelper::createView($db, $request, 'admin');
+        $this->shareAdminFeatures($view, false);
+        $pages = new PagesService($db);
+        $rbac = new RbacService($db);
+        $controller = new AdminPagesController($view, $pages, $pages, null, $rbac);
+
+        $response = $controller->createForm($request);
+
+        $this->assertSame(200, $response->getStatus());
+        $this->assertStringContainsString('data-editor-choice="1"', $response->getBody());
+        $this->assertStringContainsString('name="content_format"', $response->getBody());
+        $this->assertStringContainsString('data-markdown-editor="1"', $response->getBody());
+    }
+
     private function createDatabase(): DatabaseManager
     {
         $pdo = SecurityTestHelper::createSqlitePdo();
