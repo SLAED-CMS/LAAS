@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Laas\DevTools;
 
+use Laas\Content\ContentNormalizer;
+use Laas\Security\ContentProfiles;
 use Laas\Support\Cache\CacheInterface;
 
 final class JsErrorInbox
@@ -13,7 +15,9 @@ final class JsErrorInbox
 
     public function __construct(
         private CacheInterface $cache,
-        private int $userId
+        private int $userId,
+        private array $config = [],
+        private ?ContentNormalizer $contentNormalizer = null
     ) {
     }
 
@@ -68,6 +72,14 @@ final class JsErrorInbox
         $column = (int) ($event['column'] ?? 0);
         $happenedAt = (int) ($event['happened_at'] ?? time() * 1000);
 
+        if ($this->normalizeEnabled()) {
+            $message = $this->normalizeField($message);
+            $source = $this->normalizeField($source);
+            $stack = $this->normalizeField($stack);
+            $url = $this->normalizeField($url);
+            $userAgent = $this->normalizeField($userAgent);
+        }
+
         // Size limits
         $message = substr($message, 0, 500);
         $stack = substr($stack, 0, 4000);
@@ -120,5 +132,20 @@ final class JsErrorInbox
         $str = preg_replace('/\b[A-Za-z0-9_-]{32,}\b/', '***', $str) ?? $str;
 
         return $str;
+    }
+
+    private function normalizeEnabled(): bool
+    {
+        $appConfig = $this->config['app'] ?? $this->config;
+        return (bool) ($appConfig['devtools_js_normalize_enabled'] ?? false);
+    }
+
+    private function normalizeField(string $value): string
+    {
+        if ($value === '' || $this->contentNormalizer === null) {
+            return $value;
+        }
+
+        return $this->contentNormalizer->normalize($value, 'html', ContentProfiles::USER_PLAIN);
     }
 }

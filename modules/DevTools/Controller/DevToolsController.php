@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Laas\Modules\DevTools\Controller;
 
+use Laas\Content\ContentNormalizer;
 use Laas\Core\Container\Container;
 use Laas\DevTools\DevToolsContext;
 use Laas\DevTools\JsErrorInbox;
@@ -103,7 +104,7 @@ final class DevToolsController
             return ErrorResponse::respond($request, 'type and message are required', [], 422, [], 'devtools.controller');
         }
 
-        $inbox = new JsErrorInbox($this->devtoolsCache(), $userId);
+        $inbox = $this->jsErrorInbox($userId);
         $inbox->add($data);
 
         return new Response('', 204, ['Content-Type' => 'text/plain']);
@@ -120,7 +121,7 @@ final class DevToolsController
             return Response::html('', 401);
         }
 
-        $inbox = new JsErrorInbox($this->devtoolsCache(), $userId);
+        $inbox = $this->jsErrorInbox($userId);
         $errors = $inbox->list(200);
 
         // Format time_ago for each error
@@ -164,7 +165,7 @@ final class DevToolsController
             return ErrorResponse::respond($request, 'unauthorized', [], 401, [], 'devtools.controller');
         }
 
-        $inbox = new JsErrorInbox($this->devtoolsCache(), $userId);
+        $inbox = $this->jsErrorInbox($userId);
         $inbox->clear();
 
         // Return empty list HTML for HTMX swap
@@ -225,7 +226,7 @@ final class DevToolsController
 
     private function isAllowed(Request $request): bool
     {
-        $appConfig = require dirname(__DIR__, 3) . '/config/app.php';
+        $appConfig = $this->appConfig();
         $env = strtolower((string) ($appConfig['env'] ?? ''));
         if ($env === 'prod') {
             return false;
@@ -256,6 +257,21 @@ final class DevToolsController
         return $rbac->userHasPermission($userId, 'debug.view');
     }
 
+    private function jsErrorInbox(int $userId): JsErrorInbox
+    {
+        return new JsErrorInbox(
+            $this->devtoolsCache(),
+            $userId,
+            $this->appConfig(),
+            $this->contentNormalizer()
+        );
+    }
+
+    private function appConfig(): array
+    {
+        return require dirname(__DIR__, 3) . '/config/app.php';
+    }
+
     private function rbac(): ?RbacServiceInterface
     {
         if ($this->rbacService !== null) {
@@ -277,5 +293,19 @@ final class DevToolsController
         }
 
         return null;
+    }
+
+    private function contentNormalizer(): ?ContentNormalizer
+    {
+        if ($this->container === null) {
+            return null;
+        }
+
+        try {
+            $normalizer = $this->container->get(ContentNormalizer::class);
+            return $normalizer instanceof ContentNormalizer ? $normalizer : null;
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }
