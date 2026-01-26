@@ -1,5 +1,10 @@
 # LAAS Versions
 
+## v4.0.95 â€” Tooling: fix CommonMark dependency (2026-01-26)
+- Ensure league/commonmark is required for MarkdownRenderer to keep QA green
+### Upgrade notes (Run composer install/update)
+### Breaking changes (None)
+
 ## v4.0.94 — Pages: local editor assets + fallback (2026-01-26)
 - Load TinyMCE/Toast UI from local vendor assets on the Pages form only
 - Graceful fallback to plain textarea when editor assets are missing
