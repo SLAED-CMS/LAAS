@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.93 — Pages: TinyMCE + Toast UI editor choice (admin) (2026-01-26)
+- Add admin editor switch (HTML/TinyMCE vs Markdown/Toast UI) emitting content_format
+- Keep DB/output as HTML; write-boundary normalization stays opt-in via flags
+### Upgrade notes (Add local vendor assets; optional APP_PAGES_NORMALIZE_ENABLED / APP_BLOCKS_NORMALIZE_ENABLED)
+### Breaking changes (None)
+
 ## v4.0.91 — Blocks: rich_text format support (opt-in) (2026-01-26)
 - Support per-block rich_text data.format (html|markdown) for normalization
 - Default behavior unchanged (flag off; missing format defaults to html)

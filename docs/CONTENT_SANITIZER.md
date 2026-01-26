@@ -82,6 +82,11 @@ Policy:
 - Input format: content_format=html|markdown (unknown defaults to html)
 - Saved content is sanitized HTML in the database.
 
+## Pages admin editors
+- HTML editor: TinyMCE sets content_format=html (sanitized editor_safe_rich on write when enabled).
+- Markdown editor: Toast UI sets content_format=markdown (markdown rendered then sanitized on write when enabled).
+- Output remains HTML; normalization happens only when APP_PAGES_NORMALIZE_ENABLED=1.
+
 ## User-generated content (opt-in)
 - Security reports: SECURITY_REPORTS_NORMALIZE_ENABLED (security.reports_normalize_enabled)
 - Profile: user_plain (ContentProfiles::USER_PLAIN)
