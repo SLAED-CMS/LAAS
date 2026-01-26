@@ -88,6 +88,11 @@ Policy:
 - Output remains HTML; normalization happens only when APP_PAGES_NORMALIZE_ENABLED=1.
 - Vendor assets are local under public/assets/vendor/tinymce and public/assets/vendor/toastui-editor.
 
+## Pages editor fallback rules
+- Selection source order: server content_format (if present) -> server default (html) -> localStorage override (when no content_format).
+- Availability check runs after selection; missing assets force textarea with content_format=html.
+- When Toast UI is missing, markdown mode is not persisted; fallback is textarea HTML mode.
+
 ## User-generated content (opt-in)
 - Security reports: SECURITY_REPORTS_NORMALIZE_ENABLED (security.reports_normalize_enabled)
 - Profile: user_plain (ContentProfiles::USER_PLAIN)

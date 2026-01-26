@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.98 — Pages: editor fallback hardening (2026-01-26)
+- Add test guarding markdown editor selection fallback when assets are missing
+- Doc the fallback/format rules
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.97 — Pages: editors UX + plumbing (TinyMCE/Toast UI) (2026-01-26)
 - Remember selection, safer fallback hint
 - Harden submit sync for content_format + blocks rich_text format
@@ -914,4 +920,3 @@
 - v0.1: Kernel/Router/Modules + System+Api routes
 
 **Last updated:** 2026-01-23
-

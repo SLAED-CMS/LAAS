@@ -155,7 +155,7 @@ final class AdminPagesController
 
         $editorContext = $this->editorContext();
         $contentFormat = $this->normalizeContentFormat('html');
-        $selectedEditorId = $this->resolveSelectedEditorId($contentFormat, $editorContext['caps']);
+        $selection = $this->resolveEditorSelection($contentFormat, $editorContext['caps']);
         return $this->view->render('pages/page_form.html', [
             'mode' => 'create',
             'is_edit' => false,
@@ -166,9 +166,9 @@ final class AdminPagesController
             'blocks_json_allowed' => $this->blocksJsonAllowed($request),
             'blocks_registry_types' => $this->blocksRegistry()->types(),
             'editor_selection_source' => 'default',
-            'editor_selected_id' => $selectedEditorId,
-            'editor_selected_format' => $contentFormat,
-            'editors' => $this->markEditorSelection($editorContext['editors'], $selectedEditorId),
+            'editor_selected_id' => $selection['id'],
+            'editor_selected_format' => $selection['format'],
+            'editors' => $this->markEditorSelection($editorContext['editors'], $selection['id']),
             'editor_caps' => $editorContext['caps'],
             'editor_assets' => $editorContext['assets'],
         ], 200, [], [
@@ -210,7 +210,7 @@ final class AdminPagesController
         $status = (string) ($page['status'] ?? 'draft');
         $editorContext = $this->editorContext();
         $contentFormat = $this->normalizeContentFormat($page['content_format'] ?? 'html');
-        $selectedEditorId = $this->resolveSelectedEditorId($contentFormat, $editorContext['caps']);
+        $selection = $this->resolveEditorSelection($contentFormat, $editorContext['caps']);
         return $this->view->render('pages/page_form.html', [
             'mode' => 'edit',
             'is_edit' => true,
@@ -221,9 +221,9 @@ final class AdminPagesController
             'blocks_json_allowed' => $blocksJsonAllowed,
             'blocks_registry_types' => $this->blocksRegistry()->types(),
             'editor_selection_source' => $this->selectionSource($page),
-            'editor_selected_id' => $selectedEditorId,
-            'editor_selected_format' => $contentFormat,
-            'editors' => $this->markEditorSelection($editorContext['editors'], $selectedEditorId),
+            'editor_selected_id' => $selection['id'],
+            'editor_selected_format' => $selection['format'],
+            'editors' => $this->markEditorSelection($editorContext['editors'], $selection['id']),
             'editor_caps' => $editorContext['caps'],
             'editor_assets' => $editorContext['assets'],
         ], 200, [], [
@@ -797,14 +797,23 @@ final class AdminPagesController
 
     /**
      * @param array<string, array{available: bool, reason: string}> $caps
+     * @return array{id: string, format: string}
      */
-    private function resolveSelectedEditorId(string $format, array $caps): string
+    private function resolveEditorSelection(string $format, array $caps): array
     {
         $format = $this->normalizeContentFormat($format);
         if ($format === 'markdown') {
-            return ($caps['toastui']['available'] ?? false) ? 'toastui' : 'textarea';
+            if (($caps['toastui']['available'] ?? false)) {
+                return ['id' => 'toastui', 'format' => 'markdown'];
+            }
+            return ['id' => 'textarea', 'format' => 'html'];
         }
-        return ($caps['tinymce']['available'] ?? false) ? 'tinymce' : 'textarea';
+
+        if (($caps['tinymce']['available'] ?? false)) {
+            return ['id' => 'tinymce', 'format' => 'html'];
+        }
+
+        return ['id' => 'textarea', 'format' => 'html'];
     }
 
     /**
@@ -915,7 +924,7 @@ final class AdminPagesController
         $legacyAllowed = $legacyDetected && $this->compatBlocksLegacyContent();
         $editorContext = $this->editorContext();
         $contentFormat = $this->normalizeContentFormat($page['content_format'] ?? 'html');
-        $selectedEditorId = $this->resolveSelectedEditorId($contentFormat, $editorContext['caps']);
+        $selection = $this->resolveEditorSelection($contentFormat, $editorContext['caps']);
         return $this->view->render('pages/page_form.html', [
             'mode' => $isEdit ? 'edit' : 'create',
             'is_edit' => $isEdit,
@@ -927,9 +936,9 @@ final class AdminPagesController
             'blocks_json_allowed' => $this->blocksJsonAllowed($request),
             'blocks_registry_types' => $this->blocksRegistry()->types(),
             'editor_selection_source' => $this->selectionSource($page),
-            'editor_selected_id' => $selectedEditorId,
-            'editor_selected_format' => $contentFormat,
-            'editors' => $this->markEditorSelection($editorContext['editors'], $selectedEditorId),
+            'editor_selected_id' => $selection['id'],
+            'editor_selected_format' => $selection['format'],
+            'editors' => $this->markEditorSelection($editorContext['editors'], $selection['id']),
             'editor_caps' => $editorContext['caps'],
             'editor_assets' => $editorContext['assets'],
         ], 422, [], [
