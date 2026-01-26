@@ -63,6 +63,7 @@ return [
     'routing_cache_warm' => $envBool('APP_ROUTING_CACHE_WARM', false),
     'routing_cache_warm_force' => $envBool('APP_ROUTING_CACHE_WARM_FORCE', false),
     'view_sanity_strict' => $envBool('APP_VIEW_SANITY_STRICT', false),
+    'pages_normalize_enabled' => $envBool('APP_PAGES_NORMALIZE_ENABLED', false),
     'health_write_check' => $envBool('HEALTH_WRITE_CHECK', false),
     'devtools' => [
         'enabled' => $envBool('DEVTOOLS_ENABLED', false),
