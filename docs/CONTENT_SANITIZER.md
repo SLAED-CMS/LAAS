@@ -66,6 +66,10 @@ Policy:
 - Href allows http, https, mailto, tel, plus relative URLs (/ ./ ../ # ?).
 - Src (if allowed) only allows http/https and relative URLs; data: is blocked.
 
+## Integrations
+- Pages (opt-in): APP_PAGES_NORMALIZE_ENABLED (editor_safe_rich)
+- Menu (opt-in): APP_MENU_NORMALIZE_ENABLED (editor_safe_rich)
+
 ## Pages integration (opt-in)
 - Flag: APP_PAGES_NORMALIZE_ENABLED (app.pages_normalize_enabled)
 - Profile: editor_safe_rich (ContentProfiles::EDITOR_SAFE_RICH)
