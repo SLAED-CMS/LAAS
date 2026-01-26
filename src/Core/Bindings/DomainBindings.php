@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Laas\Core\Bindings;
 
+use Laas\Content\ContentNormalizer;
 use Laas\Core\Container\Container;
 use Laas\Core\FeatureFlagsInterface;
 use Laas\Domain\AdminSearch\AdminSearchService;
@@ -53,8 +54,17 @@ final class DomainBindings
 {
     public static function register(Container $c): void
     {
-        $c->singleton(PagesServiceInterface::class, static function (): PagesServiceInterface {
-            return new PagesService(BindingsContext::database());
+        $c->singleton(PagesServiceInterface::class, static function () use ($c): PagesServiceInterface {
+            $config = BindingsContext::config();
+            $normalizer = $c->get(ContentNormalizer::class);
+            if (!$normalizer instanceof ContentNormalizer) {
+                throw new \RuntimeException('ContentNormalizer binding not available for PagesService.');
+            }
+            return new PagesService(
+                BindingsContext::database(),
+                $config,
+                $normalizer
+            );
         }, [
             'concrete' => PagesService::class,
             'read_only' => false,

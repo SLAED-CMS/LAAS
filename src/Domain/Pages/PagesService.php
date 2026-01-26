@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Laas\Domain\Pages;
 
 use InvalidArgumentException;
+use Laas\Content\ContentNormalizer;
+use Laas\Content\MarkdownRenderer;
 use Laas\Database\DatabaseManager;
 use Laas\Domain\Pages\Dto\PageSummary;
 use Laas\Domain\Pages\Dto\PageView;
@@ -19,8 +21,14 @@ class PagesService implements PagesServiceInterface, PagesReadServiceInterface, 
     private ?PagesRepository $repository = null;
     private ?PagesRevisionsRepository $revisions = null;
 
-    public function __construct(private DatabaseManager $db)
-    {
+    /**
+     * @param array<string, mixed> $config
+     */
+    public function __construct(
+        private DatabaseManager $db,
+        private array $config = [],
+        private ?ContentNormalizer $contentNormalizer = null
+    ) {
     }
 
     /** @return array<string, mixed>|null */
@@ -141,7 +149,8 @@ class PagesService implements PagesServiceInterface, PagesReadServiceInterface, 
         }
 
         $content = (string) ($data['content'] ?? '');
-        $content = (new HtmlSanitizer())->sanitize($content);
+        $contentFormat = $data['content_format'] ?? null;
+        $content = $this->normalizeContent($content, $contentFormat);
 
         $repo = $this->repository();
         $id = $repo->create([
@@ -178,7 +187,8 @@ class PagesService implements PagesServiceInterface, PagesReadServiceInterface, 
         }
 
         $content = (string) ($data['content'] ?? '');
-        $content = (new HtmlSanitizer())->sanitize($content);
+        $contentFormat = $data['content_format'] ?? null;
+        $content = $this->normalizeContent($content, $contentFormat);
 
         $this->repository()->update($id, [
             'title' => $title,
@@ -325,5 +335,41 @@ class PagesService implements PagesServiceInterface, PagesReadServiceInterface, 
         }
 
         return $status;
+    }
+
+    private function normalizeContent(string $content, mixed $format): string
+    {
+        if (!$this->pagesNormalizeEnabled()) {
+            return (new HtmlSanitizer())->sanitize($content);
+        }
+
+        $normalizer = $this->contentNormalizer();
+        $normalizedFormat = $this->normalizeContentFormat($format);
+
+        return $normalizer->normalize($content, $normalizedFormat, 'editor_safe_rich');
+    }
+
+    private function pagesNormalizeEnabled(): bool
+    {
+        $appConfig = $this->config['app'] ?? [];
+        return (bool) ($appConfig['pages_normalize_enabled'] ?? false);
+    }
+
+    private function normalizeContentFormat(mixed $format): string
+    {
+        $format = strtolower(trim((string) $format));
+        return in_array($format, ['markdown', 'html'], true) ? $format : 'html';
+    }
+
+    private function contentNormalizer(): ContentNormalizer
+    {
+        if ($this->contentNormalizer === null) {
+            $this->contentNormalizer = new ContentNormalizer(
+                new MarkdownRenderer(),
+                new HtmlSanitizer()
+            );
+        }
+
+        return $this->contentNormalizer;
     }
 }
