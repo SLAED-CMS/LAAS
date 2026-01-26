@@ -119,7 +119,7 @@ final class HtmlSanitizer
             'blocked_tags' => ['script', 'style', 'svg'],
             'allow_all_attributes' => false,
             'allowed_attributes' => [
-                'a' => ['href'],
+                'a' => ['href', 'rel', 'target'],
             ],
             'strip_comments' => true,
             'strip_event_handlers' => true,
@@ -135,6 +135,7 @@ final class HtmlSanitizer
             return '';
         }
 
+        $resolved = ContentProfiles::resolve($profile);
         $config = $this->profile($profile);
 
         $doc = new DOMDocument('1.0', 'UTF-8');
@@ -150,6 +151,9 @@ final class HtmlSanitizer
         }
 
         $this->sanitizeNode($root, $config);
+        if ($resolved === ContentProfiles::USER_PLAIN) {
+            $this->enforceUserPlainRelPolicy($doc);
+        }
 
         $out = '';
         foreach ($root->childNodes as $child) {
@@ -370,6 +374,49 @@ final class HtmlSanitizer
         }
 
         return $config;
+    }
+
+    private function enforceUserPlainRelPolicy(DOMDocument $doc): void
+    {
+        $required = ['nofollow', 'ugc', 'noopener'];
+        $links = $doc->getElementsByTagName('a');
+
+        foreach ($links as $link) {
+            $rel = strtolower(trim($link->getAttribute('rel')));
+            $tokens = [];
+            if ($rel !== '') {
+                $tokens = preg_split('/\s+/', $rel);
+                if (!is_array($tokens)) {
+                    $tokens = [];
+                }
+            }
+            $seen = [];
+            $existing = [];
+            foreach ($tokens as $token) {
+                $token = trim($token);
+                if ($token === '' || isset($seen[$token])) {
+                    continue;
+                }
+                $seen[$token] = true;
+                $existing[] = $token;
+            }
+
+            $final = [];
+            $seen = [];
+            foreach ($required as $token) {
+                $final[] = $token;
+                $seen[$token] = true;
+            }
+            foreach ($existing as $token) {
+                if (isset($seen[$token])) {
+                    continue;
+                }
+                $final[] = $token;
+                $seen[$token] = true;
+            }
+
+            $link->setAttribute('rel', implode(' ', $final));
+        }
     }
 
     private function unwrapNode(DOMNode $parent, DOMNode $node): void

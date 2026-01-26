@@ -58,6 +58,31 @@ final class HtmlSanitizerTest extends TestCase
         $this->assertStringContainsString('ok', $sanitized);
     }
 
+    public function testUserPlainAddsRelTokensWhenMissing(): void
+    {
+        $html = '<a href="https://example.com">x</a>';
+        $sanitized = (new HtmlSanitizer())->sanitize($html, ContentProfiles::USER_PLAIN);
+
+        $this->assertStringContainsString('rel="nofollow ugc noopener"', $sanitized);
+    }
+
+    public function testUserPlainMergesExistingRelTokens(): void
+    {
+        $html = '<a href="https://example.com" rel="noreferrer">x</a>';
+        $sanitized = (new HtmlSanitizer())->sanitize($html, ContentProfiles::USER_PLAIN);
+
+        $this->assertStringContainsString('rel="nofollow ugc noopener noreferrer"', $sanitized);
+    }
+
+    public function testUserPlainKeepsTargetAndEnforcesRel(): void
+    {
+        $html = '<a href="https://example.com" target="_blank">x</a>';
+        $sanitized = (new HtmlSanitizer())->sanitize($html, ContentProfiles::USER_PLAIN);
+
+        $this->assertStringContainsString('target="_blank"', $sanitized);
+        $this->assertStringContainsString('rel="nofollow ugc noopener"', $sanitized);
+    }
+
     public function testUnknownProfileFallsBackToLegacy(): void
     {
         $html = '<img src="/a.png" alt="x">';

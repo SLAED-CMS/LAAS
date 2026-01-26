@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.86 — Security: user links rel policy (2026-01-26)
+- Enforce rel="nofollow ugc noopener" for <a> in user_plain sanitizer profile
+- Add unit tests guarding rel merge behavior
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.85 — Security: user content normalization (opt-in) (2026-01-26)
 - Add user_plain normalization for security report writes behind SECURITY_REPORTS_NORMALIZE_ENABLED
 - Add tests for normalized and raw report storage paths

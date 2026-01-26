@@ -61,6 +61,8 @@ Policy:
 - Strip style attributes.
 - Block unsafe URL schemes in href/src (only http, https, mailto, tel allowed).
 - Iframes are removed.
+- Links get rel="nofollow ugc noopener" (merged with existing rel tokens).
+- Target is not added automatically; only rel is enforced.
 
 ## Pages integration (opt-in)
 - Flag: APP_PAGES_NORMALIZE_ENABLED (app.pages_normalize_enabled)
