@@ -7,8 +7,12 @@ namespace Laas\Domain\Security;
 use DateTimeImmutable;
 use DateTimeInterface;
 use InvalidArgumentException;
+use Laas\Content\ContentNormalizer;
+use Laas\Content\MarkdownRenderer;
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\SecurityReportsRepository;
+use Laas\Security\ContentProfiles;
+use Laas\Security\HtmlSanitizer;
 use RuntimeException;
 use Throwable;
 
@@ -16,8 +20,14 @@ class SecurityReportsService implements SecurityReportsServiceInterface, Securit
 {
     private ?SecurityReportsRepository $repository = null;
 
-    public function __construct(private DatabaseManager $db)
-    {
+    /**
+     * @param array<string, mixed> $config
+     */
+    public function __construct(
+        private DatabaseManager $db,
+        private array $config = [],
+        private ?ContentNormalizer $contentNormalizer = null
+    ) {
     }
 
     /** @return array<int, array<string, mixed>> */
@@ -125,6 +135,10 @@ class SecurityReportsService implements SecurityReportsServiceInterface, Securit
      */
     public function insert(array $data): void
     {
+        if ($this->reportsNormalizeEnabled()) {
+            $data = $this->normalizeReportData($data);
+        }
+
         $this->repository()->insert($data);
     }
 
@@ -151,6 +165,52 @@ class SecurityReportsService implements SecurityReportsServiceInterface, Securit
         }
 
         return $this->repository;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    private function normalizeReportData(array $data): array
+    {
+        $normalizer = $this->contentNormalizer();
+        $format = $this->normalizeContentFormat($data['content_format'] ?? null);
+        $fields = ['document_uri', 'violated_directive', 'blocked_uri', 'user_agent'];
+
+        foreach ($fields as $field) {
+            if (!array_key_exists($field, $data)) {
+                continue;
+            }
+
+            $value = (string) $data[$field];
+            $data[$field] = $normalizer->normalize($value, $format, ContentProfiles::USER_PLAIN);
+        }
+
+        return $data;
+    }
+
+    private function reportsNormalizeEnabled(): bool
+    {
+        $security = $this->config['security'] ?? [];
+        return (bool) ($security['reports_normalize_enabled'] ?? false);
+    }
+
+    private function normalizeContentFormat(mixed $format): string
+    {
+        $format = strtolower(trim((string) $format));
+        return in_array($format, ['markdown', 'html'], true) ? $format : 'html';
+    }
+
+    private function contentNormalizer(): ContentNormalizer
+    {
+        if ($this->contentNormalizer === null) {
+            $this->contentNormalizer = new ContentNormalizer(
+                new MarkdownRenderer(),
+                new HtmlSanitizer()
+            );
+        }
+
+        return $this->contentNormalizer;
     }
 
     /** @return array<string, mixed> */

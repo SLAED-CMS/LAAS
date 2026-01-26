@@ -68,6 +68,12 @@ Policy:
 - Input format: content_format=html|markdown (unknown defaults to html)
 - Saved content is sanitized HTML in the database.
 
+## User-generated content (opt-in)
+- Security reports: SECURITY_REPORTS_NORMALIZE_ENABLED (security.reports_normalize_enabled)
+- Profile: user_plain (ContentProfiles::USER_PLAIN)
+- Input format: content_format=html|markdown (unknown defaults to html)
+- Saved content is sanitized HTML in the database.
+
 ## Security notes
 - URL schemes: javascript: and data: are blocked by the sanitizer.
 - Event handlers: any on* attribute is stripped.

@@ -112,8 +112,17 @@ final class DomainBindings
             'read_only' => false,
         ]);
 
-        $c->singleton(SecurityReportsServiceInterface::class, static function (): SecurityReportsServiceInterface {
-            return new SecurityReportsService(BindingsContext::database());
+        $c->singleton(SecurityReportsServiceInterface::class, static function () use ($c): SecurityReportsServiceInterface {
+            $config = BindingsContext::config();
+            $normalizer = $c->get(ContentNormalizer::class);
+            if (!$normalizer instanceof ContentNormalizer) {
+                throw new \RuntimeException('ContentNormalizer binding not available for SecurityReportsService.');
+            }
+            return new SecurityReportsService(
+                BindingsContext::database(),
+                $config,
+                $normalizer
+            );
         }, [
             'concrete' => SecurityReportsService::class,
             'read_only' => false,

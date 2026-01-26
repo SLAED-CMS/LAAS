@@ -127,6 +127,7 @@ return [
         'raw_mode' => $templateRawMode,
     ],
     'template_raw_allowlist_path' => 'config/template_raw_allowlist.php',
+    'reports_normalize_enabled' => $envBool('SECURITY_REPORTS_NORMALIZE_ENABLED', false),
     'ai_file_apply_allowlist_prefixes' => [
         'modules/',
         'themes/',

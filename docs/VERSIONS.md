@@ -1,5 +1,12 @@
 # LAAS Versions
 
+## v4.0.85 — Security: user content normalization (opt-in) (2026-01-26)
+- Add user_plain normalization for security report writes behind SECURITY_REPORTS_NORMALIZE_ENABLED
+- Add tests for normalized and raw report storage paths
+- Document user_plain usage for user-generated content
+### Upgrade notes (Set SECURITY_REPORTS_NORMALIZE_ENABLED=1 to enable; optional content_format param)
+### Breaking changes (None)
+
 ## v4.0.84 — Security: sanitizer profiles API (Pages uses editor_safe_rich) (2026-01-26)
 - Add stable sanitizer profile identifiers and fallback to legacy when unknown
 - Wire Pages normalization to use editor_safe_rich when enabled
