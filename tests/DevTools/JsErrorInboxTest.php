@@ -3,7 +3,10 @@ declare(strict_types=1);
 
 namespace Tests\DevTools;
 
+use Laas\Content\ContentNormalizer;
+use Laas\Content\MarkdownRenderer;
 use Laas\DevTools\JsErrorInbox;
+use Laas\Security\HtmlSanitizer;
 use Laas\Support\Cache\FileCache;
 use PHPUnit\Framework\TestCase;
 
@@ -221,5 +224,75 @@ final class JsErrorInboxTest extends TestCase
         $this->assertCount(1, $list2);
         $this->assertSame('User 1 error', $list1[0]['message']);
         $this->assertSame('User 2 error', $list2[0]['message']);
+    }
+
+    public function testNormalizationDisabledKeepsInput(): void
+    {
+        $cache = new FileCache($this->cacheDir, 'test');
+        $normalizer = new ContentNormalizer(new MarkdownRenderer(), new HtmlSanitizer());
+        $inbox = new JsErrorInbox($cache, 1, [
+            'devtools_js_normalize_enabled' => false,
+        ], $normalizer);
+
+        $event = [
+            'type' => 'error',
+            'message' => 'Safe message',
+            'source' => 'app.js',
+            'line' => 10,
+            'column' => 5,
+            'stack' => 'at app.js:10:5',
+            'url' => 'https://example.com/path',
+            'userAgent' => 'Mozilla/5.0',
+            'happened_at' => time() * 1000,
+        ];
+
+        $inbox->add($event);
+
+        $list = $inbox->list();
+        $this->assertCount(1, $list);
+        $this->assertSame($event['message'], $list[0]['message']);
+        $this->assertSame($event['source'], $list[0]['source']);
+        $this->assertSame($event['stack'], $list[0]['stack']);
+        $this->assertSame($event['url'], $list[0]['url']);
+        $this->assertSame($event['userAgent'], $list[0]['userAgent']);
+    }
+
+    public function testNormalizationEnabledSanitizesContent(): void
+    {
+        $cache = new FileCache($this->cacheDir, 'test');
+        $normalizer = new ContentNormalizer(new MarkdownRenderer(), new HtmlSanitizer());
+        $inbox = new JsErrorInbox($cache, 1, [
+            'devtools_js_normalize_enabled' => true,
+        ], $normalizer);
+
+        $event = [
+            'type' => 'error',
+            'message' => '<script>alert(1)</script><a href="javascript:alert(1)">bad</a>'
+                . '<a href="https://example.com">ok</a>',
+            'source' => '<img src="x" onerror="alert(1)">source',
+            'line' => 10,
+            'column' => 5,
+            'stack' => 'Stack <a href="https://example.com">link</a>',
+            'url' => 'https://example.com/path',
+            'userAgent' => '<b>UA</b>',
+            'happened_at' => time() * 1000,
+        ];
+
+        $inbox->add($event);
+
+        $list = $inbox->list();
+        $this->assertCount(1, $list);
+        $message = (string) $list[0]['message'];
+        $source = (string) $list[0]['source'];
+        $stack = (string) $list[0]['stack'];
+        $lowerMessage = strtolower($message);
+        $lowerSource = strtolower($source);
+
+        $this->assertStringNotContainsString('<script', $lowerMessage);
+        $this->assertStringNotContainsString('javascript:', $lowerMessage);
+        $this->assertStringContainsString('rel="nofollow ugc noopener"', $message);
+        $this->assertStringNotContainsString('onerror', $lowerSource);
+        $this->assertStringNotContainsString('<img', $lowerSource);
+        $this->assertStringContainsString('rel="nofollow ugc noopener"', $stack);
     }
 }
