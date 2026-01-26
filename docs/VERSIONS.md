@@ -1,5 +1,12 @@
 # LAAS Versions
 
+## v4.0.83 — Pages: content normalization (opt-in) (2026-01-26)
+- Integrate ContentNormalizer into Pages save/update behind APP_PAGES_NORMALIZE_ENABLED
+- Support content_format=html|markdown (optional)
+- No behavior change by default
+### Upgrade notes (Set APP_PAGES_NORMALIZE_ENABLED=1 to enable; optional content_format param)
+### Breaking changes (None)
+
 ## v4.0.82 — Security: content sanitizer foundation (2026-01-26)
 - Add MarkdownRenderer + HtmlSanitizer (profiles) + ContentNormalizer (no integrations yet)
 - Add docs/CONTENT_SANITIZER.md describing pipeline and profiles

@@ -57,6 +57,12 @@ Policy:
 - Block unsafe URL schemes in href/src (only http, https, mailto, tel allowed).
 - Iframes are removed.
 
+## Pages integration (opt-in)
+- Flag: APP_PAGES_NORMALIZE_ENABLED (app.pages_normalize_enabled)
+- Profile: editor_safe_rich
+- Input format: content_format=html|markdown (unknown defaults to html)
+- Saved content is sanitized HTML in the database.
+
 ## Security notes
 - URL schemes: javascript: and data: are blocked by the sanitizer.
 - Event handlers: any on* attribute is stripped.
