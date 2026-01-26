@@ -1,5 +1,15 @@
 {% extends "layout.html" %}
 
+{% block head_extra %}
+  <link href="{% assets.toastui_editor_css %}" rel="stylesheet">
+{% endblock %}
+
+{% block scripts_extra %}
+  <script src="{% assets.tinymce_js %}" defer></script>
+  <script src="{% assets.toastui_editor_js %}" defer></script>
+  <script src="{% assets.pages_admin_editors_js %}" defer></script>
+{% endblock %}
+
 {% block content %}
 <div class="row g-4">
   <div class="col-12 col-lg-8">
@@ -47,13 +57,28 @@
             </select>
           </div>
           <div class="mb-3">
+            <label class="form-label">Editor</label>
+            <div class="btn-group" role="group" aria-label="Content editor">
+              <input class="btn-check" type="radio" name="content_format_ui" id="content-format-html"
+                     value="html" data-editor-choice="1" autocomplete="off"
+                     {% if page.content_format == 'markdown' %}{% else %}checked{% endif %}>
+              <label class="btn btn-outline-secondary btn-sm" for="content-format-html">HTML (TinyMCE)</label>
+              <input class="btn-check" type="radio" name="content_format_ui" id="content-format-markdown"
+                     value="markdown" data-editor-choice="1" autocomplete="off"
+                     {% if page.content_format == 'markdown' %}checked{% endif %}>
+              <label class="btn btn-outline-secondary btn-sm" for="content-format-markdown">Markdown (Toast UI)</label>
+            </div>
+            <input type="hidden" name="content_format" value="{% if page.content_format == 'markdown' %}markdown{% else %}html{% endif %}" data-content-format="1">
+          </div>
+          <div class="mb-3">
             <label class="form-label">
               {% t 'admin.pages.form.content' %}
               {% if legacy_content %}
               <span class="badge text-bg-warning ms-2">{% t 'admin.pages.legacy_content' %}</span>
               {% endif %}
             </label>
-            <textarea class="form-control" name="content" rows="10">{% page.content %}</textarea>
+            <textarea class="form-control" id="page-content" name="content" rows="10">{% page.content %}</textarea>
+            <div class="border rounded bg-white p-2 d-none" data-markdown-editor="1"></div>
             {% if legacy_content %}
             <div class="form-text text-warning">{% t 'admin.pages.legacy_content_hint' %}</div>
             {% endif %}

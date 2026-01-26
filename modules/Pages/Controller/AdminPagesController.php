@@ -227,7 +227,7 @@ final class AdminPagesController
         $title = trim((string) ($request->post('title') ?? ''));
         $slug = trim((string) ($request->post('slug') ?? ''));
         $content = (string) ($request->post('content') ?? '');
-        $contentFormat = (string) ($request->post('content_format') ?? '');
+        $contentFormat = $this->normalizeContentFormat($request->post('content_format'));
         $status = (string) ($request->post('status') ?? 'draft');
         $blocksRaw = '';
         $blocksData = null;
@@ -893,6 +893,12 @@ final class AdminPagesController
         }
 
         return ucfirst($field);
+    }
+
+    private function normalizeContentFormat(mixed $format): string
+    {
+        $format = strtolower(trim((string) $format));
+        return in_array($format, ['markdown', 'html'], true) ? $format : 'html';
     }
 
     private function blocksJsonErrorResponse(Request $request, array $page, string $detail): Response
