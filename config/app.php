@@ -65,6 +65,7 @@ return [
     'view_sanity_strict' => $envBool('APP_VIEW_SANITY_STRICT', false),
     'pages_normalize_enabled' => $envBool('APP_PAGES_NORMALIZE_ENABLED', false),
     'menu_normalize_enabled' => $envBool('APP_MENU_NORMALIZE_ENABLED', false),
+    'devtools_js_normalize_enabled' => $envBool('APP_DEVTOOLS_JS_NORMALIZE_ENABLED', false),
     'health_write_check' => $envBool('HEALTH_WRITE_CHECK', false),
     'devtools' => [
         'enabled' => $envBool('DEVTOOLS_ENABLED', false),
