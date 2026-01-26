@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.90 — Blocks: normalize saved content (opt-in) (2026-01-26)
+- Sanitize block content at write-boundary via ContentNormalizer (editor_safe_rich) (opt-in)
+- Default behavior unchanged (flag off)
+### Upgrade notes (Set APP_BLOCKS_NORMALIZE_ENABLED=1 to enable)
+### Breaking changes (None)
+
 ## v4.0.89 — DevTools: user_plain normalization (opt-in) (2026-01-26)
 - Sanitize JS error inbox writes via ContentNormalizer user_plain (opt-in)
 - Default behavior unchanged (flag off)

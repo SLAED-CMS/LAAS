@@ -122,6 +122,75 @@ final class PagesServiceTest extends TestCase
         $this->assertStringNotContainsString('<script', $lowerMarkdown);
     }
 
+    public function testBlocksContentUnchangedWhenNormalizationDisabled(): void
+    {
+        $db = $this->createDb();
+        $service = new PagesService($db);
+
+        $page = $service->create([
+            'title' => 'Blocks',
+            'slug' => 'blocks',
+            'content' => 'Text',
+            'status' => 'draft',
+        ]);
+        $pageId = (int) ($page['id'] ?? 0);
+
+        $blocks = [
+            [
+                'type' => 'rich_text',
+                'data' => [
+                    'html' => '<p>Hello</p><img src="https://example.com/x.png" onerror="alert(1)"><script>alert(1)</script>',
+                ],
+            ],
+        ];
+
+        $service->createRevision($pageId, $blocks, null);
+
+        $storedBlocks = $service->findLatestBlocks($pageId);
+        $this->assertSame($blocks[0]['data']['html'], $storedBlocks[0]['data']['html'] ?? null);
+    }
+
+    public function testBlocksContentNormalizedWhenEnabledHtml(): void
+    {
+        $db = $this->createDb();
+        $service = new PagesService($db, [
+            'app' => [
+                'blocks_normalize_enabled' => true,
+            ],
+        ], new \Laas\Content\ContentNormalizer(
+            new \Laas\Content\MarkdownRenderer(),
+            new \Laas\Security\HtmlSanitizer()
+        ));
+
+        $page = $service->create([
+            'title' => 'Blocks Normalized',
+            'slug' => 'blocks-normalized',
+            'content' => 'Text',
+            'status' => 'draft',
+        ]);
+        $pageId = (int) ($page['id'] ?? 0);
+
+        $blocks = [
+            [
+                'type' => 'rich_text',
+                'data' => [
+                    'html' => '<p>Hi</p><a href="https://example.com">ok</a><a href="javascript:alert(1)">bad</a><img src="https://example.com/x.png" onerror="alert(1)"><script>alert(1)</script>',
+                ],
+            ],
+        ];
+
+        $service->createRevision($pageId, $blocks, null);
+
+        $storedBlocks = $service->findLatestBlocks($pageId);
+        $storedHtml = (string) ($storedBlocks[0]['data']['html'] ?? '');
+        $lowerHtml = strtolower($storedHtml);
+        $this->assertStringContainsString('<p>Hi</p>', $storedHtml);
+        $this->assertStringContainsString('href="https://example.com"', $storedHtml);
+        $this->assertStringNotContainsString('<script', $lowerHtml);
+        $this->assertStringNotContainsString('onerror', $lowerHtml);
+        $this->assertStringNotContainsString('javascript:', $lowerHtml);
+    }
+
     private function createDb(): DatabaseManager
     {
         $db = new DatabaseManager(['driver' => 'sqlite', 'database' => ':memory:']);
@@ -135,6 +204,15 @@ final class PagesServiceTest extends TestCase
                 status TEXT,
                 created_at TEXT,
                 updated_at TEXT
+            )'
+        );
+        $pdo->exec(
+            'CREATE TABLE pages_revisions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                page_id INTEGER,
+                blocks_json TEXT,
+                created_at TEXT,
+                created_by INTEGER
             )'
         );
 
