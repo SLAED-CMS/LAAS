@@ -8,13 +8,50 @@
     return form.querySelector('[data-content-format="1"]') || form.querySelector('input[name="content_format"]');
   }
 
-  function getEditorChoice(form) {
+  function readEditorCaps(form) {
+    var caps = {};
+    var choices = form.querySelectorAll('[data-editor-choice="1"]');
+    choices.forEach(function (choice) {
+      var id = (choice.dataset.editorId || '').toString().trim();
+      if (!id) {
+        return;
+      }
+      caps[id] = choice.dataset.editorAvailable === '1';
+    });
+    return caps;
+  }
+
+  function readEditorChoice(form, caps) {
     var checked = form.querySelector('[data-editor-choice="1"]:checked');
     if (checked) {
-      return normalizeFormat(checked.value);
+      var choice = {
+        id: (checked.dataset.editorId || '').toString().trim(),
+        format: normalizeFormat(checked.value),
+        available: checked.dataset.editorAvailable === '1'
+      };
+      if (!choice.id) {
+        choice.id = choice.format === 'markdown' ? 'toastui' : 'tinymce';
+      }
+      if (caps && Object.prototype.hasOwnProperty.call(caps, choice.id)) {
+        choice.available = caps[choice.id] === true;
+      }
+      return choice;
     }
     var input = getFormatInput(form);
-    return normalizeFormat(input ? input.value : 'html');
+    var fallbackFormat = normalizeFormat(input ? input.value : 'html');
+    var fallbackId = form.dataset.editorSelectedId || '';
+    if (!fallbackId) {
+      fallbackId = fallbackFormat === 'markdown' ? 'toastui' : 'tinymce';
+    }
+    var available = true;
+    if (caps && Object.prototype.hasOwnProperty.call(caps, fallbackId)) {
+      available = caps[fallbackId] === true;
+    }
+    return {
+      id: fallbackId,
+      format: fallbackFormat,
+      available: available
+    };
   }
 
   function setFormatValue(form, format) {
@@ -89,8 +126,9 @@
     }
     var markdownHost = form.querySelector('[data-markdown-editor="1"]');
     var formatInput = getFormatInput(form);
-    var mode = getEditorChoice(form);
-    setFormatValue(form, mode);
+    var caps = readEditorCaps(form);
+    var choice = readEditorChoice(form, caps);
+    setFormatValue(form, choice.format);
 
     var toastEditor = null;
     var tinyInit = false;
@@ -98,6 +136,9 @@
     function ensureToastUiEditor() {
       if (toastEditor || !markdownHost) {
         return toastEditor;
+      }
+      if (caps.toastui === false) {
+        return null;
       }
       if (!window.toastui || !window.toastui.Editor) {
         return null;
@@ -118,6 +159,9 @@
       if (tinyInit || !window.tinymce) {
         return;
       }
+      if (caps.tinymce === false) {
+        return;
+      }
       var id = ensureTextareaId(textarea);
       if (window.tinymce.get(id)) {
         tinyInit = true;
@@ -134,8 +178,9 @@
       tinyInit = true;
     }
 
-    function setMode(nextMode) {
-      var normalized = normalizeFormat(nextMode);
+    function setMode(nextChoice) {
+      var resolved = typeof nextChoice === 'string' ? readEditorChoice(form, caps) : nextChoice;
+      var normalized = normalizeFormat(resolved.format);
       setFormatValue(form, normalized);
       if (normalized === 'markdown') {
         if (window.tinymce && textarea.id) {
@@ -145,7 +190,7 @@
             tinyInit = false;
           }
         }
-        var editor = ensureToastUiEditor();
+        var editor = resolved.available ? ensureToastUiEditor() : null;
         if (editor) {
           editor.setMarkdown(textarea.value || '');
           markdownHost.classList.remove('d-none');
@@ -164,20 +209,24 @@
           markdownHost.classList.add('d-none');
         }
         textarea.classList.remove('d-none');
-        ensureTinyMceEditor();
+        if (resolved.available) {
+          ensureTinyMceEditor();
+        }
       }
     }
 
     var choices = form.querySelectorAll('[data-editor-choice="1"]');
     choices.forEach(function (choice) {
       choice.addEventListener('change', function () {
-        setMode(getEditorChoice(form));
-        applyBlocksFormat(form, getEditorChoice(form));
+        var nextChoice = readEditorChoice(form, caps);
+        setMode(nextChoice);
+        applyBlocksFormat(form, nextChoice.format);
       });
     });
 
     form.addEventListener('submit', function () {
-      var format = getEditorChoice(form);
+      var currentChoice = readEditorChoice(form, caps);
+      var format = currentChoice.format;
       if (format === 'markdown') {
         var editor = ensureToastUiEditor();
         if (editor) {
@@ -189,10 +238,10 @@
       applyBlocksFormat(form, format);
     });
 
-    setMode(mode);
+    setMode(choice);
 
     if (formatInput && formatInput.value === '') {
-      formatInput.value = mode;
+      formatInput.value = choice.format;
     }
   }
 
@@ -226,7 +275,7 @@
     if (!form) {
       return;
     }
-    var format = getEditorChoice(form);
+    var format = readEditorChoice(form, readEditorCaps(form)).format;
     var textarea = form.querySelector('textarea[name="content"]');
     if (format === 'markdown' && textarea) {
       var editor = form._pagesToastEditor;

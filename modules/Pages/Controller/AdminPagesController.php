@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Laas\Modules\Pages\Controller;
 
+use Laas\Admin\Editors\EditorProvidersRegistry;
 use Laas\Api\ApiCacheInvalidator;
 use Laas\Assets\AssetsManager;
 use Laas\Content\Blocks\BlockRegistry;
@@ -153,6 +154,8 @@ final class AdminPagesController
         }
 
         $editorContext = $this->editorContext();
+        $contentFormat = $this->normalizeContentFormat('html');
+        $selectedEditorId = $this->selectedEditorId($contentFormat);
         return $this->view->render('pages/page_form.html', [
             'mode' => 'create',
             'is_edit' => false,
@@ -162,6 +165,9 @@ final class AdminPagesController
             'legacy_content' => false,
             'blocks_json_allowed' => $this->blocksJsonAllowed($request),
             'blocks_registry_types' => $this->blocksRegistry()->types(),
+            'editor_selected_id' => $selectedEditorId,
+            'editor_selected_format' => $contentFormat,
+            'editors' => $this->markEditorSelection($editorContext['editors'], $selectedEditorId),
             'editor_caps' => $editorContext['caps'],
             'editor_assets' => $editorContext['assets'],
         ], 200, [], [
@@ -202,6 +208,8 @@ final class AdminPagesController
         $legacyAllowed = $legacyDetected && $this->compatBlocksLegacyContent();
         $status = (string) ($page['status'] ?? 'draft');
         $editorContext = $this->editorContext();
+        $contentFormat = $this->normalizeContentFormat($page['content_format'] ?? 'html');
+        $selectedEditorId = $this->selectedEditorId($contentFormat);
         return $this->view->render('pages/page_form.html', [
             'mode' => 'edit',
             'is_edit' => true,
@@ -211,6 +219,9 @@ final class AdminPagesController
             'legacy_content' => $legacyAllowed,
             'blocks_json_allowed' => $blocksJsonAllowed,
             'blocks_registry_types' => $this->blocksRegistry()->types(),
+            'editor_selected_id' => $selectedEditorId,
+            'editor_selected_format' => $contentFormat,
+            'editors' => $this->markEditorSelection($editorContext['editors'], $selectedEditorId),
             'editor_caps' => $editorContext['caps'],
             'editor_assets' => $editorContext['assets'],
         ], 200, [], [
@@ -754,18 +765,50 @@ final class AdminPagesController
     }
 
     /**
-     * @return array{caps: array{tinymce: bool, toastui: bool}, assets: array<string, string>}
+     * @return array{editors: array<int, array{id: string, label: string, format: string, available: bool, reason: string}>, caps: array<string, array{available: bool, reason: string}>, assets: array<string, array{js: string, css: string}|string>}
      */
     private function editorContext(): array
     {
-        $assetsManager = new AssetsManager($this->assetsConfig());
+        $registry = $this->editorRegistry();
         return [
-            'caps' => [
-                'tinymce' => $assetsManager->hasTinyMce(),
-                'toastui' => $assetsManager->hasToastUi(),
-            ],
-            'assets' => $assetsManager->editorAssets(),
+            'editors' => $registry->editors(),
+            'caps' => $registry->capabilities(),
+            'assets' => $registry->assets(),
         ];
+    }
+
+    private function editorRegistry(): EditorProvidersRegistry
+    {
+        if ($this->container !== null) {
+            try {
+                $registry = $this->container->get(EditorProvidersRegistry::class);
+                if ($registry instanceof EditorProvidersRegistry) {
+                    return $registry;
+                }
+            } catch (Throwable) {
+                // Fall through to local registry.
+            }
+        }
+
+        return new EditorProvidersRegistry(new AssetsManager($this->assetsConfig()));
+    }
+
+    private function selectedEditorId(string $format): string
+    {
+        $format = $this->normalizeContentFormat($format);
+        return $format === 'markdown' ? 'toastui' : 'tinymce';
+    }
+
+    /**
+     * @param array<int, array{id: string, label: string, format: string, available: bool, reason: string}> $editors
+     * @return array<int, array{id: string, label: string, format: string, available: bool, reason: string, selected: bool}>
+     */
+    private function markEditorSelection(array $editors, string $selectedId): array
+    {
+        foreach ($editors as $index => $editor) {
+            $editors[$index]['selected'] = $editor['id'] === $selectedId;
+        }
+        return $editors;
     }
 
     /**
@@ -854,6 +897,8 @@ final class AdminPagesController
         $legacyDetected = $this->isLegacyContent($page);
         $legacyAllowed = $legacyDetected && $this->compatBlocksLegacyContent();
         $editorContext = $this->editorContext();
+        $contentFormat = $this->normalizeContentFormat($page['content_format'] ?? 'html');
+        $selectedEditorId = $this->selectedEditorId($contentFormat);
         return $this->view->render('pages/page_form.html', [
             'mode' => $isEdit ? 'edit' : 'create',
             'is_edit' => $isEdit,
@@ -864,6 +909,9 @@ final class AdminPagesController
             'legacy_content' => $legacyAllowed,
             'blocks_json_allowed' => $this->blocksJsonAllowed($request),
             'blocks_registry_types' => $this->blocksRegistry()->types(),
+            'editor_selected_id' => $selectedEditorId,
+            'editor_selected_format' => $contentFormat,
+            'editors' => $this->markEditorSelection($editorContext['editors'], $selectedEditorId),
             'editor_caps' => $editorContext['caps'],
             'editor_assets' => $editorContext['assets'],
         ], 422, [], [

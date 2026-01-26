@@ -1,17 +1,17 @@
 {% extends "layout.html" %}
 
 {% block head_extra %}
-  {% if editor_caps.toastui %}
-  <link href="{% editor_assets.toastui_editor_css %}" rel="stylesheet">
+  {% if editor_caps.toastui.available %}
+  <link href="{% editor_assets.toastui.css %}" rel="stylesheet">
   {% endif %}
 {% endblock %}
 
 {% block scripts_extra %}
-  {% if editor_caps.tinymce %}
-  <script src="{% editor_assets.tinymce_js %}" defer></script>
+  {% if editor_caps.tinymce.available %}
+  <script src="{% editor_assets.tinymce.js %}" defer></script>
   {% endif %}
-  {% if editor_caps.toastui %}
-  <script src="{% editor_assets.toastui_editor_js %}" defer></script>
+  {% if editor_caps.toastui.available %}
+  <script src="{% editor_assets.toastui.js %}" defer></script>
   {% endif %}
   <script src="{% editor_assets.pages_admin_editors_js %}" defer></script>
 {% endblock %}
@@ -41,7 +41,9 @@
               hx-indicator="#loading"
               data-slug-form="1"
               data-page-form="1"
-              data-mode="{% mode %}">
+              data-mode="{% mode %}"
+              data-editor-selected-id="{% editor_selected_id %}"
+              data-editor-selected-format="{% editor_selected_format %}">
           <input type="hidden" name="_token" value="{% csrf_token %}">
           {% if is_edit %}
           <input type="hidden" name="id" value="{% page.id %}">
@@ -65,16 +67,17 @@
           <div class="mb-3">
             <label class="form-label">Editor</label>
             <div class="btn-group" role="group" aria-label="Content editor">
-              <input class="btn-check" type="radio" name="content_format_ui" id="content-format-html"
-                     value="html" data-editor-choice="1" autocomplete="off"
-                     {% if page.content_format == 'markdown' %}{% else %}checked{% endif %}>
-              <label class="btn btn-outline-secondary btn-sm" for="content-format-html">HTML (TinyMCE)</label>
-              <input class="btn-check" type="radio" name="content_format_ui" id="content-format-markdown"
-                     value="markdown" data-editor-choice="1" autocomplete="off"
-                     {% if page.content_format == 'markdown' %}checked{% endif %}>
-              <label class="btn btn-outline-secondary btn-sm" for="content-format-markdown">Markdown (Toast UI)</label>
+              {% foreach editors as editor %}
+              {% if editor.id != 'textarea' %}
+              <input class="btn-check" type="radio" name="content_format_ui" id="content-format-{% editor.id %}"
+                     value="{% editor.format %}" data-editor-choice="1" data-editor-id="{% editor.id %}"
+                     data-editor-available="{% if editor.available %}1{% else %}0{% endif %}"
+                     {% if editor.selected %}checked{% endif %} autocomplete="off">
+              <label class="btn btn-outline-secondary btn-sm" for="content-format-{% editor.id %}">{% editor.label %}</label>
+              {% endif %}
+              {% endforeach %}
             </div>
-            <input type="hidden" name="content_format" value="{% if page.content_format == 'markdown' %}markdown{% else %}html{% endif %}" data-content-format="1">
+            <input type="hidden" name="content_format" value="{% editor_selected_format %}" data-content-format="1">
           </div>
           <div class="mb-3">
             <label class="form-label">

@@ -86,6 +86,8 @@ final class AdminPagesBlocksStudioRenderTest extends TestCase
 
         $this->assertSame(200, $response->getStatus());
         $this->assertStringContainsString('data-editor-choice="1"', $response->getBody());
+        $this->assertStringContainsString('data-editor-id="tinymce"', $response->getBody());
+        $this->assertStringContainsString('data-editor-id="toastui"', $response->getBody());
         $this->assertStringContainsString('name="content_format"', $response->getBody());
         $this->assertStringContainsString('data-markdown-editor="1"', $response->getBody());
     }

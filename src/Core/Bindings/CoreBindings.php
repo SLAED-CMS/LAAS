@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Laas\Core\Bindings;
 
+use Laas\Admin\Editors\EditorProvidersRegistry;
+use Laas\Assets\AssetsManager;
 use Laas\Content\ContentNormalizer;
 use Laas\Content\MarkdownRenderer;
 use Laas\Core\Container\Container;
@@ -135,6 +137,31 @@ final class CoreBindings
             return new MarkdownRenderer();
         }, [
             'concrete' => MarkdownRenderer::class,
+            'read_only' => false,
+        ]);
+
+        $c->singleton(AssetsManager::class, static function (): AssetsManager {
+            $root = BindingsContext::rootPath();
+            $path = $root . '/config/assets.php';
+            $config = [];
+            if (is_file($path)) {
+                $loaded = require $path;
+                $config = is_array($loaded) ? $loaded : [];
+            }
+            return new AssetsManager($config);
+        }, [
+            'concrete' => AssetsManager::class,
+            'read_only' => false,
+        ]);
+
+        $c->singleton(EditorProvidersRegistry::class, static function () use ($c): EditorProvidersRegistry {
+            $assets = $c->get(AssetsManager::class);
+            if (!$assets instanceof AssetsManager) {
+                throw new \RuntimeException('AssetsManager binding not available for EditorProvidersRegistry.');
+            }
+            return new EditorProvidersRegistry($assets);
+        }, [
+            'concrete' => EditorProvidersRegistry::class,
             'read_only' => false,
         ]);
 

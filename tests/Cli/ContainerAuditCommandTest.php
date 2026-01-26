@@ -23,7 +23,7 @@ final class ContainerAuditCommandTest extends TestCase
         $lines = array_values(array_filter(array_map('trim', explode("\n", $output)), static fn(string $line): bool => $line !== ''));
         $this->assertNotEmpty($lines);
         $this->assertSame(
-            'Laas\\Content\\Blocks\\BlockRegistry => Laas\\Content\\Blocks\\BlockRegistry | singleton',
+            'Laas\\Admin\\Editors\\EditorProvidersRegistry => Laas\\Admin\\Editors\\EditorProvidersRegistry | singleton',
             $lines[0]
         );
         $this->assertSame(

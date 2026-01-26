@@ -1,6 +1,12 @@
 # LAAS Versions
 
-## v4.0.95 â€” Tooling: fix CommonMark dependency (2026-01-26)
+## v4.0.96 — Pages: editor provider layer (B1) (2026-01-26)
+- Add editor provider abstraction (TinyMCE/ToastUI/textarea fallback)
+- No functional changes intended; prepares for B2 (more editors)
+### Upgrade notes (None)
+### Breaking changes (None)
+
+## v4.0.95 — Tooling: fix CommonMark dependency (2026-01-26)
 - Ensure league/commonmark is required for MarkdownRenderer to keep QA green
 ### Upgrade notes (Run composer install/update)
 ### Breaking changes (None)
