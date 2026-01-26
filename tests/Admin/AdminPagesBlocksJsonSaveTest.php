@@ -2,10 +2,13 @@
 declare(strict_types=1);
 
 use Laas\Auth\NullAuthService;
+use Laas\Content\ContentNormalizer;
+use Laas\Content\MarkdownRenderer;
 use Laas\Database\DatabaseManager;
 use Laas\Http\Request;
 use Laas\I18n\Translator;
 use Laas\Modules\Pages\Controller\AdminPagesController;
+use Laas\Security\HtmlSanitizer;
 use Laas\Settings\SettingsProvider;
 use Laas\Support\RequestScope;
 use Laas\View\AssetManager;
@@ -77,6 +80,49 @@ final class AdminPagesBlocksJsonSaveTest extends TestCase
         $this->assertIsArray($decoded);
         $this->assertSame('rich_text', $decoded[0]['type'] ?? null);
         $this->assertSame('<p>Block</p>', $decoded[0]['data']['html'] ?? null);
+    }
+
+    public function testSavePassesMarkdownContentFormat(): void
+    {
+        $db = $this->createDatabase();
+        $pdo = $db->pdo();
+
+        $pdo->exec("INSERT INTO users (id, username, email) VALUES (1, 'admin', 'admin@example.com')");
+        $pdo->exec("INSERT INTO roles (id, name, title, created_at, updated_at) VALUES (1, 'admin', 'Admin', '2026-01-01 00:00:00', '2026-01-01 00:00:00')");
+        $pdo->exec("INSERT INTO permissions (id, name, title, created_at, updated_at) VALUES (1, 'pages.edit', 'Pages edit', '2026-01-01 00:00:00', '2026-01-01 00:00:00')");
+        $pdo->exec("INSERT INTO permission_role (role_id, permission_id) VALUES (1, 1)");
+        $pdo->exec("INSERT INTO role_user (user_id, role_id) VALUES (1, 1)");
+
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $session = $this->buildSession(1);
+        $request = new Request('POST', '/admin/pages/save', [], [
+            'title' => 'Markdown',
+            'slug' => 'markdown',
+            'content' => '**bold** <script>alert(1)</script>',
+            'content_format' => 'markdown',
+            'status' => 'draft',
+        ], [], '');
+        $request->setSession($session);
+
+        $view = $this->createView($db, $request);
+        $container = SecurityTestHelper::createContainer($db);
+        $service = new \Laas\Domain\Pages\PagesService($db, [
+            'app' => [
+                'pages_normalize_enabled' => true,
+            ],
+        ], new ContentNormalizer(
+            new MarkdownRenderer(),
+            new HtmlSanitizer()
+        ));
+        $controller = new AdminPagesController($view, $service, $service, $container);
+
+        $response = $controller->save($request);
+
+        $this->assertSame(303, $response->getStatus());
+        $stored = (string) $pdo->query('SELECT content FROM pages WHERE id = 1')->fetchColumn();
+        $lower = strtolower($stored);
+        $this->assertStringContainsString('<strong>bold</strong>', $stored);
+        $this->assertStringNotContainsString('<script', $lower);
     }
 
     private function createDatabase(): DatabaseManager
