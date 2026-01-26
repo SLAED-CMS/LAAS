@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Laas\Domain\Menus;
 
 use InvalidArgumentException;
+use Laas\Content\ContentNormalizer;
 use Laas\Database\DatabaseManager;
 use Laas\Modules\Menu\Repository\MenuItemsRepository;
 use Laas\Modules\Menu\Repository\MenusRepository;
+use Laas\Security\ContentProfiles;
 use RuntimeException;
 use Throwable;
 
@@ -16,8 +18,14 @@ class MenusService implements MenusServiceInterface, MenusReadServiceInterface, 
     private ?MenusRepository $menus = null;
     private ?MenuItemsRepository $items = null;
 
-    public function __construct(private DatabaseManager $db)
-    {
+    /**
+     * @param array<string, mixed> $config
+     */
+    public function __construct(
+        private DatabaseManager $db,
+        private array $config = [],
+        private ?ContentNormalizer $contentNormalizer = null
+    ) {
     }
 
     /** @return array<int, array<string, mixed>> */
@@ -123,6 +131,7 @@ class MenusService implements MenusServiceInterface, MenusReadServiceInterface, 
     /** @mutation */
     public function createItem(array $data): int
     {
+        $data = $this->normalizeItemLabel($data);
         return $this->menuItemsRepository()->saveItem($data);
     }
 
@@ -135,6 +144,7 @@ class MenusService implements MenusServiceInterface, MenusReadServiceInterface, 
 
         $payload = $data;
         $payload['id'] = $id;
+        $payload = $this->normalizeItemLabel($payload);
         return $this->menuItemsRepository()->saveItem($payload);
     }
 
@@ -194,6 +204,44 @@ class MenusService implements MenusServiceInterface, MenusReadServiceInterface, 
         }
 
         return $this->items;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    private function normalizeItemLabel(array $data): array
+    {
+        if (!$this->menuNormalizeEnabled()) {
+            return $data;
+        }
+
+        $label = (string) ($data['label'] ?? '');
+        $format = $this->normalizeContentFormat($data['content_format'] ?? null);
+        $data['label'] = $this->contentNormalizer()->normalize($label, $format, ContentProfiles::EDITOR_SAFE_RICH);
+
+        return $data;
+    }
+
+    private function menuNormalizeEnabled(): bool
+    {
+        $appConfig = $this->config['app'] ?? [];
+        return (bool) ($appConfig['menu_normalize_enabled'] ?? false);
+    }
+
+    private function normalizeContentFormat(mixed $format): string
+    {
+        $format = strtolower(trim((string) $format));
+        return in_array($format, ['markdown', 'html'], true) ? $format : 'html';
+    }
+
+    private function contentNormalizer(): ContentNormalizer
+    {
+        if ($this->contentNormalizer === null) {
+            throw new RuntimeException('ContentNormalizer binding not available for MenusService.');
+        }
+
+        return $this->contentNormalizer;
     }
 
     /** @return array<string, mixed> */

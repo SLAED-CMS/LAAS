@@ -258,8 +258,17 @@ final class DomainBindings
             'read_only' => false,
         ]);
 
-        $c->singleton(MenusServiceInterface::class, static function (): MenusServiceInterface {
-            return new MenusService(BindingsContext::database());
+        $c->singleton(MenusServiceInterface::class, static function () use ($c): MenusServiceInterface {
+            $config = BindingsContext::config();
+            $normalizer = $c->get(ContentNormalizer::class);
+            if (!$normalizer instanceof ContentNormalizer) {
+                throw new \RuntimeException('ContentNormalizer binding not available for MenusService.');
+            }
+            return new MenusService(
+                BindingsContext::database(),
+                $config,
+                $normalizer
+            );
         }, [
             'concrete' => MenusService::class,
             'read_only' => false,

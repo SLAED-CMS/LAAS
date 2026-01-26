@@ -109,6 +109,7 @@ final class AdminMenusController
         $id = $this->readId($request);
         $label = trim((string) ($request->post('label') ?? ''));
         $url = trim((string) ($request->post('url') ?? ''));
+        $contentFormat = $request->post('content_format');
         $enabled = $request->post('enabled');
         $enabledValue = ($enabled === '1' || $enabled === 1 || $enabled === true) ? '1' : '0';
         $isExternal = $request->post('is_external');
@@ -173,6 +174,9 @@ final class AdminMenusController
             'is_external' => (int) $isExternalValue,
             'sort_order' => (int) $sortOrderValue,
         ];
+        if ($contentFormat !== null) {
+            $payload['content_format'] = $contentFormat;
+        }
         if ($id !== null) {
             $payload['id'] = $id;
         }
