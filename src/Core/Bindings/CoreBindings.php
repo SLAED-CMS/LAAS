@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Laas\Core\Bindings;
 
+use Laas\Content\ContentNormalizer;
+use Laas\Content\MarkdownRenderer;
 use Laas\Core\Container\Container;
 use Laas\Core\FeatureFlags;
 use Laas\Core\FeatureFlagsInterface;
@@ -13,6 +15,7 @@ use Laas\Events\SimpleEventDispatcher;
 use Laas\I18n\Translator;
 use Laas\Modules\ModulesLoader;
 use Laas\Security\CacheRateLimiterStore;
+use Laas\Security\HtmlSanitizer;
 use Laas\Security\RateLimiter;
 use Laas\Support\Cache\CacheFactory;
 use Laas\Support\Cache\CacheInterface;
@@ -125,6 +128,32 @@ final class CoreBindings
             return new ThemeValidator(BindingsContext::rootPath() . '/themes');
         }, [
             'concrete' => ThemeValidator::class,
+            'read_only' => false,
+        ]);
+
+        $c->singleton(MarkdownRenderer::class, static function (): MarkdownRenderer {
+            return new MarkdownRenderer();
+        }, [
+            'concrete' => MarkdownRenderer::class,
+            'read_only' => false,
+        ]);
+
+        $c->singleton(HtmlSanitizer::class, static function (): HtmlSanitizer {
+            return new HtmlSanitizer();
+        }, [
+            'concrete' => HtmlSanitizer::class,
+            'read_only' => false,
+        ]);
+
+        $c->singleton(ContentNormalizer::class, static function () use ($c): ContentNormalizer {
+            $renderer = $c->get(MarkdownRenderer::class);
+            $sanitizer = $c->get(HtmlSanitizer::class);
+            if (!$renderer instanceof MarkdownRenderer || !$sanitizer instanceof HtmlSanitizer) {
+                throw new \RuntimeException('Content normalization bindings are not available.');
+            }
+            return new ContentNormalizer($renderer, $sanitizer);
+        }, [
+            'concrete' => ContentNormalizer::class,
             'read_only' => false,
         ]);
     }

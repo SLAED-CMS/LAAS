@@ -1,5 +1,12 @@
 # LAAS Versions
 
+## v4.0.82 — Security: content sanitizer foundation (2026-01-26)
+- Add MarkdownRenderer + HtmlSanitizer (profiles) + ContentNormalizer (no integrations yet)
+- Add docs/CONTENT_SANITIZER.md describing pipeline and profiles
+- No functional changes intended
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.81 — Refactor: kernel slimming via bootstraps (2026-01-22)
 - Extract request setup (devtools, view/theme, session/auth) into a request context factory
 - Bind router/view earlier for bootstraps while keeping the default path unchanged

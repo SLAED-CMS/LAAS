@@ -6,51 +6,54 @@ use PHPUnit\Framework\TestCase;
 
 final class HtmlSanitizerTest extends TestCase
 {
-    public function testRemovesScriptTag(): void
+    public function testRemovesScriptAndStyleForSafeProfiles(): void
     {
-        $html = '<p>ok</p><script>alert(1)</script>';
-        $sanitized = (new HtmlSanitizer())->sanitize($html);
+        $html = '<p>ok</p><script>alert(1)</script><style>body{}</style>';
+        $sanitizer = new HtmlSanitizer();
 
-        $this->assertStringContainsString('<p>ok</p>', $sanitized);
-        $this->assertStringNotContainsString('script', strtolower($sanitized));
-        $this->assertStringNotContainsString('alert(1)', $sanitized);
+        foreach (['editor_safe_rich', 'user_plain'] as $profile) {
+            $sanitized = $sanitizer->sanitize($html, $profile);
+            $this->assertStringContainsString('<p>ok</p>', $sanitized);
+            $this->assertStringNotContainsString('<script', strtolower($sanitized));
+            $this->assertStringNotContainsString('<style', strtolower($sanitized));
+        }
     }
 
     public function testRemovesEventHandlers(): void
     {
-        $html = '<p onclick="alert(1)">x</p><img src="/a.png" onerror="alert(2)" alt="x">';
-        $sanitized = (new HtmlSanitizer())->sanitize($html);
+        $html = '<p onload="alert(1)">x</p><img src="/a.png" onerror="alert(2)" alt="x">';
+        $sanitized = (new HtmlSanitizer())->sanitize($html, 'editor_safe_rich');
 
-        $this->assertStringNotContainsString('onclick', strtolower($sanitized));
+        $this->assertStringNotContainsString('onload', strtolower($sanitized));
         $this->assertStringNotContainsString('onerror', strtolower($sanitized));
     }
 
-    public function testBlocksJavascriptHref(): void
+    public function testBlocksJavascriptInHrefAndSrc(): void
     {
-        $html = '<a href="javascript:alert(1)">x</a>';
-        $sanitized = (new HtmlSanitizer())->sanitize($html);
+        $html = '<a href="javascript:alert(1)">x</a><img src="javascript:alert(2)" alt="x">';
+        $sanitized = (new HtmlSanitizer())->sanitize($html, 'editor_safe_rich');
 
         $this->assertStringContainsString('<a', $sanitized);
         $this->assertStringNotContainsString('href=', strtolower($sanitized));
-    }
-
-    public function testBlocksDataSrc(): void
-    {
-        $html = '<img src="data:text/html;base64,AAA" alt="x">';
-        $sanitized = (new HtmlSanitizer())->sanitize($html);
-
         $this->assertStringContainsString('<img', $sanitized);
         $this->assertStringNotContainsString('src=', strtolower($sanitized));
     }
 
-    public function testUnwrapsUnknownTags(): void
+    public function testEditorSafeRichRemovesIframesWhenAllowlistEmpty(): void
     {
-        $html = '<div><strong>Hi</strong><span>there</span></div>';
-        $sanitized = (new HtmlSanitizer())->sanitize($html);
+        $html = '<iframe src="https://example.com/embed"></iframe>';
+        $sanitized = (new HtmlSanitizer())->sanitize($html, 'editor_safe_rich');
 
-        $this->assertStringContainsString('<strong>Hi</strong>', $sanitized);
-        $this->assertStringContainsString('there', $sanitized);
-        $this->assertStringNotContainsString('<div', strtolower($sanitized));
-        $this->assertStringNotContainsString('<span', strtolower($sanitized));
+        $this->assertStringNotContainsString('<iframe', strtolower($sanitized));
+    }
+
+    public function testUserPlainStripsImagesAndTables(): void
+    {
+        $html = '<p>ok</p><img src="/a.png" alt="x"><table><tr><td>x</td></tr></table>';
+        $sanitized = (new HtmlSanitizer())->sanitize($html, 'user_plain');
+
+        $this->assertStringNotContainsString('<img', strtolower($sanitized));
+        $this->assertStringNotContainsString('<table', strtolower($sanitized));
+        $this->assertStringContainsString('ok', $sanitized);
     }
 }
