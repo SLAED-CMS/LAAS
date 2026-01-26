@@ -78,7 +78,8 @@ final class TemplateFlagGatingTest extends TestCase
             'legacy_content' => false,
             'blocks_json_allowed' => true,
             'blocks_registry_types' => ['rich_text'],
-            'editor_selected_id' => 'tinymce',
+            'editor_selection_source' => 'default',
+            'editor_selected_id' => 'textarea',
             'editor_selected_format' => 'html',
             'editors' => [
                 [
@@ -87,7 +88,7 @@ final class TemplateFlagGatingTest extends TestCase
                     'format' => 'html',
                     'available' => false,
                     'reason' => 'vendor_assets_missing',
-                    'selected' => true,
+                    'selected' => false,
                 ],
                 [
                     'id' => 'toastui',
@@ -103,7 +104,7 @@ final class TemplateFlagGatingTest extends TestCase
                     'format' => 'html',
                     'available' => true,
                     'reason' => '',
-                    'selected' => false,
+                    'selected' => true,
                 ],
             ],
             'editor_caps' => [

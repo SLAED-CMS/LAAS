@@ -42,6 +42,7 @@
               data-slug-form="1"
               data-page-form="1"
               data-mode="{% mode %}"
+              data-editor-selection-source="{% editor_selection_source %}"
               data-editor-selected-id="{% editor_selected_id %}"
               data-editor-selected-format="{% editor_selected_format %}">
           <input type="hidden" name="_token" value="{% csrf_token %}">
@@ -76,6 +77,9 @@
               <label class="btn btn-outline-secondary btn-sm" for="content-format-{% editor.id %}">{% editor.label %}</label>
               {% endif %}
               {% endforeach %}
+            </div>
+            <div class="form-text text-warning d-none" data-editor-unavailable-hint="1">
+              Editor assets missing -> textarea mode
             </div>
             <input type="hidden" name="content_format" value="{% editor_selected_format %}" data-content-format="1">
           </div>

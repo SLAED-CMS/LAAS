@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.97 — Pages: editors UX + plumbing (TinyMCE/Toast UI) (2026-01-26)
+- Remember selection, safer fallback hint
+- Harden submit sync for content_format + blocks rich_text format
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.96 — Pages: editor provider layer (B1) (2026-01-26)
 - Add editor provider abstraction (TinyMCE/ToastUI/textarea fallback)
 - No functional changes intended; prepares for B2 (more editors)
@@ -106,9 +112,9 @@
 ### Upgrade notes (Use: php tools/cli.php boot:dump / boot:check)
 ### Breaking changes (None)
 
-## v4.0.78 — Docs: bootstrap migration plan PR1–PR8 (2026-01-22)
+## v4.0.78 — Docs: bootstrap migration plan PR1â€“PR8 (2026-01-22)
 - Add docs/BOOTSTRAPS.md documenting bootstrap pipeline, flags, and takeover options
-- Document PR1–PR8 migration steps summary
+- Document PR1â€“PR8 migration steps summary
 ### Upgrade notes (None)
 ### Breaking changes (None)
 
@@ -908,3 +914,4 @@
 - v0.1: Kernel/Router/Modules + System+Api routes
 
 **Last updated:** 2026-01-23
+
