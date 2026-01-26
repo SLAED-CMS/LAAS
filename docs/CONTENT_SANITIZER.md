@@ -86,6 +86,7 @@ Policy:
 - HTML editor: TinyMCE sets content_format=html (sanitized editor_safe_rich on write when enabled).
 - Markdown editor: Toast UI sets content_format=markdown (markdown rendered then sanitized on write when enabled).
 - Output remains HTML; normalization happens only when APP_PAGES_NORMALIZE_ENABLED=1.
+- Vendor assets are local under public/assets/vendor/tinymce and public/assets/vendor/toastui-editor.
 
 ## User-generated content (opt-in)
 - Security reports: SECURITY_REPORTS_NORMALIZE_ENABLED (security.reports_normalize_enabled)

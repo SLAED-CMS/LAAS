@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.94 — Pages: local editor assets + fallback (2026-01-26)
+- Load TinyMCE/Toast UI from local vendor assets on the Pages form only
+- Graceful fallback to plain textarea when editor assets are missing
+### Upgrade notes (Place editor assets in public/assets/vendor; optional APP_PAGES_NORMALIZE_ENABLED / APP_BLOCKS_NORMALIZE_ENABLED)
+### Breaking changes (None)
+
 ## v4.0.93 — Pages: TinyMCE + Toast UI editor choice (admin) (2026-01-26)
 - Add admin editor switch (HTML/TinyMCE vs Markdown/Toast UI) emitting content_format
 - Keep DB/output as HTML; write-boundary normalization stays opt-in via flags
