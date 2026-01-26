@@ -1,5 +1,12 @@
 # LAAS Versions
 
+## v4.0.88 — Content: normalize Menu + Pages writes (opt-in) (2026-01-26)
+- Add Menu write-boundary normalization (editor_safe_rich) behind APP_MENU_NORMALIZE_ENABLED
+- Align Pages write-boundary normalization (editor_safe_rich) behind APP_PAGES_NORMALIZE_ENABLED
+- No behavior change when flags are off
+### Upgrade notes (Optional: enable flags for sanitized persistence)
+### Breaking changes (None)
+
 ## v4.0.87 — Security: user_plain URL scheme hardening (2026-01-26)
 - Enforce allowlist URL schemes for href/src in user_plain profile (block javascript/data/etc.)
 - Remove PHPUnit warning noise in test:all (clean green)
