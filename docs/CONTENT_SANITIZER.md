@@ -12,6 +12,11 @@
 
 ## Profiles
 
+Profile API (stable identifiers):
+- admin_trusted_raw
+- editor_safe_rich
+- user_plain
+
 ### admin_trusted_raw
 Goal: admin-only content that preserves most tags and attributes while blocking obvious dangers.
 
@@ -59,7 +64,7 @@ Policy:
 
 ## Pages integration (opt-in)
 - Flag: APP_PAGES_NORMALIZE_ENABLED (app.pages_normalize_enabled)
-- Profile: editor_safe_rich
+- Profile: editor_safe_rich (ContentProfiles::EDITOR_SAFE_RICH)
 - Input format: content_format=html|markdown (unknown defaults to html)
 - Saved content is sanitized HTML in the database.
 

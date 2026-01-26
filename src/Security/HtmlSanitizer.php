@@ -9,7 +9,7 @@ use DOMNode;
 
 final class HtmlSanitizer
 {
-    private const DEFAULT_PROFILE = 'legacy';
+    private const DEFAULT_PROFILE = ContentProfiles::LEGACY;
 
     /**
      * Profile structure:
@@ -25,7 +25,7 @@ final class HtmlSanitizer
      * - iframe_allowlist_hosts: string[]|null (null allows any host, empty blocks all)
      */
     private const PROFILES = [
-        'legacy' => [
+        ContentProfiles::LEGACY => [
             'allow_all_tags' => false,
             'allowed_tags' => [
                 'p',
@@ -57,7 +57,7 @@ final class HtmlSanitizer
             'allowed_url_schemes' => null,
             'iframe_allowlist_hosts' => [],
         ],
-        'admin_trusted_raw' => [
+        ContentProfiles::ADMIN_TRUSTED_RAW => [
             'allow_all_tags' => true,
             'allowed_tags' => [],
             'blocked_tags' => ['script', 'style', 'svg'],
@@ -69,7 +69,7 @@ final class HtmlSanitizer
             'allowed_url_schemes' => ['http', 'https', 'mailto', 'tel'],
             'iframe_allowlist_hosts' => null,
         ],
-        'editor_safe_rich' => [
+        ContentProfiles::EDITOR_SAFE_RICH => [
             'allow_all_tags' => false,
             'allowed_tags' => [
                 'p',
@@ -103,7 +103,7 @@ final class HtmlSanitizer
             'allowed_url_schemes' => ['http', 'https', 'mailto', 'tel'],
             'iframe_allowlist_hosts' => [],
         ],
-        'user_plain' => [
+        ContentProfiles::USER_PLAIN => [
             'allow_all_tags' => false,
             'allowed_tags' => [
                 'p',
@@ -129,7 +129,7 @@ final class HtmlSanitizer
         ],
     ];
 
-    public function sanitize(string $html, string $profile = self::DEFAULT_PROFILE): string
+    public function sanitize(string $html, ?string $profile = null): string
     {
         if (trim($html) === '') {
             return '';
@@ -347,9 +347,10 @@ final class HtmlSanitizer
     /**
      * @return array<string, mixed>
      */
-    private function profile(string $profile): array
+    private function profile(?string $profile): array
     {
-        $config = self::PROFILES[$profile] ?? self::PROFILES[self::DEFAULT_PROFILE];
+        $resolved = ContentProfiles::resolve($profile);
+        $config = self::PROFILES[$resolved] ?? self::PROFILES[self::DEFAULT_PROFILE];
 
         $config['allowed_tags'] = array_map('strtolower', $config['allowed_tags']);
         $config['blocked_tags'] = array_map('strtolower', $config['blocked_tags']);

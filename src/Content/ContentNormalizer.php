@@ -14,7 +14,7 @@ final class ContentNormalizer
     ) {
     }
 
-    public function normalize(string $input, string $format, string $profile): string
+    public function normalize(string $input, string $format, ?string $profile = null): string
     {
         $format = strtolower($format);
         if ($format === 'markdown') {

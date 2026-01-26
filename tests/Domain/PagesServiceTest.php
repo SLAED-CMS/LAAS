@@ -94,14 +94,19 @@ final class PagesServiceTest extends TestCase
         $htmlPage = $service->create([
             'title' => 'Html',
             'slug' => 'html',
-            'content' => '<p>Hi</p><img src="x" onerror="alert(1)">',
+            'content' => '<p>Hi</p><a href="https://example.com">ok</a><a href="javascript:alert(1)">x</a><img src="x" onerror="alert(1)">',
             'content_format' => 'html',
             'status' => 'draft',
         ]);
 
         $htmlContent = (string) ($htmlPage['content'] ?? '');
+        $lowerHtml = strtolower($htmlContent);
+        $this->assertStringContainsString('<p>Hi</p>', $htmlContent);
+        $this->assertStringContainsString('href="https://example.com"', $htmlContent);
         $this->assertStringContainsString('<img', $htmlContent);
-        $this->assertStringNotContainsString('onerror', strtolower($htmlContent));
+        $this->assertStringNotContainsString('onerror', $lowerHtml);
+        $this->assertStringNotContainsString('javascript:', $lowerHtml);
+        $this->assertStringNotContainsString('href="javascript', $lowerHtml);
 
         $markdownPage = $service->create([
             'title' => 'Markdown',
@@ -112,8 +117,9 @@ final class PagesServiceTest extends TestCase
         ]);
 
         $markdownContent = (string) ($markdownPage['content'] ?? '');
+        $lowerMarkdown = strtolower($markdownContent);
         $this->assertStringContainsString('<strong>bold</strong>', $markdownContent);
-        $this->assertStringNotContainsString('<script', strtolower($markdownContent));
+        $this->assertStringNotContainsString('<script', $lowerMarkdown);
     }
 
     private function createDb(): DatabaseManager

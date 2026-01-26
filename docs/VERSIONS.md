@@ -1,5 +1,12 @@
 # LAAS Versions
 
+## v4.0.84 — Security: sanitizer profiles API (Pages uses editor_safe_rich) (2026-01-26)
+- Add stable sanitizer profile identifiers and fallback to legacy when unknown
+- Wire Pages normalization to use editor_safe_rich when enabled
+- No behavior change when APP_PAGES_NORMALIZE_ENABLED is disabled
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.83 — Pages: content normalization (opt-in) (2026-01-26)
 - Integrate ContentNormalizer into Pages save/update behind APP_PAGES_NORMALIZE_ENABLED
 - Support content_format=html|markdown (optional)

@@ -12,6 +12,7 @@ use Laas\Domain\Pages\Dto\PageSummary;
 use Laas\Domain\Pages\Dto\PageView;
 use Laas\Modules\Pages\Repository\PagesRepository;
 use Laas\Modules\Pages\Repository\PagesRevisionsRepository;
+use Laas\Security\ContentProfiles;
 use Laas\Security\HtmlSanitizer;
 use RuntimeException;
 use Throwable;
@@ -340,13 +341,13 @@ class PagesService implements PagesServiceInterface, PagesReadServiceInterface, 
     private function normalizeContent(string $content, mixed $format): string
     {
         if (!$this->pagesNormalizeEnabled()) {
-            return (new HtmlSanitizer())->sanitize($content);
+            return (new HtmlSanitizer())->sanitize($content, ContentProfiles::LEGACY);
         }
 
         $normalizer = $this->contentNormalizer();
         $normalizedFormat = $this->normalizeContentFormat($format);
 
-        return $normalizer->normalize($content, $normalizedFormat, 'editor_safe_rich');
+        return $normalizer->normalize($content, $normalizedFormat, ContentProfiles::EDITOR_SAFE_RICH);
     }
 
     private function pagesNormalizeEnabled(): bool
