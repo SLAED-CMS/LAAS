@@ -44,6 +44,43 @@ final class AssetsManager
         ];
     }
 
+    public function hasTinyMce(): bool
+    {
+        return $this->assetFileExists('vendor/tinymce/tinymce.min.js');
+    }
+
+    public function hasToastUi(): bool
+    {
+        return $this->assetFileExists('vendor/toastui-editor/toastui-editor.min.js');
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function editorAssets(): array
+    {
+        $assets = $this->all();
+        return [
+            'tinymce_js' => (string) ($assets['tinymce_js'] ?? ''),
+            'toastui_editor_css' => (string) ($assets['toastui_editor_css'] ?? ''),
+            'toastui_editor_js' => (string) ($assets['toastui_editor_js'] ?? ''),
+            'pages_admin_editors_js' => (string) ($assets['pages_admin_editors_js'] ?? ''),
+        ];
+    }
+
+    private function assetFileExists(string $assetPath): bool
+    {
+        $base = $this->envString('ASSET_BASE', (string) ($this->config['asset_base'] ?? $this->config['base_url'] ?? '/assets'));
+        $base = $this->normalizeBase($base);
+        if (str_contains($base, '://')) {
+            return false;
+        }
+        $base = '/' . ltrim($base, '/');
+        $root = dirname(__DIR__, 3);
+        $fullPath = $root . '/public' . $base . '/' . ltrim($assetPath, '/');
+        return is_file($fullPath);
+    }
+
     private function envString(string $key, string $default): string
     {
         $value = $_ENV[$key] ?? null;

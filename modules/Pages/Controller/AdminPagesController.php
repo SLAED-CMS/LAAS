@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Laas\Modules\Pages\Controller;
 
 use Laas\Api\ApiCacheInvalidator;
+use Laas\Assets\AssetsManager;
 use Laas\Content\Blocks\BlockRegistry;
 use Laas\Content\Blocks\BlockValidationException;
 use Laas\Content\Blocks\ThemeContext;
@@ -151,6 +152,7 @@ final class AdminPagesController
             return $this->forbidden($request);
         }
 
+        $editorContext = $this->editorContext();
         return $this->view->render('pages/page_form.html', [
             'mode' => 'create',
             'is_edit' => false,
@@ -160,6 +162,8 @@ final class AdminPagesController
             'legacy_content' => false,
             'blocks_json_allowed' => $this->blocksJsonAllowed($request),
             'blocks_registry_types' => $this->blocksRegistry()->types(),
+            'editor_caps' => $editorContext['caps'],
+            'editor_assets' => $editorContext['assets'],
         ], 200, [], [
             'theme' => 'admin',
         ]);
@@ -197,6 +201,7 @@ final class AdminPagesController
         $legacyDetected = $this->isLegacyContent($page, $blocks);
         $legacyAllowed = $legacyDetected && $this->compatBlocksLegacyContent();
         $status = (string) ($page['status'] ?? 'draft');
+        $editorContext = $this->editorContext();
         return $this->view->render('pages/page_form.html', [
             'mode' => 'edit',
             'is_edit' => true,
@@ -206,6 +211,8 @@ final class AdminPagesController
             'legacy_content' => $legacyAllowed,
             'blocks_json_allowed' => $blocksJsonAllowed,
             'blocks_registry_types' => $this->blocksRegistry()->types(),
+            'editor_caps' => $editorContext['caps'],
+            'editor_assets' => $editorContext['assets'],
         ], 200, [], [
             'theme' => 'admin',
         ]);
@@ -734,6 +741,34 @@ final class AdminPagesController
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    private function assetsConfig(): array
+    {
+        $path = $this->rootPath() . '/config/assets.php';
+        if (!is_file($path)) {
+            return [];
+        }
+        $config = require $path;
+        return is_array($config) ? $config : [];
+    }
+
+    /**
+     * @return array{caps: array{tinymce: bool, toastui: bool}, assets: array<string, string>}
+     */
+    private function editorContext(): array
+    {
+        $assetsManager = new AssetsManager($this->assetsConfig());
+        return [
+            'caps' => [
+                'tinymce' => $assetsManager->hasTinyMce(),
+                'toastui' => $assetsManager->hasToastUi(),
+            ],
+            'assets' => $assetsManager->editorAssets(),
+        ];
+    }
+
+    /**
      * @return array<int, array{type: string, data: array<string, mixed>}>
      */
     private function decodeBlocksJson(string $raw): array
@@ -818,6 +853,7 @@ final class AdminPagesController
         $status = (string) ($page['status'] ?? 'draft');
         $legacyDetected = $this->isLegacyContent($page);
         $legacyAllowed = $legacyDetected && $this->compatBlocksLegacyContent();
+        $editorContext = $this->editorContext();
         return $this->view->render('pages/page_form.html', [
             'mode' => $isEdit ? 'edit' : 'create',
             'is_edit' => $isEdit,
@@ -828,6 +864,8 @@ final class AdminPagesController
             'legacy_content' => $legacyAllowed,
             'blocks_json_allowed' => $this->blocksJsonAllowed($request),
             'blocks_registry_types' => $this->blocksRegistry()->types(),
+            'editor_caps' => $editorContext['caps'],
+            'editor_assets' => $editorContext['assets'],
         ], 422, [], [
             'theme' => 'admin',
         ]);

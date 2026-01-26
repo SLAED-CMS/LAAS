@@ -1,13 +1,19 @@
 {% extends "layout.html" %}
 
 {% block head_extra %}
-  <link href="{% assets.toastui_editor_css %}" rel="stylesheet">
+  {% if editor_caps.toastui %}
+  <link href="{% editor_assets.toastui_editor_css %}" rel="stylesheet">
+  {% endif %}
 {% endblock %}
 
 {% block scripts_extra %}
-  <script src="{% assets.tinymce_js %}" defer></script>
-  <script src="{% assets.toastui_editor_js %}" defer></script>
-  <script src="{% assets.pages_admin_editors_js %}" defer></script>
+  {% if editor_caps.tinymce %}
+  <script src="{% editor_assets.tinymce_js %}" defer></script>
+  {% endif %}
+  {% if editor_caps.toastui %}
+  <script src="{% editor_assets.toastui_editor_js %}" defer></script>
+  {% endif %}
+  <script src="{% editor_assets.pages_admin_editors_js %}" defer></script>
 {% endblock %}
 
 {% block content %}
