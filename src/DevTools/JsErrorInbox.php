@@ -13,6 +13,9 @@ final class JsErrorInbox
     private const MAX_EVENTS = 200;
     private const RING_TTL = 600; // 10 minutes
 
+    /**
+     * @param array<string, mixed> $config
+     */
     public function __construct(
         private CacheInterface $cache,
         private int $userId,

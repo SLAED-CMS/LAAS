@@ -267,6 +267,9 @@ final class DevToolsController
         );
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function appConfig(): array
     {
         return require dirname(__DIR__, 3) . '/config/app.php';
