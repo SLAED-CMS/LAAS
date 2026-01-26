@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.89 — DevTools: user_plain normalization (opt-in) (2026-01-26)
+- Sanitize JS error inbox writes via ContentNormalizer user_plain (opt-in)
+- Default behavior unchanged (flag off)
+### Upgrade notes (Set APP_DEVTOOLS_JS_NORMALIZE_ENABLED=1 to enable)
+### Breaking changes (None)
+
 ## v4.0.88 — Content: normalize Menu + Pages writes (opt-in) (2026-01-26)
 - Add Menu write-boundary normalization (editor_safe_rich) behind APP_MENU_NORMALIZE_ENABLED
 - Align Pages write-boundary normalization (editor_safe_rich) behind APP_PAGES_NORMALIZE_ENABLED
