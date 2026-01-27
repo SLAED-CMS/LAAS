@@ -1,5 +1,14 @@
 # LAAS Versions
 
+## v4.0.103 — Pages: TinyMCE direct upload (fat) (2026-01-27)
+- Add admin upload endpoint for TinyMCE paste/drag images via Media module
+- Wire images_upload_handler with picker fallback in Pages editor
+- Add upload endpoint + editor config wiring tests
+### Upgrade notes
+- Ensure TinyMCE assets are local and admins have media.upload permission
+- CSRF/UI tokens are required for editor uploads (same as other admin POSTs)
+### Breaking changes (None)
+
 ## v4.0.102 — Pages: TinyMCE media picker (admin) (2026-01-26)
 - Wire TinyMCE image picker to Media module (admin-only)
 - Keep asset-gated fallback and write-boundary normalization unchanged

@@ -89,6 +89,7 @@ Policy:
 - Vendor assets are local under public/assets/vendor/tinymce and public/assets/vendor/toastui-editor.
 - Editor choice persists per user via localStorage; missing assets fall back to textarea for the current page load.
 - Fallback does not change the canonical sanitize pipeline (render -> sanitize -> DB).
+- TinyMCE direct uploads insert <img> tags; sanitization still happens at the write boundary.
 
 ## Pages editor fallback rules
 - Selection source order: server content_format (if present) -> server default (html) -> localStorage override (when no content_format).
