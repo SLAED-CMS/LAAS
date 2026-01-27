@@ -15,6 +15,7 @@ use Laas\Core\Bindings\ModuleBindings;
 use Laas\Core\Container\Container;
 use Laas\Database\DatabaseManager;
 use Laas\DevTools\DbCollector;
+use Laas\DevTools\ModulesDiscoveryCollector;
 use Laas\DevTools\PerformanceCollector;
 use Laas\DevTools\RequestCollector;
 use Laas\Events\EventDispatcherInterface;
@@ -36,8 +37,10 @@ use Laas\Http\Request;
 use Laas\Http\RequestContext;
 use Laas\Http\Response;
 use Laas\Http\Session\SessionManager;
+use Laas\Modules\AdminModulesNavSnapshot;
 use Laas\Modules\ModuleCatalog;
 use Laas\Modules\ModuleManager;
+use Laas\Modules\ModulesSnapshot;
 use Laas\Perf\PerfBudgetEnforcer;
 use Laas\Routing\Router;
 use Laas\Security\CacheRateLimiterStore;
@@ -93,14 +96,42 @@ final class Kernel
 
             $this->container->singleton(View::class, static fn (): View => $view);
             $this->container->singleton(Router::class, static fn (): Router => $router);
+            $modulesSnapshotTtl = (int) ($appConfig['modules_snapshot_ttl'] ?? 300);
+            $modulesSnapshotPath = rtrim($this->rootPath, '/\\') . '/storage/cache/modules_snapshot.php';
+            $this->container->singleton(ModulesSnapshot::class, function () use ($modulesSnapshotPath, $modulesSnapshotTtl): ModulesSnapshot {
+                return new ModulesSnapshot($modulesSnapshotPath, $modulesSnapshotTtl, $this->database());
+            });
+            $adminNavSnapshotPath = rtrim($this->rootPath, '/\\') . '/storage/cache/admin_modules_nav.php';
+            $this->container->singleton(AdminModulesNavSnapshot::class, function () use ($adminNavSnapshotPath): AdminModulesNavSnapshot {
+                return new AdminModulesNavSnapshot(
+                    $adminNavSnapshotPath,
+                    $this->rootPath,
+                    $this->database(),
+                    $this->config['modules'] ?? null,
+                    $this->config['modules_nav'] ?? null
+                );
+            });
+            try {
+                $snapshot = $this->container->get(ModulesSnapshot::class);
+                if ($snapshot instanceof ModulesSnapshot) {
+                    RequestScope::set('modules.snapshot', $snapshot);
+                }
+                $adminSnapshot = $this->container->get(AdminModulesNavSnapshot::class);
+                if ($adminSnapshot instanceof AdminModulesNavSnapshot) {
+                    RequestScope::set('modules.admin_nav_snapshot', $adminSnapshot);
+                }
+            } catch (\Throwable) {
+                // ignore snapshot setup failures
+            }
 
             if ($bootEnabled) {
-                $bootstraps = (new BootstrapsConfigResolver())->resolve($appConfig, $bootEnabled);
+                $bootstraps = (new BootstrapsConfigResolver())->resolve($this->config, $bootEnabled);
                 $runner = new BootstrapsRunner($bootstraps);
+                $bootConfig = $this->config['app'] ?? [];
                 $runner->run(new BootContext(
                     $this->rootPath,
                     $this->container,
-                    $this->config,
+                    $bootConfig,
                     $appDebug
                 ));
             }
@@ -141,14 +172,30 @@ final class Kernel
 
             $adminModulesNav = [];
             if (str_starts_with($request->getPath(), '/admin')) {
-                $catalog = new ModuleCatalog(
-                    $this->rootPath,
-                    $this->database(),
-                    $this->config['modules'] ?? null,
-                    $this->config['modules_nav'] ?? null
-                );
-                $adminModulesNav = $catalog->listNav();
-                $adminModulesNavSections = $catalog->listNavSections();
+                $snapshot = null;
+                try {
+                    $snapshot = $this->container->get(AdminModulesNavSnapshot::class);
+                } catch (\Throwable) {
+                    $snapshot = null;
+                }
+
+                if ($snapshot instanceof AdminModulesNavSnapshot) {
+                    $data = $snapshot->load();
+                    if ($data === null) {
+                        $data = $snapshot->rebuild();
+                    }
+                    $adminModulesNav = $data['nav'];
+                    $adminModulesNavSections = $data['sections'];
+                } else {
+                    $catalog = new ModuleCatalog(
+                        $this->rootPath,
+                        $this->database(),
+                        $this->config['modules'] ?? null,
+                        $this->config['modules_nav'] ?? null
+                    );
+                    $adminModulesNav = $catalog->listNav();
+                    $adminModulesNavSections = $catalog->listNavSections();
+                }
             }
             $view->share('admin_modules_nav', $adminModulesNav);
             $view->share('admin_modules_nav_sections', $adminModulesNavSections ?? []);
@@ -162,6 +209,7 @@ final class Kernel
             $collectors = [
                 new PerformanceCollector(),
                 new DbCollector(),
+                new ModulesDiscoveryCollector(),
             ];
             if (!empty($devtoolsConfig['collect_request'])) {
                 $collectors[] = new RequestCollector();

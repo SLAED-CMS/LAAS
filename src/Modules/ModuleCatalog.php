@@ -6,6 +6,7 @@ namespace Laas\Modules;
 
 use Laas\Database\DatabaseManager;
 use Laas\Database\Repositories\ModulesRepository;
+use Laas\DevTools\ModulesDiscoveryStats;
 use Laas\Support\RequestCache;
 
 final class ModuleCatalog
@@ -162,9 +163,11 @@ final class ModuleCatalog
      */
     private function discoverModules(): array
     {
+        $t0 = microtime(true);
         $modulesDir = $this->rootPath . '/modules';
         $modulesDir = realpath($modulesDir) ?: $modulesDir;
         if (!is_dir($modulesDir)) {
+            ModulesDiscoveryStats::record('catalog', (microtime(true) - $t0) * 1000, 0);
             return [];
         }
 
@@ -213,6 +216,7 @@ final class ModuleCatalog
             ];
         }
 
+        ModulesDiscoveryStats::record('catalog', (microtime(true) - $t0) * 1000, count($discovered));
         return $discovered;
     }
 

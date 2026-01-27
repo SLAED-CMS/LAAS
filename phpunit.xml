@@ -12,7 +12,10 @@
     <testsuite name="Full">
       <directory>tests</directory>
     </testsuite>
-  </testsuites>
+</testsuites>
+  <php>
+    <env name="RATE_LIMIT_ENABLED" value="0"/>
+  </php>
   <source>
     <include>
       <directory suffix=".php">src</directory>

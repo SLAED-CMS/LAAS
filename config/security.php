@@ -153,6 +153,7 @@ return [
     'ai_remote_endpoint' => '/v1/propose',
     'ai_remote_auth_header' => '',
     'rate_limit' => [
+        'enabled' => $envBool('RATE_LIMIT_ENABLED', true),
         'api' => [
             'window' => 60,
             'max' => $envInt('API_RATE_LIMIT_PER_MINUTE', 120),

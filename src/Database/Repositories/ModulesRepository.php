@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Laas\Database\Repositories;
 
+use Laas\Modules\AdminModulesNavSnapshot;
+use Laas\Modules\ModulesSnapshot;
 use Laas\Support\RequestScope;
 use PDO;
 
@@ -57,17 +59,20 @@ final class ModulesRepository
     {
         RequestScope::forget('modules.list');
         $this->upsert($name, true, null);
+        $this->invalidateSnapshot();
     }
 
     public function disable(string $name): void
     {
         RequestScope::forget('modules.list');
         $this->upsert($name, false, null);
+        $this->invalidateSnapshot();
     }
 
     public function upsert(string $name, bool $enabled, ?string $version = null): void
     {
         RequestScope::forget('modules.list');
+        $this->invalidateSnapshot();
         $driver = (string) $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
         if ($driver === 'sqlite') {
             $now = date('Y-m-d H:i:s');
@@ -132,5 +137,18 @@ final class ModulesRepository
 
         RequestScope::forget('modules.list');
         return $this->all();
+    }
+
+    private function invalidateSnapshot(): void
+    {
+        $snapshot = RequestScope::get('modules.snapshot');
+        if ($snapshot instanceof ModulesSnapshot) {
+            $snapshot->invalidate();
+        }
+
+        $adminSnapshot = RequestScope::get('modules.admin_nav_snapshot');
+        if ($adminSnapshot instanceof AdminModulesNavSnapshot) {
+            $adminSnapshot->invalidate();
+        }
     }
 }

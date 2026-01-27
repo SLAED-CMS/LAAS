@@ -24,6 +24,12 @@ final class RateLimitMiddleware implements MiddlewareInterface
 
     public function process(Request $request, callable $next): Response
     {
+        $rateLimit = $this->config['rate_limit'] ?? [];
+        $enabled = $rateLimit['enabled'] ?? true;
+        if (!$enabled) {
+            return $next($request);
+        }
+
         $path = $request->getPath();
 
         if (str_starts_with($path, '/api/')) {
