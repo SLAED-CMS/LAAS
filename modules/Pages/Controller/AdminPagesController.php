@@ -252,6 +252,14 @@ final class AdminPagesController
         $slug = trim((string) ($request->post('slug') ?? ''));
         $content = (string) ($request->post('content') ?? '');
         $contentFormat = $this->normalizeContentFormat($request->post('content_format'));
+        $editorContext = $this->editorContext();
+        $resolvedEditor = $this->resolveEditorForSave(
+            $request,
+            $contentFormat,
+            $editorContext['editors'],
+            $editorContext['caps']
+        );
+        $contentFormat = $resolvedEditor['format'];
         $status = (string) ($request->post('status') ?? 'draft');
         $blocksRaw = '';
         $blocksData = null;
@@ -272,6 +280,7 @@ final class AdminPagesController
                     'blocks_json' => $blocksRaw,
                 ], $this->blocksJsonDecodeDetail());
             }
+            $decoded = $this->normalizeBlocksJsonForEditor($decoded, $contentFormat, $resolvedEditor);
 
             try {
                 $blocksData = $this->blocksRegistry()->normalizeBlocks($decoded);
@@ -836,12 +845,124 @@ final class AdminPagesController
     }
 
     /**
+     * @param array<int, array{id: string, label: string, format: string, available: bool, reason: string}> $editors
+     * @param array<string, array{available: bool, reason: string}> $caps
+     * @return array{id: string, format: string, available: bool}
+     */
+    private function resolveEditorForSave(Request $request, string $contentFormat, array $editors, array $caps): array
+    {
+        $byId = [];
+        foreach ($editors as $editor) {
+            $id = (string) ($editor['id'] ?? '');
+            if ($id !== '') {
+                $byId[$id] = $editor;
+            }
+        }
+
+        $requestedId = $this->normalizeEditorId($request->post('editor_id'), $byId);
+        if ($requestedId !== null) {
+            $selected = $byId[$requestedId];
+        } else {
+            $selection = $this->resolveEditorSelection($contentFormat, $caps);
+            $selected = $byId[$selection['id']] ?? [
+                'id' => $selection['id'],
+                'format' => $selection['format'],
+                'available' => (bool) ($caps[$selection['id']]['available'] ?? false),
+            ];
+        }
+
+        $id = (string) ($selected['id'] ?? 'textarea');
+        $available = (bool) ($selected['available'] ?? ($caps[$id]['available'] ?? false));
+        if (!$available) {
+            return ['id' => 'textarea', 'format' => 'html', 'available' => true];
+        }
+
+        $format = $this->normalizeContentFormat($selected['format'] ?? $contentFormat);
+        return ['id' => $id, 'format' => $format, 'available' => true];
+    }
+
+    /**
+     * @param array<string, array{id: string, label: string, format: string, available: bool, reason: string}> $editors
+     */
+    private function normalizeEditorId(mixed $raw, array $editors): ?string
+    {
+        $id = strtolower(trim((string) $raw));
+        if ($id === '') {
+            return null;
+        }
+        return array_key_exists($id, $editors) ? $id : null;
+    }
+
+    /**
      * @param array<string, mixed> $page
      */
     private function selectionSource(array $page): string
     {
         $raw = (string) ($page['content_format'] ?? '');
         return $raw === '' ? 'default' : 'content';
+    }
+
+    /**
+     * @param array<int, mixed> $blocks
+     * @param array{id: string, format: string, available: bool} $editor
+     * @return array<int, mixed>
+     */
+    private function normalizeBlocksJsonForEditor(array $blocks, string $format, array $editor): array
+    {
+        if ($format !== 'markdown' || $editor['id'] !== 'toastui' || !$editor['available']) {
+            return $this->stripBlocksJsonFormat($blocks);
+        }
+
+        foreach ($blocks as $index => $block) {
+            if (!is_array($block)) {
+                continue;
+            }
+            if (($block['type'] ?? null) !== 'rich_text') {
+                continue;
+            }
+            $data = $block['data'] ?? null;
+            if (!is_array($data)) {
+                continue;
+            }
+            $hasContent = (isset($data['html']) && is_string($data['html']))
+                || (isset($data['text']) && is_string($data['text']));
+            if (!$hasContent) {
+                continue;
+            }
+            if (($data['format'] ?? null) !== 'markdown') {
+                $data['format'] = 'markdown';
+                $block['data'] = $data;
+                $blocks[$index] = $block;
+            }
+        }
+
+        return $blocks;
+    }
+
+    /**
+     * @param array<int, mixed> $blocks
+     * @return array<int, mixed>
+     */
+    private function stripBlocksJsonFormat(array $blocks): array
+    {
+        foreach ($blocks as $index => $block) {
+            if (!is_array($block)) {
+                continue;
+            }
+            if (($block['type'] ?? null) !== 'rich_text') {
+                continue;
+            }
+            $data = $block['data'] ?? null;
+            if (!is_array($data)) {
+                continue;
+            }
+            if (array_key_exists('format', $data)) {
+                unset($data['format']);
+                $block['data'] = $data;
+                $blocks[$index] = $block;
+            }
+        }
+        return $blocks;
     }
 
     /**

@@ -22,6 +22,10 @@
     return form.querySelector('[data-content-format="1"]') || form.querySelector('input[name="content_format"]');
   }
 
+  function getEditorIdInput(form) {
+    return form.querySelector('[data-editor-id-input="1"]') || form.querySelector('input[name="editor_id"]');
+  }
+
   function readEditorCaps(form) {
     var caps = {};
     var choices = form.querySelectorAll('[data-editor-choice="1"]');
@@ -143,6 +147,10 @@
     var input = getFormatInput(form);
     if (input) {
       input.value = format;
+    }
+    var editorInput = getEditorIdInput(form);
+    if (editorInput) {
+      editorInput.value = selectedId || '';
     }
     var choices = form.querySelectorAll('[data-editor-choice="1"]');
     if (!choices.length) {
