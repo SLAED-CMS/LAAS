@@ -14,10 +14,13 @@ use Tests\Support\InMemorySession;
 final class AdminPagesBlocksStudioRenderTest extends TestCase
 {
     private ?string $previousDebug = null;
+    private ?string $previousAssetBase = null;
 
     protected function setUp(): void
     {
         $this->previousDebug = $_ENV['APP_DEBUG'] ?? null;
+        $this->previousAssetBase = $_ENV['ASSET_BASE'] ?? null;
+        $_ENV['ASSET_BASE'] = '/_assets_missing';
     }
 
     protected function tearDown(): void
@@ -26,6 +29,11 @@ final class AdminPagesBlocksStudioRenderTest extends TestCase
             unset($_ENV['APP_DEBUG']);
         } else {
             $_ENV['APP_DEBUG'] = $this->previousDebug;
+        }
+        if ($this->previousAssetBase === null) {
+            unset($_ENV['ASSET_BASE']);
+        } else {
+            $_ENV['ASSET_BASE'] = $this->previousAssetBase;
         }
     }
 

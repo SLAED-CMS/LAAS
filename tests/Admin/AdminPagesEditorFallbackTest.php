@@ -16,6 +16,23 @@ use Tests\Support\InMemorySession;
 
 final class AdminPagesEditorFallbackTest extends TestCase
 {
+    private ?string $previousAssetBase = null;
+
+    protected function setUp(): void
+    {
+        $this->previousAssetBase = $_ENV['ASSET_BASE'] ?? null;
+        $_ENV['ASSET_BASE'] = '/_assets_missing';
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->previousAssetBase === null) {
+            unset($_ENV['ASSET_BASE']);
+        } else {
+            $_ENV['ASSET_BASE'] = $this->previousAssetBase;
+        }
+    }
+
     public function testMarkdownSelectionFallsBackToTextareaWhenToastUiMissing(): void
     {
         $db = $this->createDatabase();

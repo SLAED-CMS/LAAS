@@ -76,7 +76,7 @@ final class AssetsManager
             return false;
         }
         $base = '/' . ltrim($base, '/');
-        $root = dirname(__DIR__, 3);
+        $root = dirname(__DIR__, 2);
         $fullPath = $root . '/public' . $base . '/' . ltrim($assetPath, '/');
         return is_file($fullPath);
     }
