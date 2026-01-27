@@ -20,7 +20,7 @@ final class ObservabilityBootstrapTest extends TestCase
         $container = new Container();
         $container->singleton(EventDispatcherInterface::class, static fn () => new SimpleEventDispatcher());
 
-        $ctx = new BootContext(__DIR__, $container, ['app' => ['bootstraps_enabled' => true]], true);
+        $ctx = new BootContext(__DIR__, $container, ['bootstraps_enabled' => true], true);
         $bootstrap = new ObservabilityBootstrap();
         $bootstrap->boot($ctx);
 
@@ -52,7 +52,7 @@ final class ObservabilityBootstrapTest extends TestCase
         $container = new Container();
         $container->singleton(EventDispatcherInterface::class, static fn () => new SimpleEventDispatcher());
 
-        $ctx = new BootContext(__DIR__, $container, ['app' => ['bootstraps_enabled' => true]], true);
+        $ctx = new BootContext(__DIR__, $container, ['bootstraps_enabled' => true], true);
         $bootstrap = new ObservabilityBootstrap();
         $bootstrap->boot($ctx);
 

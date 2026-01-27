@@ -25,7 +25,7 @@ final class BootstrapsOrderTest extends TestCase
             new RecordingBootstrap(ViewBootstrap::class, $order),
         ]);
 
-        $ctx = new BootContext(__DIR__, new Container(), ['app' => []], false);
+        $ctx = new BootContext(__DIR__, new Container(), [], false);
         $runner->run($ctx);
 
         $this->assertSame([

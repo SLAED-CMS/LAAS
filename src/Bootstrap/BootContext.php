@@ -10,6 +10,8 @@ final class BootContext
 {
     /**
      * @param array<string, mixed> $appConfig
+     *
+     * BootContext exposes only appConfig. Full config is not available in bootstraps by design.
      */
     public function __construct(
         public readonly string $rootPath,

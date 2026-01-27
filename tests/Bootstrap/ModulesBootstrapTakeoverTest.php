@@ -79,10 +79,8 @@ final class ModulesBootstrapTakeoverTest extends TestCase
         $container->singleton(ModulesLoader::class, static fn () => $loader);
 
         $ctxConfig = [
-            'app' => [
-                'bootstraps_enabled' => true,
-                'bootstraps_modules_takeover' => true,
-            ],
+            'bootstraps_enabled' => true,
+            'bootstraps_modules_takeover' => true,
         ];
         $ctx = new BootContext(__DIR__, $container, $ctxConfig, true);
 

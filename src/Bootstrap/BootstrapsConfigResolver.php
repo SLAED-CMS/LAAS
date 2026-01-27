@@ -21,15 +21,16 @@ final class BootstrapsConfigResolver
     }
 
     /**
-     * @param array<string, mixed> $appConfig
+     * @param array<string, mixed> $fullConfig
      * @return list<BootstrapperInterface>
      */
-    public function resolve(array $appConfig, bool $bootEnabled): array
+    public function resolve(array $fullConfig, bool $bootEnabled): array
     {
         if (!$bootEnabled) {
             return [];
         }
 
+        $appConfig = $fullConfig['app'] ?? [];
         $configured = $appConfig['bootstraps'] ?? [];
         if (!is_array($configured) || $configured === []) {
             return [

@@ -23,9 +23,7 @@ final class ViewBootstrapTest extends TestCase
         });
 
         $ctx = new BootContext($root, $container, [
-            'app' => [
-                'view_sanity_strict' => true,
-            ],
+            'view_sanity_strict' => true,
         ], true);
 
         $runner = new BootstrapsRunner([new ViewBootstrap()]);
@@ -42,9 +40,7 @@ final class ViewBootstrapTest extends TestCase
         $container = new Container();
 
         $ctx = new BootContext($root, $container, [
-            'app' => [
-                'view_sanity_strict' => true,
-            ],
+            'view_sanity_strict' => true,
         ], true);
 
         $runner = new BootstrapsRunner([new ViewBootstrap()]);

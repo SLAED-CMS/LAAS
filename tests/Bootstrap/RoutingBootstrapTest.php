@@ -28,10 +28,8 @@ final class RoutingBootstrapTest extends TestCase
         $container->singleton(Router::class, static fn (): Router => $router);
 
         $ctxConfig = [
-            'app' => [
-                'bootstraps_enabled' => true,
-                'routing_cache_warm' => true,
-            ],
+            'bootstraps_enabled' => true,
+            'routing_cache_warm' => true,
         ];
         $ctx = new BootContext(__DIR__, $container, $ctxConfig, true);
 

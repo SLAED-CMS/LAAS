@@ -37,8 +37,7 @@ final class ViewBootstrap implements BootstrapperInterface
             return;
         }
 
-        $app = $ctx->appConfig['app'] ?? [];
-        if (!empty($app['view_sanity_strict'])) {
+        if (!empty($ctx->appConfig['view_sanity_strict'])) {
             $viewsDir = rtrim($ctx->rootPath, '/\\') . '/themes/default/views';
             if (!is_dir($viewsDir)) {
                 if ($ctx->debug) {

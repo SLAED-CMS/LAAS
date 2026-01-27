@@ -17,8 +17,7 @@ final class ModulesBootstrap implements BootstrapperInterface
     public function boot(BootContext $ctx): void
     {
         $ctx->container->singleton('boot.modules', static fn (): bool => true);
-        $appConfig = $ctx->appConfig['app'] ?? [];
-        $enabled = (bool) ($appConfig['bootstraps_modules_takeover'] ?? false);
+        $enabled = (bool) ($ctx->appConfig['bootstraps_modules_takeover'] ?? false);
         if (!$enabled) {
             return;
         }

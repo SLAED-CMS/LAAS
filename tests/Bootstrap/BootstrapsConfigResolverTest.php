@@ -34,7 +34,7 @@ final class BootstrapsConfigResolverTest extends TestCase
     {
         $resolver = new BootstrapsConfigResolver();
 
-        $result = $resolver->resolve(['bootstraps' => []], true);
+        $result = $resolver->resolve(['app' => ['bootstraps' => []]], true);
 
         $this->assertSame($this->defaultOrder(), $this->classesOf($result));
     }
@@ -44,7 +44,9 @@ final class BootstrapsConfigResolverTest extends TestCase
         $resolver = new BootstrapsConfigResolver();
 
         $result = $resolver->resolve([
-            'bootstraps' => ['view', 'unknown', 'security', 'modules'],
+            'app' => [
+                'bootstraps' => ['view', 'unknown', 'security', 'modules'],
+            ],
         ], true);
 
         $this->assertSame([
@@ -59,11 +61,13 @@ final class BootstrapsConfigResolverTest extends TestCase
         $resolver = new BootstrapsConfigResolver();
 
         $result = $resolver->resolve([
-            'bootstraps' => [
-                '\\' . ViewBootstrap::class,
-                'unknown',
-                SecurityBootstrap::class,
-                'bad\\Class',
+            'app' => [
+                'bootstraps' => [
+                    '\\' . ViewBootstrap::class,
+                    'unknown',
+                    SecurityBootstrap::class,
+                    'bad\\Class',
+                ],
             ],
         ], true);
 

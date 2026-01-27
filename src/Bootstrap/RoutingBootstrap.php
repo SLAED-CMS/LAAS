@@ -20,13 +20,12 @@ final class RoutingBootstrap implements BootstrapperInterface
             return;
         }
 
-        $appConfig = $ctx->appConfig['app'] ?? [];
-        $warmEnabled = (bool) ($appConfig['routing_cache_warm'] ?? false);
+        $warmEnabled = (bool) ($ctx->appConfig['routing_cache_warm'] ?? false);
         if (!$warmEnabled) {
             return;
         }
 
-        $force = (bool) ($appConfig['routing_cache_warm_force'] ?? false);
+        $force = (bool) ($ctx->appConfig['routing_cache_warm_force'] ?? false);
         $router->warmCache($force);
     }
 }
