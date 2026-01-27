@@ -1,6 +1,6 @@
 # LAAS Versions
 
-## v4.0.101 — Pages: TinyMCE full profile polish (2026-01-26)
+## v4.0.100 — Pages: TinyMCE full profile polish (2026-01-26)
 - Improve TinyMCE config for Pages admin: rich editing without upload-dependent features
 - Keep asset-gated fallback and write-boundary normalization unchanged
 ### Upgrade notes (None)
