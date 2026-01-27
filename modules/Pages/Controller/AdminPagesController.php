@@ -786,7 +786,7 @@ final class AdminPagesController
     {
         $registry = $this->editorRegistry();
         $configs = $registry->configs();
-        if (isset($configs['tinymce']) && is_array($configs['tinymce'])) {
+        if (isset($configs['tinymce'])) {
             $configs['tinymce']['upload_url'] = '/admin/media/upload-editor';
         }
         return [

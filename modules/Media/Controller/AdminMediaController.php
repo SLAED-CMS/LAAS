@@ -270,6 +270,9 @@ final class AdminMediaController
         return $this->tableResponse($request, $readService, $success, [], $mediaId > 0 ? $mediaId : null);
     }
 
+    /**
+     * @param array<string, mixed> $params
+     */
     public function uploadEditor(Request $request, array $params = []): Response
     {
         if (!$this->canUpload($request)) {
@@ -1162,6 +1165,9 @@ final class AdminMediaController
         ], $status);
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     */
     private function uploadEditorJsonResponse(array $payload, int $status): Response
     {
         $body = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);

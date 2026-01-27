@@ -4,7 +4,6 @@ declare(strict_types=1);
 use Laas\Domain\Media\MediaService;
 use Laas\Http\Request;
 use Laas\Modules\Media\Controller\AdminMediaController;
-use PDO;
 use PHPUnit\Framework\TestCase;
 use Tests\Security\Support\SecurityTestHelper;
 use Tests\Support\InMemorySession;
@@ -98,7 +97,7 @@ final class MediaEditorUploadTest extends TestCase
         return SecurityTestHelper::dbManagerFromPdo($pdo);
     }
 
-    private function seedRbac(PDO $pdo, int $userId, array $permissions): void
+    private function seedRbac(\PDO $pdo, int $userId, array $permissions): void
     {
         SecurityTestHelper::insertUser($pdo, $userId, 'admin', 'hash');
         SecurityTestHelper::insertRole($pdo, 1, 'admin');
