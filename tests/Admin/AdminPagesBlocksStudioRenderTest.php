@@ -138,6 +138,33 @@ final class AdminPagesBlocksStudioRenderTest extends TestCase
         $this->assertStringContainsString('help', (string) $config['toolbar']);
     }
 
+    public function testPageFormIncludesToastUiUploadConfig(): void
+    {
+        $_ENV['APP_DEBUG'] = 'true';
+        $db = $this->createDatabase();
+        $this->seedEditor($db->pdo(), 1);
+
+        $request = $this->makeRequest('GET', '/admin/pages/new', 1);
+        $view = SecurityTestHelper::createView($db, $request, 'admin');
+        $this->shareAdminFeatures($view, false);
+        $pages = new PagesService($db);
+        $rbac = new RbacService($db);
+        $controller = new AdminPagesController($view, $pages, $pages, null, $rbac);
+
+        $response = $controller->createForm($request);
+
+        $this->assertSame(200, $response->getStatus());
+        $body = $response->getBody();
+        $this->assertStringContainsString('data-toastui-config="', $body);
+        $matches = [];
+        $this->assertSame(1, preg_match('/data-toastui-config="([^"]*)"/', $body, $matches));
+        $decoded = html_entity_decode($matches[1], ENT_QUOTES);
+        $config = json_decode($decoded, true);
+        $this->assertIsArray($config);
+        $this->assertArrayHasKey('upload_url', $config);
+        $this->assertSame('/admin/media/upload-editor', $config['upload_url']);
+    }
+
     private function createDatabase(): DatabaseManager
     {
         $pdo = SecurityTestHelper::createSqlitePdo();

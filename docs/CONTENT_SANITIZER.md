@@ -91,6 +91,12 @@ Policy:
 - Fallback does not change the canonical sanitize pipeline (render -> sanitize -> DB).
 - TinyMCE direct uploads insert <img> tags; sanitization still happens at the write boundary.
 
+### Pages editors: Toast UI image upload (admin)
+- Uses the admin upload endpoint /admin/media/upload-editor (multipart/form-data).
+- Inserts markdown image syntax: ![](url) (spaces encoded).
+- Requires admin + media.upload permission and valid CSRF/UI token.
+- Missing assets fall back to textarea; no upload UI is shown.
+
 ## Pages editor fallback rules
 - Selection source order: server content_format (if present) -> server default (html) -> localStorage override (when no content_format).
 - Availability check runs after selection; missing assets force textarea with content_format=html.
