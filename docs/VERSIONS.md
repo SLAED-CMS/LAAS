@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.99 — Pages: full TinyMCE + remember editor choice (2026-01-27)
+- Expand TinyMCE config (plugins/toolbar) for Pages admin editor
+- Persist editor selection via localStorage with graceful fallback when assets missing
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.98 — Pages: editor fallback hardening (2026-01-26)
 - Add test guarding markdown editor selection fallback when assets are missing
 - Doc the fallback/format rules
@@ -919,4 +925,4 @@
 - v0.2: Middleware pipeline + sessions + security headers + error handler + Monolog
 - v0.1: Kernel/Router/Modules + System+Api routes
 
-**Last updated:** 2026-01-23
+**Last updated:** 2026-01-27

@@ -1,5 +1,17 @@
 (function () {
-  var STORAGE_KEY = 'laas.pages.editor';
+  function buildStorageKey(form) {
+    if (!form) {
+      return 'laas.pages.editor.default';
+    }
+    var raw = (form.dataset.editorUserId || '').toString().trim();
+    if (!raw) {
+      return 'laas.pages.editor.default';
+    }
+    if (!/^\d+$/.test(raw)) {
+      return 'laas.pages.editor.default';
+    }
+    return 'laas.pages.editor.' + raw;
+  }
 
   function normalizeFormat(value) {
     var raw = (value || '').toString().trim().toLowerCase();
@@ -75,31 +87,28 @@
     }
   }
 
-  function readStoredEditorId() {
+  function readStoredEditorId(storageKey) {
     try {
-      return window.localStorage.getItem(STORAGE_KEY) || '';
+      return window.localStorage.getItem(storageKey) || '';
     } catch (err) {
       return '';
     }
   }
 
-  function storeEditorId(id) {
-    if (!id) {
+  function storeEditorId(storageKey, id) {
+    if (!id || !storageKey) {
       return;
     }
     try {
-      window.localStorage.setItem(STORAGE_KEY, id);
+      window.localStorage.setItem(storageKey, id);
     } catch (err) {
       // ignore storage failures
     }
   }
 
-  function resolveChoiceFromStorage(form, caps) {
-    var storedId = readStoredEditorId();
+  function resolveChoiceFromStorage(form, caps, storageKey) {
+    var storedId = readStoredEditorId(storageKey);
     if (!storedId) {
-      return null;
-    }
-    if (caps && Object.prototype.hasOwnProperty.call(caps, storedId) && caps[storedId] !== true) {
       return null;
     }
     return buildChoiceFromInput(getEditorChoiceInput(form, storedId), caps);
@@ -274,6 +283,51 @@
     }
   }
 
+  function resolveEffectiveChoice(choice, caps) {
+    var resolved = choice;
+    if (!resolved) {
+      return {
+        choice: {
+          id: 'textarea',
+          format: 'html',
+          available: true
+        },
+        showHint: false
+      };
+    }
+    if (resolved.id !== 'textarea') {
+      var ready = resolved.available && isProviderReady(resolved);
+      if (!ready) {
+        return {
+          choice: {
+            id: 'textarea',
+            format: 'html',
+            available: true
+          },
+          showHint: true
+        };
+      }
+      return {
+        choice: resolved,
+        showHint: false
+      };
+    }
+    var showHint = false;
+    if (resolved.format === 'markdown') {
+      showHint = caps.toastui === false || !window.toastui || !window.toastui.Editor;
+    } else {
+      showHint = caps.tinymce === false || !window.tinymce;
+    }
+    return {
+      choice: {
+        id: 'textarea',
+        format: normalizeFormat(resolved.format),
+        available: true
+      },
+      showHint: showHint
+    };
+  }
+
   function initEditorForForm(form) {
     if (form.dataset.pagesEditorsReady === '1') {
       return;
@@ -288,21 +342,17 @@
     var formatInput = getFormatInput(form);
     var caps = readEditorCaps(form);
     var selectionSource = (form.dataset.editorSelectionSource || 'content').toString().trim();
+    var storageKey = buildStorageKey(form);
     var choice = readEditorChoice(form, caps);
     if (selectionSource === 'default') {
-      var storedChoice = resolveChoiceFromStorage(form, caps);
-      if (storedChoice && storedChoice.available) {
+      var storedChoice = resolveChoiceFromStorage(form, caps, storageKey);
+      if (storedChoice && storedChoice.id) {
         choice = storedChoice;
       }
     }
-    if (!choice.available) {
-      choice = {
-        id: 'textarea',
-        format: 'html',
-        available: true
-      };
-    }
-    setFormatValue(form, choice.format, choice.id);
+    var resolvedChoice = resolveEffectiveChoice(choice, caps);
+    var appliedChoice = resolvedChoice.choice;
+    setFormatValue(form, appliedChoice.format, appliedChoice.id);
 
     var toastEditor = null;
     var tinyInit = false;
@@ -356,20 +406,11 @@
 
     function setMode(nextChoice) {
       var resolved = typeof nextChoice === 'string' ? readEditorChoice(form, caps) : nextChoice;
-      var normalized = normalizeFormat(resolved.format);
-      setFormatValue(form, normalized, resolved.id);
-      var providerReady = resolved.available && isProviderReady(resolved);
-      var showHint = false;
-      if (resolved.id === 'textarea') {
-        if (normalized === 'markdown') {
-          showHint = caps.toastui === false || !window.toastui || !window.toastui.Editor;
-        } else {
-          showHint = caps.tinymce === false || !window.tinymce;
-        }
-      } else {
-        showHint = !providerReady;
-      }
-      setUnavailableHint(form, showHint);
+      var effective = resolveEffectiveChoice(resolved, caps);
+      var applied = effective.choice;
+      var normalized = normalizeFormat(applied.format);
+      setFormatValue(form, normalized, applied.id);
+      setUnavailableHint(form, effective.showHint);
       if (normalized === 'markdown') {
         if (window.tinymce && textarea.id) {
           var inst = window.tinymce.get(textarea.id);
@@ -378,7 +419,7 @@
             tinyInit = false;
           }
         }
-        var editor = providerReady ? ensureToastUiEditor() : null;
+        var editor = applied.id === 'toastui' ? ensureToastUiEditor() : null;
         if (editor) {
           if ((textarea.value || '') !== '') {
             editor.setMarkdown(textarea.value || '');
@@ -399,32 +440,34 @@
           markdownHost.classList.add('d-none');
         }
         textarea.classList.remove('d-none');
-        if (providerReady) {
+        if (applied.id === 'tinymce') {
           ensureTinyMceEditor();
         }
       }
+      return applied;
     }
 
     var choices = form.querySelectorAll('[data-editor-choice="1"]');
     choices.forEach(function (choice) {
       choice.addEventListener('change', function () {
         var nextChoice = readEditorChoice(form, caps);
-        setMode(nextChoice);
-        storeEditorId(nextChoice.id);
-        normalizeBlocksJsonForFormat(form, nextChoice.format);
+        var applied = setMode(nextChoice);
+        storeEditorId(storageKey, nextChoice.id);
+        normalizeBlocksJsonForFormat(form, applied.format);
       });
     });
 
     form.addEventListener('submit', function () {
       var currentChoice = readEditorChoice(form, caps);
-      var format = currentChoice.format;
-      setFormatValue(form, format, currentChoice.id);
+      var applied = resolveEffectiveChoice(currentChoice, caps).choice;
+      var format = applied.format;
+      setFormatValue(form, format, applied.id);
       if (format === 'markdown') {
         var editor = ensureToastUiEditor();
-        if (editor && currentChoice.available && isProviderReady(currentChoice)) {
+        if (editor && applied.id === 'toastui') {
           syncToastUiToTextarea(textarea, editor);
         }
-      } else if (window.tinymce && currentChoice.available && isProviderReady(currentChoice)) {
+      } else if (window.tinymce && applied.id === 'tinymce') {
         syncTinyMceToTextarea(textarea);
       }
       normalizeBlocksJsonForFormat(form, format);
@@ -433,7 +476,7 @@
     setMode(choice);
 
     if (formatInput && formatInput.value === '') {
-      formatInput.value = choice.format;
+      formatInput.value = appliedChoice.format;
     }
   }
 

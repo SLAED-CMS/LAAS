@@ -87,6 +87,8 @@ Policy:
 - Markdown editor: Toast UI sets content_format=markdown (markdown rendered then sanitized on write when enabled).
 - Output remains HTML; normalization happens only when APP_PAGES_NORMALIZE_ENABLED=1.
 - Vendor assets are local under public/assets/vendor/tinymce and public/assets/vendor/toastui-editor.
+- Editor choice persists per user via localStorage; missing assets fall back to textarea for the current page load.
+- Fallback does not change the canonical sanitize pipeline (render -> sanitize -> DB).
 
 ## Pages editor fallback rules
 - Selection source order: server content_format (if present) -> server default (html) -> localStorage override (when no content_format).

@@ -138,6 +138,7 @@ final class AdminPagesEditorFallbackTest extends TestCase
         $this->assertStringContainsString('data-editor-selected-id="textarea"', $response->getBody());
         $this->assertStringContainsString('data-editor-selected-format="html"', $response->getBody());
         $this->assertStringContainsString('name="content_format" value="html"', $response->getBody());
+        $this->assertStringContainsString('data-editor-unavailable-hint="1"', $response->getBody());
     }
 
     private function createDatabase(): DatabaseManager

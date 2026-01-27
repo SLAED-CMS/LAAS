@@ -14,8 +14,8 @@ return [
     'version' => 1,
     'items' => [
         ['file' => 'themes/admin/pages/audit.html', 'line' => 36, 'kind' => 'raw_output'],
-        ['file' => 'themes/admin/pages/page_form.html', 'line' => 64, 'kind' => 'raw_output'],
         ['file' => 'themes/admin/pages/page_form.html', 'line' => 65, 'kind' => 'raw_output'],
+        ['file' => 'themes/admin/pages/page_form.html', 'line' => 66, 'kind' => 'raw_output'],
         ['file' => 'themes/admin/pages/pages.html', 'line' => 29, 'kind' => 'raw_output'],
         ['file' => 'themes/admin/pages/pages.html', 'line' => 30, 'kind' => 'raw_output'],
         ['file' => 'themes/admin/pages/pages.html', 'line' => 31, 'kind' => 'raw_output'],
