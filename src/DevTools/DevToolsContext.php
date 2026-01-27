@@ -23,6 +23,8 @@ final class DevToolsContext
         'misses' => 0,
         'sets' => 0,
     ];
+    /** @var array<string, array{calls?: int, ms?: float, count?: int}> */
+    private array $modules = [];
     private bool $externalAvailable = false;
     private bool $cacheAvailable = false;
     private array $request = [];
@@ -34,6 +36,8 @@ final class DevToolsContext
     private array $customWarnings = [];
     private bool $storeSql = true;
     private bool $rawSqlAllowed = false;
+    /** @var array<string, string> */
+    private array $modulesMeta = [];
 
     public function __construct(array $flags)
     {
@@ -197,6 +201,28 @@ final class DevToolsContext
         $this->media = $data;
     }
 
+    /**
+     * @param array<string, array{calls?: int, ms?: float, count?: int}> $data
+     */
+    public function setModules(array $data): void
+    {
+        $this->modules = $data;
+    }
+
+    /**
+     * @param array<string, string> $meta
+     */
+    public function setModulesMeta(array $meta): void
+    {
+        if (!isset($meta['admin_nav_cache']) || $meta['admin_nav_cache'] === '') {
+            $meta['admin_nav_cache'] = 'n/a';
+        }
+        if (!isset($meta['modules_snapshot']) || $meta['modules_snapshot'] === '') {
+            $meta['modules_snapshot'] = 'n/a';
+        }
+        $this->modulesMeta = $meta;
+    }
+
     public function addWarning(string $code, string $message): void
     {
         if (!($this->flags['enabled'] ?? false)) {
@@ -333,6 +359,9 @@ final class DevToolsContext
             ],
             'external' => $external,
             'cache' => $cache,
+            'modules' => $this->modules,
+            'modules_breakdown' => $this->normalizeModulesBreakdown($this->modules),
+            'modules_meta' => $this->modulesMeta,
             'profile' => $this->buildProfile($duplicateCount, $grouped, $duplicates, $memoryMb),
             'request' => $this->request,
             'user' => $this->user,
@@ -711,6 +740,8 @@ final class DevToolsContext
         if (!empty($external['top3_slowest_calls'])) {
             $httpMaxMs = (float) ($external['top3_slowest_calls'][0]['total_ms'] ?? 0);
         }
+        $modsCalls = (int) ($this->modules['total']['calls'] ?? 0);
+        $modsMs = round((float) ($this->modules['total']['ms'] ?? 0.0), 1);
         $cacheRate = $cache['available'] ? sprintf('%.1f%%', (float) ($cache['hit_rate'] ?? 0)) : 'n/a';
 
         $postParams = [];
@@ -733,6 +764,8 @@ final class DevToolsContext
             'total_ms' => round($totalMs, 2),
             'memory_mb' => round($memoryMb, 0),
             'cache_rate' => $cacheRate,
+            'modules_calls' => $modsCalls,
+            'modules_ms' => $modsMs,
             'http_count' => $httpCount,
             'http_max_ms' => round($httpMaxMs, 1),
             'method' => $methodUpper,
@@ -1364,5 +1397,31 @@ final class DevToolsContext
         }
 
         return $out;
+    }
+
+    /**
+     * @param array<string, array{calls?: int, ms?: float, count?: int}> $modules
+     * @return array<string, array{calls: int, ms: float, count: int}>
+     */
+    private function normalizeModulesBreakdown(array $modules): array
+    {
+        $defaults = [
+            'discover' => ['calls' => 0, 'ms' => 0.0, 'count' => 0],
+            'sync' => ['calls' => 0, 'ms' => 0.0, 'count' => 0],
+            'catalog' => ['calls' => 0, 'ms' => 0.0, 'count' => 0],
+            'admin_nav' => ['calls' => 0, 'ms' => 0.0, 'count' => 0],
+            'total' => ['calls' => 0, 'ms' => 0.0, 'count' => 0],
+        ];
+
+        foreach ($defaults as $key => $entry) {
+            $current = $modules[$key] ?? [];
+            $defaults[$key] = [
+                'calls' => (int) ($current['calls'] ?? $entry['calls']),
+                'ms' => (float) ($current['ms'] ?? $entry['ms']),
+                'count' => (int) ($current['count'] ?? $entry['count']),
+            ];
+        }
+
+        return $defaults;
     }
 }
