@@ -789,6 +789,9 @@ final class AdminPagesController
         if (isset($configs['tinymce'])) {
             $configs['tinymce']['upload_url'] = '/admin/media/upload-editor';
         }
+        if (isset($configs['toastui'])) {
+            $configs['toastui']['upload_url'] = '/admin/media/upload-editor';
+        }
         return [
             'editors' => $registry->editors(),
             'caps' => $registry->capabilities(),

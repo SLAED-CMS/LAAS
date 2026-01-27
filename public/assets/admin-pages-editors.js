@@ -211,12 +211,98 @@
     return null;
   }
 
+  function readToastUiConfig(host) {
+    if (!host) {
+      return null;
+    }
+    var raw = host.getAttribute('data-toastui-config') || '';
+    if (!raw) {
+      return null;
+    }
+    try {
+      var parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        return parsed;
+      }
+    } catch (err) {
+      return null;
+    }
+    return null;
+  }
+
   function getCsrfToken(form) {
     if (!form) {
       return '';
     }
     var input = form.querySelector('input[name="_token"]');
     return input ? (input.value || '') : '';
+  }
+
+  function normalizeImageUrlForMarkdown(url) {
+    var value = (url || '').toString();
+    if (/\s/.test(value)) {
+      return encodeURI(value);
+    }
+    return value;
+  }
+
+  function createToastUiImageUploadHook(form, uploadUrl) {
+    var url = (uploadUrl || '').toString().trim();
+    if (!url) {
+      return null;
+    }
+    return function (blob, callback) {
+      if (!blob) {
+        return false;
+      }
+      var csrf = getCsrfToken(form);
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', url);
+      xhr.withCredentials = true;
+      xhr.setRequestHeader('Accept', 'application/json');
+      if (csrf) {
+        xhr.setRequestHeader('X-CSRF-Token', csrf);
+      }
+      xhr.onload = function () {
+        var status = xhr.status;
+        var responseText = xhr.responseText || '';
+        if (status < 200 || status >= 300) {
+          console.warn('Toast UI upload failed', status);
+          return;
+        }
+        try {
+          var json = JSON.parse(responseText);
+          var location = json && json.location ? String(json.location) : '';
+          if (!location) {
+            console.warn('Toast UI upload invalid response');
+            return;
+          }
+          callback(normalizeImageUrlForMarkdown(location), '');
+        } catch (err) {
+          console.warn('Toast UI upload invalid response');
+        }
+      };
+      xhr.onerror = function () {
+        console.warn('Toast UI upload failed');
+      };
+      var filename = 'image';
+      if (blob && blob.type) {
+        if (blob.type === 'image/png') {
+          filename = 'image.png';
+        } else if (blob.type === 'image/jpeg') {
+          filename = 'image.jpg';
+        } else if (blob.type === 'image/webp') {
+          filename = 'image.webp';
+        }
+      }
+      var formData = new FormData();
+      formData.append('file', blob, filename);
+      if (csrf) {
+        formData.append('_token', csrf);
+      }
+      xhr.send(formData);
+      return false;
+    };
   }
 
   function createTinyMceUploadHandler(form, uploadUrl) {
@@ -481,13 +567,24 @@
       if (!window.toastui || !window.toastui.Editor) {
         return null;
       }
+      var toastConfig = readToastUiConfig(markdownHost) || {};
+      var hooks = {};
+      if (toastConfig.hooks && typeof toastConfig.hooks === 'object') {
+        hooks = Object.assign({}, toastConfig.hooks);
+      }
+      var uploadHook = createToastUiImageUploadHook(form, toastConfig.upload_url);
+      if (uploadHook) {
+        hooks.addImageBlobHook = uploadHook;
+      }
+      var options = Object.assign({}, toastConfig);
       toastEditor = new window.toastui.Editor({
         el: markdownHost,
-        height: '380px',
-        initialEditType: 'markdown',
-        previewStyle: 'vertical',
-        usageStatistics: false,
-        initialValue: textarea.value || ''
+        height: options.height || '380px',
+        initialEditType: options.initialEditType || 'markdown',
+        previewStyle: options.previewStyle || 'vertical',
+        usageStatistics: options.usageStatistics === true,
+        initialValue: textarea.value || '',
+        hooks: Object.keys(hooks).length ? hooks : undefined
       });
       form._pagesToastEditor = toastEditor;
       return toastEditor;

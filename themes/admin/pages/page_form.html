@@ -95,7 +95,8 @@
             </label>
             <textarea class="form-control" id="page-content" name="content" rows="10"
                       data-tinymce-config="{% editor_configs.tinymce %}">{% page.content %}</textarea>
-            <div class="border rounded bg-white p-2 d-none" data-markdown-editor="1"></div>
+            <div class="border rounded bg-white p-2 d-none" data-markdown-editor="1"
+                 data-toastui-config="{% editor_configs.toastui %}"></div>
             {% if legacy_content %}
             <div class="form-text text-warning">{% t 'admin.pages.legacy_content_hint' %}</div>
             {% endif %}
