@@ -290,7 +290,7 @@ final class AdminMediaController
         $contentLength = $this->contentLength($request);
 
         if ($contentLength === -1) {
-            return $this->uploadEditorJsonError('invalid_request', 400);
+            return $this->uploadEditorJsonError('invalid_request', 422);
         }
 
         if ($maxBytes > 0 && $contentLength !== null && $contentLength > $maxBytes) {
@@ -298,7 +298,7 @@ final class AdminMediaController
         }
 
         if ($this->isUploadTimedOut()) {
-            return $this->uploadEditorJsonError('upload_timeout', 400);
+            return $this->uploadEditorJsonError('upload_timeout', 422);
         }
 
         $rateLimited = $this->enforceUploadRateLimit($request);
@@ -308,7 +308,7 @@ final class AdminMediaController
 
         $file = $_FILES['file'] ?? null;
         if (!is_array($file)) {
-            return $this->uploadEditorJsonError('invalid_request', 400);
+            return $this->uploadEditorJsonError('invalid_request', 422);
         }
 
         $fileSize = (int) ($file['size'] ?? 0);
@@ -318,13 +318,13 @@ final class AdminMediaController
 
         $tmpPath = (string) ($file['tmp_name'] ?? '');
         if ($tmpPath === '' || !is_file($tmpPath)) {
-            return $this->uploadEditorJsonError('invalid_request', 400);
+            return $this->uploadEditorJsonError('invalid_request', 422);
         }
 
         $sniffer = new MimeSniffer();
         $detected = $sniffer->detect($tmpPath);
         if ($detected === null || $detected === '' || !str_starts_with($detected, 'image/') || $detected === 'image/svg+xml') {
-            return $this->uploadEditorJsonError('invalid_mime', 422);
+            return $this->uploadEditorJsonError('invalid_mime', 415);
         }
 
         $originalName = $this->safeOriginalName((string) ($file['name'] ?? ''));
@@ -344,7 +344,7 @@ final class AdminMediaController
                 return $this->uploadEditorJsonError('file_too_large', 413);
             }
             if ($key === 'admin.media.error_invalid_type' || $key === 'admin.media.error_svg_forbidden') {
-                return $this->uploadEditorJsonError('invalid_mime', 422);
+                return $this->uploadEditorJsonError('invalid_mime', 415);
             }
             return $this->uploadEditorJsonError('upload_failed', 500);
         } catch (Throwable) {
