@@ -130,7 +130,7 @@ final class AdminPagesBlocksStudioRenderTest extends TestCase
         $this->assertArrayHasKey('plugins', $config);
         $this->assertArrayHasKey('toolbar', $config);
         $this->assertStringContainsString('table', (string) $config['plugins']);
-        $this->assertStringNotContainsString('image', (string) $config['plugins']);
+        $this->assertStringContainsString('image', (string) $config['plugins']);
         $this->assertStringNotContainsString('media', (string) $config['plugins']);
         $this->assertStringContainsString('removeformat', (string) $config['toolbar']);
         $this->assertStringContainsString('help', (string) $config['toolbar']);
