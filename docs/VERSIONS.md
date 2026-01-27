@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.102 — Pages: TinyMCE media picker (admin) (2026-01-26)
+- Wire TinyMCE image picker to Media module (admin-only)
+- Keep asset-gated fallback and write-boundary normalization unchanged
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.101 — Pages: editors B2 invariants (2026-01-26)
 - Providers are the single source of truth for editor availability and formats
 - Enforce submit sync invariants for content_format + blocks_json

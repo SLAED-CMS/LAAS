@@ -44,6 +44,7 @@ final class MediaPickerTest extends TestCase
 
         $response = $controller->index($request);
         $this->assertSame(200, $response->getStatus());
+        $this->assertStringContainsString('Select', $response->getBody());
     }
 
     public function testPickerSearchFiltersResults(): void

@@ -99,6 +99,7 @@ final class AdminPagesBlocksStudioRenderTest extends TestCase
         $this->assertStringContainsString('data-editor-id="toastui"', $response->getBody());
         $this->assertStringContainsString('data-editor-selected-id="textarea"', $response->getBody());
         $this->assertStringContainsString('name="content_format"', $response->getBody());
+        $this->assertStringContainsString('data-media-picker-url="/admin/media/picker"', $response->getBody());
         $this->assertStringContainsString('data-editor-unavailable-hint="1"', $response->getBody());
         $this->assertStringContainsString('data-markdown-editor="1"', $response->getBody());
     }

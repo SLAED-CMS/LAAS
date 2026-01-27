@@ -48,6 +48,27 @@ final class HtmlSanitizerTest extends TestCase
         $this->assertStringNotContainsString('<iframe', strtolower($sanitized));
     }
 
+    public function testEditorSafeRichAllowsImageAttributes(): void
+    {
+        $html = '<img src="/media/1/a.jpg" alt="a" title="t" width="120" height="80">';
+        $sanitized = (new HtmlSanitizer())->sanitize($html, ContentProfiles::EDITOR_SAFE_RICH);
+
+        $this->assertStringContainsString('src="/media/1/a.jpg"', $sanitized);
+        $this->assertStringContainsString('alt="a"', $sanitized);
+        $this->assertStringContainsString('title="t"', $sanitized);
+        $this->assertStringContainsString('width="120"', $sanitized);
+        $this->assertStringContainsString('height="80"', $sanitized);
+    }
+
+    public function testEditorSafeRichBlocksDataImageSrc(): void
+    {
+        $html = '<img src="data:image/png;base64,AAA" alt="x">';
+        $sanitized = (new HtmlSanitizer())->sanitize($html, ContentProfiles::EDITOR_SAFE_RICH);
+
+        $this->assertStringContainsString('<img', $sanitized);
+        $this->assertStringNotContainsString('src=', strtolower($sanitized));
+    }
+
     public function testUserPlainStripsImagesAndTables(): void
     {
         $html = '<p>ok</p><img src="/a.png" alt="x"><table><tr><td>x</td></tr></table>';
