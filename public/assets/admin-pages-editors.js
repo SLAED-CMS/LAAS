@@ -211,6 +211,71 @@
     return null;
   }
 
+  function getCsrfToken(form) {
+    if (!form) {
+      return '';
+    }
+    var input = form.querySelector('input[name="_token"]');
+    return input ? (input.value || '') : '';
+  }
+
+  function createTinyMceUploadHandler(form, uploadUrl) {
+    var url = (uploadUrl || '').toString().trim();
+    if (!url) {
+      return null;
+    }
+    return function (blobInfo, success, failure, progress) {
+      var csrf = getCsrfToken(form);
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', url);
+      xhr.withCredentials = true;
+      xhr.setRequestHeader('Accept', 'application/json');
+      if (csrf) {
+        xhr.setRequestHeader('X-CSRF-Token', csrf);
+      }
+      xhr.upload.onprogress = function (event) {
+        if (typeof progress === 'function' && event.lengthComputable) {
+          progress((event.loaded / event.total) * 100);
+        }
+      };
+      xhr.onload = function () {
+        var status = xhr.status;
+        var responseText = xhr.responseText || '';
+        if (status < 200 || status >= 300) {
+          var message = 'upload_failed';
+          try {
+            var data = JSON.parse(responseText);
+            if (data && data.error) {
+              message = data.error;
+            }
+          } catch (err) {
+          }
+          failure(message);
+          return;
+        }
+        try {
+          var json = JSON.parse(responseText);
+          if (!json || !json.location) {
+            failure('invalid_response');
+            return;
+          }
+          success(json.location);
+        } catch (err) {
+          failure('invalid_response');
+        }
+      };
+      xhr.onerror = function () {
+        failure('upload_failed');
+      };
+      var formData = new FormData();
+      formData.append('file', blobInfo.blob(), blobInfo.filename());
+      if (csrf) {
+        formData.append('_token', csrf);
+      }
+      xhr.send(formData);
+    };
+  }
+
   function normalizeBlocksJsonForFormat(form, format) {
     if (format !== 'markdown') {
       return normalizeBlocksJsonToHtml(form);
@@ -449,6 +514,10 @@
       var providerConfig = readTinyMceConfig(textarea) || {};
       var merged = Object.assign({}, baseConfig, providerConfig);
       merged.selector = '#' + id;
+      var uploadHandler = createTinyMceUploadHandler(form, merged.upload_url);
+      if (uploadHandler) {
+        merged.images_upload_handler = uploadHandler;
+      }
       merged.file_picker_callback = function (callback, value, meta) {
         if (!meta || meta.filetype !== 'image') {
           return;

@@ -785,11 +785,15 @@ final class AdminPagesController
     private function editorContext(): array
     {
         $registry = $this->editorRegistry();
+        $configs = $registry->configs();
+        if (isset($configs['tinymce']) && is_array($configs['tinymce'])) {
+            $configs['tinymce']['upload_url'] = '/admin/media/upload-editor';
+        }
         return [
             'editors' => $registry->editors(),
             'caps' => $registry->capabilities(),
             'assets' => $registry->assets(),
-            'configs' => $this->encodeEditorConfigs($registry->configs()),
+            'configs' => $this->encodeEditorConfigs($configs),
         ];
     }
 

@@ -43,6 +43,8 @@ final class TinyMceProvider implements EditorProviderInterface
             'statusbar' => true,
             'height' => 420,
             'paste_as_text' => true,
+            'paste_data_images' => true,
+            'automatic_uploads' => true,
             'file_picker_types' => 'image',
         ];
     }
