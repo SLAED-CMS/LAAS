@@ -129,6 +129,8 @@ final class AdminPagesBlocksStudioRenderTest extends TestCase
         $this->assertIsArray($config);
         $this->assertArrayHasKey('plugins', $config);
         $this->assertArrayHasKey('toolbar', $config);
+        $this->assertArrayHasKey('upload_url', $config);
+        $this->assertSame('/admin/media/upload-editor', $config['upload_url']);
         $this->assertStringContainsString('table', (string) $config['plugins']);
         $this->assertStringContainsString('image', (string) $config['plugins']);
         $this->assertStringNotContainsString('media', (string) $config['plugins']);
