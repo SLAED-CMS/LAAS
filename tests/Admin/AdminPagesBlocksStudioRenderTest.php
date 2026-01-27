@@ -119,10 +119,20 @@ final class AdminPagesBlocksStudioRenderTest extends TestCase
         $response = $controller->createForm($request);
 
         $this->assertSame(200, $response->getStatus());
-        $this->assertStringContainsString('data-tinymce-config="', $response->getBody());
-        $this->assertStringContainsString('toolbar', $response->getBody());
-        $this->assertStringContainsString('fullscreen', $response->getBody());
-        $this->assertStringContainsString('wordcount', $response->getBody());
+        $body = $response->getBody();
+        $this->assertStringContainsString('data-tinymce-config="', $body);
+        $matches = [];
+        $this->assertSame(1, preg_match('/data-tinymce-config="([^"]*)"/', $body, $matches));
+        $decoded = html_entity_decode($matches[1], ENT_QUOTES);
+        $config = json_decode($decoded, true);
+        $this->assertIsArray($config);
+        $this->assertArrayHasKey('plugins', $config);
+        $this->assertArrayHasKey('toolbar', $config);
+        $this->assertStringContainsString('table', (string) $config['plugins']);
+        $this->assertStringNotContainsString('image', (string) $config['plugins']);
+        $this->assertStringNotContainsString('media', (string) $config['plugins']);
+        $this->assertStringContainsString('removeformat', (string) $config['toolbar']);
+        $this->assertStringContainsString('help', (string) $config['toolbar']);
     }
 
     private function createDatabase(): DatabaseManager

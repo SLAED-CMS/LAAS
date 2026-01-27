@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.101 — Pages: TinyMCE full profile polish (2026-01-26)
+- Improve TinyMCE config for Pages admin: rich editing without upload-dependent features
+- Keep asset-gated fallback and write-boundary normalization unchanged
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.99 — Pages: full TinyMCE + remember editor choice (2026-01-27)
 - Expand TinyMCE config (plugins/toolbar) for Pages admin editor
 - Persist editor selection via localStorage with graceful fallback when assets missing
