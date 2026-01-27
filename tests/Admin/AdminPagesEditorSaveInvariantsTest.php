@@ -13,7 +13,6 @@ use Laas\View\View;
 use PHPUnit\Framework\TestCase;
 use Tests\Security\Support\SecurityTestHelper;
 use Tests\Support\InMemorySession;
-use PDO;
 
 final class AdminPagesEditorSaveInvariantsTest extends TestCase
 {
