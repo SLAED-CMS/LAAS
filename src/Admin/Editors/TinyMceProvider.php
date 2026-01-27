@@ -35,12 +35,14 @@ final class TinyMceProvider implements EditorProviderInterface
     public function config(): array
     {
         return [
-            'plugins' => 'lists link image table code fullscreen media wordcount paste autoresize',
-            'toolbar' => 'undo redo | blocks | bold italic underline strikethrough | alignleft aligncenter alignright | bullist numlist outdent indent | link image media table | code fullscreen',
+            'plugins' => 'lists link table code fullscreen wordcount paste autoresize searchreplace help',
+            'toolbar' => 'undo redo | blocks | bold italic underline strikethrough | alignleft aligncenter alignright | bullist numlist outdent indent | link table | searchreplace removeformat | code fullscreen help',
+            'table_toolbar' => 'tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol',
             'menubar' => false,
             'branding' => false,
             'statusbar' => true,
             'height' => 420,
+            'paste_as_text' => true,
         ];
     }
 
