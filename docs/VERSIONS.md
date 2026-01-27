@@ -1,5 +1,13 @@
 # LAAS Versions
 
+## v4.0.101 — Pages: editors B2 invariants (2026-01-26)
+- Providers are the single source of truth for editor availability and formats
+- Enforce submit sync invariants for content_format + blocks_json
+- Asset-missing fallback rules stay in effect
+- No functional change unless editors are enabled/available
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.100 — Pages: TinyMCE full profile polish (2026-01-26)
 - Improve TinyMCE config for Pages admin: rich editing without upload-dependent features
 - Keep asset-gated fallback and write-boundary normalization unchanged
