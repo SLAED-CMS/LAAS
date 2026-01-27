@@ -871,13 +871,13 @@ final class AdminPagesController
             ];
         }
 
-        $id = (string) ($selected['id'] ?? 'textarea');
-        $available = (bool) ($selected['available'] ?? ($caps[$id]['available'] ?? false));
+        $id = (string) $selected['id'];
+        $available = (bool) $selected['available'];
         if (!$available) {
             return ['id' => 'textarea', 'format' => 'html', 'available' => true];
         }
 
-        $format = $this->normalizeContentFormat($selected['format'] ?? $contentFormat);
+        $format = $this->normalizeContentFormat($selected['format']);
         return ['id' => $id, 'format' => $format, 'available' => true];
     }
 
