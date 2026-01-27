@@ -8,6 +8,7 @@ return [
     ['POST', '/admin/media/picker/select', [\Laas\Modules\Media\Controller\AdminMediaPickerController::class, 'select']],
     // rate-limited: media_upload
     ['POST', '/admin/media/upload', [\Laas\Modules\Media\Controller\AdminMediaController::class, 'upload']],
+    ['POST', '/admin/media/upload-editor', [\Laas\Modules\Media\Controller\AdminMediaController::class, 'uploadEditor']],
     ['POST', '/admin/media/delete', [\Laas\Modules\Media\Controller\AdminMediaController::class, 'delete']],
     ['POST', '/admin/media/{id:\d+}/public', [\Laas\Modules\Media\Controller\AdminMediaController::class, 'togglePublic']],
     ['GET', '/admin/media/{id:\d+}/signed', [\Laas\Modules\Media\Controller\AdminMediaController::class, 'signed']],

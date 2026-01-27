@@ -270,6 +270,109 @@ final class AdminMediaController
         return $this->tableResponse($request, $readService, $success, [], $mediaId > 0 ? $mediaId : null);
     }
 
+    public function uploadEditor(Request $request, array $params = []): Response
+    {
+        if (!$this->canUpload($request)) {
+            return $this->uploadEditorJsonError('forbidden', 403);
+        }
+
+        $readService = $this->readService();
+        $writeService = $this->writeService();
+        if ($readService === null || $writeService === null) {
+            return $this->uploadEditorJsonError('db_unavailable', 503);
+        }
+
+        $config = $this->mediaConfig();
+        $maxBytes = (int) ($config['max_bytes'] ?? 0);
+        $contentLength = $this->contentLength($request);
+
+        if ($contentLength === -1) {
+            return $this->uploadEditorJsonError('invalid_request', 400);
+        }
+
+        if ($maxBytes > 0 && $contentLength !== null && $contentLength > $maxBytes) {
+            return $this->uploadEditorJsonError('file_too_large', 413);
+        }
+
+        if ($this->isUploadTimedOut()) {
+            return $this->uploadEditorJsonError('upload_timeout', 400);
+        }
+
+        $rateLimited = $this->enforceUploadRateLimit($request);
+        if ($rateLimited !== null) {
+            return $rateLimited;
+        }
+
+        $file = $_FILES['file'] ?? null;
+        if (!is_array($file)) {
+            return $this->uploadEditorJsonError('invalid_request', 400);
+        }
+
+        $fileSize = (int) ($file['size'] ?? 0);
+        if ($maxBytes > 0 && $fileSize > $maxBytes) {
+            return $this->uploadEditorJsonError('file_too_large', 413);
+        }
+
+        $tmpPath = (string) ($file['tmp_name'] ?? '');
+        if ($tmpPath === '' || !is_file($tmpPath)) {
+            return $this->uploadEditorJsonError('invalid_request', 400);
+        }
+
+        $sniffer = new MimeSniffer();
+        $detected = $sniffer->detect($tmpPath);
+        if ($detected === null || $detected === '' || !str_starts_with($detected, 'image/') || $detected === 'image/svg+xml') {
+            return $this->uploadEditorJsonError('invalid_mime', 422);
+        }
+
+        $originalName = $this->safeOriginalName((string) ($file['name'] ?? ''));
+
+        try {
+            $media = $writeService->upload([
+                'name' => $originalName,
+                'tmp_path' => $tmpPath,
+                'size' => $fileSize,
+                'mime' => (string) ($file['type'] ?? ''),
+            ], [
+                'user_id' => $this->currentUserId($request),
+            ]);
+        } catch (MediaServiceException $e) {
+            $key = $e->key();
+            if ($key === 'media.upload_too_large' || $key === 'media.upload_mime_too_large') {
+                return $this->uploadEditorJsonError('file_too_large', 413);
+            }
+            if ($key === 'admin.media.error_invalid_type' || $key === 'admin.media.error_svg_forbidden') {
+                return $this->uploadEditorJsonError('invalid_mime', 422);
+            }
+            return $this->uploadEditorJsonError('upload_failed', 500);
+        } catch (Throwable) {
+            return $this->uploadEditorJsonError('upload_failed', 500);
+        }
+
+        $mediaId = (int) ($media['id'] ?? 0);
+        $mime = (string) ($media['mime_type'] ?? '');
+        $size = (int) ($media['size_bytes'] ?? 0);
+        $url = $this->publicUrl($media, 'view');
+        if ($mediaId <= 0 || $url === '') {
+            return $this->uploadEditorJsonError('upload_failed', 500);
+        }
+
+        Audit::log('media.upload', 'media_file', $mediaId, [
+            'id' => $mediaId,
+            'original_name' => $originalName,
+            'mime' => $mime !== '' ? $mime : $detected,
+            'size' => $size > 0 ? $size : $fileSize,
+            'actor_user_id' => $this->currentUserId($request),
+            'actor_ip' => $request->ip(),
+        ]);
+
+        (new ApiCacheInvalidator())->bumpMedia();
+
+        return $this->uploadEditorJsonResponse([
+            'location' => $url,
+            'id' => $mediaId,
+        ], 200);
+    }
+
     public function delete(Request $request, array $params = []): Response
     {
         if (!$this->canDelete($request)) {
@@ -1049,6 +1152,21 @@ final class AdminMediaController
 
         return new Response($message, $status, [
             'Content-Type' => 'text/plain; charset=utf-8',
+        ]);
+    }
+
+    private function uploadEditorJsonError(string $message, int $status): Response
+    {
+        return $this->uploadEditorJsonResponse([
+            'error' => $message,
+        ], $status);
+    }
+
+    private function uploadEditorJsonResponse(array $payload, int $status): Response
+    {
+        $body = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        return new Response($body !== false ? $body : '{}', $status, [
+            'Content-Type' => 'application/json; charset=utf-8',
         ]);
     }
 
