@@ -21,6 +21,7 @@ final class AdminPagesBlocksStudioRenderTest extends TestCase
         $this->previousDebug = $_ENV['APP_DEBUG'] ?? null;
         $this->previousAssetBase = $_ENV['ASSET_BASE'] ?? null;
         $_ENV['ASSET_BASE'] = '/_assets_missing';
+        $this->clearTemplateCache();
     }
 
     protected function tearDown(): void
@@ -102,6 +103,28 @@ final class AdminPagesBlocksStudioRenderTest extends TestCase
         $this->assertStringContainsString('data-markdown-editor="1"', $response->getBody());
     }
 
+    public function testPageFormIncludesTinyMceFullConfigTokens(): void
+    {
+        $_ENV['APP_DEBUG'] = 'true';
+        $db = $this->createDatabase();
+        $this->seedEditor($db->pdo(), 1);
+
+        $request = $this->makeRequest('GET', '/admin/pages/new', 1);
+        $view = SecurityTestHelper::createView($db, $request, 'admin');
+        $this->shareAdminFeatures($view, false);
+        $pages = new PagesService($db);
+        $rbac = new RbacService($db);
+        $controller = new AdminPagesController($view, $pages, $pages, null, $rbac);
+
+        $response = $controller->createForm($request);
+
+        $this->assertSame(200, $response->getStatus());
+        $this->assertStringContainsString('data-tinymce-config="', $response->getBody());
+        $this->assertStringContainsString('toolbar', $response->getBody());
+        $this->assertStringContainsString('fullscreen', $response->getBody());
+        $this->assertStringContainsString('wordcount', $response->getBody());
+    }
+
     private function createDatabase(): DatabaseManager
     {
         $pdo = SecurityTestHelper::createSqlitePdo();
@@ -110,6 +133,17 @@ final class AdminPagesBlocksStudioRenderTest extends TestCase
         SecurityTestHelper::seedSettingsTable($pdo);
         $db = SecurityTestHelper::dbManagerFromPdo($pdo);
         return $db;
+    }
+
+    private function clearTemplateCache(): void
+    {
+        $path = SecurityTestHelper::rootPath() . '/storage/cache/templates';
+        if (!is_dir($path)) {
+            return;
+        }
+        foreach (glob($path . '/*.php') as $file) {
+            @unlink($file);
+        }
     }
 
     private function seedEditor(PDO $pdo, int $userId): void

@@ -83,4 +83,16 @@ final class EditorProvidersRegistry
         $assets['pages_admin_editors_js'] = (string) ($editorAssets['pages_admin_editors_js'] ?? '');
         return $assets;
     }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    public function configs(): array
+    {
+        $configs = [];
+        foreach ($this->providers as $provider) {
+            $configs[$provider->id()] = $provider->config();
+        }
+        return $configs;
+    }
 }

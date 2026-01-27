@@ -171,6 +171,7 @@ final class AdminPagesController
             'editors' => $this->markEditorSelection($editorContext['editors'], $selection['id']),
             'editor_caps' => $editorContext['caps'],
             'editor_assets' => $editorContext['assets'],
+            'editor_configs' => $editorContext['configs'],
         ], 200, [], [
             'theme' => 'admin',
         ]);
@@ -226,6 +227,7 @@ final class AdminPagesController
             'editors' => $this->markEditorSelection($editorContext['editors'], $selection['id']),
             'editor_caps' => $editorContext['caps'],
             'editor_assets' => $editorContext['assets'],
+            'editor_configs' => $editorContext['configs'],
         ], 200, [], [
             'theme' => 'admin',
         ]);
@@ -767,7 +769,7 @@ final class AdminPagesController
     }
 
     /**
-     * @return array{editors: array<int, array{id: string, label: string, format: string, available: bool, reason: string}>, caps: array<string, array{available: bool, reason: string}>, assets: array<string, array{js: string, css: string}|string>}
+     * @return array{editors: array<int, array{id: string, label: string, format: string, available: bool, reason: string}>, caps: array<string, array{available: bool, reason: string}>, assets: array<string, array{js: string, css: string}|string>, configs: array<string, string>}
      */
     private function editorContext(): array
     {
@@ -776,7 +778,22 @@ final class AdminPagesController
             'editors' => $registry->editors(),
             'caps' => $registry->capabilities(),
             'assets' => $registry->assets(),
+            'configs' => $this->encodeEditorConfigs($registry->configs()),
         ];
+    }
+
+    /**
+     * @param array<string, array<string, mixed>> $configs
+     * @return array<string, string>
+     */
+    private function encodeEditorConfigs(array $configs): array
+    {
+        $out = [];
+        foreach ($configs as $id => $config) {
+            $encoded = json_encode($config, JSON_UNESCAPED_SLASHES);
+            $out[$id] = is_string($encoded) ? $encoded : '{}';
+        }
+        return $out;
     }
 
     private function editorRegistry(): EditorProvidersRegistry
@@ -941,6 +958,7 @@ final class AdminPagesController
             'editors' => $this->markEditorSelection($editorContext['editors'], $selection['id']),
             'editor_caps' => $editorContext['caps'],
             'editor_assets' => $editorContext['assets'],
+            'editor_configs' => $editorContext['configs'],
         ], 422, [], [
             'theme' => 'admin',
         ]);

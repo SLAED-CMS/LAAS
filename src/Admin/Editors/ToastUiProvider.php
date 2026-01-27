@@ -32,6 +32,11 @@ final class ToastUiProvider implements EditorProviderInterface
         return $this->assets->hasToastUi();
     }
 
+    public function config(): array
+    {
+        return [];
+    }
+
     public function assets(): array
     {
         if (!$this->isAvailable()) {

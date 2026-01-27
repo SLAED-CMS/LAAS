@@ -18,6 +18,11 @@ interface EditorProviderInterface
     public function isAvailable(): bool;
 
     /**
+     * @return array<string, mixed>
+     */
+    public function config(): array;
+
+    /**
      * @return array{js: string, css: string}
      */
     public function assets(): array;

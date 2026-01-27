@@ -90,7 +90,8 @@
               <span class="badge text-bg-warning ms-2">{% t 'admin.pages.legacy_content' %}</span>
               {% endif %}
             </label>
-            <textarea class="form-control" id="page-content" name="content" rows="10">{% page.content %}</textarea>
+            <textarea class="form-control" id="page-content" name="content" rows="10"
+                      data-tinymce-config="{% editor_configs.tinymce %}">{% page.content %}</textarea>
             <div class="border rounded bg-white p-2 d-none" data-markdown-editor="1"></div>
             {% if legacy_content %}
             <div class="form-text text-warning">{% t 'admin.pages.legacy_content_hint' %}</div>

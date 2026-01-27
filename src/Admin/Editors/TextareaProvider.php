@@ -26,6 +26,11 @@ final class TextareaProvider implements EditorProviderInterface
         return true;
     }
 
+    public function config(): array
+    {
+        return [];
+    }
+
     public function assets(): array
     {
         return ['js' => '', 'css' => ''];

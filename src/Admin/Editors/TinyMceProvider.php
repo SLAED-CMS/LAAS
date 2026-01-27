@@ -32,6 +32,18 @@ final class TinyMceProvider implements EditorProviderInterface
         return $this->assets->hasTinyMce();
     }
 
+    public function config(): array
+    {
+        return [
+            'plugins' => 'lists link image table code fullscreen media wordcount paste autoresize',
+            'toolbar' => 'undo redo | blocks | bold italic underline strikethrough | alignleft aligncenter alignright | bullist numlist outdent indent | link image media table | code fullscreen',
+            'menubar' => false,
+            'branding' => false,
+            'statusbar' => true,
+            'height' => 420,
+        ];
+    }
+
     public function assets(): array
     {
         if (!$this->isAvailable()) {

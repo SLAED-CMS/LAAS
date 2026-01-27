@@ -160,6 +160,25 @@
     return textarea.id;
   }
 
+  function readTinyMceConfig(textarea) {
+    if (!textarea) {
+      return null;
+    }
+    var raw = textarea.getAttribute('data-tinymce-config') || '';
+    if (!raw) {
+      return null;
+    }
+    try {
+      var parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        return parsed;
+      }
+    } catch (err) {
+      return null;
+    }
+    return null;
+  }
+
   function normalizeBlocksJsonForFormat(form, format) {
     if (format !== 'markdown') {
       return normalizeBlocksJsonToHtml(form);
@@ -322,14 +341,16 @@
         tinyInit = true;
         return;
       }
-      window.tinymce.init({
-        selector: '#' + id,
-        height: 380,
+      var baseConfig = {
+        height: 420,
         menubar: false,
         branding: false,
-        statusbar: true,
-        toolbar: 'undo redo | bold italic | bullist numlist | link'
-      });
+        statusbar: true
+      };
+      var providerConfig = readTinyMceConfig(textarea) || {};
+      var merged = Object.assign({}, baseConfig, providerConfig);
+      merged.selector = '#' + id;
+      window.tinymce.init(merged);
       tinyInit = true;
     }
 
