@@ -230,6 +230,18 @@
     return null;
   }
 
+  function notifyToast(type, message) {
+    if (!message) {
+      return;
+    }
+    window.dispatchEvent(new CustomEvent('laas:toast', {
+      detail: {
+        type: type,
+        message: message
+      }
+    }));
+  }
+
   function getCsrfToken(form) {
     if (!form) {
       return '';
@@ -255,6 +267,7 @@
       if (!blob) {
         return false;
       }
+      notifyToast('info', 'Uploading image…');
       var csrf = getCsrfToken(form);
       var xhr = new XMLHttpRequest();
       xhr.open('POST', url);
@@ -267,23 +280,24 @@
         var status = xhr.status;
         var responseText = xhr.responseText || '';
         if (status < 200 || status >= 300) {
-          console.warn('Toast UI upload failed', status);
+          notifyToast('error', 'Image upload failed');
           return;
         }
         try {
           var json = JSON.parse(responseText);
           var location = json && json.location ? String(json.location) : '';
           if (!location) {
-            console.warn('Toast UI upload invalid response');
+            notifyToast('error', 'Image upload failed');
             return;
           }
           callback(normalizeImageUrlForMarkdown(location), '');
+          notifyToast('success', 'Image uploaded');
         } catch (err) {
-          console.warn('Toast UI upload invalid response');
+          notifyToast('error', 'Image upload failed');
         }
       };
       xhr.onerror = function () {
-        console.warn('Toast UI upload failed');
+        notifyToast('error', 'Image upload failed');
       };
       var filename = 'image';
       if (blob && blob.type) {
@@ -311,6 +325,7 @@
       return null;
     }
     return function (blobInfo, success, failure, progress) {
+      notifyToast('info', 'Uploading image…');
       var csrf = getCsrfToken(form);
       var xhr = new XMLHttpRequest();
       xhr.open('POST', url);
@@ -337,21 +352,26 @@
           } catch (err) {
           }
           failure(message);
+          notifyToast('error', 'Image upload failed');
           return;
         }
         try {
           var json = JSON.parse(responseText);
           if (!json || !json.location) {
             failure('invalid_response');
+            notifyToast('error', 'Image upload failed');
             return;
           }
           success(json.location);
+          notifyToast('success', 'Image uploaded');
         } catch (err) {
           failure('invalid_response');
+          notifyToast('error', 'Image upload failed');
         }
       };
       xhr.onerror = function () {
         failure('upload_failed');
+        notifyToast('error', 'Image upload failed');
       };
       var formData = new FormData();
       formData.append('file', blobInfo.blob(), blobInfo.filename());
