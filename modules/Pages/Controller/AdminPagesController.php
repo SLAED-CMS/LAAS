@@ -853,10 +853,8 @@ final class AdminPagesController
     {
         $byId = [];
         foreach ($editors as $editor) {
-            $id = (string) ($editor['id'] ?? '');
-            if ($id !== '') {
-                $byId[$id] = $editor;
-            }
+            $id = (string) $editor['id'];
+            $byId[$id] = $editor;
         }
 
         $requestedId = $this->normalizeEditorId($request->post('editor_id'), $byId);
