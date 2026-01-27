@@ -1,5 +1,11 @@
 # LAAS Versions
 
+## v4.0.104 — Pages: Toast UI image upload (admin) (2026-01-27)
+- Wire Toast UI markdown image upload to Media endpoint (admin-only)
+- Keep asset-gated fallback and write-boundary normalization unchanged
+### Upgrade notes (None)
+### Breaking changes (None)
+
 ## v4.0.103 — Pages: TinyMCE direct upload (fat) (2026-01-27)
 - Add admin upload endpoint for TinyMCE paste/drag images via Media module
 - Wire images_upload_handler with picker fallback in Pages editor
