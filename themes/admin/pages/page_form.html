@@ -45,7 +45,8 @@
               data-editor-selection-source="{% editor_selection_source %}"
               data-editor-selected-id="{% editor_selected_id %}"
               data-editor-selected-format="{% editor_selected_format %}"
-              data-editor-user-id="{% editor_user_id %}">
+              data-editor-user-id="{% editor_user_id %}"
+              data-media-picker-url="/admin/media/picker">
           <input type="hidden" name="_token" value="{% csrf_token %}">
           {% if is_edit %}
           <input type="hidden" name="id" value="{% page.id %}">
@@ -156,6 +157,7 @@
         <div id="loading" class="htmx-indicator text-center my-3">
           <div class="spinner-border" role="status" aria-hidden="true"></div>
         </div>
+        <div id="media-picker-modal"></div>
       </div>
     </div>
   </div>

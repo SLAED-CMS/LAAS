@@ -94,7 +94,7 @@ final class HtmlSanitizer
             'allow_all_attributes' => false,
             'allowed_attributes' => [
                 'a' => ['href'],
-                'img' => ['src', 'alt'],
+                'img' => ['src', 'alt', 'title', 'width', 'height'],
                 'iframe' => ['src', 'title', 'width', 'height', 'allow', 'allowfullscreen', 'frameborder'],
             ],
             'strip_comments' => true,

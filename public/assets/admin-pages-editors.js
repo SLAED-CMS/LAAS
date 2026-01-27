@@ -26,6 +26,21 @@
     return form.querySelector('[data-editor-id-input="1"]') || form.querySelector('input[name="editor_id"]');
   }
 
+  function getMediaPickerUrl(form) {
+    if (!form) {
+      return '/admin/media/picker';
+    }
+    var url = (form.dataset.mediaPickerUrl || '').toString().trim();
+    return url ? url : '/admin/media/picker';
+  }
+
+  function getMediaPickerHost(form) {
+    if (!form) {
+      return null;
+    }
+    return form.querySelector('#media-picker-modal') || document.getElementById('media-picker-modal');
+  }
+
   function readEditorCaps(form) {
     var caps = {};
     var choices = form.querySelectorAll('[data-editor-choice="1"]');
@@ -291,6 +306,32 @@
     }
   }
 
+  var pendingMediaPick = null;
+
+  function closeMediaPicker(form) {
+    var host = getMediaPickerHost(form);
+    if (host) {
+      host.innerHTML = '';
+    }
+  }
+
+  function openMediaPicker(form, callback) {
+    var host = getMediaPickerHost(form);
+    if (!host) {
+      return;
+    }
+    pendingMediaPick = callback;
+    var url = getMediaPickerUrl(form);
+    if (window.htmx && typeof window.htmx.ajax === 'function') {
+      window.htmx.ajax('GET', url, { target: host, swap: 'innerHTML' });
+      return;
+    }
+    fetch(url, { credentials: 'same-origin' })
+      .then(function (response) { return response.text(); })
+      .then(function (html) { host.innerHTML = html; })
+      .catch(function () { closeMediaPicker(form); });
+  }
+
   function resolveEffectiveChoice(choice, caps) {
     var resolved = choice;
     if (!resolved) {
@@ -408,6 +449,15 @@
       var providerConfig = readTinyMceConfig(textarea) || {};
       var merged = Object.assign({}, baseConfig, providerConfig);
       merged.selector = '#' + id;
+      merged.file_picker_callback = function (callback, value, meta) {
+        if (!meta || meta.filetype !== 'image') {
+          return;
+        }
+        openMediaPicker(form, function (url, detail) {
+          var alt = (detail && detail.original_name) ? detail.original_name : '';
+          callback(url, { alt: alt });
+        });
+      };
       window.tinymce.init(merged);
       tinyInit = true;
     }
@@ -532,4 +582,19 @@
     }
     normalizeBlocksJsonForFormat(form, format);
   }, true);
+
+  document.body.addEventListener('media:selected', function (event) {
+    if (!pendingMediaPick) {
+      return;
+    }
+    var detail = event.detail || {};
+    var url = detail.original_url || '';
+    if (!url) {
+      return;
+    }
+    var callback = pendingMediaPick;
+    pendingMediaPick = null;
+    callback(url, detail);
+    closeMediaPicker(null);
+  });
 })();
