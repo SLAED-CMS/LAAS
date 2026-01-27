@@ -1,5 +1,13 @@
 # LAAS Versions
 
+## v4.0.105 — Pages: editor uploads hardening (2026-01-27)
+- Add toast UX for editor image uploads (TinyMCE + Toast UI)
+- Harden upload validation and error responses for /admin/media/upload-editor
+- Add tests for upload errors and Toast UI wiring
+### Upgrade notes
+- Ensure media.upload permission is granted and editor assets are present
+### Breaking changes (None)
+
 ## v4.0.104 — Pages: Toast UI image upload (admin) (2026-01-27)
 - Wire Toast UI markdown image upload to Media endpoint (admin-only)
 - Keep asset-gated fallback and write-boundary normalization unchanged

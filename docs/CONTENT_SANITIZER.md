@@ -95,6 +95,7 @@ Policy:
 - Uses the admin upload endpoint /admin/media/upload-editor (multipart/form-data).
 - Inserts markdown image syntax: ![](url) (spaces encoded).
 - Requires admin + media.upload permission and valid CSRF/UI token.
+- Upload progress and errors surface via laas:toast notifications.
 - Missing assets fall back to textarea; no upload UI is shown.
 
 ## Pages editor fallback rules

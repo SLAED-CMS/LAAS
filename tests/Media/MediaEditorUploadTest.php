@@ -87,6 +87,48 @@ final class MediaEditorUploadTest extends TestCase
         }
     }
 
+    public function testUploadEditorRejectsNonImage(): void
+    {
+        $db = $this->createDatabase();
+        $this->seedRbac($db->pdo(), $this->userId, ['media.upload']);
+
+        $tmp = tempnam(sys_get_temp_dir(), 'laas_txt_');
+        if ($tmp === false) {
+            $this->fail('Failed to create temp file');
+        }
+        file_put_contents($tmp, 'hello');
+        $size = (int) filesize($tmp);
+
+        $_FILES['file'] = [
+            'name' => 'note.txt',
+            'type' => 'text/plain',
+            'tmp_name' => $tmp,
+            'size' => $size,
+            'error' => 0,
+        ];
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+
+        $request = $this->makeRequest('POST', '/admin/media/upload-editor', $this->userId, [
+            'accept' => 'application/json',
+            'content-length' => (string) $size,
+        ]);
+        $view = SecurityTestHelper::createView($db, $request, 'admin');
+        $container = SecurityTestHelper::createContainer($db);
+        $service = new MediaService($db, [], $this->rootPath);
+        $controller = new AdminMediaController($view, $service, $service, $container);
+
+        $response = $controller->uploadEditor($request);
+
+        $this->assertSame(415, $response->getStatus());
+        $payload = json_decode($response->getBody(), true);
+        $this->assertIsArray($payload);
+        $this->assertArrayHasKey('error', $payload);
+
+        if (is_file($tmp)) {
+            @unlink($tmp);
+        }
+    }
+
     private function createDatabase(): \Laas\Database\DatabaseManager
     {
         $pdo = SecurityTestHelper::createSqlitePdo();
